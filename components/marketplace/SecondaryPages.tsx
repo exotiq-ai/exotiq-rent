@@ -59,7 +59,7 @@ export function TripsPage({ navigate }: { navigate: (page: PageType, vehicleId?:
               className="flex-1 py-2.5 rounded-lg text-sm font-medium capitalize transition-all duration-200"
               style={{
                 backgroundColor: tab === t ? 'rgba(110,193,228,0.12)' : 'transparent',
-                color: tab === t ? '#6EC1E4' : '#8888A0',
+                color: tab === t ? '#6EC1E4' : '#9999B0',
               }}
             >
               {t}
@@ -85,19 +85,19 @@ export function TripsPage({ navigate }: { navigate: (page: PageType, vehicleId?:
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <p className="font-semibold" style={{ color: '#F0F0F5' }}>{trip.vehicle.name}</p>
-                    <p className="text-xs" style={{ color: '#8888A0' }}>{trip.vehicle.fleet}</p>
+                    <p className="text-xs" style={{ color: '#9999B0' }}>{trip.vehicle.fleet}</p>
                   </div>
                   <span
                     className="text-[10px] font-medium px-2.5 py-1 rounded-full"
                     style={{
                       backgroundColor: trip.status === 'Confirmed' ? 'rgba(110,193,228,0.12)' : 'rgba(255,255,255,0.05)',
-                      color: trip.status === 'Confirmed' ? '#6EC1E4' : '#8888A0',
+                      color: trip.status === 'Confirmed' ? '#6EC1E4' : '#9999B0',
                     }}
                   >
                     {trip.status}
                   </span>
                 </div>
-                <div className="flex items-center gap-4 text-xs" style={{ color: '#8888A0' }}>
+                <div className="flex items-center gap-4 text-xs" style={{ color: '#9999B0' }}>
                   <span className="flex items-center gap-1"><Calendar size={12} /> {trip.dates}</span>
                   <span className="flex items-center gap-1"><MapPin size={12} /> {trip.pickup}</span>
                 </div>
@@ -116,8 +116,8 @@ export function TripsPage({ navigate }: { navigate: (page: PageType, vehicleId?:
 
         {trips.length === 0 && (
           <div className="text-center py-16">
-            <Car size={40} color="#555570" className="mx-auto mb-4" />
-            <p style={{ color: '#8888A0' }}>No {tab} trips</p>
+            <Car size={40} color="#707088" className="mx-auto mb-4" />
+            <p style={{ color: '#9999B0' }}>No {tab} trips</p>
             <button
               onClick={() => navigate('search')}
               className="mt-4 px-4 py-2 rounded-lg text-sm"
@@ -166,7 +166,7 @@ export function FavoritesPage({
 
         {favVehicles.length > 0 ? (
           <>
-            <p className="text-sm mb-6" style={{ color: '#8888A0' }}>
+            <p className="text-sm mb-6" style={{ color: '#9999B0' }}>
               {favVehicles.length} saved vehicle{favVehicles.length !== 1 ? 's' : ''}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -183,9 +183,9 @@ export function FavoritesPage({
           </>
         ) : (
           <div className="text-center py-16">
-            <Heart size={40} color="#555570" className="mx-auto mb-4" />
+            <Heart size={40} color="#707088" className="mx-auto mb-4" />
             <p className="text-lg mb-2" style={{ color: '#F0F0F5' }}>No favorites yet</p>
-            <p className="text-sm mb-6" style={{ color: '#8888A0' }}>
+            <p className="text-sm mb-6" style={{ color: '#9999B0' }}>
               Tap the heart icon on any vehicle to save it here
             </p>
             <button
@@ -278,10 +278,10 @@ export function MessagesPage({ navigate }: { navigate: (page: PageType) => void 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium truncate" style={{ color: '#F0F0F5' }}>{thread.host}</p>
-                      <span className="text-[10px] ml-2 flex-shrink-0" style={{ color: '#555570' }}>{thread.time}</span>
+                      <span className="text-[10px] ml-2 flex-shrink-0" style={{ color: '#707088' }}>{thread.time}</span>
                     </div>
                     <p className="text-xs truncate" style={{ color: '#6EC1E4' }}>{thread.vehicle}</p>
-                    <p className="text-xs truncate mt-0.5" style={{ color: '#8888A0' }}>{thread.lastMessage}</p>
+                    <p className="text-xs truncate mt-0.5" style={{ color: '#9999B0' }}>{thread.lastMessage}</p>
                   </div>
                   {thread.unread && (
                     <div className="w-2 h-2 rounded-full flex-shrink-0 mt-2" style={{ backgroundColor: '#6EC1E4' }} />
@@ -303,7 +303,7 @@ export function MessagesPage({ navigate }: { navigate: (page: PageType) => void 
               </div>
               <div>
                 <p className="text-sm font-semibold" style={{ color: '#F0F0F5' }}>{active.host}</p>
-                <p className="text-xs" style={{ color: '#8888A0' }}>{active.vehicle}</p>
+                <p className="text-xs" style={{ color: '#9999B0' }}>{active.vehicle}</p>
               </div>
             </div>
 
@@ -322,7 +322,7 @@ export function MessagesPage({ navigate }: { navigate: (page: PageType) => void 
                     >
                       {msg.text}
                     </div>
-                    <p className={`text-[10px] mt-1 ${msg.role === 'user' ? 'text-right' : 'text-left'}`} style={{ color: '#555570' }}>
+                    <p className={`text-[10px] mt-1 ${msg.role === 'user' ? 'text-right' : 'text-left'}`} style={{ color: '#707088' }}>
                       {msg.time}
                     </p>
                   </div>

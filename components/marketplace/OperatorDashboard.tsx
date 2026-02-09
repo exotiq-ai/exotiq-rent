@@ -25,7 +25,7 @@ export default function OperatorDashboard({ navigate }: OperatorDashboardProps) 
             <h1 className="text-2xl sm:text-3xl font-bold" style={{ fontFamily: '"Dfaalt", sans-serif', color: '#F0F0F5' }}>
               Desert Exotic Rentals
             </h1>
-            <p className="text-sm mt-1" style={{ color: '#8888A0' }}>Scottsdale, AZ · Member since Jan 2023</p>
+            <p className="text-sm mt-1" style={{ color: '#9999B0' }}>Scottsdale, AZ · Member since Jan 2023</p>
           </div>
           <button
             className="mt-4 sm:mt-0 flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
@@ -51,7 +51,7 @@ export default function OperatorDashboard({ navigate }: OperatorDashboardProps) 
                 </span>
               </div>
               <p className="text-2xl font-bold font-mont" style={{ color: '#F0F0F5' }}>{kpi.value}</p>
-              <p className="text-xs mt-1" style={{ color: '#555570' }}>{kpi.label}</p>
+              <p className="text-xs mt-1" style={{ color: '#707088' }}>{kpi.label}</p>
             </div>
           ))}
         </div>
@@ -62,7 +62,7 @@ export default function OperatorDashboard({ navigate }: OperatorDashboardProps) 
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-base font-semibold" style={{ color: '#F0F0F5' }}>Revenue Overview</h3>
-                <p className="text-xs" style={{ color: '#555570' }}>Last 12 months</p>
+                <p className="text-xs" style={{ color: '#707088' }}>Last 12 months</p>
               </div>
               <div className="flex items-center gap-1">
                 <TrendingUp size={14} color="#2ECC71" />
@@ -80,7 +80,7 @@ export default function OperatorDashboard({ navigate }: OperatorDashboardProps) 
                       minHeight: '4px',
                     }}
                   />
-                  <span className="text-[9px]" style={{ color: '#555570' }}>
+                  <span className="text-[9px]" style={{ color: '#707088' }}>
                     {['J','F','M','A','M','J','J','A','S','O','N','D'][i]}
                   </span>
                 </div>
@@ -95,7 +95,7 @@ export default function OperatorDashboard({ navigate }: OperatorDashboardProps) 
               {[
                 { status: 'Upcoming', count: 8, color: '#6EC1E4' },
                 { status: 'Active', count: 3, color: '#2ECC71' },
-                { status: 'Completed', count: 142, color: '#8888A0' },
+                { status: 'Completed', count: 142, color: '#9999B0' },
                 { status: 'Pending Review', count: 2, color: '#F15A29' },
               ].map((item, i) => (
                 <div key={i} className="flex items-center justify-between">
@@ -108,7 +108,7 @@ export default function OperatorDashboard({ navigate }: OperatorDashboardProps) 
               ))}
             </div>
             <div className="mt-6 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-              <p className="text-xs mb-2" style={{ color: '#555570' }}>Total Revenue (YTD)</p>
+              <p className="text-xs mb-2" style={{ color: '#707088' }}>Total Revenue (YTD)</p>
               <p className="text-2xl font-bold font-mont" style={{ color: '#6EC1E4' }}>$847,200</p>
             </div>
           </div>
@@ -118,7 +118,7 @@ export default function OperatorDashboard({ navigate }: OperatorDashboardProps) 
         <div className="mt-10">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold" style={{ fontFamily: '"Dfaalt", sans-serif', color: '#F0F0F5' }}>Your Fleet</h3>
-            <span className="text-xs" style={{ color: '#8888A0' }}>6 vehicles</span>
+            <span className="text-xs" style={{ color: '#9999B0' }}>6 vehicles</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {fleetVehicles.map((v) => (
@@ -132,7 +132,7 @@ export default function OperatorDashboard({ navigate }: OperatorDashboardProps) 
                 <div className="p-4">
                   <p className="font-semibold text-sm mb-1" style={{ color: '#F0F0F5' }}>{v.name}</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs" style={{ color: '#8888A0' }}>{v.trips} trips · {v.rating}★</span>
+                    <span className="text-xs" style={{ color: '#9999B0' }}>{v.trips} trips · {v.rating}★</span>
                     <span className="text-sm font-bold font-mont" style={{ color: '#6EC1E4' }}>${v.price}/day</span>
                   </div>
                   <div className="mt-2 flex items-center gap-2">
@@ -152,7 +152,7 @@ export default function OperatorDashboard({ navigate }: OperatorDashboardProps) 
           <h3 className="text-xl font-bold mb-2" style={{ fontFamily: '"Dfaalt", sans-serif', color: '#F0F0F5' }}>
             Ready to List Your Fleet?
           </h3>
-          <p className="text-sm mb-6 max-w-md mx-auto" style={{ color: '#8888A0' }}>
+          <p className="text-sm mb-6 max-w-md mx-auto" style={{ color: '#9999B0' }}>
             Join 50+ verified operators earning an average of $14K/month per vehicle on Drive Exotiq.
           </p>
           <button className="px-6 py-3 rounded-xl text-sm font-semibold transition-all hover:opacity-90" style={{ backgroundColor: '#6EC1E4', color: '#0B0B0F' }}>

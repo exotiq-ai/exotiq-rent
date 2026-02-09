@@ -133,7 +133,7 @@ export function VehicleCard({
       {/* Content */}
       <div className="p-4">
         {/* Fleet name */}
-        <p className="text-xs mb-1 truncate" style={{ color: '#555570' }}>
+        <p className="text-xs mb-1 truncate" style={{ color: '#707088' }}>
           {vehicle.fleet}
         </p>
         {/* Vehicle name */}
@@ -141,7 +141,7 @@ export function VehicleCard({
           {vehicle.name}
         </h3>
         {/* Rating + trips + city */}
-        <div className="flex items-center gap-2 text-xs mb-3" style={{ color: '#8888A0' }}>
+        <div className="flex items-center gap-2 text-xs mb-3" style={{ color: '#9999B0' }}>
           <div className="flex items-center gap-1">
             <Star size={12} fill="#F5C842" color="#F5C842" />
             <span className="font-medium" style={{ color: '#F0F0F5' }}>{vehicle.rating}</span>
@@ -159,7 +159,7 @@ export function VehicleCard({
           <span className="text-lg font-bold" style={{ color: '#6EC1E4' }}>
             ${vehicle.price.toLocaleString()}
           </span>
-          <span className="text-xs" style={{ color: '#555570' }}>/day</span>
+          <span className="text-xs" style={{ color: '#707088' }}>/day</span>
         </div>
       </div>
     </div>

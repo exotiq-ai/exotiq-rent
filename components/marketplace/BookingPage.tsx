@@ -60,12 +60,12 @@ export default function BookingPage({ vehicle, navigate }: BookingPageProps) {
                       className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300"
                       style={{
                         backgroundColor: i <= stepIndex ? '#6EC1E4' : 'rgba(255,255,255,0.06)',
-                        color: i <= stepIndex ? '#0B0B0F' : '#555570',
+                        color: i <= stepIndex ? '#0B0B0F' : '#707088',
                       }}
                     >
                       {i < stepIndex ? <Check size={14} /> : i + 1}
                     </div>
-                    <span className="text-[10px] mt-1.5 hidden sm:block" style={{ color: i <= stepIndex ? '#6EC1E4' : '#555570' }}>
+                    <span className="text-[10px] mt-1.5 hidden sm:block" style={{ color: i <= stepIndex ? '#6EC1E4' : '#707088' }}>
                       {step.label}
                     </span>
                   </div>
@@ -87,11 +87,11 @@ export default function BookingPage({ vehicle, navigate }: BookingPageProps) {
             <img src={vehicle.image} alt={vehicle.name} className="w-20 h-14 rounded-lg object-cover" />
             <div className="flex-1">
               <p className="text-sm font-semibold" style={{ color: '#F0F0F5' }}>{vehicle.name}</p>
-              <p className="text-xs" style={{ color: '#8888A0' }}>{vehicle.fleet} · {vehicle.city}</p>
+              <p className="text-xs" style={{ color: '#9999B0' }}>{vehicle.fleet} · {vehicle.city}</p>
             </div>
             <div className="text-right">
               <p className="text-lg font-bold font-mont" style={{ color: '#6EC1E4' }}>${total.toLocaleString()}</p>
-              <p className="text-[10px]" style={{ color: '#555570' }}>{days} days</p>
+              <p className="text-[10px]" style={{ color: '#707088' }}>{days} days</p>
             </div>
           </div>
         )}
@@ -114,14 +114,14 @@ export default function BookingPage({ vehicle, navigate }: BookingPageProps) {
                   <p className="text-sm font-medium mb-1" style={{ color: '#F0F0F5' }}>Dates & Times</p>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      <p className="text-[10px] uppercase tracking-wider" style={{ color: '#555570' }}>Pickup</p>
+                      <p className="text-[10px] uppercase tracking-wider" style={{ color: '#707088' }}>Pickup</p>
                       <p className="text-sm" style={{ color: '#F0F0F5' }}>Wed, Oct 11</p>
-                      <p className="text-xs" style={{ color: '#8888A0' }}>10:00 AM</p>
+                      <p className="text-xs" style={{ color: '#9999B0' }}>10:00 AM</p>
                     </div>
                     <div className="rounded-lg p-3" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      <p className="text-[10px] uppercase tracking-wider" style={{ color: '#555570' }}>Return</p>
+                      <p className="text-[10px] uppercase tracking-wider" style={{ color: '#707088' }}>Return</p>
                       <p className="text-sm" style={{ color: '#F0F0F5' }}>Sat, Oct 14</p>
-                      <p className="text-xs" style={{ color: '#8888A0' }}>10:00 AM</p>
+                      <p className="text-xs" style={{ color: '#9999B0' }}>10:00 AM</p>
                     </div>
                   </div>
                 </div>
@@ -152,7 +152,7 @@ export default function BookingPage({ vehicle, navigate }: BookingPageProps) {
                 <Car size={18} color="#6EC1E4" className="mt-1" />
                 <div className="flex-1">
                   <p className="text-sm font-medium mb-1" style={{ color: '#F0F0F5' }}>Driver Information</p>
-                  <p className="text-xs" style={{ color: '#8888A0' }}>Primary driver details will be confirmed at checkout</p>
+                  <p className="text-xs" style={{ color: '#9999B0' }}>Primary driver details will be confirmed at checkout</p>
                 </div>
               </div>
             </div>
@@ -235,7 +235,7 @@ export default function BookingPage({ vehicle, navigate }: BookingPageProps) {
                     </div>
                     <span className="font-bold text-sm font-mont" style={{ color: '#6EC1E4' }}>{plan.price}</span>
                   </div>
-                  <p className="text-xs ml-7" style={{ color: '#8888A0' }}>{plan.desc}</p>
+                  <p className="text-xs ml-7" style={{ color: '#9999B0' }}>{plan.desc}</p>
                 </button>
               ))}
             </div>
@@ -244,7 +244,7 @@ export default function BookingPage({ vehicle, navigate }: BookingPageProps) {
               <button
                 onClick={goBack}
                 className="flex-1 py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-all duration-200"
-                style={{ border: '1px solid rgba(255,255,255,0.1)', color: '#8888A0' }}
+                style={{ border: '1px solid rgba(255,255,255,0.1)', color: '#9999B0' }}
               >
                 <ArrowLeft size={14} /> Back
               </button>
@@ -299,7 +299,7 @@ export default function BookingPage({ vehicle, navigate }: BookingPageProps) {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium" style={{ color: '#F0F0F5' }}>{extra.name}</p>
-                    <p className="text-xs" style={{ color: '#8888A0' }}>{extra.desc}</p>
+                    <p className="text-xs" style={{ color: '#9999B0' }}>{extra.desc}</p>
                   </div>
                   <span className="text-sm font-semibold font-mont" style={{ color: '#6EC1E4' }}>{extra.price}</span>
                 </button>
@@ -310,7 +310,7 @@ export default function BookingPage({ vehicle, navigate }: BookingPageProps) {
               <button
                 onClick={goBack}
                 className="flex-1 py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-all duration-200"
-                style={{ border: '1px solid rgba(255,255,255,0.1)', color: '#8888A0' }}
+                style={{ border: '1px solid rgba(255,255,255,0.1)', color: '#9999B0' }}
               >
                 <ArrowLeft size={14} /> Back
               </button>
@@ -338,7 +338,7 @@ export default function BookingPage({ vehicle, navigate }: BookingPageProps) {
             {/* Card form */}
             <div className="space-y-4 mb-6">
               <div>
-                <label className="block text-xs mb-1.5" style={{ color: '#8888A0' }}>Card Number</label>
+                <label className="block text-xs mb-1.5" style={{ color: '#9999B0' }}>Card Number</label>
                 <input
                   type="text"
                   placeholder="4242 4242 4242 4242"
@@ -352,7 +352,7 @@ export default function BookingPage({ vehicle, navigate }: BookingPageProps) {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs mb-1.5" style={{ color: '#8888A0' }}>Expiry</label>
+                  <label className="block text-xs mb-1.5" style={{ color: '#9999B0' }}>Expiry</label>
                   <input
                     type="text"
                     placeholder="MM / YY"
@@ -365,7 +365,7 @@ export default function BookingPage({ vehicle, navigate }: BookingPageProps) {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs mb-1.5" style={{ color: '#8888A0' }}>CVV</label>
+                  <label className="block text-xs mb-1.5" style={{ color: '#9999B0' }}>CVV</label>
                   <input
                     type="text"
                     placeholder="123"
@@ -379,7 +379,7 @@ export default function BookingPage({ vehicle, navigate }: BookingPageProps) {
                 </div>
               </div>
               <div>
-                <label className="block text-xs mb-1.5" style={{ color: '#8888A0' }}>Name on Card</label>
+                <label className="block text-xs mb-1.5" style={{ color: '#9999B0' }}>Name on Card</label>
                 <input
                   type="text"
                   placeholder="John Smith"
@@ -398,18 +398,18 @@ export default function BookingPage({ vehicle, navigate }: BookingPageProps) {
               className="rounded-xl p-4 mb-6 space-y-2"
               style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
             >
-              <p className="text-xs font-medium uppercase tracking-wider mb-3" style={{ color: '#555570' }}>Trip Summary</p>
+              <p className="text-xs font-medium uppercase tracking-wider mb-3" style={{ color: '#707088' }}>Trip Summary</p>
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#8888A0' }}>{vehicle.name}</span>
+                <span style={{ color: '#9999B0' }}>{vehicle.name}</span>
                 <span style={{ color: '#F0F0F5' }}>{days} days</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#8888A0' }}>Protection</span>
+                <span style={{ color: '#9999B0' }}>Protection</span>
                 <span className="capitalize" style={{ color: '#F0F0F5' }}>{selectedProtection}</span>
               </div>
               {extras.length > 0 && (
                 <div className="flex justify-between text-sm">
-                  <span style={{ color: '#8888A0' }}>Extras</span>
+                  <span style={{ color: '#9999B0' }}>Extras</span>
                   <span style={{ color: '#F0F0F5' }}>{extras.length} add-ons</span>
                 </div>
               )}
@@ -423,7 +423,7 @@ export default function BookingPage({ vehicle, navigate }: BookingPageProps) {
               <button
                 onClick={goBack}
                 className="flex-1 py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-all duration-200"
-                style={{ border: '1px solid rgba(255,255,255,0.1)', color: '#8888A0' }}
+                style={{ border: '1px solid rgba(255,255,255,0.1)', color: '#9999B0' }}
               >
                 <ArrowLeft size={14} /> Back
               </button>
@@ -453,7 +453,7 @@ export default function BookingPage({ vehicle, navigate }: BookingPageProps) {
             >
               Booking Confirmed!
             </h2>
-            <p className="text-sm mb-8 max-w-md mx-auto" style={{ color: '#8888A0' }}>
+            <p className="text-sm mb-8 max-w-md mx-auto" style={{ color: '#9999B0' }}>
               Your {vehicle.name} is reserved. Rari will message you with pickup details and final instructions.
             </p>
 
@@ -465,20 +465,20 @@ export default function BookingPage({ vehicle, navigate }: BookingPageProps) {
                 <img src={vehicle.image} alt={vehicle.name} className="w-24 h-16 rounded-lg object-cover" />
                 <div>
                   <p className="font-semibold text-sm" style={{ color: '#F0F0F5' }}>{vehicle.name}</p>
-                  <p className="text-xs" style={{ color: '#8888A0' }}>{vehicle.fleet}</p>
+                  <p className="text-xs" style={{ color: '#9999B0' }}>{vehicle.fleet}</p>
                 </div>
               </div>
               <div className="space-y-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '12px' }}>
                 <div className="flex justify-between text-sm">
-                  <span style={{ color: '#8888A0' }}>Dates</span>
+                  <span style={{ color: '#9999B0' }}>Dates</span>
                   <span style={{ color: '#F0F0F5' }}>Oct 11 – Oct 14</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span style={{ color: '#8888A0' }}>Location</span>
+                  <span style={{ color: '#9999B0' }}>Location</span>
                   <span style={{ color: '#F0F0F5' }}>{vehicle.city}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span style={{ color: '#8888A0' }}>Total</span>
+                  <span style={{ color: '#9999B0' }}>Total</span>
                   <span className="font-bold" style={{ color: '#6EC1E4' }}>${total.toLocaleString()}</span>
                 </div>
               </div>
@@ -495,7 +495,7 @@ export default function BookingPage({ vehicle, navigate }: BookingPageProps) {
               <button
                 onClick={() => navigate('home')}
                 className="px-6 py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-all duration-200"
-                style={{ border: '1px solid rgba(255,255,255,0.1)', color: '#8888A0' }}
+                style={{ border: '1px solid rgba(255,255,255,0.1)', color: '#9999B0' }}
               >
                 Back to Home
               </button>

@@ -74,7 +74,7 @@ function GateForm() {
         >
           Marketplace Preview
         </h1>
-        <p className="text-sm mb-8" style={{ color: '#8888A0' }}>
+        <p className="text-sm mb-8" style={{ color: '#9999B0' }}>
           Enter the access code to continue.
         </p>
 
@@ -117,7 +117,7 @@ function GateForm() {
         </form>
 
         {/* Footer */}
-        <p className="text-xs mt-10" style={{ color: '#555570' }}>
+        <p className="text-xs mt-10" style={{ color: '#707088' }}>
           © 2025 Drive Exotiq. Confidential.
         </p>
       </div>

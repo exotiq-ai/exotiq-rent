@@ -78,7 +78,7 @@ function Navbar({
                 key={link.label}
                 onClick={() => navigate(link.page)}
                 className="text-sm font-medium transition-colors duration-200 hover:text-[#6EC1E4] relative pb-1"
-                style={{ color: currentPage === link.page ? '#6EC1E4' : '#8888A0' }}
+                style={{ color: currentPage === link.page ? '#6EC1E4' : '#9999B0' }}
               >
                 {link.label}
                 {/* Active indicator */}
@@ -184,7 +184,7 @@ function MarketplaceFooter({ navigate }: { navigate: (page: PageType) => void })
             <button onClick={() => navigate('home')} className="flex items-center gap-2 mb-4">
               <Logo size={24} />
             </button>
-            <p className="text-xs leading-relaxed mb-4" style={{ color: '#555570' }}>
+            <p className="text-xs leading-relaxed mb-4" style={{ color: '#707088' }}>
               The marketplace for extraordinary driving experiences. Curated fleets, AI-powered pricing, white-glove service.
             </p>
             <div className="flex gap-3">
@@ -195,7 +195,7 @@ function MarketplaceFooter({ navigate }: { navigate: (page: PageType) => void })
                   className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-[rgba(110,193,228,0.1)]"
                   style={{ backgroundColor: 'rgba(255,255,255,0.04)' }}
                 >
-                  <Icon size={14} color="#8888A0" />
+                  <Icon size={14} color="#9999B0" />
                 </a>
               ))}
             </div>
@@ -203,7 +203,7 @@ function MarketplaceFooter({ navigate }: { navigate: (page: PageType) => void })
 
           {/* Marketplace */}
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#8888A0' }}>
+            <h4 className="text-xs font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#9999B0' }}>
               Marketplace
             </h4>
             <div className="space-y-2.5">
@@ -217,7 +217,7 @@ function MarketplaceFooter({ navigate }: { navigate: (page: PageType) => void })
                   key={link.label}
                   onClick={() => navigate(link.page)}
                   className="block text-sm transition-colors hover:text-[#6EC1E4]"
-                  style={{ color: '#555570' }}
+                  style={{ color: '#707088' }}
                 >
                   {link.label}
                 </button>
@@ -227,7 +227,7 @@ function MarketplaceFooter({ navigate }: { navigate: (page: PageType) => void })
 
           {/* Cities */}
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#8888A0' }}>
+            <h4 className="text-xs font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#9999B0' }}>
               Top Cities
             </h4>
             <div className="space-y-2.5">
@@ -236,7 +236,7 @@ function MarketplaceFooter({ navigate }: { navigate: (page: PageType) => void })
                   key={city}
                   onClick={() => navigate('search')}
                   className="block text-sm transition-colors hover:text-[#6EC1E4]"
-                  style={{ color: '#555570' }}
+                  style={{ color: '#707088' }}
                 >
                   {city}
                 </button>
@@ -246,7 +246,7 @@ function MarketplaceFooter({ navigate }: { navigate: (page: PageType) => void })
 
           {/* Support */}
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#8888A0' }}>
+            <h4 className="text-xs font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#9999B0' }}>
               Support
             </h4>
             <div className="space-y-2.5">
@@ -254,7 +254,7 @@ function MarketplaceFooter({ navigate }: { navigate: (page: PageType) => void })
                 <button
                   key={label}
                   className="block text-sm transition-colors hover:text-[#6EC1E4]"
-                  style={{ color: '#555570' }}
+                  style={{ color: '#707088' }}
                 >
                   {label}
                 </button>
@@ -275,7 +275,7 @@ function MarketplaceFooter({ navigate }: { navigate: (page: PageType) => void })
             <p className="font-semibold text-sm mb-1" style={{ color: '#F0F0F5' }}>
               Get exclusive deals & early access
             </p>
-            <p className="text-xs" style={{ color: '#8888A0' }}>
+            <p className="text-xs" style={{ color: '#9999B0' }}>
               Join 10,000+ enthusiasts. No spam, ever.
             </p>
           </div>
@@ -304,14 +304,14 @@ function MarketplaceFooter({ navigate }: { navigate: (page: PageType) => void })
           className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4"
           style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}
         >
-          <p className="text-xs" style={{ color: '#555570' }}>
+          <p className="text-xs" style={{ color: '#707088' }}>
             © 2025 Drive Exotiq. All rights reserved.
           </p>
-          <div className="flex items-center gap-1 text-xs" style={{ color: '#555570' }}>
+          <div className="flex items-center gap-1 text-xs" style={{ color: '#707088' }}>
             <span>Powered by</span>
             <span style={{ color: '#6EC1E4' }}>Exotiq AI</span>
           </div>
-          <div className="flex gap-4 text-xs" style={{ color: '#555570' }}>
+          <div className="flex gap-4 text-xs" style={{ color: '#707088' }}>
             <button className="hover:text-[#6EC1E4] transition-colors">Terms</button>
             <button className="hover:text-[#6EC1E4] transition-colors">Privacy</button>
             <button className="hover:text-[#6EC1E4] transition-colors">Cookies</button>

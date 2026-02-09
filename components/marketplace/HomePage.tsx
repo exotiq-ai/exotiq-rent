@@ -90,7 +90,7 @@ function HeroSection({ navigate, setSearchCity }: { navigate: (page: PageType) =
         {/* Subheadline */}
         <p
           className="text-base sm:text-lg lg:text-xl mb-10 max-w-2xl mx-auto leading-relaxed"
-          style={{ color: '#8888A0' }}
+          style={{ color: '#9999B0' }}
         >
           Access curated exotic fleets in 25+ cities. AI-powered pricing.
           White-glove service.
@@ -143,7 +143,7 @@ function HeroSection({ navigate, setSearchCity }: { navigate: (page: PageType) =
         </div>
 
         {/* Popular Links */}
-        <div className="flex items-center justify-center gap-2 flex-wrap text-sm" style={{ color: '#555570' }}>
+        <div className="flex items-center justify-center gap-2 flex-wrap text-sm" style={{ color: '#707088' }}>
           <span>Popular:</span>
           {['Scottsdale', 'Miami', 'Las Vegas', 'Los Angeles'].map((city) => (
             <button
@@ -153,7 +153,7 @@ function HeroSection({ navigate, setSearchCity }: { navigate: (page: PageType) =
                 navigate('search');
               }}
               className="transition-colors duration-200 hover:text-[#6EC1E4]"
-              style={{ color: '#8888A0' }}
+              style={{ color: '#9999B0' }}
             >
               {city}
             </button>
@@ -163,8 +163,8 @@ function HeroSection({ navigate, setSearchCity }: { navigate: (page: PageType) =
 
       {/* Scroll indicator */}
       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3">
-        <span className="text-[10px] uppercase tracking-[0.2em]" style={{ color: '#555570' }}>Scroll to explore</span>
-        <div className="w-5 h-9 rounded-full border border-[#555570]/50 flex justify-center pt-2 animate-bounce">
+        <span className="text-[10px] uppercase tracking-[0.2em]" style={{ color: '#707088' }}>Scroll to explore</span>
+        <div className="w-5 h-9 rounded-full border border-[#707088]/50 flex justify-center pt-2 animate-bounce">
           <div className="w-0.5 h-2.5 rounded-full bg-[#6EC1E4] animate-pulse" />
         </div>
       </div>
@@ -200,7 +200,7 @@ function TrustBar() {
                 <span className="font-bold text-lg font-mont" style={{ color: '#6EC1E4' }}>
                   {stat.value}
                 </span>{' '}
-                <span className="text-sm" style={{ color: '#8888A0' }}>
+                <span className="text-sm" style={{ color: '#9999B0' }}>
                   {stat.label}
                 </span>
               </div>
@@ -324,7 +324,7 @@ function HowItWorks() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
         <SectionEyebrow>SEAMLESS EXPERIENCE</SectionEyebrow>
         <SectionHeading>How Drive Exotiq Works</SectionHeading>
-        <p className="text-base max-w-2xl mx-auto mb-16" style={{ color: '#8888A0' }}>
+        <p className="text-base max-w-2xl mx-auto mb-16" style={{ color: '#9999B0' }}>
           Three simple steps to an extraordinary driving experience
         </p>
 
@@ -348,7 +348,7 @@ function HowItWorks() {
               <h3 className="text-lg font-semibold mb-3 font-mont" style={{ color: '#F0F0F5' }}>
                 {step.title}
               </h3>
-              <p className="text-sm leading-relaxed max-w-xs mx-auto" style={{ color: '#8888A0' }}>
+              <p className="text-sm leading-relaxed max-w-xs mx-auto" style={{ color: '#9999B0' }}>
                 {step.desc}
               </p>
             </div>
@@ -432,12 +432,12 @@ function FeaturedIn() {
   return (
     <section className="py-12" style={{ backgroundColor: '#0B0B0F', borderTop: '1px solid rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
       <div className="max-w-5xl mx-auto px-4 text-center">
-        <p className="text-[10px] uppercase tracking-[0.2em] mb-6" style={{ color: '#555570' }}>As Featured In</p>
+        <p className="text-[10px] uppercase tracking-[0.2em] mb-6" style={{ color: '#707088' }}>As Featured In</p>
         <div className="flex items-center justify-center gap-8 sm:gap-14 flex-wrap">
           {publications.map((pub) => (
             <span
               key={pub}
-              className="text-sm sm:text-base font-medium tracking-wide transition-colors duration-300 hover:text-[#8888A0]"
+              className="text-sm sm:text-base font-medium tracking-wide transition-colors duration-300 hover:text-[#9999B0]"
               style={{ color: '#3A3A50', fontFamily: '"Dfaalt", sans-serif' }}
             >
               {pub}
@@ -499,7 +499,7 @@ function RariShowcase() {
                 style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(110,193,228,0.1)' }}
               >
                 <Mic size={18} color="#6EC1E4" />
-                <span className="text-sm flex-1" style={{ color: '#555570' }}>Ask Rari anything...</span>
+                <span className="text-sm flex-1" style={{ color: '#707088' }}>Ask Rari anything...</span>
                 <Play size={16} color="#6EC1E4" />
               </div>
             </div>
@@ -514,7 +514,7 @@ function RariShowcase() {
             >
               Meet <span style={{ color: '#6EC1E4' }}>Rari</span>
             </h2>
-            <p className="text-base leading-relaxed mb-4" style={{ color: '#8888A0' }}>
+            <p className="text-base leading-relaxed mb-4" style={{ color: '#9999B0' }}>
               Your AI-powered concierge. Tell Rari what you want and get personalized recommendations instantly. Voice or text. Available 24/7.
             </p>
             <ul className="space-y-3 mb-8">
@@ -576,7 +576,7 @@ function WhiteGloveService() {
               <h3 className="text-lg font-semibold mb-2 font-mont" style={{ color: '#F0F0F5' }}>
                 {f.title}
               </h3>
-              <p className="text-sm leading-relaxed" style={{ color: '#8888A0' }}>
+              <p className="text-sm leading-relaxed" style={{ color: '#9999B0' }}>
                 {f.desc}
               </p>
             </div>
@@ -616,7 +616,7 @@ function SocialProof() {
                     key={j}
                     size={14}
                     fill={j < review.rating ? '#F5C842' : 'transparent'}
-                    color={j < review.rating ? '#F5C842' : '#555570'}
+                    color={j < review.rating ? '#F5C842' : '#707088'}
                   />
                 ))}
               </div>
@@ -634,7 +634,7 @@ function SocialProof() {
                 </div>
                 <div>
                   <p className="text-sm font-medium" style={{ color: '#F0F0F5' }}>{review.name}</p>
-                  <p className="text-xs" style={{ color: '#555570' }}>
+                  <p className="text-xs" style={{ color: '#707088' }}>
                     {review.vehicle} · {review.date}
                   </p>
                 </div>
@@ -693,7 +693,7 @@ function IPhoneFrame({ src, alt, label, description }: { src: string; alt: strin
       {/* Label beneath phone */}
       <div className="text-center mt-5">
         <h3 className="text-sm font-semibold mb-1 font-mont" style={{ color: '#F0F0F5' }}>{label}</h3>
-        <p className="text-xs leading-relaxed max-w-[220px] mx-auto" style={{ color: '#8888A0' }}>{description}</p>
+        <p className="text-xs leading-relaxed max-w-[220px] mx-auto" style={{ color: '#9999B0' }}>{description}</p>
       </div>
     </div>
   );
@@ -742,7 +742,7 @@ function MobileAppCTA() {
             The Exotic Car Experience,{' '}
             <span style={{ color: '#6EC1E4' }}>In Your Pocket</span>
           </SectionHeading>
-          <p className="text-base max-w-2xl mx-auto" style={{ color: '#8888A0' }}>
+          <p className="text-base max-w-2xl mx-auto" style={{ color: '#9999B0' }}>
             Browse, book, and manage your exotic car rentals from anywhere.
             Voice-powered AI concierge. Instant notifications. Digital key handoff.
           </p>
@@ -795,39 +795,6 @@ function MobileAppCTA() {
 }
 
 /* ============================================================
-   INVESTOR / PLATFORM METRICS
-   ============================================================ */
-function InvestorMetrics() {
-  const metrics = [
-    { icon: Car, value: '500+', label: 'Exotic Vehicles', sub: 'Across 25+ markets' },
-    { icon: DollarSign, value: '$3,800', label: 'Avg Booking', sub: '18-22% take rate' },
-    { icon: TrendingUp, value: '34%', label: 'Repeat Rate', sub: 'Month over month' },
-    { icon: BarChart3, value: '180%', label: 'YoY Growth', sub: 'Revenue trajectory' },
-  ];
-
-  return (
-    <section className="py-20" style={{ backgroundColor: '#0B0B0F', borderTop: '1px solid rgba(255,255,255,0.03)' }}>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <SectionEyebrow>PLATFORM METRICS</SectionEyebrow>
-          <SectionHeading>Built for Scale</SectionHeading>
-        </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-          {metrics.map((m, i) => (
-            <div key={i} className="rounded-xl p-6 text-center" style={{ backgroundColor: '#161622', border: '1px solid rgba(110,193,228,0.06)' }}>
-              <m.icon size={24} color="#6EC1E4" className="mx-auto mb-3" />
-              <p className="text-2xl sm:text-3xl font-bold font-mont mb-1" style={{ color: '#6EC1E4' }}>{m.value}</p>
-              <p className="text-sm font-semibold mb-1" style={{ color: '#F0F0F5' }}>{m.label}</p>
-              <p className="text-[11px]" style={{ color: '#555570' }}>{m.sub}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ============================================================
    HOME PAGE (COMBINES ALL SECTIONS)
    ============================================================ */
 export default function HomePage({ navigate, favorites, toggleFavorite, setSearchCity }: HomePageProps) {
@@ -843,7 +810,6 @@ export default function HomePage({ navigate, favorites, toggleFavorite, setSearc
       <AnimateOnScroll><WhiteGloveService /></AnimateOnScroll>
       <AnimateOnScroll><MobileAppCTA /></AnimateOnScroll>
       <AnimateOnScroll><SocialProof /></AnimateOnScroll>
-      <AnimateOnScroll><InvestorMetrics /></AnimateOnScroll>
     </div>
   );
 }

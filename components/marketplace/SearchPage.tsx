@@ -112,7 +112,7 @@ export default function SearchPage({
     <div className="space-y-8">
       {/* Sort */}
       <div>
-        <h4 className="text-xs font-medium uppercase tracking-[0.1em] mb-3" style={{ color: '#8888A0' }}>
+        <h4 className="text-xs font-medium uppercase tracking-[0.1em] mb-3" style={{ color: '#9999B0' }}>
           Sort By
         </h4>
         <div className="flex flex-wrap gap-2">
@@ -129,7 +129,7 @@ export default function SearchPage({
               style={
                 sortBy === s.value
                   ? { backgroundColor: 'rgba(110, 193, 228, 0.15)', color: '#6EC1E4', border: '1px solid rgba(110,193,228,0.3)' }
-                  : { backgroundColor: 'transparent', color: '#8888A0', border: '1px solid rgba(255,255,255,0.08)' }
+                  : { backgroundColor: 'transparent', color: '#9999B0', border: '1px solid rgba(255,255,255,0.08)' }
               }
             >
               {s.label}
@@ -140,7 +140,7 @@ export default function SearchPage({
 
       {/* Price Range */}
       <div>
-        <h4 className="text-xs font-medium uppercase tracking-[0.1em] mb-3" style={{ color: '#8888A0' }}>
+        <h4 className="text-xs font-medium uppercase tracking-[0.1em] mb-3" style={{ color: '#9999B0' }}>
           Daily Price
         </h4>
         <div className="flex items-center gap-3 mb-3">
@@ -150,7 +150,7 @@ export default function SearchPage({
           >
             ${priceRange[0]}
           </div>
-          <span className="text-xs" style={{ color: '#555570' }}>to</span>
+          <span className="text-xs" style={{ color: '#707088' }}>to</span>
           <div
             className="flex-1 rounded-lg px-3 py-2 text-sm"
             style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F5' }}
@@ -171,7 +171,7 @@ export default function SearchPage({
 
       {/* Categories */}
       <div>
-        <h4 className="text-xs font-medium uppercase tracking-[0.1em] mb-3" style={{ color: '#8888A0' }}>
+        <h4 className="text-xs font-medium uppercase tracking-[0.1em] mb-3" style={{ color: '#9999B0' }}>
           Category
         </h4>
         <div className="flex flex-wrap gap-2">
@@ -183,7 +183,7 @@ export default function SearchPage({
               style={
                 selectedTypes.includes(type)
                   ? { backgroundColor: 'rgba(110, 193, 228, 0.15)', color: '#6EC1E4', border: '1px solid rgba(110,193,228,0.3)' }
-                  : { backgroundColor: 'transparent', color: '#8888A0', border: '1px solid rgba(255,255,255,0.08)' }
+                  : { backgroundColor: 'transparent', color: '#9999B0', border: '1px solid rgba(255,255,255,0.08)' }
               }
             >
               {type}
@@ -194,7 +194,7 @@ export default function SearchPage({
 
       {/* Brands */}
       <div>
-        <h4 className="text-xs font-medium uppercase tracking-[0.1em] mb-3" style={{ color: '#8888A0' }}>
+        <h4 className="text-xs font-medium uppercase tracking-[0.1em] mb-3" style={{ color: '#9999B0' }}>
           Brands
         </h4>
         <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -216,7 +216,7 @@ export default function SearchPage({
               </div>
               <span
                 className="text-sm transition-colors duration-200 group-hover:text-white"
-                style={{ color: selectedBrands.includes(brand) ? '#F0F0F5' : '#8888A0' }}
+                style={{ color: selectedBrands.includes(brand) ? '#F0F0F5' : '#9999B0' }}
               >
                 {brand}
               </span>
@@ -237,7 +237,7 @@ export default function SearchPage({
             <div
               className="w-4 h-4 rounded-full absolute top-1 transition-all duration-200"
               style={{
-                backgroundColor: instantOnly ? '#0B0B0F' : '#8888A0',
+                backgroundColor: instantOnly ? '#0B0B0F' : '#9999B0',
                 left: instantOnly ? '24px' : '4px',
               }}
             />
@@ -285,18 +285,18 @@ export default function SearchPage({
               />
               {searchCity && (
                 <button onClick={() => setSearchCity('')}>
-                  <X size={14} color="#555570" />
+                  <X size={14} color="#707088" />
                 </button>
               )}
             </div>
             <div className="hidden sm:flex items-center gap-2 px-3 py-2.5 rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
               <Calendar size={14} color="#6EC1E4" />
-              <span className="text-xs" style={{ color: '#8888A0' }}>Any dates</span>
+              <span className="text-xs" style={{ color: '#9999B0' }}>Any dates</span>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="text-sm hidden sm:block" style={{ color: '#8888A0' }}>
+            <span className="text-sm hidden sm:block" style={{ color: '#9999B0' }}>
               <span style={{ color: '#6EC1E4', fontWeight: 600 }}>{displayVehicles.length}</span> vehicles
             </span>
             {/* Mobile filter toggle */}
@@ -354,7 +354,7 @@ export default function SearchPage({
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-semibold" style={{ color: '#F0F0F5' }}>Filters</h3>
                   <button onClick={() => setMobileFilters(false)}>
-                    <X size={20} color="#8888A0" />
+                    <X size={20} color="#9999B0" />
                   </button>
                 </div>
                 {filterContent}
@@ -374,7 +374,7 @@ export default function SearchPage({
             {displayVehicles.length === 0 ? (
               <div className="text-center py-20">
                 <p className="text-lg mb-2" style={{ color: '#F0F0F5' }}>No vehicles found</p>
-                <p className="text-sm" style={{ color: '#8888A0' }}>Try adjusting your filters</p>
+                <p className="text-sm" style={{ color: '#9999B0' }}>Try adjusting your filters</p>
                 <button
                   onClick={resetFilters}
                   className="mt-4 px-4 py-2 rounded-lg text-sm"

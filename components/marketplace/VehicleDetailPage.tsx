@@ -96,7 +96,7 @@ function SpecsGrid({ specs }: { specs: Vehicle['specs'] }) {
           }}
         >
           <s.icon size={18} color="#6EC1E4" className="mx-auto mb-2" />
-          <p className="text-[11px] uppercase tracking-wider mb-1" style={{ color: '#555570' }}>{s.label}</p>
+          <p className="text-[11px] uppercase tracking-wider mb-1" style={{ color: '#707088' }}>{s.label}</p>
           <p className="text-sm font-semibold font-mont" style={{ color: '#F0F0F5' }}>{s.value}</p>
         </div>
       ))}
@@ -131,10 +131,10 @@ function BookingCard({ vehicle, navigate }: { vehicle: Vehicle; navigate: (page:
         <span className="text-3xl font-bold font-mont" style={{ color: '#6EC1E4' }}>
           ${vehicle.price.toLocaleString()}
         </span>
-        <span className="text-sm line-through" style={{ color: '#555570' }}>
+        <span className="text-sm line-through" style={{ color: '#707088' }}>
           ${Math.round(vehicle.price * 1.15).toLocaleString()}
         </span>
-        <span className="text-xs" style={{ color: '#555570' }}>/day</span>
+        <span className="text-xs" style={{ color: '#707088' }}>/day</span>
       </div>
       <div className="flex items-center gap-2 mb-6">
         <p className="flex items-center gap-1 text-xs" style={{ color: '#6EC1E4' }}>
@@ -152,49 +152,49 @@ function BookingCard({ vehicle, navigate }: { vehicle: Vehicle; navigate: (page:
       >
         <div className="flex">
           <div className="flex-1 p-3" style={{ borderRight: '1px solid rgba(255,255,255,0.08)' }}>
-            <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: '#555570' }}>Pickup</p>
+            <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: '#707088' }}>Pickup</p>
             <p className="text-sm font-medium" style={{ color: '#F0F0F5' }}>Oct 11, 10:00 AM</p>
           </div>
           <div className="flex-1 p-3">
-            <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: '#555570' }}>Return</p>
+            <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: '#707088' }}>Return</p>
             <p className="text-sm font-medium" style={{ color: '#F0F0F5' }}>Oct 14, 10:00 AM</p>
           </div>
         </div>
       </div>
 
       {/* Trip duration */}
-      <p className="text-sm text-center mb-5" style={{ color: '#8888A0' }}>
+      <p className="text-sm text-center mb-5" style={{ color: '#9999B0' }}>
         {days} day trip
       </p>
 
       {/* Price Breakdown */}
       <div className="space-y-3 mb-6" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '16px' }}>
         <div className="flex justify-between text-sm">
-          <span style={{ color: '#8888A0' }}>${vehicle.price.toLocaleString()} x {days} days</span>
+          <span style={{ color: '#9999B0' }}>${vehicle.price.toLocaleString()} x {days} days</span>
           <span style={{ color: '#F0F0F5' }}>${subtotal.toLocaleString()}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span style={{ color: '#8888A0' }}>Young driver fee</span>
+          <span style={{ color: '#9999B0' }}>Young driver fee</span>
           <span style={{ color: '#F0F0F5' }}>${youngDriverFee}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span style={{ color: '#8888A0' }}>Trip fee</span>
+          <span style={{ color: '#9999B0' }}>Trip fee</span>
           <span style={{ color: '#F0F0F5' }}>${tripFee}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span style={{ color: '#8888A0' }}>Standard protection</span>
+          <span style={{ color: '#9999B0' }}>Standard protection</span>
           <span style={{ color: '#F0F0F5' }}>${protection}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span style={{ color: '#8888A0' }}>Sales tax</span>
+          <span style={{ color: '#9999B0' }}>Sales tax</span>
           <span style={{ color: '#F0F0F5' }}>${salesTax}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span style={{ color: '#8888A0' }}>Free delivery</span>
+          <span style={{ color: '#9999B0' }}>Free delivery</span>
           <span style={{ color: '#2ECC71' }}>$0</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span style={{ color: '#8888A0' }}>Mileage (500 included)</span>
+          <span style={{ color: '#9999B0' }}>Mileage (500 included)</span>
           <span style={{ color: '#2ECC71' }}>FREE</span>
         </div>
         <div
@@ -224,11 +224,11 @@ function BookingCard({ vehicle, navigate }: { vehicle: Vehicle; navigate: (page:
 
       {/* Links */}
       <div className="flex items-center justify-center gap-4 mt-4">
-        <button className="text-xs transition-colors hover:text-[#6EC1E4]" style={{ color: '#555570' }}>
+        <button className="text-xs transition-colors hover:text-[#6EC1E4]" style={{ color: '#707088' }}>
           Gift Card
         </button>
-        <span style={{ color: '#555570' }}>·</span>
-        <button className="text-xs transition-colors hover:text-[#6EC1E4]" style={{ color: '#555570' }}>
+        <span style={{ color: '#707088' }}>·</span>
+        <button className="text-xs transition-colors hover:text-[#6EC1E4]" style={{ color: '#707088' }}>
           Promo Code
         </button>
       </div>
@@ -271,7 +271,7 @@ export default function VehicleDetailPage({
         <button
           onClick={() => navigate('search')}
           className="flex items-center gap-2 text-sm transition-colors hover:text-[#6EC1E4]"
-          style={{ color: '#8888A0' }}
+          style={{ color: '#9999B0' }}
         >
           <ChevronLeft size={16} /> Back to results
         </button>
@@ -291,8 +291,8 @@ export default function VehicleDetailPage({
                 <Star size={16} fill="#F5C842" color="#F5C842" />
                 <span className="font-semibold text-sm" style={{ color: '#F0F0F5' }}>{vehicle.rating}</span>
               </div>
-              <span className="text-sm" style={{ color: '#8888A0' }}>· {vehicle.trips} trips</span>
-              <span className="text-sm flex items-center gap-1" style={{ color: '#8888A0' }}>
+              <span className="text-sm" style={{ color: '#9999B0' }}>· {vehicle.trips} trips</span>
+              <span className="text-sm flex items-center gap-1" style={{ color: '#9999B0' }}>
                 · <MapPin size={12} /> {vehicle.city}
               </span>
               {vehicle.instant && (
@@ -317,17 +317,17 @@ export default function VehicleDetailPage({
                 <div className="flex items-start gap-3">
                   <Calendar size={16} color="#6EC1E4" className="mt-0.5" />
                   <div>
-                    <p className="text-[11px] uppercase tracking-wider" style={{ color: '#555570' }}>Trip Dates</p>
+                    <p className="text-[11px] uppercase tracking-wider" style={{ color: '#707088' }}>Trip Dates</p>
                     <p className="text-sm" style={{ color: '#F0F0F5' }}>Wed, Oct 11 – Sat, Oct 14</p>
-                    <p className="text-xs" style={{ color: '#8888A0' }}>10:00 AM – 10:00 AM</p>
+                    <p className="text-xs" style={{ color: '#9999B0' }}>10:00 AM – 10:00 AM</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <MapPin size={16} color="#6EC1E4" className="mt-0.5" />
                   <div>
-                    <p className="text-[11px] uppercase tracking-wider" style={{ color: '#555570' }}>Pickup & Return</p>
+                    <p className="text-[11px] uppercase tracking-wider" style={{ color: '#707088' }}>Pickup & Return</p>
                     <p className="text-sm" style={{ color: '#F0F0F5' }}>{vehicle.city}</p>
-                    <p className="text-xs" style={{ color: '#8888A0' }}>Doorstep delivery available</p>
+                    <p className="text-xs" style={{ color: '#9999B0' }}>Doorstep delivery available</p>
                   </div>
                 </div>
               </div>
@@ -355,7 +355,7 @@ export default function VehicleDetailPage({
                     </div>
                     <div>
                       <p className="text-sm font-medium" style={{ color: '#F0F0F5' }}>{item.title}</p>
-                      <p className="text-xs" style={{ color: '#8888A0' }}>{item.desc}</p>
+                      <p className="text-xs" style={{ color: '#9999B0' }}>{item.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -381,14 +381,14 @@ export default function VehicleDetailPage({
               >
                 About This Vehicle
               </h3>
-              <p className="text-sm leading-relaxed mb-3" style={{ color: '#8888A0' }}>
+              <p className="text-sm leading-relaxed mb-3" style={{ color: '#9999B0' }}>
                 Experience the extraordinary {vehicle.name}. With {vehicle.specs.power} of raw power
                 and a {vehicle.specs.acceleration} sprint to 100, this {vehicle.type.toLowerCase()} delivers
                 an unforgettable driving experience. The {vehicle.specs.engine} engine paired with a
                 {' '}{vehicle.specs.transmission.toLowerCase()} transmission provides seamless performance
                 through every corner.
               </p>
-              <p className="text-sm leading-relaxed" style={{ color: '#8888A0' }}>
+              <p className="text-sm leading-relaxed" style={{ color: '#9999B0' }}>
                 Available from {vehicle.fleet} in {vehicle.city}, this vehicle comes with 500 miles
                 included, comprehensive insurance, and the option for doorstep delivery.
                 {vehicle.instant ? ' Instant booking available — reserve in seconds.' : ''}
@@ -412,7 +412,7 @@ export default function VehicleDetailPage({
                     >
                       <f.icon size={18} color="#6EC1E4" />
                     </div>
-                    <p className="text-[11px]" style={{ color: '#8888A0' }}>{f.label}</p>
+                    <p className="text-[11px]" style={{ color: '#9999B0' }}>{f.label}</p>
                   </div>
                 ))}
               </div>
@@ -436,19 +436,19 @@ export default function VehicleDetailPage({
                       <Star key={i} size={14} fill="#F5C842" color="#F5C842" />
                     ))}
                   </div>
-                  <p className="text-xs mt-1" style={{ color: '#8888A0' }}>{vehicle.trips} reviews</p>
+                  <p className="text-xs mt-1" style={{ color: '#9999B0' }}>{vehicle.trips} reviews</p>
                 </div>
                 <div className="flex-1 space-y-1.5">
                   {[5, 4, 3, 2, 1].map(stars => {
                     const pct = stars === 5 ? 78 : stars === 4 ? 18 : stars === 3 ? 4 : 0;
                     return (
                       <div key={stars} className="flex items-center gap-2">
-                        <span className="text-xs w-3" style={{ color: '#8888A0' }}>{stars}</span>
+                        <span className="text-xs w-3" style={{ color: '#9999B0' }}>{stars}</span>
                         <Star size={10} color="#F5C842" fill="#F5C842" />
                         <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
                           <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: '#F5C842' }} />
                         </div>
-                        <span className="text-xs w-8 text-right" style={{ color: '#555570' }}>{pct}%</span>
+                        <span className="text-xs w-8 text-right" style={{ color: '#707088' }}>{pct}%</span>
                       </div>
                     );
                   })}
@@ -473,16 +473,16 @@ export default function VehicleDetailPage({
                         </div>
                         <div>
                           <p className="text-sm font-medium" style={{ color: '#F0F0F5' }}>{review.name}</p>
-                          <p className="text-xs" style={{ color: '#555570' }}>{review.date}</p>
+                          <p className="text-xs" style={{ color: '#707088' }}>{review.date}</p>
                         </div>
                       </div>
                       <div className="flex gap-0.5">
                         {Array.from({ length: 5 }).map((_, j) => (
-                          <Star key={j} size={12} fill={j < review.rating ? '#F5C842' : 'transparent'} color={j < review.rating ? '#F5C842' : '#555570'} />
+                          <Star key={j} size={12} fill={j < review.rating ? '#F5C842' : 'transparent'} color={j < review.rating ? '#F5C842' : '#707088'} />
                         ))}
                       </div>
                     </div>
-                    <p className="text-sm leading-relaxed" style={{ color: '#8888A0' }}>
+                    <p className="text-sm leading-relaxed" style={{ color: '#9999B0' }}>
                       {review.text}
                     </p>
                   </div>
@@ -511,20 +511,20 @@ export default function VehicleDetailPage({
                   </div>
                   <div>
                     <p className="font-semibold text-base" style={{ color: '#F0F0F5' }}>{vehicle.fleet}</p>
-                    <p className="text-xs" style={{ color: '#8888A0' }}>Joined January 2023</p>
+                    <p className="text-xs" style={{ color: '#9999B0' }}>Joined January 2023</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-4 mb-4">
                   <div>
-                    <p className="text-xs" style={{ color: '#555570' }}>Response Rate</p>
+                    <p className="text-xs" style={{ color: '#707088' }}>Response Rate</p>
                     <p className="text-sm font-semibold" style={{ color: '#F0F0F5' }}>98%</p>
                   </div>
                   <div>
-                    <p className="text-xs" style={{ color: '#555570' }}>Response Time</p>
+                    <p className="text-xs" style={{ color: '#707088' }}>Response Time</p>
                     <p className="text-sm font-semibold" style={{ color: '#F0F0F5' }}>&lt;1 hour</p>
                   </div>
                   <div>
-                    <p className="text-xs" style={{ color: '#555570' }}>Fleet Size</p>
+                    <p className="text-xs" style={{ color: '#707088' }}>Fleet Size</p>
                     <p className="text-sm font-semibold" style={{ color: '#F0F0F5' }}>12 vehicles</p>
                   </div>
                 </div>
@@ -550,13 +550,13 @@ export default function VehicleDetailPage({
                 {rules.map((rule, i) => (
                   <div key={i} className="flex items-center gap-3">
                     <Info size={14} color="#6EC1E4" />
-                    <span className="text-sm" style={{ color: '#8888A0' }}>{rule}</span>
+                    <span className="text-sm" style={{ color: '#9999B0' }}>{rule}</span>
                   </div>
                 ))}
               </div>
               <button
                 className="mt-5 text-xs transition-colors hover:text-[#6EC1E4]"
-                style={{ color: '#555570' }}
+                style={{ color: '#707088' }}
               >
                 Report Listing
               </button>
@@ -584,7 +584,7 @@ export default function VehicleDetailPage({
               <span className="text-xl font-bold font-mont" style={{ color: '#6EC1E4' }}>
                 ${vehicle.price.toLocaleString()}
               </span>
-              <span className="text-xs" style={{ color: '#555570' }}>/day</span>
+              <span className="text-xs" style={{ color: '#707088' }}>/day</span>
             </div>
             <p className="text-[10px] flex items-center gap-1" style={{ color: '#2ECC71' }}>
               <Check size={10} /> Free cancellation

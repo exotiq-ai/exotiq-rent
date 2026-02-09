@@ -108,7 +108,7 @@ export default function RariWidget({
               onClick={onToggle}
               className="p-1.5 rounded-full transition-colors hover:bg-white/5"
             >
-              <X size={16} color="#8888A0" />
+              <X size={16} color="#9999B0" />
             </button>
           </div>
 
@@ -173,7 +173,7 @@ export default function RariWidget({
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend(input)}
               placeholder="Ask Rari anything..."
-              className="flex-1 bg-transparent text-sm outline-none placeholder:text-[#555570]"
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-[#707088]"
               style={{ color: '#F0F0F5' }}
             />
             <button
@@ -181,7 +181,7 @@ export default function RariWidget({
               className="p-2 rounded-full transition-all duration-200 hover:bg-[rgba(110,193,228,0.15)]"
               style={{ backgroundColor: input.trim() ? '#6EC1E4' : 'transparent' }}
             >
-              <Send size={16} color={input.trim() ? '#0B0B0F' : '#555570'} />
+              <Send size={16} color={input.trim() ? '#0B0B0F' : '#707088'} />
             </button>
           </div>
         </div>
