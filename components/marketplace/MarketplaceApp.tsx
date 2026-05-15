@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Menu, X, Mic, Search, Heart, MapPin, Calendar, ArrowRight,
-  Car, User, MessageCircle, Star, Instagram, Twitter,
+  Car, User, MessageCircle, Star, Instagram, Twitter, Mail,
 } from 'lucide-react';
 import { vehicles, Vehicle, PageType } from './data';
 import { Logo } from './shared';
@@ -323,6 +323,85 @@ function MarketplaceFooter({ navigate }: { navigate: (page: PageType) => void })
 }
 
 /* ============================================================
+   COMING SOON OVERLAY
+   ============================================================ */
+function ComingSoonOverlay({ onDismiss }: { onDismiss: () => void }) {
+  return (
+    <div
+      role="dialog"
+      aria-label="Coming soon notice"
+      className="fixed inset-0 z-[100] flex items-center justify-center px-4"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)' }}
+      onClick={onDismiss}
+    >
+      <div
+        className="relative w-full max-w-md rounded-2xl p-8 text-center"
+        style={{
+          backgroundColor: '#16161E',
+          border: '1px solid rgba(110, 193, 228, 0.15)',
+          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.5)',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onDismiss}
+          aria-label="Dismiss coming soon notice"
+          className="absolute top-4 right-4 p-1.5 rounded-lg transition-colors hover:bg-white/10"
+        >
+          <X size={18} color="#8888A0" />
+        </button>
+
+        <div className="mb-6">
+          <img
+            src="/images/logos/drive-exotiq-lockup-transparent.png"
+            alt="Drive Exotiq"
+            className="h-8 mx-auto mb-5"
+          />
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium"
+            style={{
+              backgroundColor: 'rgba(110, 193, 228, 0.08)',
+              border: '1px solid rgba(110, 193, 228, 0.2)',
+              color: '#6EC1E4',
+            }}
+          >
+            <span
+              className="w-1.5 h-1.5 rounded-full animate-pulse"
+              style={{ backgroundColor: '#6EC1E4' }}
+            />
+            Coming Soon
+          </div>
+        </div>
+
+        <h2
+          className="text-xl font-bold mb-3"
+          style={{ fontFamily: '"Dfaalt", sans-serif', color: '#F0F0F5' }}
+        >
+          Not Yet Available for Bookings
+        </h2>
+        <p className="text-sm leading-relaxed mb-6" style={{ color: '#8888A0' }}>
+          We&apos;re putting the finishing touches on the marketplace.
+          Email us for early access or more information.
+        </p>
+
+        <a
+          href="mailto:hello@exotiq.ai"
+          className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold transition-all duration-300 hover:bg-[#8AD0EA]"
+          style={{ backgroundColor: '#6EC1E4', color: '#0B0B0F' }}
+        >
+          <Mail size={16} />
+          hello@exotiq.ai
+        </a>
+
+        <p className="text-xs mt-6" style={{ color: '#555570' }}>
+          Click anywhere or press the X to browse the marketplace preview.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
    MAIN MARKETPLACE APP
    ============================================================ */
 export default function MarketplaceApp() {
@@ -331,6 +410,7 @@ export default function MarketplaceApp() {
   const [favorites, setFavorites] = useState<number[]>([]);
   const [searchCity, setSearchCity] = useState('');
   const [rariOpen, setRariOpen] = useState(false);
+  const [showComingSoon, setShowComingSoon] = useState(true);
 
   const navigate = useCallback((page: PageType, vehicleId?: number) => {
     if (vehicleId !== undefined) {
@@ -446,6 +526,7 @@ export default function MarketplaceApp() {
           navigate={navigate}
         />
       </div>
+      {showComingSoon && <ComingSoonOverlay onDismiss={() => setShowComingSoon(false)} />}
     </>
   );
 }
