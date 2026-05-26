@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowLeft, BatteryFull, Signal, Wifi, X } from 'lucide-react';
+import { ArrowLeft, X } from 'lucide-react';
 
 type StepStyle = 'bars' | 'numbered';
 
@@ -31,15 +31,6 @@ function StepIndicator({ step, total = 8, variant = 'bars' }: { step: number; to
   );
 }
 
-function StatusBar() {
-  return (
-    <div className="relative z-10 flex h-[50px] flex-shrink-0 items-center justify-between px-8 pt-4 text-[15px] font-semibold tabular-nums text-[#F0F2F5]">
-      <span>9:41</span>
-      <div className="flex items-center gap-1.5 text-[#F0F2F5]"><Signal size={14} /><Wifi size={14} /><BatteryFull size={17} /></div>
-    </div>
-  );
-}
-
 export function PhoneViewport({
   step,
   children,
@@ -54,26 +45,21 @@ export function PhoneViewport({
   className?: string;
 }) {
   return (
-    <main className={`min-h-screen bg-[radial-gradient(900px_560px_at_18%_-10%,rgba(200,166,100,0.07),transparent_58%),radial-gradient(760px_520px_at_90%_110%,rgba(200,166,100,0.045),transparent_60%),#06070a] text-[#F0F2F5] md:py-10 ${className}`}>
-      <div className="mx-auto w-full max-w-[393px] bg-[#050608] shadow-[0_40px_90px_-20px_rgba(0,0,0,.72),0_18px_42px_-18px_rgba(200,166,100,.18)] md:h-[818px] md:rounded-[54px] md:p-3 md:ring-1 md:ring-[#1a1c22]">
-        <div className="relative flex min-h-screen flex-col overflow-hidden bg-[#0D0F14] md:min-h-0 md:h-full md:rounded-[42px]">
-          <div className="pointer-events-none absolute left-1/2 top-0 z-30 hidden h-[34px] w-[122px] -translate-x-1/2 rounded-b-[22px] bg-[#050608] md:block" />
-          <StatusBar />
-          <div className="grid flex-shrink-0 grid-cols-[32px_1fr_32px] items-center px-4 pb-2 pt-3">
-            <button type="button" onClick={onBack} disabled={!onBack} className="grid h-8 w-8 place-items-center rounded-lg text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5] disabled:opacity-30" aria-label="Back">
-              <ArrowLeft size={18} />
-            </button>
-            <div className="flex items-center justify-center">
-              <Image src="/images/logos/drive-exotiq-logo-white.png" alt="Drive Exotiq" width={116} height={17} className="opacity-95" style={{ height: '17px', width: 'auto' }} priority />
-            </div>
-            <Link href="/" className="grid h-8 w-8 place-items-center rounded-lg text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5]" aria-label="Close booking flow">
-              <X size={18} />
-            </Link>
+    <main className={`min-h-screen bg-[radial-gradient(900px_560px_at_18%_-10%,rgba(200,166,100,0.07),transparent_58%),radial-gradient(760px_520px_at_90%_110%,rgba(200,166,100,0.045),transparent_60%),#06070a] text-[#F0F2F5] ${className}`}>
+      <div className="relative mx-auto flex min-h-screen w-full max-w-[480px] flex-col overflow-hidden bg-[#0D0F14] shadow-[0_40px_90px_-20px_rgba(0,0,0,.72),0_18px_42px_-18px_rgba(200,166,100,.18)]">
+        <div className="grid flex-shrink-0 grid-cols-[40px_1fr_40px] items-center px-4 pb-2 pt-[calc(env(safe-area-inset-top)+14px)]">
+          <button type="button" onClick={onBack} disabled={!onBack} className="grid h-10 w-10 place-items-center rounded-lg text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5] disabled:opacity-30" aria-label="Back">
+            <ArrowLeft size={20} />
+          </button>
+          <div className="flex items-center justify-center">
+            <Image src="/images/logos/drive-exotiq-logo-white.png" alt="Drive Exotiq" width={122} height={18} className="opacity-95" style={{ height: '18px', width: 'auto' }} priority />
           </div>
-          <StepIndicator step={step} variant={stepStyle} />
-          <div className="flex min-h-0 flex-1 flex-col md:h-[calc(100%-134px)]">{children}</div>
-          <div className="pointer-events-none absolute bottom-2 left-1/2 z-20 hidden h-[5px] w-[134px] -translate-x-1/2 rounded-full bg-[#F0F2F5]/50 md:block" />
+          <Link href="/" className="grid h-10 w-10 place-items-center rounded-lg text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5]" aria-label="Close booking flow">
+            <X size={20} />
+          </Link>
         </div>
+        <StepIndicator step={step} variant={stepStyle} />
+        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
       </div>
     </main>
   );
