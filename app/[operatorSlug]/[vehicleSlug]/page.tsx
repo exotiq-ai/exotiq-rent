@@ -1,26 +1,27 @@
 import type { Metadata } from 'next';
 import { VehicleEntryPage } from '@/components/drive-exotiq/VehicleEntryPage';
 import { driveFontClassName } from '@/components/drive-exotiq/fonts';
-import { findMockVehicle } from '@/domain/booking/mockData';
+import { getPublicVehicleContext } from '@/domain/booking/service';
 import { formatMoney } from '@/domain/booking/totals';
 
 type Props = { params: { operatorSlug: string; vehicleSlug: string } };
 
-export function generateMetadata({ params }: Props): Metadata {
-  const result = findMockVehicle(params.operatorSlug, params.vehicleSlug);
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const teamSlug = params.operatorSlug;
+  const result = await getPublicVehicleContext(teamSlug, params.vehicleSlug);
   if (!result) return { title: 'Vehicle not found | Drive Exotiq' };
-  const { operator, vehicle } = result;
+  const { team, vehicle } = result;
   return {
-    title: `${vehicle.name} | ${operator.name} | Drive Exotiq`,
-    description: `From ${formatMoney(vehicle.dailyRateCents)}/day. ${operator.city}, ${operator.state}. Book with Drive Exotiq.`,
+    title: `${vehicle.name} | ${team.name} | Drive Exotiq`,
+    description: `From ${formatMoney(vehicle.dailyRateCents)}/day. ${team.city}, ${team.state}. Book with Drive Exotiq.`,
     openGraph: {
       title: `${vehicle.name} | Drive Exotiq`,
-      description: `From ${formatMoney(vehicle.dailyRateCents)}/day. ${operator.city}, ${operator.state}.`,
+      description: `From ${formatMoney(vehicle.dailyRateCents)}/day. ${team.city}, ${team.state}.`,
       images: [vehicle.heroImage],
     },
   };
 }
 
-export default function VehicleRoute({ params }: Props) {
-  return <div className={driveFontClassName}><VehicleEntryPage operatorSlug={params.operatorSlug} vehicleSlug={params.vehicleSlug} /></div>;
+export default async function VehicleRoute({ params }: Props) {
+  return <div className={driveFontClassName}>{await VehicleEntryPage({ operatorSlug: params.operatorSlug, vehicleSlug: params.vehicleSlug })}</div>;
 }

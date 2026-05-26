@@ -44,10 +44,10 @@ export const mockVehicle: Vehicle = {
 };
 
 export const curatedExtras: ExtraSelection[] = [
-  { id: 'delivery', name: 'Concierge delivery', description: 'Hotel, residence, or FBO handoff.', priceCents: 15000, unit: 'flat', defaultSelected: true },
-  { id: 'driver', name: 'Additional driver', description: 'Pre-verified second driver.', priceCents: 9900, unit: 'day' },
-  { id: 'photo', name: 'Photo package', description: 'Editorial handoff photos with the car.', priceCents: 25000, unit: 'flat' },
-  { id: 'late-return', name: 'Late return', description: 'Extend return window up to 4 hours.', priceCents: 12500, unit: 'flat' },
+  { id: 'delivery', name: 'Concierge delivery', description: 'We bring it to your hotel · 25-mile radius', priceCents: 15000, unit: 'flat', defaultSelected: true },
+  { id: 'driver', name: 'Additional driver', description: 'Second verified driver on the rental.', priceCents: 4500, unit: 'day' },
+  { id: 'photo', name: 'Photo package', description: '90-minute shoot · 30 edited images.', priceCents: 40000, unit: 'flat' },
+  { id: 'late-return', name: 'Late return', description: 'Until 6 PM on the final day.', priceCents: 7500, unit: 'flat' },
 ];
 
 export function createInitialCart(overrides: { operator?: Operator; vehicle?: Vehicle } = {}): BookingCart {
@@ -80,11 +80,4 @@ export function createInitialCart(overrides: { operator?: Operator; vehicle?: Ve
       operatorTaxRate: 0.078,
     }),
   };
-}
-
-export function findMockVehicle(operatorSlug: string, vehicleSlug: string) {
-  if (operatorSlug === mockOperator.slug && vehicleSlug === mockVehicle.slug) {
-    return { operator: mockOperator, vehicle: mockVehicle };
-  }
-  return null;
 }

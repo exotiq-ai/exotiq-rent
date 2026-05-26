@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { ConfirmationScreen } from '@/components/drive-exotiq/BookingFlow';
+import { ConfirmationScreen } from '@/components/drive-exotiq/ConfirmationScreen';
 import { driveFontClassName } from '@/components/drive-exotiq/fonts';
 
 export const metadata: Metadata = {
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function ConfirmationRoute({ params }: { params: { bookingId: string } }) {
-  return <div className={driveFontClassName}><ConfirmationScreen bookingId={params.bookingId} /></div>;
+  return <div className={driveFontClassName}><ConfirmationScreen bookingRef={params.bookingId} /></div>;
 }

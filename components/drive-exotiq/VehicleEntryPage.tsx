@@ -2,13 +2,14 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Gauge, Zap, CircleDot, Settings2 } from 'lucide-react';
-import { findMockVehicle } from '@/domain/booking/mockData';
+import { getPublicVehicleContext } from '@/domain/booking/service';
 import { HTitle, Money, PhoneViewport } from './BookingChrome';
 
-export function VehicleEntryPage({ operatorSlug, vehicleSlug }: { operatorSlug: string; vehicleSlug: string }) {
-  const result = findMockVehicle(operatorSlug, vehicleSlug);
+export async function VehicleEntryPage({ operatorSlug, vehicleSlug }: { operatorSlug: string; vehicleSlug: string }) {
+  const teamSlug = operatorSlug;
+  const result = await getPublicVehicleContext(teamSlug, vehicleSlug);
   if (!result) notFound();
-  const { operator, vehicle } = result;
+  const { team: operator, vehicle } = result;
   const specs = [
     { label: '0–60', value: vehicle.specs.zeroToSixty, icon: Gauge },
     { label: 'Power', value: vehicle.specs.power, icon: Zap },
