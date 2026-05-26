@@ -60,7 +60,7 @@ function DatesScreen({ cart, setCart, next }: { cart: BookingCart; setCart: (car
   const selected = [14, 15, 16, 17];
   return (
     <ScreenShell>
-      <StepHeader eyebrow="Step 02" title="Select your dates." sub="Three-day minimum. Pickup time is set before review." />
+      <StepHeader eyebrow="Step 02" title="When are you driving?" sub={`${cart.vehicle.minRentalDays}-day minimum · from ${formatMoney(cart.vehicle.dailyRateCents)}/day`} />
       <div className="rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
         <div className="mb-4 flex items-center justify-between">
           <span className="text-sm font-medium">June 2026</span>
@@ -102,7 +102,7 @@ function DriverScreen({ cart, setCart, next }: { cart: BookingCart; setCart: (ca
   const canContinue = cart.driver.license.status === 'verified' && cart.driver.insurance.status === 'verified';
   return (
     <ScreenShell>
-      <StepHeader eyebrow="Step 03" title="Driver details." sub="We verify ahead of pickup so the handoff feels concierge, not counter-service." />
+      <StepHeader eyebrow="Step 03" title="Who's driving?" sub="We verify ahead of pickup · 60 seconds." />
       <div className="rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
         {[['Name', cart.driver.name], ['DOB', 'Jun 14, 1985'], ['Phone', cart.driver.phone]].map(([label, value]) => (
           <div key={label} className="flex items-center justify-between border-b border-[#2A2E3A] py-3 last:border-0">
@@ -110,6 +110,7 @@ function DriverScreen({ cart, setCart, next }: { cart: BookingCart; setCart: (ca
           </div>
         ))}
       </div>
+      <div className="mt-5 text-[10px] uppercase tracking-[0.24em] text-[#5C6272]">Documents</div>
       <UploadCard title="Driver's license" status={cart.driver.license.status} onClick={() => setDoc('license', 'verified')} />
       <UploadCard title="Proof of insurance" status={cart.driver.insurance.status} onClick={() => setDoc('insurance', 'verified')} />
       <p className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-[12px] leading-5 text-[#9BA1B0]">We verify ahead of pickup. Documents are encrypted and deleted within 30 days of return.</p>
@@ -136,7 +137,7 @@ function ExtrasScreen({ cart, setCart, next }: { cart: BookingCart; setCart: (ca
   };
   return (
     <ScreenShell>
-      <StepHeader eyebrow="Step 04" title="Curate the trip." sub="A short wine list, not a checkout aisle." />
+      <StepHeader eyebrow="Step 04" title="Add to your trip" sub="Optional · curated by the operator." />
       <div className="space-y-3">
         {curatedExtras.map((extra) => {
           const selected = cart.extras.some((item) => item.id === extra.id);
@@ -151,7 +152,12 @@ function ExtrasScreen({ cart, setCart, next }: { cart: BookingCart; setCart: (ca
 }
 
 function ProtectScreen({ cart, setCart, next }: { cart: BookingCart; setCart: (cart: BookingCart) => void; next: () => void }) {
-  const setTier = (protection: ProtectionTier) => setCart(recompute({ ...cart, protection }));
+  const [declineAcknowledged, setDeclineAcknowledged] = useState(false);
+  const setTier = (protection: ProtectionTier) => {
+    if (protection !== 'decline') setDeclineAcknowledged(false);
+    setCart(recompute({ ...cart, protection }));
+  };
+  const canContinue = cart.protection !== 'decline' || declineAcknowledged;
   const tiers = [
     { id: 'premium' as const, name: 'Premium', price: 8900, detail: '$0 deductible. Collision, theft, liability up to $250K. Roadside included.', badge: 'Recommended' },
     { id: 'standard' as const, name: 'Standard', price: 5900, detail: '$2,500 deductible. Collision and theft up to $150K.', badge: '' },
@@ -161,9 +167,15 @@ function ProtectScreen({ cart, setCart, next }: { cart: BookingCart; setCart: (c
       <StepHeader eyebrow="Step 05" title="Exotiq Protect" sub="Drive with confidence. No hidden fees." />
       <div className="space-y-3">
         {tiers.map((tier) => <Card key={tier.id} selected={cart.protection === tier.id} onClick={() => setTier(tier.id)}><div className="flex items-start gap-3"><ShieldCheck className="text-[#C8A664]" /><div className="flex-1"><div className="flex justify-between"><span className="text-sm font-medium">{tier.name}</span><span><Money cents={tier.price} />/day</span></div>{tier.badge && <span className="mt-2 inline-block rounded-full bg-[#C8A664]/10 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-[#C8A664]">{tier.badge}</span>}<p className="mt-2 text-xs leading-5 text-[#9BA1B0]">{tier.detail}</p></div></div></Card>)}
-        <Card selected={cart.protection === 'decline'} warning dashed onClick={() => setTier('decline')}><div className="flex justify-between gap-4"><div><div className="text-sm font-medium text-[#FFB84D]">Decline protection</div><p className="mt-2 text-xs leading-5 text-[#9BA1B0]">Full financial responsibility. $5,000 authorization hold required later.</p></div><span className="text-sm">$0</span></div></Card>
+        <Card selected={cart.protection === 'decline'} warning dashed onClick={() => setTier('decline')}><div className="flex justify-between gap-4"><div><div className="text-sm font-medium text-[#FFB84D]">Self-cover · decline protection</div><p className="mt-2 text-xs leading-5 text-[#9BA1B0]">You accept full financial responsibility. A $5,000 authorization hold is required later.</p></div><span className="text-sm">$0</span></div></Card>
       </div>
-      <Sticky><PrimaryButton onClick={next}>Continue</PrimaryButton></Sticky>
+      {cart.protection === 'decline' && (
+        <label className="mt-4 flex gap-3 rounded-xl border border-[#FFB84D]/45 bg-[#FFB84D]/10 p-4 text-left text-[12px] leading-5 text-[#F0F2F5]">
+          <input type="checkbox" checked={declineAcknowledged} onChange={(event) => setDeclineAcknowledged(event.target.checked)} className="mt-1 h-4 w-4 accent-[#FFB84D]" />
+          <span>I understand I am declining Exotiq Protect and may be responsible for damage, theft, loss of use, and a later authorization hold.</span>
+        </label>
+      )}
+      <Sticky><PrimaryButton onClick={next} disabled={!canContinue}>Continue</PrimaryButton></Sticky>
     </ScreenShell>
   );
 }
@@ -188,8 +200,12 @@ function Breakdown({ title, note, rows, total }: { title: string; note: string; 
 function PayScreen({ cart, onPay }: { cart: BookingCart; onPay: () => void }) {
   return (
     <ScreenShell>
-      <StepHeader eyebrow="Step 07" title="Secure payment." sub="Payment is mocked in this scaffold. Stripe Connect becomes its own focused project next." />
-      <div className="rounded-xl border border-[#C8A664] bg-[#C8A664]/10 p-4"><div className="text-xs uppercase tracking-[0.22em] text-[#5C6272]">Total</div><div className="mt-2"><Money cents={cart.totals.grandTotalCents} large /></div></div>
+      <StepHeader eyebrow="Step 07" title="Pay securely" sub="Mocked payment today · Stripe boundary next." />
+      <div className="rounded-xl border border-[#C8A664] bg-[#C8A664]/10 p-4"><div className="text-xs uppercase tracking-[0.22em] text-[#5C6272]">Total due today</div><div className="mt-2"><Money cents={cart.totals.grandTotalCents} large /></div></div>
+      <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm">
+        <div className="flex justify-between"><span className="text-[#9BA1B0]">Operator charge</span><Money cents={cart.totals.operatorTotalCents} /></div>
+        <div className="mt-3 flex justify-between border-t border-[#2A2E3A] pt-3"><span className="text-[#9BA1B0]">Exotiq Protect charge</span><Money cents={cart.totals.protectionTotalCents} /></div>
+      </div>
       <button type="button" onClick={onPay} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-black px-5 py-4 text-sm font-semibold text-white"><WalletCards size={18} /> Apple Pay mock</button>
       <div className="my-5 flex items-center gap-3 text-[10px] uppercase tracking-[0.22em] text-[#5C6272]"><span className="h-px flex-1 bg-[#2A2E3A]" />Tokenized card mock<span className="h-px flex-1 bg-[#2A2E3A]" /></div>
       <div className="rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#C8A664]/10 text-[#C8A664]"><CreditCard size={18} /></div><div className="flex-1"><div className="text-sm font-medium">Mock payment method</div><div className="mt-1 text-xs text-[#9BA1B0]">Tokenized test method ready for future Stripe Elements integration.</div></div><Check size={16} className="text-[#C8A664]" /></div></div>
