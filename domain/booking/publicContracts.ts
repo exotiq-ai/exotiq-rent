@@ -30,7 +30,7 @@ export type PublicQuote = {
   mileagePackageCents?: number;
   operatorFeesCents?: number;
   depositHoldCents?: number;
-  exotiqBrokerFeeCents?: number;
+  exotiqPlatformFeeCents?: number;
   protectionPremiumCents?: number;
   operatorChargeCents: number;
   exotiqChargeCents: number;

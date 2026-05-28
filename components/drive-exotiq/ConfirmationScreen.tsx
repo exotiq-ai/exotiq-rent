@@ -9,6 +9,7 @@ export async function ConfirmationScreen({ bookingRef }: { bookingRef: string })
   const confirmation = await getBookingConfirmation(bookingRef);
   if (!confirmation) notFound();
   const cart = createBookingCart({ operator: confirmation.team, vehicle: confirmation.vehicle });
+  const platformPercent = Math.round(cart.totals.platformFeeRate * 100);
 
   return (
     <PhoneViewport step={8} className="font-[var(--font-drive-inter)]">
@@ -22,7 +23,13 @@ export async function ConfirmationScreen({ bookingRef }: { bookingRef: string })
           <div className="p-4"><HTitle>Your {cart.vehicle.make} is reserved.</HTitle><p className="mt-2 text-sm text-[#9BA1B0]">Booking {confirmation.bookingRef}</p></div>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm"><Detail label="Dates" value="Jun 14 – Jun 17" /><Detail label="Pickup" value={cart.pickupTime} /><Detail label="Location" value={cart.vehicle.pickupLocation.address} /><Detail label="Total" value={formatMoney(cart.totals.grandTotalCents)} /></div>
-        <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="mb-3 text-sm font-medium">Charges</div><div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block">Operator</span><span className="text-xs text-[#C8A664]">Charge from {cart.operator.name}</span></span><Money cents={cart.totals.operatorTotalCents} /></div><div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block">Exotiq Protect</span><span className="text-xs text-[#C8A664]">Charge from Exotiq</span></span><Money cents={cart.totals.protectionTotalCents} /></div></div>
+        <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
+          <div className="mb-3 text-sm font-medium">Charges</div>
+          <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block">Operator rental charge</span><span className="text-xs text-[#C8A664]">Charge from {cart.operator.name}</span></span><Money cents={cart.totals.operatorTotalCents} /></div>
+          <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block">Exotiq platform fee ({platformPercent}%)</span><span className="text-xs text-[#C8A664]">Pass-through to Exotiq; deposit excluded</span></span><Money cents={cart.totals.platformFeeCents} /></div>
+          <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block">Exotiq protection plan</span><span className="text-xs text-[#C8A664]">Statement descriptor: exotiq.rent</span></span><Money cents={cart.totals.protectionTotalCents} /></div>
+          <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm font-medium"><span>Exotiq pass-through total</span><Money cents={cart.totals.exotiqTotalCents} /></div>
+        </div>
         <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#C8A664]/10 text-[#C8A664]">DE</div><div className="flex-1"><div className="text-sm font-medium">{cart.operator.name}</div><div className="text-xs text-[#9BA1B0]">Will reach out before pickup</div></div><a href={`tel:${cart.operator.phone}`} className="rounded-full border border-[#C8A664]/30 p-2 text-[#C8A664]" aria-label="Call operator"><Phone size={16} /></a></div></div>
         <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="mb-3 flex items-center gap-2 text-sm font-medium"><Sparkles size={16} className="text-[#C8A664]" />What happens next</div>{['Operator confirms final handoff details.', 'Driver documents remain encrypted for verification.', 'You receive pickup reminders before the rental.'].map((item, index) => <div key={item} className="flex gap-3 border-t border-[#2A2E3A] py-3 text-sm text-[#9BA1B0]"><span className="text-[#C8A664]">0{index + 1}</span>{item}</div>)}</div>
         <button type="button" className="mt-4 w-full rounded-xl bg-[#C8A664] px-5 py-4 text-sm font-semibold text-[#1A1308]">Share your Exotiq</button>

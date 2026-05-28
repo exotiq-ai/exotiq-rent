@@ -11,7 +11,7 @@ export const mockOperators: Operator[] = [
     phone: '+14805550142',
     logoUrl: '/images/logos/drive-exotiq-logo-white.png',
     timezone: 'America/Phoenix',
-    platformFeePercent: 20,
+    platformFeePercent: 10,
   },
   {
     id: 'team_mile_high_exotics',
@@ -22,7 +22,7 @@ export const mockOperators: Operator[] = [
     phone: '+17205550177',
     logoUrl: '/images/logos/drive-exotiq-logo-white.png',
     timezone: 'America/Denver',
-    platformFeePercent: 20,
+    platformFeePercent: 10,
   },
 ];
 
@@ -136,6 +136,7 @@ export function createInitialCart(overrides: { operator?: Operator; vehicle?: Ve
       extras: selectedExtras,
       protection,
       operatorTaxRate: 0.078,
+      platformFeeRate: (operator.platformFeePercent ?? 10) / 100,
     }),
   };
 }

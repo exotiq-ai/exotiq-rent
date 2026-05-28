@@ -29,6 +29,7 @@ export function calculateBookingTotals(input: {
   extras: ExtraSelection[];
   protection: ProtectionTier;
   operatorTaxRate: number;
+  platformFeeRate?: number;
 }): BookingTotals {
   const days = countRentalDays(input.startDate, input.endDate);
   const rentalSubtotalCents = input.dailyRateCents * days;
@@ -36,9 +37,18 @@ export function calculateBookingTotals(input: {
   const taxableOperatorSubtotal = rentalSubtotalCents + extrasSubtotalCents;
   const operatorTaxesCents = Math.round(taxableOperatorSubtotal * input.operatorTaxRate);
   const operatorTotalCents = taxableOperatorSubtotal + operatorTaxesCents;
+  const platformFeeRate = input.platformFeeRate ?? 0.1;
+  // Product rule: Exotiq.Rent charges a 10% platform fee on the booking
+  // amount due for the rental, excluding any deposit/security authorization.
+  // The current scaffold has no deposit line, so the operator total is the
+  // platform-fee base. Protection is an Exotiq pass-through line and is not
+  // used as a fee-on-fee base.
+  const platformFeeBaseCents = operatorTotalCents;
+  const platformFeeCents = Math.round(platformFeeBaseCents * platformFeeRate);
   const protectionDailyRateCents = PROTECTION_DAILY_RATES[input.protection];
   const protectionTotalCents = protectionDailyRateCents * days;
-  const grandTotalCents = operatorTotalCents + protectionTotalCents;
+  const exotiqTotalCents = platformFeeCents + protectionTotalCents;
+  const grandTotalCents = operatorTotalCents + exotiqTotalCents;
 
   return {
     days,
@@ -46,8 +56,12 @@ export function calculateBookingTotals(input: {
     extrasSubtotalCents,
     operatorTaxesCents,
     operatorTotalCents,
+    platformFeeRate,
+    platformFeeBaseCents,
+    platformFeeCents,
     protectionDailyRateCents,
     protectionTotalCents,
+    exotiqTotalCents,
     grandTotalCents,
   };
 }

@@ -76,8 +76,12 @@ export type BookingTotals = {
   extrasSubtotalCents: number;
   operatorTaxesCents: number;
   operatorTotalCents: number;
+  platformFeeRate: number;
+  platformFeeBaseCents: number;
+  platformFeeCents: number;
   protectionDailyRateCents: number;
   protectionTotalCents: number;
+  exotiqTotalCents: number;
   grandTotalCents: number;
 };
 

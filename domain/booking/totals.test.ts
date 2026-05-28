@@ -12,7 +12,7 @@ describe('booking totals', () => {
     expect(countRentalDays('2026-06-14', '2026-06-17')).toBe(3);
   });
 
-  it('derives operator, protection, and grand totals in cents', () => {
+  it('derives operator, Exotiq platform/protection, and grand totals in cents', () => {
     const totals = calculateBookingTotals({
       dailyRateCents: 119900,
       startDate: '2026-06-14',
@@ -20,6 +20,7 @@ describe('booking totals', () => {
       extras,
       protection: 'premium',
       operatorTaxRate: 0.078,
+      platformFeeRate: 0.1,
     });
 
     expect(totals.days).toBe(3);
@@ -27,13 +28,16 @@ describe('booking totals', () => {
     expect(totals.extrasSubtotalCents).toBe(44700);
     expect(totals.operatorTaxesCents).toBe(31543);
     expect(totals.operatorTotalCents).toBe(435943);
+    expect(totals.platformFeeBaseCents).toBe(435943);
+    expect(totals.platformFeeCents).toBe(43594);
     expect(totals.protectionDailyRateCents).toBe(8900);
     expect(totals.protectionTotalCents).toBe(26700);
-    expect(totals.grandTotalCents).toBe(462643);
+    expect(totals.exotiqTotalCents).toBe(70294);
+    expect(totals.grandTotalCents).toBe(506237);
   });
 
   it('formats cents as luxury checkout currency', () => {
-    expect(formatMoney(462643)).toBe('$4,626');
-    expect(formatMoney(462643, { showCents: true })).toBe('$4,626.43');
+    expect(formatMoney(506237)).toBe('$5,062');
+    expect(formatMoney(506237, { showCents: true })).toBe('$5,062.37');
   });
 });

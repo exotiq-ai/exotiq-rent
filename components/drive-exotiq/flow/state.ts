@@ -13,6 +13,7 @@ export function recomputeBookingCart(cart: BookingCart): BookingCart {
       extras: cart.extras,
       protection: cart.protection,
       operatorTaxRate: taxRate,
+      platformFeeRate: (cart.operator.platformFeePercent ?? 10) / 100,
     }),
   };
 }
