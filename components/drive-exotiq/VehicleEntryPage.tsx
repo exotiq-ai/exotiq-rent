@@ -62,7 +62,7 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug }: { operator
 
         <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
           <div className="mb-3 flex items-center gap-2 text-sm font-medium"><ShieldCheck size={16} className="text-[#C8A664]" />Before pickup</div>
-          {['Choose dates and pickup time.', 'Verify driver and insurance documents.', 'Review rental and Exotiq Protect charges separately.'].map((item, index) => <div key={item} className="flex gap-3 border-t border-[#2A2E3A] py-3 text-sm text-[#9BA1B0]"><span className="text-[#C8A664]">0{index + 1}</span>{item}</div>)}
+          {['Choose dates and pickup time.', 'Verify driver and insurance documents.', 'Review the charge breakdown before single Stripe Checkout.'].map((item, index) => <div key={item} className="flex gap-3 border-t border-[#2A2E3A] py-3 text-sm text-[#9BA1B0]"><span className="text-[#C8A664]">0{index + 1}</span>{item}</div>)}
         </div>
       </div>
       <div className="absolute bottom-5 left-0 right-0 z-10 border-t border-[#2A2E3A] bg-[#0D0F14] px-4 pb-4 pt-3 shadow-[0_-24px_42px_rgba(13,15,20,.96)]">

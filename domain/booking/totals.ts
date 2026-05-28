@@ -30,6 +30,7 @@ export function calculateBookingTotals(input: {
   protection: ProtectionTier;
   operatorTaxRate: number;
   platformFeeRate?: number;
+  depositHoldCents?: number;
 }): BookingTotals {
   const days = countRentalDays(input.startDate, input.endDate);
   const rentalSubtotalCents = input.dailyRateCents * days;
@@ -49,6 +50,7 @@ export function calculateBookingTotals(input: {
   const protectionTotalCents = protectionDailyRateCents * days;
   const exotiqTotalCents = platformFeeCents + protectionTotalCents;
   const grandTotalCents = operatorTotalCents + exotiqTotalCents;
+  const depositHoldCents = input.depositHoldCents ?? 0;
 
   return {
     days,
@@ -63,6 +65,7 @@ export function calculateBookingTotals(input: {
     protectionTotalCents,
     exotiqTotalCents,
     grandTotalCents,
+    depositHoldCents,
   };
 }
 

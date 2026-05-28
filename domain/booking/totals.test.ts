@@ -21,6 +21,7 @@ describe('booking totals', () => {
       protection: 'premium',
       operatorTaxRate: 0.078,
       platformFeeRate: 0.1,
+      depositHoldCents: 250000,
     });
 
     expect(totals.days).toBe(3);
@@ -34,6 +35,7 @@ describe('booking totals', () => {
     expect(totals.protectionTotalCents).toBe(26700);
     expect(totals.exotiqTotalCents).toBe(70294);
     expect(totals.grandTotalCents).toBe(506237);
+    expect(totals.depositHoldCents).toBe(250000);
   });
 
   it('formats cents as luxury checkout currency', () => {

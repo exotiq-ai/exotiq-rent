@@ -14,6 +14,7 @@ export function recomputeBookingCart(cart: BookingCart): BookingCart {
       protection: cart.protection,
       operatorTaxRate: taxRate,
       platformFeeRate: (cart.operator.platformFeePercent ?? 10) / 100,
+      depositHoldCents: cart.vehicle.securityDepositCents,
     }),
   };
 }

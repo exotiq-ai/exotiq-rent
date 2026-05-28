@@ -35,6 +35,7 @@ export type Vehicle = {
   model: string;
   dailyRateCents: number;
   minRentalDays: number;
+  securityDepositCents: number;
   photos: string[];
   heroImage: string;
   specs: {
@@ -83,6 +84,7 @@ export type BookingTotals = {
   protectionTotalCents: number;
   exotiqTotalCents: number;
   grandTotalCents: number;
+  depositHoldCents: number;
 };
 
 export type BookingCart = {

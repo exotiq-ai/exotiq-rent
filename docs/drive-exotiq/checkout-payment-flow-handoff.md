@@ -6,12 +6,14 @@ _Last updated: 2026-05-27_
 
 This document aligns the renter-facing Exotiq.Rent booking flow with the operator-facing Exotiq Command Center / app.exotiq.ai backend and Stripe implementation before final code freeze.
 
-The current repo is still a frontend/payment scaffold. It now shows the intended final payment breakdown:
+The current repo is still a frontend/payment scaffold. It now shows the intended V1 payment breakdown:
 
-- Operator rental charge: collected for the rental operator.
-- Exotiq platform fee: 10% platform fee on the booking amount, excluding any deposit/security authorization.
-- Exotiq protection plan: passed through Stripe to Exotiq.
-- Customer statement descriptor for Exotiq lines: `exotiq.rent`.
+- Single Stripe Checkout charge: customer statement descriptor `EXOTIQ.RENT`.
+- Operator rental charge: included in the full checkout amount; operator share transfers automatically.
+- Exotiq platform fee: 10% platform fee on operator total, excluding any deposit/security authorization and excluding protection.
+- Exotiq protection plan: $89/day, Exotiq-controlled, included in the single checkout charge.
+- Security deposit: separate authorization hold on the operator connected account, not charged today and not included in the platform-fee base.
+- Free cancellation: 72 hours before pickup; platform fee and protection are refundable inside the window.
 
 ## Current implementation scope
 
@@ -133,16 +135,19 @@ Payment screen displays:
 - Operator rental charge.
 - Exotiq platform fee at 10%.
 - Exotiq protection plan.
-- Exotiq pass-through total.
-- Stripe statement descriptor requirement: `exotiq.rent` for Exotiq lines.
-- Tokenized Stripe checkout boundary language.
+- Exotiq total.
+- Separate security deposit authorization hold.
+- Stripe statement descriptor requirement: `EXOTIQ.RENT` for the single V1 charge.
+- Hosted Stripe Checkout boundary language.
+- Free cancellation up to 72 hours before pickup.
 
 Stripe implementation intent:
 
-- Use Stripe Elements / Payment Element or Checkout; do not collect raw card data in Exotiq.Rent components.
-- Platform fee and protection plan should be routed to Exotiq's Stripe account.
-- Customer statement for Exotiq lines should show `exotiq.rent`.
-- Operator charge/transfer should align with the operator's connected account.
+- V1 uses one hosted Stripe Checkout charge for the full booking amount via Exotiq.
+- Do not implement Stripe Elements / Payment Element or collect card data in Exotiq.Rent components.
+- Backend creates the booking and returns the hosted Stripe Checkout URL.
+- Operator share transfers automatically after checkout.
+- Security deposit is a separate authorization hold on the operator connected account, created server-side after payment.
 
 ### 08. Confirmation
 
@@ -191,77 +196,47 @@ Expected table mapping:
 
 ## Stripe architecture notes
 
-The final Stripe design needs to be explicit because the desired money movement has two destination concepts:
+The V1 Stripe architecture is locked:
 
-1. Operator receives the rental-side economics.
-2. Exotiq receives platform fee and protection plan.
+- Customer completes one hosted Stripe Checkout for the full booking amount.
+- Statement descriptor should be `EXOTIQ.RENT`.
+- Exotiq receives the full charge and transfers the operator share automatically.
+- The 10% renter platform fee is calculated on operator total only: rental + extras + operator taxes/fees.
+- Platform fee base excludes protection and excludes deposits/security authorization holds.
+- Protection is $89/day, Exotiq-controlled, and included in the single checkout charge.
+- Security deposit is a separate server-side authorization hold on the operator connected account after payment.
+- Broker commission is invisible to renters and remains operator-side/Phase 2.
 
-Possible implementation patterns to evaluate:
+When Lovable deploys the backend, the payment button should:
 
-### Option A: One customer payment intent with Stripe Connect transfer/application-fee split
+1. Call `renter-create-booking` to create the booking and return a Stripe Checkout URL.
+2. Redirect the renter to that hosted Stripe Checkout URL.
+3. Accept Stripe success redirects at `/booking/{bookingRef}?status=confirmed`.
+4. Accept cancel redirects back to the booking page with `?payment=cancelled`.
 
-- Customer sees one payment authorization/charge.
-- Operator connected account receives operator portion.
-- Exotiq keeps application fee and protection plan amount.
-- Must verify statement descriptor behavior; a single charge may not allow two different statement descriptors.
-- Requires careful accounting if protection is not technically an application fee.
+## Remaining implementation coordination
 
-### Option B: Separate payment intents/charges
+The core V1 payment decisions are now locked. Remaining coordination points are implementation details:
 
-- Operator charge goes to operator connected account.
-- Exotiq platform/protection charge goes to Exotiq account with descriptor `exotiq.rent`.
-- Statement descriptors are cleaner.
-- Customer may see multiple charges, which must be made clear in UI.
-- More SCA/3DS, failure recovery, refund, and webhook complexity.
-
-### Option C: Stripe Checkout with line items and backend-led transfers
-
-- Customer-facing UI is familiar.
-- Backend handles transfers or application fee after session completion.
-- Need confirm whether exact customer statement descriptor and split-recipient requirements are achievable.
-
-## Clarification flags before final backend implementation
-
-These need product/legal/Stripe confirmation before both sides are locked:
-
-1. **Platform-fee base**
-   - Current frontend assumption: 10% is calculated on operator total due for the rental, including rental, selected extras, and operator tax/fees, excluding deposit/security authorizations and excluding protection.
-   - Please confirm if the intended base is instead pre-tax rental subtotal only, rental + extras only, or total due including protection.
-
-2. **Deposit/security hold treatment**
-   - Current assumption: deposits/security holds are not revenue and never included in the Exotiq platform-fee base.
-   - Need final answer on whether deposit is a separate authorization hold, separate payment, operator-owned hold, and when it is captured/released.
-
-3. **One charge vs multiple charges**
-   - Requirement says Exotiq platform fee and protection plan pass through Stripe to Exotiq and show as `exotiq.rent` on the customer statement.
-   - Need Stripe decision: one PaymentIntent with Connect splits, or separate customer charge(s) for Exotiq vs operator.
-
-4. **Statement descriptor feasibility**
-   - Confirm exact descriptor format supported by Stripe: `exotiq.rent` may need to comply with Stripe descriptor length/character rules and account descriptor prefixes.
-
-5. **Protection plan accounting**
-   - Confirm if protection is Exotiq revenue, insurance/protection pass-through, or a third-party remittance item.
-   - This affects Stripe account routing, taxes, refunds, and receipt wording.
-
-6. **Tax treatment**
+1. **Tax treatment**
    - Current scaffold has a simple operator tax estimate.
-   - Need final tax calculation owner and whether platform fee/protection are taxable in each market.
+   - Backend quote should own final tax calculations and decide whether platform fee/protection are taxable by market.
 
-7. **Command Center booking lifecycle**
+2. **Command Center booking lifecycle**
    - Confirm statuses for marketplace/direct bookings: recommended states include `requested`, `pending_documents`, `pending_payment`, `confirmed`, `declined`, `cancelled`, `completed`, `refunded`.
    - If existing enums are tight, consider a marketplace sub-state rather than breaking current operator UI.
 
-8. **Stripe connected account type**
+3. **Stripe connected account type**
    - Prior inspection showed app.exotiq.ai may create Express accounts while older handoff language referenced Standard accounts.
-   - Confirm the account type before implementing onboarding and charge routing.
+   - Confirm the account type for transfer and security-deposit hold implementation.
 
-9. **Refund/cancellation ownership**
-   - Define how refunds split between operator rental charge, Exotiq platform fee, and protection plan.
-   - Define whether platform fee is refundable and under what conditions.
+4. **Refund webhook behavior**
+   - Product rule: platform fee and protection are refundable inside the 72h free-cancellation window; platform fee is non-refundable after the window; protection is non-refundable after rental start or early return.
+   - Backend/webhooks should persist which portions were refunded.
 
-10. **Failed partial payment recovery**
-   - If operator and Exotiq are separate charges, define what happens if one succeeds and the other fails.
-   - Booking should not become confirmed until required payments and holds are reconciled.
+5. **Security deposit hold lifecycle**
+   - Deposit hold is separate from the Stripe Checkout charge and should be created server-side on the operator connected account after payment confirmation.
+   - Backend should persist hold status, expiry, capture, release, and damage adjustment details.
 
 ## Recommended build sequence
 
