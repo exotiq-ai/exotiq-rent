@@ -15,12 +15,12 @@ export function PayStep({ cart, onPay }: { cart: BookingCart; onPay: () => void 
         <StepHeader
           eyebrow="Step 07"
           title="Final payment."
-          sub="One secure Stripe Checkout collects the full booking amount; the operator share transfers automatically."
+          sub="One secure Stripe Checkout, two clear charges: the operator's rental and Exotiq's booking fee + protection."
         />
         <div className="rounded-xl border border-[#C8A664] bg-[#14130F] p-4 shadow-[0_0_0_1px_#C8A664,0_0_24px_rgba(200,166,100,.10)]">
           <div className="text-xs uppercase tracking-[0.22em] text-[#5C6272]">Estimated total due today</div>
           <div className="mt-2"><Money cents={cart.totals.grandTotalCents} large /></div>
-          <p className="mt-2 text-xs leading-5 text-[#9BA1B0]">Security deposits or future authorization holds are not included in the platform-fee base.</p>
+          <p className="mt-2 text-xs leading-5 text-[#9BA1B0]">Security deposits or future authorization holds are not included in the booking-fee base.</p>
         </div>
 
         <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm">
@@ -28,12 +28,12 @@ export function PayStep({ cart, onPay }: { cart: BookingCart; onPay: () => void 
             <span className="text-[#9BA1B0]">Operator rental charge</span>
             <Money cents={cart.totals.operatorTotalCents} />
           </div>
-          <div className="mt-2 text-xs leading-5 text-[#5C6272]">Included in the single EXOTIQ.RENT checkout; operator share transfers automatically.</div>
+          <div className="mt-2 text-xs leading-5 text-[#5C6272]">Charged by {cart.operator.name} — appears as its own line on your statement.</div>
           <div className="mt-3 flex justify-between gap-3 border-t border-[#2A2E3A] pt-3">
-            <span className="text-[#9BA1B0]">Exotiq platform fee ({platformPercent}%)</span>
+            <span className="text-[#9BA1B0]">Exotiq booking fee ({platformPercent}%)</span>
             <Money cents={cart.totals.platformFeeCents} />
           </div>
-          <div className="mt-1 text-xs leading-5 text-[#5C6272]">Calculated on {formatMoney(cart.totals.platformFeeBaseCents)} booking amount, excluding deposits.</div>
+          <div className="mt-1 text-xs leading-5 text-[#5C6272]">Calculated on the {formatMoney(cart.totals.platformFeeBaseCents)} rental only; extras and deposits excluded.</div>
           <div className="mt-3 flex justify-between gap-3 border-t border-[#2A2E3A] pt-3">
             <span className="text-[#9BA1B0]">Exotiq protection plan</span>
             <Money cents={cart.totals.protectionTotalCents} />
@@ -53,8 +53,8 @@ export function PayStep({ cart, onPay }: { cart: BookingCart; onPay: () => void 
           <div className="flex items-start gap-3">
             <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#C8A664]/10 text-[#C8A664]"><LockKeyhole size={18} /></div>
             <div>
-              <div className="text-sm font-medium">Stripe statement descriptor</div>
-              <p className="mt-1 text-xs leading-5 text-[#9BA1B0]">Your card will be charged once by <span className="text-[#F0F2F5]">EXOTIQ.RENT</span> for the full booking amount. The operator&apos;s share is transferred automatically.</p>
+              <div className="text-sm font-medium">What you&apos;ll see on your statement</div>
+              <p className="mt-1 text-xs leading-5 text-[#9BA1B0]">Two charges: the operator&apos;s rental charge, and an <span className="text-[#F0F2F5]">EXOTIQ.RENT</span> charge for the booking fee and protection.</p>
             </div>
           </div>
         </div>

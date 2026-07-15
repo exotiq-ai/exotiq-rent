@@ -29,13 +29,40 @@ describe('booking totals', () => {
     expect(totals.extrasSubtotalCents).toBe(44700);
     expect(totals.operatorTaxesCents).toBe(31543);
     expect(totals.operatorTotalCents).toBe(435943);
-    expect(totals.platformFeeBaseCents).toBe(435943);
-    expect(totals.platformFeeCents).toBe(43594);
-    expect(totals.protectionDailyRateCents).toBe(8900);
-    expect(totals.protectionTotalCents).toBe(26700);
-    expect(totals.exotiqTotalCents).toBe(70294);
-    expect(totals.grandTotalCents).toBe(506237);
+    // D1/D9: fee base is the rental subtotal only — extras and taxes excluded.
+    expect(totals.platformFeeBaseCents).toBe(359700);
+    expect(totals.platformFeeCents).toBe(35970);
+    expect(totals.protectionDailyRateCents).toBe(28900);
+    expect(totals.protectionTotalCents).toBe(86700);
+    expect(totals.exotiqTotalCents).toBe(122670);
+    expect(totals.grandTotalCents).toBe(558613);
     expect(totals.depositHoldCents).toBe(250000);
+  });
+
+  it('matches the D1/D9/D5 sample quote to the cent (3 days × $1,999, premium)', () => {
+    const totals = calculateBookingTotals({
+      dailyRateCents: 199900,
+      startDate: '2026-06-14',
+      endDate: '2026-06-17',
+      extras: [],
+      protection: 'premium',
+      operatorTaxRate: 0,
+      platformFeeRate: 0.1,
+    });
+
+    expect(totals.rentalSubtotalCents).toBe(599700); // $5,997.00 rental
+    expect(totals.platformFeeCents).toBe(59970); // $599.70 booking fee
+    expect(totals.protectionTotalCents).toBe(86700); // $867.00 premium protection
+    expect(totals.grandTotalCents).toBe(746370); // $7,463.70
+  });
+
+  it('keeps the booking fee unchanged when extras are added (D9)', () => {
+    const base = { dailyRateCents: 119900, startDate: '2026-06-14', endDate: '2026-06-17', protection: 'decline' as const, operatorTaxRate: 0.078, platformFeeRate: 0.1 };
+    const withoutExtras = calculateBookingTotals({ ...base, extras: [] });
+    const withExtras = calculateBookingTotals({ ...base, extras });
+
+    expect(withExtras.extrasSubtotalCents).toBeGreaterThan(0);
+    expect(withExtras.platformFeeCents).toBe(withoutExtras.platformFeeCents);
   });
 
   it('formats cents as luxury checkout currency', () => {
