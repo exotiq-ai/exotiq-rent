@@ -31,6 +31,16 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug }: { operator
           </div>
         </div>
 
+        {vehicle.photos.length > 1 && (
+          <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]" aria-label="Vehicle gallery">
+            {vehicle.photos.map((photo, index) => (
+              <div key={photo} className="relative h-20 w-32 shrink-0 overflow-hidden rounded-lg border border-[#2A2E3A]">
+                <Image src={photo} alt={`${vehicle.shortName} photo ${index + 1}`} fill sizes="128px" className="object-cover" />
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="mt-4 grid grid-cols-2 gap-2">
           {specs.map((spec) => (
             <div key={spec.label} className="rounded-xl border border-[#2A2E3A] bg-[#161922] p-[14px]">
