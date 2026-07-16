@@ -1,18 +1,13 @@
 'use client';
 
 import { Money, PrimaryButton } from '../BookingChrome';
+import { formatRangeLabel } from '@/domain/booking/dates';
 import { formatMoney } from '@/domain/booking/totals';
 import type { BookingCart } from '@/domain/booking/types';
 import { Breakdown, ScreenShell, StepHeader, Sticky } from './shared';
 
-function formatDateRange(start: string, end: string) {
-  const startDay = Number(start.split('-')[2]);
-  const endDay = Number(end.split('-')[2]);
-  return `Jun ${startDay}–${endDay}`;
-}
-
 export function ReviewStep({ cart, goTo, next }: { cart: BookingCart; goTo: (step: number) => void; next: () => void }) {
-  const dateLabel = formatDateRange(cart.dates.start, cart.dates.end);
+  const dateLabel = formatRangeLabel(cart.dates.start, cart.dates.end);
   const platformPercent = Math.round(cart.totals.platformFeeRate * 100);
 
   return (

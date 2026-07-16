@@ -2,6 +2,7 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { LockKeyhole, Phone, Sparkles } from 'lucide-react';
 import { getBookingConfirmation, createBookingCart } from '@/domain/booking/service';
+import { formatRangeLabel } from '@/domain/booking/dates';
 import { formatMoney } from '@/domain/booking/totals';
 import { HTitle, Money, PhoneViewport } from './BookingChrome';
 
@@ -22,7 +23,7 @@ export async function ConfirmationScreen({ bookingRef }: { bookingRef: string })
           </div>
           <div className="p-4"><HTitle>Your {cart.vehicle.make} is reserved.</HTitle><p className="mt-2 text-sm text-[#9BA1B0]">Booking {confirmation.bookingRef}</p></div>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm"><Detail label="Dates" value="Jun 14 – Jun 17" /><Detail label="Pickup" value={cart.pickupTime} /><Detail label="Location" value={cart.vehicle.pickupLocation.address} /><Detail label="Total" value={formatMoney(cart.totals.grandTotalCents)} /></div>
+        <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm"><Detail label="Dates" value={formatRangeLabel(cart.dates.start, cart.dates.end)} /><Detail label="Pickup" value={cart.pickupTime} /><Detail label="Location" value={cart.vehicle.pickupLocation.address} /><Detail label="Total" value={formatMoney(cart.totals.grandTotalCents)} /></div>
         <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
           <div className="mb-3 text-sm font-medium">Charges</div>
           <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block">Operator rental charge</span><span className="text-xs text-[#C8A664]">Charged by {cart.operator.name}</span></span><Money cents={cart.totals.operatorTotalCents} /></div>
