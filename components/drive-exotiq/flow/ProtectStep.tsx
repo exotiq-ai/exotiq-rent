@@ -14,9 +14,17 @@ export function ProtectStep({ cart, setCart, next }: { cart: BookingCart; setCar
     setCart(recomputeBookingCart({ ...cart, protection }));
   };
   const canContinue = cart.protection !== 'decline' || declineAcknowledged;
+  // D5 pricing (docs/rent/DECISIONS.md): Premium $289/day (default), Standard $89/day.
   const tiers = [
-    { id: 'premium' as const, name: 'Premium', price: 8900, detail: '$0 deductible. Collision, theft, liability up to $250K. Roadside included.', badge: 'Recommended' },
-    { id: 'standard' as const, name: 'Standard', price: 5900, detail: '$2,500 deductible. Collision and theft up to $150K.', badge: '' },
+    { id: 'premium' as const, name: 'Premium', price: 28900, detail: '$0 deductible. Collision, theft, liability up to $250K. Roadside included.', badge: 'Recommended' },
+    { id: 'standard' as const, name: 'Standard', price: 8900, detail: '$2,500 deductible. Collision and theft up to $150K.', badge: '' },
+  ];
+  // Decline terms per D5. Final legal copy is pending Gregory's approval;
+  // the substance (cash-value liability + insurance verification) is decided.
+  const declineTerms = [
+    'You are personally responsible for the total cash value of the vehicle for any damage, theft, loss of use, or total loss during the rental.',
+    'You must carry personal auto insurance that covers this rental, and provide proof for verification before pickup.',
+    'A $5,000 authorization hold will be placed on your card before the rental begins.',
   ];
   return (
     <ScreenShell>
@@ -39,10 +47,18 @@ export function ProtectStep({ cart, setCart, next }: { cart: BookingCart; setCar
         </SelectableCard>
       </div>
       {cart.protection === 'decline' && (
-        <label className="mt-4 flex gap-3 rounded-xl border border-[#FFB84D]/45 bg-[#FFB84D]/10 p-4 text-left text-[12px] leading-5 text-[#F0F2F5]">
-          <input type="checkbox" checked={declineAcknowledged} onChange={(event) => setDeclineAcknowledged(event.target.checked)} className="mt-1 h-4 w-4 accent-[#FFB84D]" />
-          <span>I understand I am declining Exotiq Protect and may be responsible for damage, theft, loss of use, and a later authorization hold.</span>
-        </label>
+        <div className="mt-4 rounded-xl border border-[#FFB84D]/45 bg-[#FFB84D]/10 p-4 text-left">
+          <div className="text-[12px] font-medium text-[#FFB84D]">Decline terms</div>
+          <ul className="mt-2 space-y-2">
+            {declineTerms.map((term) => (
+              <li key={term} className="flex gap-2 text-[12px] leading-5 text-[#F0F2F5]"><span className="text-[#FFB84D]">·</span><span>{term}</span></li>
+            ))}
+          </ul>
+          <label className="mt-3 flex gap-3 border-t border-[#FFB84D]/25 pt-3 text-[12px] leading-5 text-[#F0F2F5]">
+            <input type="checkbox" checked={declineAcknowledged} onChange={(event) => setDeclineAcknowledged(event.target.checked)} className="mt-1 h-4 w-4 accent-[#FFB84D]" />
+            <span>I have read and accept the decline terms above.</span>
+          </label>
+        </div>
       )}
       <Sticky><PrimaryButton onClick={next} disabled={!canContinue}>Continue</PrimaryButton></Sticky>
     </ScreenShell>

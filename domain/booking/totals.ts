@@ -2,9 +2,10 @@ import type { BookingTotals, ExtraSelection, ProtectionTier } from './types';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
+// D5 (docs/rent/DECISIONS.md, 2026-07-15): Standard $89/day, Premium $289/day.
 const PROTECTION_DAILY_RATES: Record<ProtectionTier, number> = {
-  premium: 8900,
-  standard: 5900,
+  premium: 28900,
+  standard: 8900,
   decline: 0,
 };
 
@@ -39,12 +40,11 @@ export function calculateBookingTotals(input: {
   const operatorTaxesCents = Math.round(taxableOperatorSubtotal * input.operatorTaxRate);
   const operatorTotalCents = taxableOperatorSubtotal + operatorTaxesCents;
   const platformFeeRate = input.platformFeeRate ?? 0.1;
-  // Product rule: Exotiq.Rent charges a 10% platform fee on the booking
-  // amount due for the rental, excluding any deposit/security authorization.
-  // The current scaffold has no deposit line, so the operator total is the
-  // platform-fee base. Protection is an Exotiq pass-through line and is not
-  // used as a fee-on-fee base.
-  const platformFeeBaseCents = operatorTotalCents;
+  // D1 + D9 (docs/rent/DECISIONS.md, 2026-07-15): the renter-facing booking
+  // fee is 10% of the rental subtotal only (daily rate × days). Extras,
+  // operator taxes, deposits, and protection are all excluded from the base.
+  // Matches the Command Center's compute_rental_base / public_vehicle_quote.
+  const platformFeeBaseCents = rentalSubtotalCents;
   const platformFeeCents = Math.round(platformFeeBaseCents * platformFeeRate);
   const protectionDailyRateCents = PROTECTION_DAILY_RATES[input.protection];
   const protectionTotalCents = protectionDailyRateCents * days;
