@@ -88,6 +88,7 @@ export type Driver = {
   name: string;
   dob: string;
   phone: string;
+  email?: string;
   license: DriverDocument;
   insurance: DriverDocument;
 };
