@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { VehicleEntryPage } from '@/components/drive-exotiq/VehicleEntryPage';
 import { driveFontClassName } from '@/components/drive-exotiq/fonts';
 import { getPublicVehicleContext } from '@/domain/booking/service';
@@ -9,7 +10,8 @@ type Props = { params: { operatorSlug: string; vehicleSlug: string } };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const teamSlug = params.operatorSlug;
   const result = await getPublicVehicleContext(teamSlug, params.vehicleSlug);
-  if (!result) return { title: 'Vehicle not found | Drive Exotiq' };
+  // Before streaming starts, so the HTTP status stays 404 (see storefront route).
+  if (!result) notFound();
   const { team, vehicle } = result;
   return {
     title: `${vehicle.name} | ${team.name} | Drive Exotiq`,

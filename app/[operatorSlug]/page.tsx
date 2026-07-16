@@ -11,7 +11,9 @@ type Props = { params: { operatorSlug: string } };
 export async function generateMetadata({ params }: Props) {
   const teamSlug = params.operatorSlug;
   const storefront = await getPublicTeamStorefront(teamSlug);
-  if (!storefront) return { title: 'Operator not found | Drive Exotiq' };
+  // notFound() here (before streaming starts) keeps the HTTP status 404;
+  // thrown only from the page body it would stream a 200 shell first.
+  if (!storefront) notFound();
   return {
     title: `${storefront.team.name} | Drive Exotiq`,
     description: `Book exotic rentals from ${storefront.team.name} in ${storefront.team.city}, ${storefront.team.state}.`,
