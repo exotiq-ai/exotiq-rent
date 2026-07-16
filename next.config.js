@@ -1,5 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async redirects() {
+    // Demo (D7): land visitors straight on the demo storefront instead of
+    // the legacy marketplace homepage. Temporary (307) so it can be
+    // repointed or removed without browsers caching it.
+    return [{ source: '/', destination: '/desert-exotic-rentals', permanent: false }];
+  },
   images: {
     remotePatterns: [
       {
