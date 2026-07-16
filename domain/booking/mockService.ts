@@ -4,7 +4,10 @@ import type { PublicBookingConfirmation, PublicTeamStorefront, PublicVehicleCont
 export async function getMockPublicTeamStorefront(teamSlug: string): Promise<PublicTeamStorefront | null> {
   const team = mockOperators.find((operator) => operator.slug === teamSlug);
   if (!team) return null;
-  return { team, vehicles: mockVehicles.filter((vehicle) => vehicle.operatorId === team.id) };
+  // Hidden vehicles are excluded here, not in the UI — mirrors server-side
+  // marketplace visibility (the future RPCs never return non-visible rows).
+  const vehicles = mockVehicles.filter((vehicle) => vehicle.operatorId === team.id && !vehicle.hidden);
+  return { team, vehicles };
 }
 
 export async function getMockPublicVehicleContext(teamSlug: string, vehicleSlug: string): Promise<PublicVehicleContext | null> {

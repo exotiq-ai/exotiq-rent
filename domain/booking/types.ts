@@ -2,6 +2,15 @@ export type ProtectionTier = 'premium' | 'standard' | 'decline';
 export type ExtraUnit = 'flat' | 'day';
 export type VerificationStatus = 'empty' | 'pending' | 'verified' | 'rejected';
 
+export type OperatorPolicies = {
+  minimumDriverAge: number;
+  freeCancellationHours: number;
+  milesIncludedPerDay: number | 'unlimited';
+  fuelPolicy: string;
+  deliveryAvailable: boolean;
+  deliveryNote?: string;
+};
+
 export type Operator = {
   id: string;
   slug: string;
@@ -13,6 +22,8 @@ export type Operator = {
   timezone?: string;
   stripeAccountId?: string;
   platformFeePercent?: number;
+  about?: string;
+  policies?: OperatorPolicies;
 };
 
 export type PickupLocation = {
@@ -22,6 +33,12 @@ export type PickupLocation = {
   city: string;
   state: string;
   phone?: string;
+};
+
+/** Inclusive local-date range (YYYY-MM-DD) during which a vehicle cannot be booked. */
+export type UnavailableDateRange = {
+  start: string;
+  end: string;
 };
 
 export type Vehicle = {
@@ -46,6 +63,10 @@ export type Vehicle = {
   };
   footnote: string;
   pickupLocation: PickupLocation;
+  /** Busy ranges the renter cannot select. Mirrors the future get_vehicle_availability RPC shape. */
+  unavailableRanges?: UnavailableDateRange[];
+  /** Not marketplace-visible: excluded from storefronts and unresolvable by slug (mirrors server-side visibility). */
+  hidden?: boolean;
 };
 
 export type ExtraSelection = {

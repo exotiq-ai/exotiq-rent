@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { mockOperators, mockVehicles } from './mockData';
 import { getBookingConfirmation, getPublicTeamStorefront, getPublicVehicleContext } from './service';
 
 describe('booking service facade mock mode', () => {
@@ -28,5 +29,29 @@ describe('booking service facade mock mode', () => {
 
     expect(confirmation?.bookingRef).toBe('BK-01001');
     expect(confirmation?.team.slug).toBe('desert-exotic-rentals');
+  });
+
+  it('has a demo-sized catalog: 3 teams and 6+ visible vehicles with varied rates and minimums', async () => {
+    expect(mockOperators.length).toBe(3);
+
+    const storefronts = await Promise.all(mockOperators.map((team) => getPublicTeamStorefront(team.slug)));
+    const visibleVehicles = storefronts.flatMap((storefront) => storefront?.vehicles ?? []);
+
+    expect(visibleVehicles.length).toBeGreaterThanOrEqual(6);
+    expect(new Set(visibleVehicles.map((vehicle) => vehicle.dailyRateCents)).size).toBeGreaterThan(3);
+    expect(new Set(visibleVehicles.map((vehicle) => vehicle.minRentalDays)).size).toBeGreaterThan(1);
+    expect(visibleVehicles.some((vehicle) => (vehicle.unavailableRanges?.length ?? 0) > 0)).toBe(true);
+    expect(visibleVehicles.every((vehicle) => vehicle.photos.length >= 2)).toBe(true);
+  });
+
+  it('never exposes hidden vehicles through the storefront or by slug', async () => {
+    const hidden = mockVehicles.find((vehicle) => vehicle.hidden);
+    expect(hidden).toBeDefined();
+
+    const team = mockOperators.find((operator) => operator.id === hidden?.operatorId);
+    const storefront = await getPublicTeamStorefront(team!.slug);
+
+    expect(storefront?.vehicles.map((vehicle) => vehicle.slug)).not.toContain(hidden!.slug);
+    await expect(getPublicVehicleContext(team!.slug, hidden!.slug)).resolves.toBeNull();
   });
 });
