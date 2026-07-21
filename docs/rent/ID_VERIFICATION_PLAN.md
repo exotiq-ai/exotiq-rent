@@ -4,9 +4,10 @@
 sessions on this repo (renter UI) + `exotiq-spark-mvp-flow` (edge functions,
 migrations) + Lovable (Command Center UI, migration apply).
 
-**Status: BLOCKED ON DECISION REGISTER (§6).** Answer the questions, then
-sessions execute phase by phase. Sandbox/test mode only until Gregory
-explicitly approves live.
+**Status: UNBLOCKED — all ten decisions answered by Gregory 2026-07-21
+(in-chat); recorded in §6. V0 partially complete (Identity already enabled
+in the Stripe sandbox).** Sandbox/test mode only until Gregory explicitly
+approves live.
 
 ---
 
@@ -32,12 +33,28 @@ only to keep the two statuses side by side in the UI.
 
 ## 2. What we're building (architecture in one page)
 
-Stripe Identity `VerificationSession` (type `document`, sandbox first), one
-integration serving both surfaces:
+Stripe Identity `VerificationSession` (type `document` + matching selfie,
+sandbox first), one integration serving both surfaces.
+
+**Placement (V1 ruling): verification happens AFTER payment, as the final
+step that confirms the booking.** Pay → Confirmation screen immediately
+prompts "Verify your identity" → booking sits in `pending_documents` until
+`verified` → then it moves to confirmed/operator approval. A returning
+already-verified renter (V7) skips the step entirely. Safeguards that make
+post-payment placement safe:
+
+- The deposit hold is only placed **after** verification succeeds.
+- Unverified after 24h → reminder email to renter + notification to the
+  operator in the Command Center.
+- 3 failed self-serve attempts (V6) → manual review flag + operator
+  notification; cancellation/refund per the 72h policy if it can't be
+  resolved. Payment is never blocked by verification issues — worst case is
+  a clean refund, not a lost checkout.
 
 ```
 Renter app (exotiq-rent)          Command Center (Lovable UI)
-  Driver step "Verify ID"           "Send verification link" per customer
+  Confirmation "Verify ID"          "Send verification link" per customer
+  (post-payment, per V1)
         │                                   │
         ▼                                   ▼
   identity-create-session  ◄── edge function (spark repo) ──►  creates/reuses
@@ -75,15 +92,13 @@ Hard rules (inherit the goal brief, plus):
 
 ## 3. Phases
 
-### V0 — Stripe account setup (Gregory, one sitting, with agent guidance)
+### V0 — Stripe account setup (Gregory — MOSTLY DONE 2026-07-21)
 
-1. In the Stripe **sandbox** dashboard: enable Identity (Settings →
-   Identity), accept the Identity terms, set the branding (Exotiq gold/black,
-   logo) shown in the verification modal.
-2. Confirm which Stripe account this runs on (V8) — expected: the platform
-   account that already runs Connect/subscriptions.
-3. No code. Exit gate: a test VerificationSession can be created from the
-   dashboard ("Create test session") and completed with a simulated document.
+1. ~~Enable Identity in the Stripe sandbox~~ **done** (platform account, V8).
+2. Remaining: set the Identity **branding** (Exotiq gold/black + logo) shown
+   in the verification modal, and confirm a dashboard-created test session
+   completes with a simulated document.
+3. Exit gate: test session verified from the dashboard.
 
 ### V1 — Backend plumbing (spark repo; agent builds, Lovable applies)
 
@@ -111,14 +126,25 @@ columns, "View in Stripe" deep link, and a manual-review state for
 
 ### V3 — Renter app surface (this repo; agent builds)
 
-Driver step: the license `UploadCard` becomes a **Verify your identity**
-card → loads Stripe.js, calls `verifyIdentity(clientSecret)`, shows
-processing state, polls `identity-session-status`, flips the pill to
-Verified. Mock mode keeps the current one-tap simulation (demo unaffected —
-no env, no Stripe). Failure shows `last_error.reason` with a retry (max per
-V6). Insurance card unchanged.
+Per the V1 ruling, verification lives **after payment**:
 
-### V4 — End-to-end sandbox test with `hello@exotiq.ai` (Gregory + agent)
+1. **Confirmation screen** gains a "Confirm your booking — verify your
+   identity" card (gold, first position, above the charges): loads
+   Stripe.js, calls `verifyIdentity(clientSecret)`, shows processing state,
+   polls `identity-session-status`, then flips the booking header from
+   "Pending verification" to "Confirmed". Already-verified returning renters
+   (V7) see the Verified state immediately and no prompt.
+2. **Driver step** stops implying license upload in live mode: the license
+   card becomes an informational "You'll verify your ID right after booking
+   — have it ready" note; insurance card unchanged (V5). Mock/demo mode
+   keeps today's one-tap simulation end to end — no env, no Stripe, demo
+   unaffected.
+3. Failure UX: `last_error.reason` shown with retry, max 3 attempts (V6),
+   then "We're reviewing your booking — the operator has been notified."
+4. Copy: replace the "deleted within 30 days" line with the V9 wording
+   (§6a).
+
+### V4 — End-to-end sandbox test (Gregory + agent; accounts per V10)
 
 The full loop, scripted in §7. Exit gate: one verification started in the
 renter app and one started from the Command Center both land `verified`,
@@ -154,39 +180,70 @@ sits parked until Gregory says "go live" in writing.
 > Show status from `customers.identity_status`
 > (`processing / verified / requires_input / redacted`) as badges matching
 > the existing verified/partial/unverified design. Add "View in Stripe"
-> linking to the session in the Stripe dashboard. Keep insurance upload
-> exactly as is. Flip `idVerification` feature flag to enabled. **Do not
-> add any ID image upload or storage — images stay in Stripe (DPA §3.8).**
+> linking to the session in the Stripe dashboard. Add a team notification
+> when a customer's verification enters manual review (3 failed attempts,
+> webhook sets the flag) and when a booking is unverified 24h after
+> payment. Keep insurance upload exactly as is. Flip `idVerification`
+> feature flag to enabled. **Do not add any ID image upload or storage —
+> images stay in Stripe (DPA §3.8).**
 
-## 6. Decision register — answer these to unblock (defaults pre-filled)
+## 6. Decision register — ANSWERED (Gregory, 2026-07-21, in-chat)
 
-| # | Question | Recommended default |
+| # | Question | Decision |
 |---|---|---|
-| V1 | **When must a renter verify?** | At the Driver step during booking (before payment step is reachable). Operator can also trigger ad-hoc from Command Center for phone bookings. |
-| V2 | **Document only, or document + selfie?** | Document + selfie for exotics (stronger match of person-to-ID; slightly higher per-verification cost and friction). |
-| V3 | **Does verification gate booking confirmation?** | Yes — per D3 lifecycle, a booking sits in `pending_documents` until ID `verified` (+ insurance per V5). Demo/mock mode unaffected. |
-| V4 | **What do we store in our DB?** | Status, session id, verified full name, document expiry date, timestamps. Nothing else — no images, no ID numbers, no DOB. Staff view detail in Stripe dashboard. |
-| V5 | **Insurance handling unchanged?** | Yes — separate manual/upload path as today; this plan only shows the two statuses side by side. |
-| V6 | **Failure policy?** | 2 self-serve retries on `requires_input`, then flag for manual review in Command Center; operator decides. |
-| V7 | **Reuse across operators?** | Yes — a verified renter (matched by customer identity) stays verified marketplace-wide until document expiry; per-operator re-verification off. |
-| V8 | **Which Stripe account?** | The existing platform account (same one running Connect + subscriptions), sandbox first. Renter verifications never live on operator connected accounts. |
-| V9 | **Retention/redaction?** | Auto-redact the Stripe session 30 days after rental return (matches the promise already in the renter UI), immediate redaction on data-deletion requests (hooks into existing `confirm-data-deletion` flow). |
-| V10 | **What is `hello@exotiq.ai` exactly?** | Assumed: your Command Center test/operator login AND the email used as the test renter. Confirm both roles (or tell me which), so the V4 script uses it correctly. |
+| V1 | When must a renter verify? | **After payment, as the last step — verification confirms the booking, never blocks the checkout.** Shape in §2: `pending_documents` after pay, deposit hold only after verified, reminder at 24h, refund path if unresolvable. Operator can still trigger ad-hoc links from the Command Center. |
+| V2 | Document only, or + selfie? | **Document + selfie, all inside Stripe's system.** No image ever touches Exotiq/Lovable infrastructure. |
+| V3 | Does verification gate booking confirmation? | **Yes** — `pending_documents` until verified (D3 lifecycle). |
+| V4 | What do we store in our DB? | **Status, session id, verified full name, document expiry, timestamps — nothing else.** Staff view detail in the Stripe dashboard. |
+| V5 | Insurance handling unchanged? | **Yes** — separate path as today. |
+| V6 | Failure policy? | **3 self-serve retries**, then manual-review flag **with a notification to the operator (tenant) in the Command Center**. |
+| V7 | Reuse across operators? | **Yes, marketplace-wide, "if compliantly done correctly":** the verification belongs to the Exotiq platform (renters verify with Exotiq, not with an operator), only the status/name/expiry is shared with operators — never documents. Expired document forces re-verification (V9). |
+| V8 | Which Stripe account? | **Existing platform account, sandbox first.** |
+| V9 | Retention/redaction? | **Recommended policy accepted-in-principle, final copy pending (§6a):** our status row lives until document expiry (return customers stay verified, no 30-day cliff); the Stripe session (images/PII) is redacted at document expiry or 12 months after verification, whichever is first, and immediately on a data-deletion request. Renter UI copy to be updated to match (the current "deleted within 30 days" line predates this design). |
+| V10 | What is `hello@exotiq.ai`? | **The Command Center demo account (and the Exotiq Stripe login).** The demo **customer** for testing is **Gregory, `gregory.ringler@gmail.com`**, already in the Command Center DB. Test script (§7) updated. |
 
-## 7. The `hello@exotiq.ai` sandbox test script (V4)
+### 6a. V9 retention rationale (for the privacy policy and renter copy)
 
-1. **Renter side:** on the staging/live renter app in supabase mode, start a
-   booking, enter `hello@exotiq.ai` as the driver email, tap Verify ID,
-   complete the Stripe test-mode modal with **simulated success**. Watch the
-   pill flip after webhook (~seconds in test mode).
+Stripe imposes no 30-day limit; redaction timing is the platform's call under
+its own privacy policy, with two hard edges from Stripe's side: **biometric
+identifiers (the selfie check) are retained by Stripe no longer than 1 year**
+regardless, and redaction is irreversible, takes up to 4 days, and wipes the
+session, reports, events, and files. Hence the recommendation: **redact at
+document expiry or 12 months post-verification (whichever first)** — inside
+Stripe's biometric ceiling, long enough for disputes and damage claims, and
+return customers within the window stay verified because *our status row*,
+not the stored images, is what gates booking. Renter-facing copy for V3:
+"Identity documents are processed and stored securely by Stripe, our
+verification partner — Exotiq never stores your ID. Verified status lasts
+until your document expires." Gregory approves final wording with the
+decline-terms legal pass (Phase 1 of the launch checklist).
+
+## 7. Sandbox test script (V4)
+
+Accounts (per V10): **operator/tenant login = `hello@exotiq.ai`** (Command
+Center demo account; also the Exotiq Stripe login); **demo customer =
+Gregory, `gregory.ringler@gmail.com`** (already in the Command Center DB).
+
+1. **Renter side:** on the staging renter app in supabase mode, complete a
+   booking through payment with `gregory.ringler@gmail.com` as the driver
+   email; on the confirmation screen tap **Verify your identity**, complete
+   the Stripe test-mode modal with **simulated success**. Watch the booking
+   flip from "Pending verification" to "Confirmed" after the webhook
+   (~seconds in test mode).
 2. **Command Center side:** log in as `hello@exotiq.ai`, open Verification,
-   confirm the same customer shows **ID Verified** without a refresh fight;
-   check `identity.verification_session.verified` arrived in the webhook log.
-3. **Failure path:** second customer, simulated failure (expired document),
-   confirm `requires_input` badge + renter-side retry copy.
+   confirm the Gregory customer shows **ID Verified** without manual
+   refresh; check `identity.verification_session.verified` in the webhook
+   log (Stripe dashboard → Developers → Events).
+3. **Failure path:** second test customer, simulated failure (expired
+   document) three times; confirm `requires_input` badge, renter-side retry
+   copy, and the manual-review notification reaching the `hello@exotiq.ai`
+   tenant (V6).
 4. **Cross-surface:** operator-initiated link for a third customer from the
    Command Center; complete it on a phone; confirm status lands in both apps.
-5. Record results in this file under a "Test log" heading; screenshots into
+5. **Reuse check (V7):** start a second booking as
+   `gregory.ringler@gmail.com` with a different operator's vehicle; confirm
+   no verification prompt appears and the booking confirms directly.
+6. Record results in this file under a "Test log" heading; screenshots into
    the PR.
 
 ## 8. Risks and flags
