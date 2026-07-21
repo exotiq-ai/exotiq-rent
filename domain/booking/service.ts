@@ -1,6 +1,18 @@
 import { createInitialCart, curatedExtras } from './mockData';
-import { getMockBookingConfirmation, getMockPublicTeamStorefront, getMockPublicVehicleContext } from './mockService';
-import type { PublicBookingConfirmation, PublicTeamStorefront, PublicVehicleContext } from './publicContracts';
+import {
+  getMockBookingConfirmation,
+  getMockIdentityVerificationState,
+  getMockPublicTeamStorefront,
+  getMockPublicVehicleContext,
+  startMockIdentityVerification,
+} from './mockService';
+import type {
+  IdentityVerificationStart,
+  IdentityVerificationState,
+  PublicBookingConfirmation,
+  PublicTeamStorefront,
+  PublicVehicleContext,
+} from './publicContracts';
 import type { BookingCart, ExtraSelection, Operator, Vehicle } from './types';
 
 /**
@@ -32,4 +44,17 @@ export function createBookingCart(overrides: { operator?: Operator; vehicle?: Ve
 
 export function getCuratedExtras(): ExtraSelection[] {
   return curatedExtras;
+}
+
+/**
+ * Identity verification (ID plan V3). Post-payment: verification confirms
+ * the booking. Live mode will call identity-create-session /
+ * identity-session-status; mock mode simulates the same shape.
+ */
+export async function startIdentityVerification(bookingRef: string): Promise<IdentityVerificationStart> {
+  return startMockIdentityVerification(bookingRef);
+}
+
+export async function getIdentityVerificationState(sessionId: string): Promise<IdentityVerificationState> {
+  return getMockIdentityVerificationState(sessionId);
 }

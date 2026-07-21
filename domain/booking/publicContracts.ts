@@ -21,6 +21,30 @@ export type AvailabilityBusyRange = {
   end: string;
 };
 
+/** Mirrors identity_verifications.status in the Command Center schema. */
+export type IdentityVerificationStatus =
+  | 'created'
+  | 'processing'
+  | 'verified'
+  | 'requires_input'
+  | 'canceled'
+  | 'redacted'
+  | 'manual_review';
+
+export type IdentityVerificationStart = {
+  sessionId: string;
+  status: IdentityVerificationStatus;
+  /** Absent when the renter is already verified (marketplace-wide reuse, V7). */
+  clientSecret?: string;
+  reused?: boolean;
+};
+
+export type IdentityVerificationState = {
+  status: IdentityVerificationStatus;
+  lastErrorReason?: string;
+  attemptsRemaining: number;
+};
+
 export type PublicQuote = {
   currency: 'usd';
   rentalDays: number;

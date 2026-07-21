@@ -1,5 +1,6 @@
 'use client';
 
+import { IdCard } from 'lucide-react';
 import { PrimaryButton } from '../BookingChrome';
 import type { BookingCart, Driver, VerificationStatus } from '@/domain/booking/types';
 import { ScreenShell, StepHeader, Sticky, UploadCard } from './shared';
@@ -25,8 +26,9 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
     Boolean(cart.driver.dob) &&
     cart.driver.phone.replace(/\D/g, '').length >= 10 &&
     (cart.driver.email ?? '').includes('@');
-  const docsVerified = cart.driver.license.status === 'verified' && cart.driver.insurance.status === 'verified';
-  const canContinue = fieldsComplete && !tooYoung && docsVerified;
+  // ID verification moved post-payment (ID plan V1 ruling) — only insurance
+  // is collected here now (V5: separate path from Stripe Identity).
+  const canContinue = fieldsComplete && !tooYoung && cart.driver.insurance.status === 'verified';
 
   const fieldClass = 'mt-1 w-full rounded-lg border border-[#2A2E3A] bg-[#10131A] px-3 py-2.5 text-sm text-[#F0F2F5] outline-none transition placeholder:text-[#3D4250] focus:border-[#C8A664]/60 [color-scheme:dark]';
 
@@ -60,9 +62,15 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
           </p>
         )}
         <div className="mt-5 px-1 text-[10px] uppercase tracking-[0.24em] text-[#5C6272]">Documents</div>
-        <UploadCard title="Driver's license" subtitle="Front photo · expires after pickup" status={cart.driver.license.status} tone="gold" onClick={() => setDoc('license', 'verified')} />
+        <div className="mt-3 flex items-start gap-3 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#C8A664]/10 text-[#C8A664]"><IdCard size={18} /></div>
+          <div>
+            <div className="text-sm font-medium text-[#F0F2F5]">ID check comes after booking</div>
+            <p className="mt-1 text-xs leading-5 text-[#9BA1B0]">You&apos;ll verify your identity right after payment — takes two minutes, have your license ready.</p>
+          </div>
+        </div>
         <UploadCard title="Proof of insurance" subtitle="Personal policy declaration page" status={cart.driver.insurance.status} tone="slate" onClick={() => setDoc('insurance', 'verified')} />
-        <p className="mt-4 rounded-xl border border-dashed border-[#2A2E3A] bg-transparent p-3 text-[11.5px] leading-5 text-[#9BA1B0]">We verify ahead of pickup so you skip the counter. Documents are encrypted and deleted within 30 days of return.</p>
+        <p className="mt-4 rounded-xl border border-dashed border-[#2A2E3A] bg-transparent p-3 text-[11.5px] leading-5 text-[#9BA1B0]">Exotiq never stores your ID — identity documents are processed securely by Stripe, our verification partner. Verified status lasts until your document expires.</p>
       </ScreenShell>
       <Sticky><PrimaryButton onClick={next} disabled={!canContinue}>Continue</PrimaryButton></Sticky>
     </>
