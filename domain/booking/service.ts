@@ -1,3 +1,5 @@
+import { getDataMode } from './config';
+import { createLiveIdentitySession, getLiveIdentityState } from './identityClient';
 import { createInitialCart, curatedExtras } from './mockData';
 import {
   getMockBookingConfirmation,
@@ -48,13 +50,24 @@ export function getCuratedExtras(): ExtraSelection[] {
 
 /**
  * Identity verification (ID plan V3). Post-payment: verification confirms
- * the booking. Live mode will call identity-create-session /
- * identity-session-status; mock mode simulates the same shape.
+ * the booking. Supabase mode calls the identity-create-session /
+ * identity-session-status edge functions; mock mode (default, no env)
+ * simulates the same shape.
  */
-export async function startIdentityVerification(bookingRef: string): Promise<IdentityVerificationStart> {
+export async function startIdentityVerification(
+  bookingRef: string,
+  email?: string,
+): Promise<IdentityVerificationStart> {
+  if (getDataMode() === 'supabase') {
+    if (!email) throw new Error('email is required to start verification');
+    return createLiveIdentitySession({ email, bookingRef });
+  }
   return startMockIdentityVerification(bookingRef);
 }
 
 export async function getIdentityVerificationState(sessionId: string): Promise<IdentityVerificationState> {
+  if (getDataMode() === 'supabase') {
+    return getLiveIdentityState(sessionId);
+  }
   return getMockIdentityVerificationState(sessionId);
 }

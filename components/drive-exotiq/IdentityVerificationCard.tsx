@@ -2,50 +2,104 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { BadgeCheck, ShieldCheck } from 'lucide-react';
+import { getDataMode, getStripePublishableKey } from '@/domain/booking/config';
 import { getIdentityVerificationState, startIdentityVerification } from '@/domain/booking/service';
 import type { IdentityVerificationStatus } from '@/domain/booking/publicContracts';
 
-const POLL_INTERVAL_MS = 1000;
+const POLL_INTERVAL_MS = 2000;
+const MAX_POLLS = 90; // ~3 minutes, then show the still-processing note
+
+/** Set by the booking flow at payment so the guest confirmation page can start verification without re-asking. */
+export const DRIVER_EMAIL_STORAGE_KEY = 'exotiq.driverEmail';
+
+function storedDriverEmail(): string {
+  try {
+    return sessionStorage.getItem(DRIVER_EMAIL_STORAGE_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
 
 /**
  * Post-payment identity verification (ID plan V1 ruling): payment is done,
- * verification is the step that confirms the booking. Renders on the
- * confirmation screen, first position under the hero.
+ * verification is the step that confirms the booking. Mock mode simulates;
+ * supabase mode opens the Stripe Identity modal and trusts the webhook-backed
+ * status endpoint.
  */
 export function IdentityVerificationCard({ bookingRef }: { bookingRef: string }) {
   const [status, setStatus] = useState<IdentityVerificationStatus | 'idle'>('idle');
   const [errorReason, setErrorReason] = useState<string | undefined>();
+  const [email, setEmail] = useState('');
+  const [needsEmail, setNeedsEmail] = useState(false);
+  const [slowNote, setSlowNote] = useState(false);
   const sessionRef = useRef<string | null>(null);
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isLive = getDataMode() === 'supabase';
 
-  useEffect(() => () => {
-    if (pollTimer.current) clearInterval(pollTimer.current);
+  useEffect(() => {
+    setEmail(storedDriverEmail());
+    return () => {
+      if (pollTimer.current) clearInterval(pollTimer.current);
+    };
   }, []);
 
   const poll = () => {
     if (pollTimer.current) clearInterval(pollTimer.current);
+    let polls = 0;
     pollTimer.current = setInterval(async () => {
       if (!sessionRef.current) return;
-      const state = await getIdentityVerificationState(sessionRef.current);
-      if (state.status === 'verified' || state.status === 'requires_input' || state.status === 'manual_review') {
-        if (pollTimer.current) clearInterval(pollTimer.current);
-        setErrorReason(state.lastErrorReason);
-        setStatus(state.status);
+      polls += 1;
+      if (polls > MAX_POLLS) setSlowNote(true);
+      try {
+        const state = await getIdentityVerificationState(sessionRef.current);
+        if (state.status === 'verified' || state.status === 'requires_input' || state.status === 'manual_review') {
+          if (pollTimer.current) clearInterval(pollTimer.current);
+          setErrorReason(state.lastErrorReason);
+          setSlowNote(false);
+          setStatus(state.status);
+        }
+      } catch {
+        // Transient polling errors are ignored; the webhook remains the source of truth.
       }
     }, POLL_INTERVAL_MS);
   };
 
   const begin = async () => {
-    setStatus('processing');
-    const start = await startIdentityVerification(bookingRef);
-    if (start.status === 'verified') {
-      setStatus('verified');
+    const driverEmail = email.trim() || storedDriverEmail();
+    if (isLive && !driverEmail.includes('@')) {
+      setNeedsEmail(true);
       return;
     }
-    sessionRef.current = start.sessionId;
-    // Live mode: stripe.verifyIdentity(start.clientSecret) opens the Stripe
-    // modal here; the webhook flips the status we poll for.
-    poll();
+    setNeedsEmail(false);
+    setStatus('processing');
+    try {
+      const start = await startIdentityVerification(bookingRef, driverEmail || undefined);
+      if (start.status === 'verified') {
+        setStatus('verified');
+        return;
+      }
+      if (start.status === 'manual_review') {
+        setStatus('manual_review');
+        return;
+      }
+      sessionRef.current = start.sessionId;
+
+      if (isLive && start.clientSecret) {
+        const { loadStripe } = await import('@stripe/stripe-js');
+        const stripe = await loadStripe(getStripePublishableKey());
+        if (!stripe) throw new Error('Stripe failed to load');
+        const { error } = await stripe.verifyIdentity(start.clientSecret);
+        if (error) {
+          // Renter closed the modal or a pre-submit error occurred — back to the prompt.
+          setStatus('idle');
+          return;
+        }
+      }
+      poll();
+    } catch (err) {
+      setErrorReason(err instanceof Error ? err.message : 'Verification could not be started.');
+      setStatus('requires_input');
+    }
   };
 
   if (status === 'verified') {
@@ -85,6 +139,18 @@ export function IdentityVerificationCard({ bookingRef }: { bookingRef: string })
         <div className="flex-1">
           <div className="text-sm font-medium text-[#F0F2F5]">Confirm your booking — verify your identity</div>
           <p className="mt-1 text-xs leading-5 text-[#9BA1B0]">Takes about two minutes. Have your driver&apos;s license ready. Exotiq never stores your ID — documents are processed securely by Stripe, our verification partner.</p>
+          {isLive && needsEmail && (
+            <label className="mt-3 block">
+              <span className="text-[10px] uppercase tracking-[0.18em] text-[#5C6272]">Driver email on the booking</span>
+              <input
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="you@example.com"
+                className="mt-1 w-full rounded-lg border border-[#2A2E3A] bg-[#10131A] px-3 py-2.5 text-sm text-[#F0F2F5] outline-none transition placeholder:text-[#3D4250] focus:border-[#C8A664]/60"
+              />
+            </label>
+          )}
           <button
             type="button"
             onClick={begin}
@@ -93,6 +159,9 @@ export function IdentityVerificationCard({ bookingRef }: { bookingRef: string })
           >
             {status === 'processing' ? 'Verifying…' : 'Verify identity'}
           </button>
+          {status === 'processing' && slowNote && (
+            <p className="mt-2 text-center text-[11px] text-[#5C6272]">Still processing — you can close this page; the operator sees the result either way.</p>
+          )}
         </div>
       </div>
     </div>

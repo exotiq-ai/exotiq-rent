@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BookingChrome } from './BookingChrome';
+import { DRIVER_EMAIL_STORAGE_KEY } from './IdentityVerificationCard';
 import { createBookingCart } from '@/domain/booking/service';
 import type { BookingCart, Operator, Vehicle } from '@/domain/booking/types';
 import { DatesStep } from './flow/DatesStep';
@@ -28,7 +29,22 @@ export function BookingFlow({ operator, vehicle }: { operator: Operator; vehicle
       {step === 3 && <ExtrasStep cart={cart} setCart={setCart} next={next} />}
       {step === 4 && <ProtectStep cart={cart} setCart={setCart} next={next} />}
       {step === 5 && <ReviewStep cart={cart} goTo={setStep} next={next} />}
-      {step === 6 && <PayStep cart={cart} onPay={() => router.push(confirmationHref)} />}
+      {step === 6 && (
+        <PayStep
+          cart={cart}
+          onPay={() => {
+            // Hand the driver email to the confirmation page (session-local
+            // only) so post-payment identity verification can start without
+            // re-asking — ID plan V1 ruling.
+            try {
+              if (cart.driver.email) sessionStorage.setItem(DRIVER_EMAIL_STORAGE_KEY, cart.driver.email);
+            } catch {
+              // Storage unavailable (private mode) — the card will ask for the email instead.
+            }
+            router.push(confirmationHref);
+          }}
+        />
+      )}
     </BookingChrome>
   );
 }
