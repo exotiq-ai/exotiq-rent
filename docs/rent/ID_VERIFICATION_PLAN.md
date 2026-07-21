@@ -4,10 +4,15 @@
 sessions on this repo (renter UI) + `exotiq-spark-mvp-flow` (edge functions,
 migrations) + Lovable (Command Center UI, migration apply).
 
-**Status: UNBLOCKED — all ten decisions answered by Gregory 2026-07-21
-(in-chat); recorded in §6. V0 partially complete (Identity already enabled
-in the Stripe sandbox).** Sandbox/test mode only until Gregory explicitly
-approves live.
+**Status (2026-07-21 evening): V1 BUILT AND APPLIED** — decisions V1–V10
+recorded in §6; backend plumbing landed in `exotiq-spark-mvp-flow` PR #24
+(from the patch set in `docs/rent/patches/idv/`, plus an `is_active`
+team-member drift fix made there; 6/6 behavioral RLS tests green). **V3
+renter UI done in mock mode** (exotiq-rent PR #9, stacked on #6). Remaining:
+merge spark PR #24 → Stripe webhook endpoint + `STRIPE_IDENTITY_WEBHOOK_SECRET`
+→ Lovable Prompts A/B (§5) → live-mode facade wiring in exotiq-rent → V4
+sandbox test (§7). Sandbox/test mode only until Gregory explicitly approves
+live.
 
 ---
 

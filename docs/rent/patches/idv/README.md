@@ -1,5 +1,15 @@
 # V1 backend plumbing — apply instructions (spark repo)
 
+> **STATUS: APPLIED 2026-07-21** via `exotiq-spark-mvp-flow` **PR #24**, with
+> one drift fix made there: the `team_members` queries in
+> `identity-create-session` and `identity-webhook` now filter
+> `is_active = true` (matching that repo's `is_team_member_of_record`
+> semantics) so deactivated members can't mint verification links or receive
+> manual-review notifications. **The spark repo is now the source of truth;
+> this directory is historical reference — do not re-apply.** Remaining
+> rollout steps live in the queue below (webhook + secret, Lovable Prompts
+> A/B).
+
 **Why this is a patch directory:** this session cannot push to
 `exotiq-ai/exotiq-spark-mvp-flow` (`cursor[bot]` 403 — same access gap as the
 original goal-brief blocker 1, in reverse). Per the established fallback,
