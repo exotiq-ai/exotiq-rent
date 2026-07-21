@@ -59,8 +59,8 @@ export default async function TeamStorefrontRoute({ params }: Props) {
     <div className={driveFontClassName}>
       <PhoneViewport step={1} stepStyle="numbered" className="font-[var(--font-drive-inter)]">
         <section className="flex-1 overflow-y-auto px-4 pb-32 pt-2 [scrollbar-width:none]">
-          <div className="relative -mx-4 mt-[-8px] h-64 overflow-hidden">
-            <Image src={heroVehicle.heroImage} alt={heroVehicle.name} fill priority sizes="480px" className="object-cover object-[50%_52%]" />
+          <div className="relative -mx-4 mt-[-8px] h-64 overflow-hidden bg-[#161922]">
+            {heroVehicle.heroImage && <Image src={heroVehicle.heroImage} alt={heroVehicle.name} fill priority sizes="480px" className="object-cover object-[50%_52%]" />}
             <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-[#0D0F14]/20 to-[#0D0F14]" />
             <div className="absolute bottom-4 left-4 right-4">
               <div className="inline-flex items-center gap-2 rounded-full border border-[#C8A664]/25 bg-[#0D0F14]/70 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-[#C8A664] backdrop-blur"><Sparkles size={12} /> Partner fleet</div>
@@ -85,15 +85,15 @@ export default async function TeamStorefrontRoute({ params }: Props) {
           <div className="mt-3 space-y-3">
             {vehicles.map((vehicle) => (
               <Link key={vehicle.id} href={`/${team.slug}/${vehicle.slug}`} className="block overflow-hidden rounded-xl border border-[#2A2E3A] bg-[#161922] transition hover:border-[#C8A664]/45">
-                <div className="relative h-44">
-                  <Image src={vehicle.heroImage} alt={vehicle.name} fill sizes="448px" className="object-cover" />
+                <div className="relative h-44 bg-[#1E2230]">
+                  {vehicle.heroImage && <Image src={vehicle.heroImage} alt={vehicle.name} fill sizes="448px" className="object-cover" />}
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#161922]" />
                   <div className="absolute left-3 top-3 rounded-full border border-[#C8A664]/25 bg-[#0D0F14]/70 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-[#C8A664] backdrop-blur">{vehicle.minRentalDays}-day min</div>
                   <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-3">
                     <div className="min-w-0">
                       <div className="text-[11px] uppercase tracking-[0.18em] text-[#C8A664]">From <Money cents={vehicle.dailyRateCents} />/day</div>
                       <div className="mt-1 truncate text-base font-medium text-[#F0F2F5]">{vehicle.name}</div>
-                      <div className="mt-1 flex items-center gap-2 text-xs text-[#9BA1B0]"><CarFront size={13} />{vehicle.specs.power} · {vehicle.specs.zeroToSixty} 0–60</div>
+                      <div className="mt-1 flex items-center gap-2 text-xs text-[#9BA1B0]"><CarFront size={13} />{vehicle.specs ? `${vehicle.specs.power} · ${vehicle.specs.zeroToSixty} 0–60` : `${vehicle.year} ${vehicle.make}`.trim()}</div>
                     </div>
                     <span className="rounded-full bg-[#C8A664] px-3 py-1 text-[11px] font-medium text-[#1A1308]">View</span>
                   </div>

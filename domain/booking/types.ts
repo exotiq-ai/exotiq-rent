@@ -55,7 +55,8 @@ export type Vehicle = {
   securityDepositCents: number;
   photos: string[];
   heroImage: string;
-  specs: {
+  /** Marketing specs exist only in mock/curated data; the public read RPCs do not expose them. */
+  specs?: {
     zeroToSixty: string;
     power: string;
     engine: string;
