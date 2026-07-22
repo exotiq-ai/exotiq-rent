@@ -5,6 +5,7 @@ import { getBookingConfirmation, createBookingCart } from '@/domain/booking/serv
 import { formatRangeLabel } from '@/domain/booking/dates';
 import { formatMoney } from '@/domain/booking/totals';
 import { HTitle, Money, PhoneViewport } from './BookingChrome';
+import { ConfirmationActions } from './ConfirmationActions';
 import { IdentityVerificationCard } from './IdentityVerificationCard';
 
 export async function ConfirmationScreen({ bookingRef, accessToken }: { bookingRef: string; accessToken?: string }) {
@@ -40,7 +41,9 @@ export async function ConfirmationScreen({ bookingRef, accessToken }: { bookingR
           <div className="relative h-56">
             <Image src={cart.vehicle.heroImage} alt={cart.vehicle.name} fill sizes="393px" className="object-cover" />
             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#161922]" />
-            <div className="absolute right-3 top-3 rounded-full bg-[#C8A664]/10 px-3 py-1 text-xs text-[#C8A664]"><span className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-[#C8A664]" />Reserved</div>
+            {/* One-time celebration: a single champagne-gold sheen across the car. */}
+            <div aria-hidden className="animate-gold-sheen pointer-events-none absolute inset-y-0 w-1/3" />
+            <div className="animate-reserve-pop absolute right-3 top-3 rounded-full bg-[#C8A664]/10 px-3 py-1 text-xs text-[#C8A664]"><span className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-[#C8A664]" />Reserved</div>
           </div>
           <div className="p-4"><HTitle>Your {cart.vehicle.make} is reserved.</HTitle><p className="mt-2 text-sm text-[#9BA1B0]">Booking {confirmation.bookingRef}</p></div>
         </div>
@@ -71,8 +74,16 @@ export async function ConfirmationScreen({ bookingRef, accessToken }: { bookingR
         )}
         <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#C8A664]/10 text-[#C8A664]">DE</div><div className="flex-1"><div className="text-sm font-medium">{cart.operator.name}</div><div className="text-xs text-[#9BA1B0]">Will reach out before pickup</div></div><a href={`tel:${cart.operator.phone}`} className="rounded-full border border-[#C8A664]/30 p-2 text-[#C8A664]" aria-label="Call operator"><Phone size={16} /></a></div></div>
         <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="mb-3 flex items-center gap-2 text-sm font-medium"><Sparkles size={16} className="text-[#C8A664]" />What happens next</div>{['Verify your identity above to confirm the booking.', 'Operator confirms final handoff details.', 'You receive pickup reminders before the rental.', 'Security deposit hold is placed on your card after your identity is verified.'].map((item, index) => <div key={item} className="flex gap-3 border-t border-[#2A2E3A] py-3 text-sm text-[#9BA1B0]"><span className="text-[#C8A664]">0{index + 1}</span>{item}</div>)}</div>
-        <button type="button" className="mt-4 w-full rounded-xl bg-[#C8A664] px-5 py-4 text-sm font-semibold text-[#1A1308]">Share your Exotiq</button>
-        <button type="button" className="mt-3 w-full rounded-xl border border-[#2A2E3A] px-5 py-4 text-sm font-semibold text-[#F0F2F5]">Add to calendar</button>
+        <ConfirmationActions
+          bookingRef={confirmation.bookingRef}
+          vehicleName={cart.vehicle.name}
+          teamSlug={cart.operator.slug}
+          vehicleSlug={cart.vehicle.slug}
+          startDate={live ? live.startAt.slice(0, 10) : cart.dates.start}
+          endDate={live ? live.endAt.slice(0, 10) : cart.dates.end}
+          pickupTime={cart.pickupTime}
+          location={live ? `${cart.operator.city}, ${cart.operator.state}` : cart.vehicle.pickupLocation.address}
+        />
       </section>
     </PhoneViewport>
   );

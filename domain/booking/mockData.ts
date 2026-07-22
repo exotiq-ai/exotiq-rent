@@ -336,8 +336,6 @@ export function createInitialCart(overrides: { operator?: Operator; vehicle?: Ve
       dob: '1985-06-14',
       phone: '+13035550184',
       email: 'gregory@example.com',
-      license: { fileId: 'mock-license', status: 'verified', thumbnailUrl: '/images/app/app-detail.png' },
-      insurance: { status: 'empty' },
     },
     extras: selectedExtras,
     protection,

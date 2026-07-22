@@ -1,6 +1,5 @@
 export type ProtectionTier = 'premium' | 'standard' | 'decline';
 export type ExtraUnit = 'flat' | 'day';
-export type VerificationStatus = 'empty' | 'pending' | 'verified' | 'rejected';
 
 export type OperatorPolicies = {
   minimumDriverAge: number;
@@ -79,19 +78,11 @@ export type ExtraSelection = {
   defaultSelected?: boolean;
 };
 
-export type DriverDocument = {
-  fileId?: string;
-  status: VerificationStatus;
-  thumbnailUrl?: string;
-};
-
 export type Driver = {
   name: string;
   dob: string;
   phone: string;
   email?: string;
-  license: DriverDocument;
-  insurance: DriverDocument;
 };
 
 export type BookingTotals = {

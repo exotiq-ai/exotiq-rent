@@ -1,9 +1,8 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { Check, CheckCircle2, ChevronRight, FileText, Plus, Upload } from 'lucide-react';
+import { Check, CheckCircle2, FileText } from 'lucide-react';
 import { HTitle, Money } from '../BookingChrome';
-import type { VerificationStatus } from '@/domain/booking/types';
 
 export function SelectableCard({
   children,
@@ -84,65 +83,6 @@ export function RunningTotalCard({
         <Money cents={amountCents} large />
       </div>
     </div>
-  );
-}
-
-export function UploadCard({
-  title,
-  subtitle,
-  status,
-  onClick,
-  tone = 'gold',
-}: {
-  title: string;
-  subtitle: string;
-  status: VerificationStatus;
-  onClick: () => void;
-  tone?: 'gold' | 'slate';
-}) {
-  const verified = status === 'verified';
-  const gradient = tone === 'gold'
-    ? 'linear-gradient(160deg, rgba(200,166,100,0.18), rgba(200,166,100,0.04) 60%, rgba(0,0,0,0.35))'
-    : 'linear-gradient(160deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02) 60%, rgba(0,0,0,0.35))';
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="mt-3 w-full overflow-hidden rounded-xl border text-left transition"
-      style={{
-        borderColor: verified ? '#C8A664' : '#2A2E3A',
-        background: verified ? 'linear-gradient(180deg, rgba(200,166,100,0.06), rgba(200,166,100,0.015))' : '#161922',
-        boxShadow: verified ? '0 0 0 1px #C8A664, 0 0 18px rgba(200,166,100,0.08)' : 'none',
-      }}
-    >
-      <div className="relative h-[92px] border-b border-[#2A2E3A] bg-[repeating-linear-gradient(45deg,rgba(255,255,255,0.012)_0_12px,rgba(255,255,255,0.025)_12px_13px)]">
-        {verified ? (
-          <div className="absolute inset-y-[14px] left-[14px] right-[60px] flex items-end rounded-md border border-white/10 p-2" style={{ background: gradient }}>
-            <div className="space-y-1">
-              <div className="h-1 w-16 rounded bg-white/50" />
-              <div className="h-[3px] w-10 rounded bg-white/30" />
-            </div>
-          </div>
-        ) : (
-          <div className="absolute inset-0 grid place-items-center text-[#5C6272]">
-            <div className="flex flex-col items-center gap-2">
-              <Upload size={22} strokeWidth={1.5} />
-              <span className="text-[10px] uppercase tracking-[0.22em]">Tap to upload</span>
-            </div>
-          </div>
-        )}
-        {verified && <div className="absolute right-3 top-3 rounded-full bg-[#C8A664]/10 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-[#C8A664]"><span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-[#C8A664]" />Verified</div>}
-      </div>
-      <div className="flex items-center gap-3 p-4">
-        <div className="min-w-0 flex-1">
-          <div className="text-sm font-medium text-[#F0F2F5]">{title}</div>
-          <div className="mt-1 text-[11px] text-[#9BA1B0]">{subtitle}</div>
-        </div>
-        {verified ? <span className="text-[11px] uppercase tracking-[0.14em] text-[#5C6272]">Replace</span> : <span className="grid h-8 w-8 place-items-center rounded-full border border-[#2A2E3A] bg-[#1E2230] text-[#9BA1B0]"><Plus size={14} /></span>}
-        <ChevronRight size={16} className="text-[#5C6272]" />
-      </div>
-    </button>
   );
 }
 
