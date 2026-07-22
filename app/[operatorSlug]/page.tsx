@@ -4,11 +4,14 @@ import { notFound } from 'next/navigation';
 import { CalendarX2, CarFront, FileCheck2, Fuel, Gauge, MapPin, Phone, ShieldCheck, Sparkles, Truck } from 'lucide-react';
 import { driveFontClassName } from '@/components/drive-exotiq/fonts';
 import { HTitle, Money, PhoneViewport } from '@/components/drive-exotiq/BookingChrome';
+import { getSiteMode } from '@/domain/booking/config';
 import { getPublicTeamStorefront } from '@/domain/booking/service';
 
 type Props = { params: { operatorSlug: string } };
 
 export async function generateMetadata({ params }: Props) {
+  // Marketplace-mode deploys (exotiq.rent) do not route the booking flow.
+  if (getSiteMode() === 'marketplace') notFound();
   const teamSlug = params.operatorSlug;
   const storefront = await getPublicTeamStorefront(teamSlug);
   // notFound() here (before streaming starts) keeps the HTTP status 404;
