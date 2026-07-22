@@ -9,6 +9,20 @@
 
 export type DataMode = 'mock' | 'supabase';
 
+/**
+ * Which product a deploy serves (URL split, 2026-07-22):
+ * - `booking` (default): the Gold booking flow — root redirects to the demo
+ *   storefront. Runs at book.exotiq.rent.
+ * - `marketplace`: the public marketing/marketplace mockup at the root, with
+ *   the entire booking flow unrouteable (branded 404). Runs at exotiq.rent
+ *   until the marketplace gets the gold treatment and booking goes live.
+ */
+export type SiteMode = 'booking' | 'marketplace';
+
+export function getSiteMode(): SiteMode {
+  return process.env.NEXT_PUBLIC_SITE_MODE === 'marketplace' ? 'marketplace' : 'booking';
+}
+
 export function getDataMode(): DataMode {
   if (process.env.NEXT_PUBLIC_EXOTIQ_RENT_DATA_MODE !== 'supabase') return 'mock';
   if (!getSupabaseUrl() || !getSupabaseAnonKey() || !getStripePublishableKey()) return 'mock';

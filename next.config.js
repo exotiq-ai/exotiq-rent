@@ -1,9 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async redirects() {
-    // Demo (D7): land visitors straight on the demo storefront instead of
-    // the legacy marketplace homepage. Temporary (307) so it can be
-    // repointed or removed without browsers caching it.
+    // Site split (2026-07-22): booking mode (default, book.exotiq.rent)
+    // lands visitors straight on the demo storefront. Marketplace mode
+    // (exotiq.rent, NEXT_PUBLIC_SITE_MODE=marketplace) serves the public
+    // marketplace mockup at the root instead. Temporary (307) so it can be
+    // repointed without browsers caching it.
+    if (process.env.NEXT_PUBLIC_SITE_MODE === 'marketplace') return [];
     return [{ source: '/', destination: '/desert-exotic-rentals', permanent: false }];
   },
   images: {

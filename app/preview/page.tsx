@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { getSiteMode } from '@/domain/booking/config';
 
 export const metadata: Metadata = {
   title: 'Drive Exotiq Preview | Booking Flow',
@@ -26,6 +28,8 @@ const links = [
 ];
 
 export default function PreviewPage() {
+  // Marketplace-mode deploys (exotiq.rent) do not route the booking flow.
+  if (getSiteMode() === 'marketplace') notFound();
   return (
     <main className="min-h-screen bg-[#06070a] px-5 py-8 text-[#F0F2F5]" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
       <section className="mx-auto max-w-[460px] rounded-[28px] border border-[#2A2E3A] bg-[#0D0F14] p-5 shadow-2xl shadow-black/40">
