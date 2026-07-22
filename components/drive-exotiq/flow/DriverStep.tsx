@@ -2,8 +2,8 @@
 
 import { IdCard } from 'lucide-react';
 import { PrimaryButton } from '../BookingChrome';
-import type { BookingCart, Driver, VerificationStatus } from '@/domain/booking/types';
-import { ScreenShell, StepHeader, Sticky, UploadCard } from './shared';
+import type { BookingCart, Driver } from '@/domain/booking/types';
+import { ScreenShell, StepHeader, Sticky } from './shared';
 
 function ageOn(dobIso: string, onIso: string): number {
   const dob = new Date(`${dobIso}T00:00:00Z`);
@@ -16,7 +16,6 @@ function ageOn(dobIso: string, onIso: string): number {
 
 export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart: (cart: BookingCart) => void; next: () => void }) {
   const setDriver = (patch: Partial<Driver>) => setCart({ ...cart, driver: { ...cart.driver, ...patch } });
-  const setDoc = (kind: 'license' | 'insurance', status: VerificationStatus) => setDriver({ [kind]: { fileId: `mock-${kind}`, status, thumbnailUrl: '/images/app/app-detail.png' } });
 
   const minAge = cart.operator.policies?.minimumDriverAge ?? 25;
   const driverAge = cart.driver.dob ? ageOn(cart.driver.dob, cart.dates.start) : 0;
@@ -26,9 +25,9 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
     Boolean(cart.driver.dob) &&
     cart.driver.phone.replace(/\D/g, '').length >= 10 &&
     (cart.driver.email ?? '').includes('@');
-  // ID verification moved post-payment (ID plan V1 ruling) — only insurance
-  // is collected here now (V5: separate path from Stripe Identity).
-  const canContinue = fieldsComplete && !tooYoung && cart.driver.insurance.status === 'verified';
+  // ID verification is post-payment via Stripe Identity (ID plan V1 ruling);
+  // insurance is handled with the operator before pickup, not collected here.
+  const canContinue = fieldsComplete && !tooYoung;
 
   const fieldClass = 'mt-1 w-full rounded-lg border border-[#2A2E3A] bg-[#10131A] px-3 py-2.5 text-sm text-[#F0F2F5] outline-none transition placeholder:text-[#3D4250] focus:border-[#C8A664]/60 [color-scheme:dark]';
 
@@ -61,7 +60,7 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
             {cart.operator.name} requires drivers to be {minAge}+ on the pickup date for this rental.
           </p>
         )}
-        <div className="mt-5 px-1 text-[10px] uppercase tracking-[0.24em] text-[#5C6272]">Documents</div>
+        <div className="mt-5 px-1 text-[10px] uppercase tracking-[0.24em] text-[#5C6272]">Verification</div>
         <div className="mt-3 flex items-start gap-3 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
           <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#C8A664]/10 text-[#C8A664]"><IdCard size={18} /></div>
           <div>
@@ -69,7 +68,6 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
             <p className="mt-1 text-xs leading-5 text-[#9BA1B0]">You&apos;ll verify your identity right after payment — takes two minutes, have your license ready.</p>
           </div>
         </div>
-        <UploadCard title="Proof of insurance" subtitle="Personal policy declaration page" status={cart.driver.insurance.status} tone="slate" onClick={() => setDoc('insurance', 'verified')} />
         <p className="mt-4 rounded-xl border border-dashed border-[#2A2E3A] bg-transparent p-3 text-[11.5px] leading-5 text-[#9BA1B0]">Exotiq never stores your ID — identity documents are processed securely by Stripe, our verification partner. Verified status lasts until your document expires.</p>
       </ScreenShell>
       <Sticky><PrimaryButton onClick={next} disabled={!canContinue}>Continue</PrimaryButton></Sticky>
