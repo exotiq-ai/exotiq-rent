@@ -2,9 +2,11 @@
  * Data-mode switch (M4 architecture, introduced for identity live mode).
  *
  * Mock is the default and requires NO environment — the demo depends on it.
- * `supabase` mode is explicit opt-in and needs all three public env vars;
+ * `supabase` mode is explicit opt-in and needs the Supabase URL + anon key;
  * anything missing falls back to mock so a misconfigured deploy degrades to
- * the working demo instead of a broken live surface.
+ * the working demo instead of a broken live surface. The Stripe publishable
+ * key is optional: without it, identity verification uses Stripe's hosted
+ * page instead of the embedded modal (see IdentityVerificationCard).
  */
 
 export type DataMode = 'mock' | 'supabase';
@@ -25,7 +27,7 @@ export function getSiteMode(): SiteMode {
 
 export function getDataMode(): DataMode {
   if (process.env.NEXT_PUBLIC_EXOTIQ_RENT_DATA_MODE !== 'supabase') return 'mock';
-  if (!getSupabaseUrl() || !getSupabaseAnonKey() || !getStripePublishableKey()) return 'mock';
+  if (!getSupabaseUrl() || !getSupabaseAnonKey()) return 'mock';
   return 'supabase';
 }
 

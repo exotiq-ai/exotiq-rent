@@ -43,6 +43,7 @@ export async function createLiveIdentitySession(input: {
     sessionId: body.session_id,
     status: body.status ?? 'created',
     clientSecret: body.client_secret ?? undefined,
+    hostedUrl: body.url ?? undefined,
   };
 }
 

@@ -16,11 +16,18 @@ describe('data mode switch', () => {
     expect(getDataMode()).toBe('mock');
   });
 
-  it('enters supabase mode only with the full env set', () => {
+  it('enters supabase mode with the full env set', () => {
     vi.stubEnv('NEXT_PUBLIC_EXOTIQ_RENT_DATA_MODE', 'supabase');
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://example.supabase.co');
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', 'anon-key');
     vi.stubEnv('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY', 'pk_test_x');
+    expect(getDataMode()).toBe('supabase');
+  });
+
+  it('enters supabase mode without a Stripe key (IDV falls back to the hosted page)', () => {
+    vi.stubEnv('NEXT_PUBLIC_EXOTIQ_RENT_DATA_MODE', 'supabase');
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://example.supabase.co');
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', 'anon-key');
     expect(getDataMode()).toBe('supabase');
   });
 });
