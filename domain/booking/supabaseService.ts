@@ -27,7 +27,12 @@ export async function getSupabaseTeamStorefront(teamSlug: string): Promise<Publi
   if (!teamRow) return null;
   const team = adaptTeam(teamRow);
   const fleetRows = await fetchPublicTeamFleet(teamSlug);
-  return { team, vehicles: fleetRows.map((row) => adaptFleetVehicle(row, team)) };
+  // Storefront quality gate (marketplace testing handoff, gap #3): vehicles
+  // without a hero image render as blank cards, so they are excluded from
+  // the public listing until photos are seeded. Direct vehicle URLs still
+  // resolve — this filters the grid, not the catalog.
+  const listable = fleetRows.filter((row) => Boolean(row.hero_image_url));
+  return { team, vehicles: listable.map((row) => adaptFleetVehicle(row, team)) };
 }
 
 export async function getSupabaseVehicleContext(teamSlug: string, vehicleSlug: string): Promise<PublicVehicleContext | null> {
