@@ -59,6 +59,8 @@ export type IdentityVerificationStart = {
   status: IdentityVerificationStatus;
   /** Absent when the renter is already verified (marketplace-wide reuse, V7). */
   clientSecret?: string;
+  /** Stripe-hosted verification page — the fallback when no publishable key is configured for the modal. */
+  hostedUrl?: string;
   reused?: boolean;
 };
 

@@ -84,7 +84,7 @@ export function IdentityVerificationCard({ bookingRef, initialStatus }: { bookin
       }
       sessionRef.current = start.sessionId;
 
-      if (isLive && start.clientSecret) {
+      if (isLive && start.clientSecret && getStripePublishableKey()) {
         const { loadStripe } = await import('@stripe/stripe-js');
         const stripe = await loadStripe(getStripePublishableKey());
         if (!stripe) throw new Error('Stripe failed to load');
@@ -94,6 +94,10 @@ export function IdentityVerificationCard({ bookingRef, initialStatus }: { bookin
           setStatus('idle');
           return;
         }
+      } else if (isLive && start.hostedUrl) {
+        // No publishable key configured — hand off to Stripe's hosted page in a
+        // new tab and keep polling here; the webhook flips the status either way.
+        window.open(start.hostedUrl, '_blank', 'noopener');
       }
       poll();
     } catch (err) {
