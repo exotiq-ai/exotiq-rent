@@ -10,18 +10,27 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug }: { operator
   const result = await getPublicVehicleContext(teamSlug, vehicleSlug);
   if (!result) notFound();
   const { team: operator, vehicle } = result;
-  const specs = [
-    { label: '0–60 mph', value: vehicle.specs.zeroToSixty, icon: Gauge },
-    { label: 'Power', value: vehicle.specs.power, icon: Zap },
-    { label: 'Engine', value: vehicle.specs.engine, icon: CircleDot },
-    { label: 'Transmission', value: vehicle.specs.transmission, icon: Settings2 },
-  ];
+  // Marketing specs are curated (mock) data; real reads expose year/make/model
+  // instead, so the grid adapts to what exists.
+  const specs = vehicle.specs
+    ? [
+        { label: '0–60 mph', value: vehicle.specs.zeroToSixty, icon: Gauge },
+        { label: 'Power', value: vehicle.specs.power, icon: Zap },
+        { label: 'Engine', value: vehicle.specs.engine, icon: CircleDot },
+        { label: 'Transmission', value: vehicle.specs.transmission, icon: Settings2 },
+      ]
+    : [
+        { label: 'Year', value: String(vehicle.year || '—'), icon: Gauge },
+        { label: 'Make', value: vehicle.make || '—', icon: Zap },
+        { label: 'Model', value: vehicle.model || '—', icon: CircleDot },
+        { label: 'Daily rate', value: `$${Math.round(vehicle.dailyRateCents / 100)}`, icon: Settings2 },
+      ];
 
   return (
     <PhoneViewport step={1} stepStyle="numbered" className="font-[var(--font-drive-inter)]">
       <div className="flex-1 overflow-y-auto px-4 pb-36 pt-1 [scrollbar-width:none]">
-        <div className="relative -mx-4 mt-[-4px] h-[260px] overflow-hidden">
-          <Image src={vehicle.heroImage} alt={vehicle.name} fill sizes="480px" priority className="object-cover object-[50%_52%]" />
+        <div className="relative -mx-4 mt-[-4px] h-[260px] overflow-hidden bg-[#161922]">
+          {vehicle.heroImage && <Image src={vehicle.heroImage} alt={vehicle.name} fill sizes="480px" priority className="object-cover object-[50%_52%]" />}
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0D0F14]/10 to-[#0D0F14]" />
           <div className="pointer-events-none absolute inset-0 opacity-[0.10] [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] [background-size:4px_4px]" />
           <div className="absolute bottom-4 left-4 right-4">

@@ -1,5 +1,6 @@
 import { getDataMode } from './config';
 import { createLiveIdentitySession, getLiveIdentityState } from './identityClient';
+import { getSupabaseTeamStorefront, getSupabaseVehicleContext } from './supabaseService';
 import { createInitialCart, curatedExtras } from './mockData';
 import {
   getMockBookingConfirmation,
@@ -25,10 +26,12 @@ import type { BookingCart, ExtraSelection, Operator, Vehicle } from './types';
  * components or booking-flow UI internals.
  */
 export async function getPublicTeamStorefront(teamSlug: string): Promise<PublicTeamStorefront | null> {
+  if (getDataMode() === 'supabase') return getSupabaseTeamStorefront(teamSlug);
   return getMockPublicTeamStorefront(teamSlug);
 }
 
 export async function getPublicVehicleContext(teamSlug: string, vehicleSlug: string): Promise<PublicVehicleContext | null> {
+  if (getDataMode() === 'supabase') return getSupabaseVehicleContext(teamSlug, vehicleSlug);
   return getMockPublicVehicleContext(teamSlug, vehicleSlug);
 }
 
@@ -37,6 +40,8 @@ export async function getBookingStartContext(teamSlug: string, vehicleSlug: stri
 }
 
 export async function getBookingConfirmation(bookingRef: string): Promise<PublicBookingConfirmation | null> {
+  // Real booking reads arrive with M5 (there are no renter-created bookings
+  // yet); confirmation stays mock-backed in both modes until then.
   return getMockBookingConfirmation(bookingRef);
 }
 
