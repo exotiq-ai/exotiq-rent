@@ -1,6 +1,11 @@
 import { getDataMode } from './config';
 import { createLiveIdentitySession, getLiveIdentityState } from './identityClient';
-import { getSupabaseTeamStorefront, getSupabaseVehicleContext } from './supabaseService';
+import {
+  createSupabaseRenterBooking,
+  getSupabaseBookingConfirmation,
+  getSupabaseTeamStorefront,
+  getSupabaseVehicleContext,
+} from './supabaseService';
 import { createInitialCart, curatedExtras } from './mockData';
 import {
   getMockBookingConfirmation,
@@ -10,9 +15,10 @@ import {
   startMockIdentityVerification,
 } from './mockService';
 import type {
+  BookingLookupResult,
+  CreateBookingResult,
   IdentityVerificationStart,
   IdentityVerificationState,
-  PublicBookingConfirmation,
   PublicTeamStorefront,
   PublicVehicleContext,
 } from './publicContracts';
@@ -39,10 +45,19 @@ export async function getBookingStartContext(teamSlug: string, vehicleSlug: stri
   return getPublicVehicleContext(teamSlug, vehicleSlug);
 }
 
-export async function getBookingConfirmation(bookingRef: string): Promise<PublicBookingConfirmation | null> {
-  // Real booking reads arrive with M5 (there are no renter-created bookings
-  // yet); confirmation stays mock-backed in both modes until then.
+export async function getBookingConfirmation(bookingRef: string, accessToken?: string): Promise<BookingLookupResult> {
+  if (getDataMode() === 'supabase') return getSupabaseBookingConfirmation(bookingRef, accessToken);
   return getMockBookingConfirmation(bookingRef);
+}
+
+/**
+ * M5 booking creation. Supabase mode calls rent-create-booking (server-side
+ * re-quote + transactional overlap guard); mock mode keeps the demo's fixed
+ * confirmation ref.
+ */
+export async function createRenterBooking(cart: BookingCart): Promise<CreateBookingResult> {
+  if (getDataMode() === 'supabase') return createSupabaseRenterBooking(cart);
+  return { bookingRef: 'BK-01001', status: 'pending_documents' };
 }
 
 export function createBookingCart(overrides: { operator?: Operator; vehicle?: Vehicle } = {}): BookingCart {

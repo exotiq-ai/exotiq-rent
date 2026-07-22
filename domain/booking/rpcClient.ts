@@ -150,6 +150,60 @@ export async function fetchVehicleQuote(
   return rows[0] ?? null;
 }
 
+export type RpcBookingByRefRow = {
+  booking_ref: string;
+  status: string;
+  team_slug: string | null;
+  team_name: string | null;
+  vehicle_slug: string | null;
+  vehicle_name: string | null;
+  start_at: string | null;
+  end_at: string | null;
+  total_cents: number | null;
+  currency: string | null;
+  authorized: boolean;
+};
+
+export async function fetchBookingByRef(bookingRef: string, token?: string): Promise<RpcBookingByRefRow | null> {
+  const rows = await rpc<RpcBookingByRefRow[]>(
+    'public_booking_by_ref',
+    { _booking_ref: bookingRef, _token: token ?? null },
+    { noStore: true },
+  );
+  return rows[0] ?? null;
+}
+
+export type CreateBookingRequest = {
+  team_slug: string;
+  vehicle_slug: string;
+  start_date: string;
+  end_date: string;
+  pickup_time: string;
+  protection: 'premium' | 'standard' | 'decline';
+  driver: { name: string; email: string; phone: string };
+};
+
+export type CreateBookingResponse = {
+  booking_ref: string;
+  confirmation_token: string;
+  status: string;
+  identity_verified: boolean;
+};
+
+export async function postCreateBooking(request: CreateBookingRequest): Promise<CreateBookingResponse> {
+  const response = await fetch(`${getFunctionsBaseUrl()}/rent-create-booking`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify(request),
+    cache: 'no-store',
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(body.error ?? `Booking could not be created (${response.status})`);
+  }
+  return body as CreateBookingResponse;
+}
+
 export async function fetchSignedVehicleMedia(teamSlug: string, vehicleSlug: string): Promise<SignedMediaResponse> {
   const url = `${getFunctionsBaseUrl()}/rent-public-media?team=${encodeURIComponent(teamSlug)}&vehicle=${encodeURIComponent(vehicleSlug)}`;
   const response = await fetch(url, {

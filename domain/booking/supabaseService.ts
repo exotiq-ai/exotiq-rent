@@ -1,12 +1,15 @@
 import { adaptBusyRanges, adaptFleetVehicle, adaptTeam, adaptVehicleDetail } from './adapters';
 import {
+  fetchBookingByRef,
   fetchPublicTeam,
   fetchPublicTeamFleet,
   fetchPublicVehicle,
   fetchSignedVehicleMedia,
   fetchVehicleAvailability,
+  postCreateBooking,
 } from './rpcClient';
-import type { PublicTeamStorefront, PublicVehicleContext } from './publicContracts';
+import type { BookingCart, } from './types';
+import type { BookingLookupResult, CreateBookingResult, PublicTeamStorefront, PublicVehicleContext } from './publicContracts';
 
 /**
  * Supabase-mode reads (M4): real storefronts from the five public RPCs.
@@ -53,4 +56,53 @@ export async function getSupabaseVehicleContext(teamSlug: string, vehicleSlug: s
 
   const vehicle = adaptVehicleDetail(vehicleRow, team, media);
   return { team, vehicle: { ...vehicle, unavailableRanges: adaptBusyRanges(busyRows) } };
+}
+
+export async function createSupabaseRenterBooking(cart: BookingCart): Promise<CreateBookingResult> {
+  const response = await postCreateBooking({
+    team_slug: cart.operator.slug,
+    vehicle_slug: cart.vehicle.slug,
+    start_date: cart.dates.start,
+    end_date: cart.dates.end,
+    pickup_time: cart.pickupTime,
+    protection: cart.protection,
+    driver: {
+      name: cart.driver.name,
+      email: cart.driver.email ?? '',
+      phone: cart.driver.phone,
+    },
+  });
+  return {
+    bookingRef: response.booking_ref,
+    confirmationToken: response.confirmation_token,
+    status: response.status,
+    identityVerified: response.identity_verified,
+  };
+}
+
+export async function getSupabaseBookingConfirmation(bookingRef: string, token?: string): Promise<BookingLookupResult> {
+  const row = await fetchBookingByRef(bookingRef, token);
+  if (!row) return null;
+  if (!row.authorized || !row.team_slug || !row.vehicle_slug) {
+    // D4: no token, no details.
+    return { restricted: true, bookingRef: row.booking_ref, status: row.status };
+  }
+
+  const context = await getSupabaseVehicleContext(row.team_slug, row.vehicle_slug);
+  if (!context) {
+    // Vehicle dropped off the marketplace after booking — still show the summary.
+    return { restricted: true, bookingRef: row.booking_ref, status: row.status };
+  }
+
+  return {
+    bookingRef: row.booking_ref,
+    team: context.team,
+    vehicle: context.vehicle,
+    live: {
+      status: row.status,
+      startAt: row.start_at ?? '',
+      endAt: row.end_at ?? '',
+      totalCents: Number(row.total_cents ?? 0),
+    },
+  };
 }
