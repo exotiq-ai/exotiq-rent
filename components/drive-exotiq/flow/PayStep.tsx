@@ -6,7 +6,7 @@ import { formatMoney } from '@/domain/booking/totals';
 import type { BookingCart } from '@/domain/booking/types';
 import { ScreenShell, StepHeader, Sticky } from './shared';
 
-export function PayStep({ cart, onPay }: { cart: BookingCart; onPay: () => void }) {
+export function PayStep({ cart, onPay, paying = false, payError }: { cart: BookingCart; onPay: () => void; paying?: boolean; payError?: string }) {
   const platformPercent = Math.round(cart.totals.platformFeeRate * 100);
 
   return (
@@ -59,13 +59,16 @@ export function PayStep({ cart, onPay }: { cart: BookingCart; onPay: () => void 
           </div>
         </div>
 
-        <button type="button" onClick={onPay} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-black px-5 py-4 text-sm font-semibold text-white"><WalletCards size={18} /> Continue with Stripe checkout</button>
+        <button type="button" onClick={onPay} disabled={paying} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-black px-5 py-4 text-sm font-semibold text-white disabled:opacity-60"><WalletCards size={18} /> {paying ? 'Reserving…' : 'Continue with Stripe checkout'}</button>
         <p className="mt-3 text-center text-xs text-[#9BA1B0]">Free cancellation up to 72 hours before pickup.</p>
         <div className="my-5 flex items-center gap-3 text-[10px] uppercase tracking-[0.22em] text-[#5C6272]"><span className="h-px flex-1 bg-[#2A2E3A]" />Preview payment method<span className="h-px flex-1 bg-[#2A2E3A]" /></div>
         <div className="rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#C8A664]/10 text-[#C8A664]"><CreditCard size={18} /></div><div className="flex-1"><div className="text-sm font-medium">Stripe Checkout placeholder</div><div className="mt-1 text-xs text-[#9BA1B0]">Backend will return a hosted checkout URL; no card data enters app state.</div></div></div></div>
         <p className="mt-4 text-center text-xs text-[#5C6272]">No raw card data is collected in this preview.</p>
       </ScreenShell>
-      <Sticky><PrimaryButton onClick={onPay}>Reserve for {formatMoney(cart.totals.grandTotalCents)}</PrimaryButton></Sticky>
+      <Sticky>
+        {payError && <p className="rounded-xl border border-[#FFB84D]/45 bg-[#FFB84D]/10 p-3 text-center text-xs leading-5 text-[#F0F2F5]">{payError}</p>}
+        <PrimaryButton onClick={onPay} disabled={paying}>{paying ? 'Reserving…' : `Reserve for ${formatMoney(cart.totals.grandTotalCents)}`}</PrimaryButton>
+      </Sticky>
     </>
   );
 }

@@ -26,8 +26,8 @@ function storedDriverEmail(): string {
  * supabase mode opens the Stripe Identity modal and trusts the webhook-backed
  * status endpoint.
  */
-export function IdentityVerificationCard({ bookingRef }: { bookingRef: string }) {
-  const [status, setStatus] = useState<IdentityVerificationStatus | 'idle'>('idle');
+export function IdentityVerificationCard({ bookingRef, initialStatus }: { bookingRef: string; initialStatus?: 'verified' }) {
+  const [status, setStatus] = useState<IdentityVerificationStatus | 'idle'>(initialStatus ?? 'idle');
   const [errorReason, setErrorReason] = useState<string | undefined>();
   const [email, setEmail] = useState('');
   const [needsEmail, setNeedsEmail] = useState(false);

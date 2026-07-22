@@ -14,6 +14,29 @@ export type PublicBookingConfirmation = {
   bookingRef: string;
   team: Operator;
   vehicle: Vehicle;
+  /** Present when the confirmation was read from a real booking (supabase mode). */
+  live?: {
+    status: string;
+    startAt: string;
+    endAt: string;
+    totalCents: number;
+  };
+};
+
+/** D4: a booking ref without its access token reveals existence + status only. */
+export type RestrictedBookingLookup = {
+  restricted: true;
+  bookingRef: string;
+  status: string;
+};
+
+export type BookingLookupResult = PublicBookingConfirmation | RestrictedBookingLookup | null;
+
+export type CreateBookingResult = {
+  bookingRef: string;
+  confirmationToken?: string;
+  status: string;
+  identityVerified?: boolean;
 };
 
 export type AvailabilityBusyRange = {

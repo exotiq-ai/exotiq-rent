@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { mockOperators, mockVehicles } from './mockData';
-import { getBookingConfirmation, getPublicTeamStorefront, getPublicVehicleContext } from './service';
+import { createInitialCart, mockOperators, mockVehicles } from './mockData';
+import { createRenterBooking, getBookingConfirmation, getPublicTeamStorefront, getPublicVehicleContext } from './service';
 
 describe('booking service facade mock mode', () => {
   it('returns a public storefront with multiple vehicles for a known team', async () => {
@@ -28,7 +28,8 @@ describe('booking service facade mock mode', () => {
     const confirmation = await getBookingConfirmation('BK-01001');
 
     expect(confirmation?.bookingRef).toBe('BK-01001');
-    expect(confirmation?.team.slug).toBe('desert-exotic-rentals');
+    if (!confirmation || 'restricted' in confirmation) throw new Error('expected a full mock confirmation');
+    expect(confirmation.team.slug).toBe('desert-exotic-rentals');
   });
 
   it('has a demo-sized catalog: 3 teams and 6+ visible vehicles with varied rates and minimums', async () => {
@@ -42,6 +43,13 @@ describe('booking service facade mock mode', () => {
     expect(new Set(visibleVehicles.map((vehicle) => vehicle.minRentalDays)).size).toBeGreaterThan(1);
     expect(visibleVehicles.some((vehicle) => (vehicle.unavailableRanges?.length ?? 0) > 0)).toBe(true);
     expect(visibleVehicles.every((vehicle) => vehicle.photos.length >= 2)).toBe(true);
+  });
+
+  it('creates a mock booking with the demo ref and pending_documents status (V1 ruling)', async () => {
+    const result = await createRenterBooking(createInitialCart());
+    expect(result.bookingRef).toBe('BK-01001');
+    expect(result.status).toBe('pending_documents');
+    expect(result.confirmationToken).toBeUndefined();
   });
 
   it('never exposes hidden vehicles through the storefront or by slug', async () => {
