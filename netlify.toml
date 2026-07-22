@@ -1,0 +1,8 @@
+# Both Netlify sites build this repo from main:
+#   exotiqrent       -> exotiq.rent       (NEXT_PUBLIC_SITE_MODE=marketplace)
+#   book-exotiq-rent -> book.exotiq.rent  (+ demo.exotiq.rent alias; default booking mode)
+# The Next.js runtime plugin is required to serve the app at all — a site
+# created without it publishes .next as static files and 404s everywhere.
+# Per-site behavior stays in each site's Netlify env vars, never in this file.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
