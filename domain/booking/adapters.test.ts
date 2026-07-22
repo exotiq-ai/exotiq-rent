@@ -115,5 +115,34 @@ describe('M4 adapters (RPC rows -> domain, dollars -> cents)', () => {
     expect(quote.platformFeeRate).toBeCloseTo(0.1);
     expect(quote.platformFeeCents).toBe(59970);
     expect(quote.protectionTotalCents).toBe(86700);
+    // No deposit_cents in the row → nothing held, nothing stripped.
+    expect(quote.depositHoldCents).toBe(0);
+    expect(quote.operatorTaxesCents).toBe(0);
+  });
+
+  it('strips the deposit out of the charge lines (2026-07-22 quote shape)', () => {
+    // Live sample: $500/day x 3, 10% fee, premium protection, $1,500 deposit
+    // rolled into operator_total and grand_total by the backend.
+    const quoteRow: RpcQuoteRow = {
+      currency: 'usd',
+      rental_days: 3,
+      daily_rate_cents: 50000,
+      rental_subtotal_cents: 150000,
+      deposit_cents: 150000,
+      operator_total_cents: 300000,
+      platform_fee_percent: 10,
+      platform_fee_cents: 15000,
+      protection_tier: 'premium',
+      protection_daily_cents: 28900,
+      protection_total_cents: 86700,
+      exotiq_total_cents: 101700,
+      grand_total_cents: 401700,
+    };
+    const quote = adaptQuote(quoteRow);
+    // Charges exclude the hold: $1,500 rental + $150 fee + $867 protection.
+    expect(quote.operatorTotalCents).toBe(150000);
+    expect(quote.operatorTaxesCents).toBe(0);
+    expect(quote.grandTotalCents).toBe(251700);
+    expect(quote.depositHoldCents).toBe(150000);
   });
 });

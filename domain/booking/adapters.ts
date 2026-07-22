@@ -94,21 +94,27 @@ export function adaptBusyRanges(rows: RpcBusyRangeRow[]): UnavailableDateRange[]
 }
 
 export function adaptQuote(row: RpcQuoteRow): PublicQuote {
+  // The 2026-07-22 backend fee update rolled the security deposit into
+  // operator_total_cents and grand_total_cents. Renter-facing semantics keep
+  // the deposit as a separate authorization hold (matching mock totals), so
+  // strip it back out of the charge lines here.
+  const depositCents = Number(row.deposit_cents ?? 0);
+  const operatorChargeCents = Number(row.operator_total_cents) - depositCents;
   return {
     currency: 'usd',
     rentalDays: row.rental_days,
     dailyRateCents: Number(row.daily_rate_cents),
     rentalSubtotalCents: Number(row.rental_subtotal_cents),
     extrasSubtotalCents: 0, // extras are outside the fee base (D9) and not in the M3 quote
-    operatorTaxesCents: Number(row.operator_total_cents) - Number(row.rental_subtotal_cents),
-    operatorTotalCents: Number(row.operator_total_cents),
+    operatorTaxesCents: operatorChargeCents - Number(row.rental_subtotal_cents),
+    operatorTotalCents: operatorChargeCents,
     platformFeeRate: Number(row.platform_fee_percent) / 100,
     platformFeeCents: Number(row.platform_fee_cents),
     protectionDailyRateCents: Number(row.protection_daily_cents),
     protectionTotalCents: Number(row.protection_total_cents),
     exotiqTotalCents: Number(row.exotiq_total_cents),
-    grandTotalCents: Number(row.grand_total_cents),
-    depositHoldCents: 0, // deposit surfaces at booking time (M5)
+    grandTotalCents: Number(row.grand_total_cents) - depositCents,
+    depositHoldCents: depositCents,
     cancellationPolicy: {
       freeCancellationHours: 72,
       platformFeeRefundableInWindow: true,

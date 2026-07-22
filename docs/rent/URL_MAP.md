@@ -7,7 +7,7 @@
 | URL | Netlify site | Site mode | Data mode | Serves |
 |-----|--------------|-----------|-----------|--------|
 | `https://exotiq.rent` | `exotiqrent` (`1ec963dc-2d50-400d-bc1c-6049ce9d62e5`) | `marketplace` | mock | Marketplace mockup at `/`. All booking routes 404. |
-| `https://book.exotiq.rent` | `book-exotiq-rent` (`2fcbaa5b-d700-461d-bbd5-7af4917ef997`) | `booking` | **supabase (LIVE)** | Gold flow on the **live Exotiq fleet**. `/` → 307 → `/exotiq-`. Temp `/exotiq` → `/exotiq-` until the backend slug rename. |
+| `https://book.exotiq.rent` | `book-exotiq-rent` (`2fcbaa5b-d700-461d-bbd5-7af4917ef997`) | `booking` | **supabase (LIVE)** | Gold flow on the **live Exotiq fleet**. `/` → 307 → `/exotiq`. Legacy `exotiq-` URLs (pre-rename shares) 307 to `exotiq`. |
 | `https://demo.exotiq.rent` | `demo-exotiq-rent` (`a2eef772-4503-47f8-8aa8-d100f04699a6`) | `booking` | mock | The gold **mock demo** (desert-exotic-rentals). Old demo links keep working. |
 
 ## Verified route matrix (2026-07-22, post-flip)
@@ -28,17 +28,14 @@
 NEXT_PUBLIC_EXOTIQ_RENT_DATA_MODE=supabase
 NEXT_PUBLIC_SUPABASE_URL=https://jlgwbbqydjeokypoenoc.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key — publishable, from spark repo .env>
-NEXT_PUBLIC_DEFAULT_TEAM_SLUG=exotiq-
+NEXT_PUBLIC_DEFAULT_TEAM_SLUG=exotiq
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=<pk_live_… platform publishable key>
 ```
 
-`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` is intentionally absent: identity
-verification uses Stripe's hosted page until the key is provided (then the
-embedded modal lights up with no code change).
-
-**After the backend renames the team slug `exotiq-` → `exotiq`** (see
-`LOVABLE_HANDOFF_2026-07-22.md` §1): set
-`NEXT_PUBLIC_DEFAULT_TEAM_SLUG=exotiq`, delete the temp redirect in
-`next.config.js`, rebuild.
+Without `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, identity verification falls
+back to Stripe's hosted page; with it, the embedded modal is used. The slug
+rename (`exotiq-` → `exotiq`) landed backend-side 2026-07-22 — the legacy
+redirects in `next.config.js` keep pre-rename links alive.
 
 ## Operational notes
 

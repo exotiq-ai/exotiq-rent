@@ -11,14 +11,15 @@ const nextConfig = {
     // NEXT_PUBLIC_DEFAULT_TEAM_SLUG to the Exotiq tenant; the mock demo
     // (no env) keeps landing on desert-exotic-rentals.
     const defaultTeam = process.env.NEXT_PUBLIC_DEFAULT_TEAM_SLUG || 'desert-exotic-rentals';
-    const redirects = [{ source: '/', destination: `/${defaultTeam}`, permanent: false }];
-    if (defaultTeam === 'exotiq-') {
-      // TEMPORARY until the backend renames the Exotiq team slug 'exotiq-' →
-      // 'exotiq' (slug-generation bug; see docs/rent/LOVABLE_HANDOFF_2026-07-22.md).
-      // Gives renters the clean /exotiq URL today; delete once the rename lands.
-      redirects.push({ source: '/exotiq', destination: '/exotiq-', permanent: false });
-    }
-    return redirects;
+    return [
+      { source: '/', destination: `/${defaultTeam}`, permanent: false },
+      // The Exotiq team slug was renamed 'exotiq-' → 'exotiq' on 2026-07-22.
+      // Links shared under the old slug (storefront + share cards) live on in
+      // text threads — keep them landing on the renamed team.
+      { source: '/exotiq-', destination: '/exotiq', permanent: false },
+      { source: '/exotiq-/:path*', destination: '/exotiq/:path*', permanent: false },
+      { source: '/share/exotiq-/:path*', destination: '/share/exotiq/:path*', permanent: false },
+    ];
   },
   images: {
     remotePatterns: [

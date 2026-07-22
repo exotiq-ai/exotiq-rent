@@ -61,6 +61,8 @@ export type RpcQuoteRow = {
   rental_days: number;
   daily_rate_cents: number;
   rental_subtotal_cents: number;
+  /** Added by the backend 2026-07-22 fee update; older responses omit it. */
+  deposit_cents?: number;
   operator_total_cents: number;
   platform_fee_percent: number | string;
   platform_fee_cents: number;
