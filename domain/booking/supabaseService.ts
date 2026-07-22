@@ -8,7 +8,7 @@ import {
   fetchVehicleAvailability,
   postCreateBooking,
 } from './rpcClient';
-import type { BookingCart, } from './types';
+import type { BookingCart } from './types';
 import type { BookingLookupResult, CreateBookingResult, PublicTeamStorefront, PublicVehicleContext } from './publicContracts';
 
 /**

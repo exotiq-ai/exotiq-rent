@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { mockOperators, mockVehicles } from './mockData';
+import { createInitialCart, mockOperators, mockVehicles } from './mockData';
 import { createRenterBooking, getBookingConfirmation, getPublicTeamStorefront, getPublicVehicleContext } from './service';
-import { createInitialCart } from './mockData';
 
 describe('booking service facade mock mode', () => {
   it('returns a public storefront with multiple vehicles for a known team', async () => {
