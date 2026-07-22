@@ -1,38 +1,51 @@
 # Exotiq Rent — Public URL Map
 
-> Final state of the URL flip, verified live 2026-07-22. One codebase, two
-> Netlify sites, split by `NEXT_PUBLIC_SITE_MODE` (see `domain/booking/config.ts`).
+> Three sites, one repo. Updated 2026-07-22 after the live Exotiq tenant flip;
+> all rows verified live. Modes come from `NEXT_PUBLIC_SITE_MODE` /
+> `NEXT_PUBLIC_EXOTIQ_RENT_DATA_MODE` (see `domain/booking/config.ts`).
 
-| URL | Netlify site | Mode | Serves |
-|-----|--------------|------|--------|
-| `https://exotiq.rent` | `exotiqrent` (`1ec963dc-2d50-400d-bc1c-6049ce9d62e5`) | `marketplace` | Marketplace mockup at `/`. **All booking routes 404.** |
-| `https://book.exotiq.rent` | `book-exotiq-rent` (`2fcbaa5b-d700-461d-bbd5-7af4917ef997`) | `booking` (default) | Gold Drive Exotiq flow. `/` → 307 → `/desert-exotic-rentals`. |
-| `https://demo.exotiq.rent` | alias on `book-exotiq-rent` | `booking` | Same as book site (kept so old links work). |
+| URL | Netlify site | Site mode | Data mode | Serves |
+|-----|--------------|-----------|-----------|--------|
+| `https://exotiq.rent` | `exotiqrent` (`1ec963dc-2d50-400d-bc1c-6049ce9d62e5`) | `marketplace` | mock | Marketplace mockup at `/`. All booking routes 404. |
+| `https://book.exotiq.rent` | `book-exotiq-rent` (`2fcbaa5b-d700-461d-bbd5-7af4917ef997`) | `booking` | **supabase (LIVE)** | Gold flow on the **live Exotiq fleet**. `/` → 307 → `/exotiq-`. Temp `/exotiq` → `/exotiq-` until the backend slug rename. |
+| `https://demo.exotiq.rent` | `demo-exotiq-rent` (`a2eef772-4503-47f8-8aa8-d100f04699a6`) | `booking` | mock | The gold **mock demo** (desert-exotic-rentals). Old demo links keep working. |
 
-## Verified route matrix (2026-07-22)
+## Verified route matrix (2026-07-22, post-flip)
 
 | Check | Result |
 |-------|--------|
-| `book.exotiq.rent/` | 307 → `/desert-exotic-rentals` ✅ |
-| `book.exotiq.rent/desert-exotic-rentals` (+ vehicle, book) | 200 ✅ |
-| `book.exotiq.rent/booking/BK-DEMO-001` | 200 ✅ |
-| `book.exotiq.rent/preview` | 200 ✅ |
-| `book.exotiq.rent/no-such-team/no-such-car` | 404 ✅ |
-| `demo.exotiq.rent/` | 200 ✅ |
-| `exotiq.rent/` | 200 (marketplace mockup) ✅ |
-| `exotiq.rent/desert-exotic-rentals`, `/booking/*` | 404 (gated) ✅ |
+| `book.exotiq.rent/` | 307 → `/exotiq-` ✅ |
+| `book.exotiq.rent/exotiq` | 307 → `/exotiq-` ✅ (temp until slug rename) |
+| `book.exotiq.rent/exotiq-` | 200, live fleet (22 photo-backed of 52 visible) ✅ |
+| `book.exotiq.rent/exotiq-/2017-audi-s8` | 200, live $500/day rate ✅ |
+| `book.exotiq.rent/desert-exotic-rentals` | 404 (mock team absent in live mode — correct) ✅ |
+| `demo.exotiq.rent/` + `/desert-exotic-rentals` | 200 (mock demo intact) ✅ |
+| `exotiq.rent/` | 200 marketplace mockup; booking routes 404 ✅ |
+
+## Book-site env (live pilot)
+
+```
+NEXT_PUBLIC_EXOTIQ_RENT_DATA_MODE=supabase
+NEXT_PUBLIC_SUPABASE_URL=https://jlgwbbqydjeokypoenoc.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key — publishable, from spark repo .env>
+NEXT_PUBLIC_DEFAULT_TEAM_SLUG=exotiq-
+```
+
+`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` is intentionally absent: identity
+verification uses Stripe's hosted page until the key is provided (then the
+embedded modal lights up with no code change).
+
+**After the backend renames the team slug `exotiq-` → `exotiq`** (see
+`LOVABLE_HANDOFF_2026-07-22.md` §1): set
+`NEXT_PUBLIC_DEFAULT_TEAM_SLUG=exotiq`, delete the temp redirect in
+`next.config.js`, rebuild.
 
 ## Operational notes
 
-- Both sites build `main` of `exotiq-ai/exotiq-rent` with `npm run build`,
-  publish `.next`, and get the Next.js runtime from `netlify.toml`
-  (`@netlify/plugin-nextjs`). **Do not** remove that file — a site building
-  this repo without the plugin serves nothing (the 2026-07-22 book-site 404).
-- Site mode is the only intended per-site difference:
-  `NEXT_PUBLIC_SITE_MODE=marketplace` is set on `exotiqrent` only.
-- Data mode on both sites is currently **mock** (default). Supabase mode
-  requires the three env vars listed in
-  `docs/rent/CLAUDE_CODE_HANDOFF_2026-07-22.md` §4 and falls back to mock if
-  any is missing.
-- The old standalone `demo-exotiq-rent` Netlify site was deleted; the
-  `demo.exotiq.rent` alias on `book-exotiq-rent` replaces it.
+- All three sites build `main` with `npm run build`, publish `.next`, and get
+  the Next.js runtime from `netlify.toml` (`@netlify/plugin-nextjs`). **Do
+  not** remove that file — a site building this repo without the plugin
+  serves nothing (the 2026-07-22 book-site 404).
+- Per-site behavior lives ONLY in Netlify env vars, never in code or toml.
+- Mock mode needs no env at all — a misconfigured live site degrades to the
+  demo, not to a broken page.
