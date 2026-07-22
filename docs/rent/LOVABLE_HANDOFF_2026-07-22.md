@@ -1,5 +1,11 @@
 # Lovable / Command Center Handoff — Exotiq Tenant Live Flip (2026-07-22)
 
+> **STATUS: ALL ITEMS RESOLVED by Lovable same day.** Slug renamed to
+> `exotiq` (§1 ✅), platform fee set to 10% (§2 ✅ — note the quote RPC now
+> also returns `deposit_cents`, adapted frontend-side), all marketplace
+> vehicles have hero images (§3 ✅), timezone fixed to America/Phoenix
+> (§4 ✅), platform publishable key provided (§5 ✅). Kept for the record.
+
 > From the exotiq-rent Claude Code session. Context: book.exotiq.rent is being
 > flipped to supabase data mode serving the **Exotiq tenant**
 > (`c1de6533-ab44-4973-a123-007a8007b5ba`) instead of the fredo-d-lima pilot.
