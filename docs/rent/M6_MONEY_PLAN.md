@@ -8,7 +8,7 @@
 
 | # | Decision | Ruling |
 |---|----------|--------|
-| M6-D1 | Charge sequencing | **One card entry, two charges.** Stripe Checkout charges the operator's rental as a destination charge to the operator's connected account and saves the payment method (`setup_future_usage: off_session`); on `checkout.session.completed`, Exotiq's booking fee + protection charges immediately off-session on the platform account. Renter sees two statement lines: the operator's descriptor + `EXOTIQ.RENT`. |
+| M6-D1 | Charge sequencing | **One card entry, two charges.** Checkout charges the **Exotiq portion on the platform account** (fee + protection, `EXOTIQ.RENT`) and saves the card (`setup_future_usage: off_session`); the webhook then clones the payment method to the operator's connected account and creates the **rental as a direct charge there** (operator's own descriptor). Renter sees two statement lines. *Mechanics note:* Stripe only clones payment methods platform → connected, and the Command Center already uses direct charges on connected accounts — this ordering is the buildable one, and it makes M6-D2 automatic (each account pays its own processing fee natively). Full design in `patches/m6a-payment-foundations/README.md`. |
 | M6-D2 | Processing fees | **Each party absorbs their own.** Operator nets rental minus Stripe's cut; Exotiq absorbs the cut on its own charge. No renter surcharges. |
 | M6-D3 | Deposit hold | **Operator places it at pickup** via the Command Center (`stripe-create-hold`, already live). No scheduled auto-holds — avoids the 7-day authorization-expiry trap. |
 | M6-D4 | Payment window | **48 hours** from operator approval. Unpaid bookings expire and the dates release back to the calendar. |
