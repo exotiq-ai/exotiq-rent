@@ -84,6 +84,7 @@ export async function ConfirmationScreen({ bookingRef, accessToken }: { bookingR
           pickupTime={cart.pickupTime}
           location={live ? `${cart.operator.city}, ${cart.operator.state}` : cart.vehicle.pickupLocation.address}
         />
+        <p className="mt-5 rounded-xl border border-dashed border-[#2A2E3A] p-3 text-center text-[11.5px] leading-5 text-[#5C6272]">Exotiq never stores your ID — identity documents are processed securely by Stripe, our verification partner. Verified status lasts until your document expires.</p>
       </section>
     </PhoneViewport>
   );

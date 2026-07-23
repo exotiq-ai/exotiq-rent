@@ -1,9 +1,9 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CalendarDays, CircleDot, Gauge, MapPin, Settings2, ShieldCheck, Zap } from 'lucide-react';
 import { getPublicVehicleContext } from '@/domain/booking/service';
-import { HTitle, Money, PhoneViewport } from './BookingChrome';
+import { Money, PhoneViewport } from './BookingChrome';
+import { VehicleGallery } from './VehicleGallery';
 
 export async function VehicleEntryPage({ operatorSlug, vehicleSlug }: { operatorSlug: string; vehicleSlug: string }) {
   const teamSlug = operatorSlug;
@@ -28,27 +28,17 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug }: { operator
 
   return (
     <PhoneViewport step={1} stepStyle="numbered" className="font-[var(--font-drive-inter)]">
-      <div className="flex-1 overflow-y-auto px-4 pb-36 pt-1 [scrollbar-width:none]">
-        <div className="relative -mx-4 mt-[-4px] h-[260px] overflow-hidden bg-[#161922]">
-          {vehicle.heroImage && <Image src={vehicle.heroImage} alt={vehicle.name} fill sizes="480px" priority className="object-cover object-[50%_52%]" />}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0D0F14]/10 to-[#0D0F14]" />
-          <div className="pointer-events-none absolute inset-0 opacity-[0.10] [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] [background-size:4px_4px]" />
-          <div className="absolute bottom-4 left-4 right-4">
-            <div className="text-[11px] uppercase tracking-[0.18em] text-[#C8A664]">{operator.name} · From <Money cents={vehicle.dailyRateCents} />/day</div>
-            <HTitle className="mt-2 text-[26px]">{vehicle.name}</HTitle>
-            <p className="mt-2 flex items-center gap-2 text-[13px] text-[#D7DAE0]"><MapPin size={14} className="text-[#C8A664]" />{operator.city}, {operator.state} · Concierge-approved rental</p>
-          </div>
-        </div>
-
-        {vehicle.photos.length > 1 && (
-          <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]" aria-label="Vehicle gallery">
-            {vehicle.photos.map((photo, index) => (
-              <div key={photo} className="relative h-20 w-32 shrink-0 overflow-hidden rounded-lg border border-[#2A2E3A]">
-                <Image src={photo} alt={`${vehicle.shortName} photo ${index + 1}`} fill sizes="128px" className="object-cover" />
-              </div>
-            ))}
-          </div>
-        )}
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-36 pt-1 [scrollbar-width:none]">
+        <VehicleGallery
+          vehicleName={vehicle.name}
+          shortName={vehicle.shortName}
+          heroImage={vehicle.heroImage}
+          photos={vehicle.photos}
+          operatorName={operator.name}
+          dailyRateCents={vehicle.dailyRateCents}
+          city={operator.city}
+          state={operator.state}
+        />
 
         <div className="mt-4 grid grid-cols-2 gap-2">
           {specs.map((spec) => (
