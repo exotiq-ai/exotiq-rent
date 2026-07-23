@@ -18,9 +18,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const result = await getPublicVehicleContext(params.operatorSlug, params.vehicleSlug);
   if (!result) notFound();
   const { team, vehicle } = result;
+  const description = `The ${vehicle.name} is spoken for. Reserved for an upcoming drive with Drive Exotiq — ${team.city}, ${team.state}.`;
   return {
     title: `${vehicle.name} · Reserved | Drive Exotiq`,
-    description: `The ${vehicle.name} is spoken for. Reserved for an upcoming drive with Drive Exotiq — ${team.city}, ${team.state}.`,
+    description,
+    // Override the root layout's marketplace OG block so unfurls carry the
+    // share card, not the generic site branding. The image comes from the
+    // sibling opengraph-image.tsx via metadataBase.
+    openGraph: {
+      title: `${vehicle.name} · Reserved on Drive Exotiq`,
+      description,
+      siteName: 'Drive Exotiq',
+      type: 'website',
+    },
   };
 }
 
