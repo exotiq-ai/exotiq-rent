@@ -17,13 +17,22 @@ use obviously-fake driver names (e.g. "QA Redteam One") so ops can spot them.
 
 ## 2. ⚠️ Read before testing identity verification
 
-Stripe Identity runs against the **live-mode platform account**. Every
-verification session costs real money (~$1.50) and requires a **real
-government ID** — Stripe test documents will not pass live mode.
-Budget accordingly, or have Lovable flip the identity edge-function secrets
-to test mode for the QA window first. Sessions reuse: a verified email stays
-verified until the document expires (V7), so one real verification can cover
-many booking tests.
+Stripe Identity is in **test mode** for the QA window (confirmed by Gregory,
+2026-07-23). The renter app intentionally has no publishable key deployed, so
+verification opens **Stripe's hosted page** in a new tab — in test mode it
+offers simulated verification outcomes; no real ID is needed.
+
+**Run the identity loop ONCE, total** (owner's instruction — do not spawn
+repeated verification sessions). Sessions reuse: a verified email stays
+verified until the document expires (V7), so that single run covers every
+subsequent booking test under the same driver email. Test the *other* IDV
+paths (missing email, restricted confirmation, polling UX) without starting
+new Stripe sessions.
+
+At launch: secrets flip back to live and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+(pk_live, on file) is restored on the book site — that re-enables the
+embedded modal. The browser key and backend secret must always be the same
+Stripe mode or the modal fails.
 
 ## 3. What to attack (in scope)
 
