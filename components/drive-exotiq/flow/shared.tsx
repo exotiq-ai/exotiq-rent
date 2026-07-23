@@ -35,7 +35,7 @@ export function SelectableCard({
 
 export function StepHeader({ eyebrow, title, sub }: { eyebrow: string; title: string; sub?: string }) {
   return (
-    <div className="mb-5 pt-1">
+    <div className="mb-4">
       <div className="text-[10px] uppercase tracking-[0.28em] text-[#5C6272]">{eyebrow}</div>
       <HTitle className="mt-2">{title}</HTitle>
       {sub && <p className="mt-2 text-[13px] leading-5 text-[#9BA1B0]">{sub}</p>}
@@ -46,7 +46,10 @@ export function StepHeader({ eyebrow, title, sub }: { eyebrow: string; title: st
 export function ScreenShell({ children, stickySafe = true }: { children: ReactNode; stickySafe?: boolean }) {
   return (
     <div
-      className={`flex-1 overflow-y-auto px-4 pt-6 [scrollbar-width:none] ${stickySafe ? 'pb-60' : 'pb-24'}`}
+      // min-h-0 is load-bearing: without it this flex child grows to its
+      // content instead of scrolling, pushing the "sticky" footer below the
+      // fold on long steps (review/pay).
+      className={`min-h-0 flex-1 overflow-y-auto px-4 pt-2 [scrollbar-width:none] ${stickySafe ? 'pb-48' : 'pb-20'}`}
       style={{ fontFamily: 'var(--font-drive-inter), system-ui, sans-serif' }}
     >
       {children}
@@ -56,7 +59,7 @@ export function ScreenShell({ children, stickySafe = true }: { children: ReactNo
 
 export function Sticky({ children }: { children: ReactNode }) {
   return (
-    <div className="absolute bottom-5 left-0 right-0 z-10 border-t border-[#2A2E3A] bg-[#0D0F14] px-4 pb-4 pt-3 shadow-[0_-24px_42px_rgba(13,15,20,.96)] md:bottom-6">
+    <div className="absolute bottom-4 left-0 right-0 z-10 border-t border-[#2A2E3A] bg-[#0D0F14] px-4 pb-4 pt-3 shadow-[0_-24px_42px_rgba(13,15,20,.96)] md:bottom-5">
       <div className="space-y-3">{children}</div>
     </div>
   );

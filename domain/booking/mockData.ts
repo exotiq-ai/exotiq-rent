@@ -1,4 +1,5 @@
 import type { BookingCart, ExtraSelection, Operator, PickupLocation, Vehicle } from './types';
+import { addDays, isoDate } from './dates';
 import { calculateBookingTotals } from './totals';
 
 export const mockOperators: Operator[] = [
@@ -323,7 +324,11 @@ export function createInitialCart(overrides: { operator?: Operator; vehicle?: Ve
   const vehicle = overrides.vehicle ?? mockVehicle;
   const operator = overrides.operator ?? mockOperators.find((team) => team.id === vehicle.operatorId) ?? mockOperator;
   const selectedExtras = curatedExtras.filter((extra) => extra.defaultSelected);
-  const dates = { start: '2026-06-14', end: '2026-06-17' };
+  // Default range starts today and spans the vehicle's minimum stay — the
+  // date step opens on the current month with a valid selection in place.
+  const now = new Date();
+  const start = isoDate(now.getFullYear(), now.getMonth() + 1, now.getDate());
+  const dates = { start, end: addDays(start, vehicle.minRentalDays || 3) };
   const protection = 'premium' as const;
 
   return {

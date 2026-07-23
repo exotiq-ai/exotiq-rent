@@ -20,17 +20,26 @@ import {
 import { RunningTotalCard, ScreenShell, StepHeader, Sticky } from './shared';
 import { recomputeBookingCart } from './state';
 
-// The mock demo lives in mid-2026; allow browsing a season ahead.
-const MIN_MONTH: MonthKey = { year: 2026, month: 6 };
-const MAX_MONTH: MonthKey = { year: 2026, month: 12 };
+const PICKUP_TIMES = ['8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', 'Request after-hours pickup'];
+
+function todayIsoDate(): string {
+  const now = new Date();
+  return isoDate(now.getFullYear(), now.getMonth() + 1, now.getDate());
+}
 
 export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart: (cart: BookingCart) => void; next: () => void }) {
+  // Calendar opens on the month of the selected start date (today by default)
+  // and browses up to six months out.
+  const [todayIso] = useState(todayIsoDate);
   const [visibleMonth, setVisibleMonth] = useState<MonthKey>(() => monthKeyFromIso(cart.dates.start));
+  const minMonth = monthKeyFromIso(todayIso);
+  const maxMonth = addMonths(minMonth, 6);
   const startIso = cart.dates.start;
   const endIso = cart.dates.end;
   const canContinue = cart.totals.days >= cart.vehicle.minRentalDays;
 
-  const isBlocked = (iso: string) => (cart.vehicle.unavailableRanges ?? []).some((range) => range.start <= iso && iso <= range.end);
+  const isBlocked = (iso: string) =>
+    iso < todayIso || (cart.vehicle.unavailableRanges ?? []).some((range) => range.start <= iso && iso <= range.end);
   const hasBlockedDays = (cart.vehicle.unavailableRanges ?? []).length > 0;
 
   const rangeCrossesBlocked = (fromIso: string, toIso: string) => {
@@ -51,8 +60,8 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
     setCart(recomputeBookingCart({ ...cart, dates: { ...cart.dates, end: iso } }));
   };
 
-  const canGoPrev = compareMonthKeys(visibleMonth, MIN_MONTH) > 0;
-  const canGoNext = compareMonthKeys(visibleMonth, MAX_MONTH) < 0;
+  const canGoPrev = compareMonthKeys(visibleMonth, minMonth) > 0;
+  const canGoNext = compareMonthKeys(visibleMonth, maxMonth) < 0;
   const totalDays = daysInMonth(visibleMonth);
   const leadingBlanks = firstWeekdayOfMonth(visibleMonth);
   const minEndIso = startIso ? addDays(startIso, cart.vehicle.minRentalDays) : '';
@@ -91,10 +100,10 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
             );
           })}
         </div>
-        <div className="mt-3 text-center text-[10px] uppercase tracking-[0.18em] text-[#5C6272]">Tap start, then end · {cart.vehicle.minRentalDays}-day minimum{hasBlockedDays ? ' · Crossed-out dates are booked' : ''}</div>
+        <div className="mt-3 text-center text-[10px] uppercase tracking-[0.18em] text-[#5C6272]">Tap start, then end · {cart.vehicle.minRentalDays}-day minimum{hasBlockedDays ? ' · Crossed-out dates are unavailable' : ''}</div>
         <label className="mt-5 block text-xs uppercase tracking-[0.22em] text-[#5C6272]">Pickup time</label>
         <select value={cart.pickupTime} onChange={(event) => setCart(recomputeBookingCart({ ...cart, pickupTime: event.target.value }))} className="mt-2 w-full rounded-xl border border-[#2A2E3A] bg-[#161922] px-4 py-3 text-sm text-[#F0F2F5]">
-          <option>10:00 AM</option><option>12:00 PM</option><option>2:00 PM</option><option>4:00 PM</option>
+          {PICKUP_TIMES.map((time) => <option key={time}>{time}</option>)}
         </select>
       </ScreenShell>
       <Sticky>
