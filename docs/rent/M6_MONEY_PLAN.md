@@ -4,6 +4,16 @@
 > with two clean statement lines — built and proven **entirely in Stripe
 > test mode**, then flipped to live by configuration, not code.
 
+## Status (2026-07-24)
+
+| Phase | State |
+|-------|-------|
+| M6a foundations | ✅ Applied & verified (payment_due_at trigger confirmed live on BK-03447) |
+| M6b renter checkout + webhook | ✅ Applied; **E2E gate passed** — BK-03447 paid via hosted Checkout, two statement legs in the sandbox dashboard ($1,500 rental → exotiq.ai; $1,017 EXOTIQ RENT), webhook confirmed booking, receipt UI verified |
+| M6c refunds & cancellation | ✅ Applied; **gate passed** — unpaid cancel, paid free-window dual-leg refund (dates released), re-cancel guard, terminal-state UI all verified. Remaining: operator-decline refund + paid-forfeit path (red-team scripts) |
+| M6d expiry schedule + emails | 🔄 In progress at Lovable (prompt delivered 2026-07-24) |
+| M6e live flip | ⏸ Awaiting Gregory's go — checklist below unchanged |
+
 ## 1. Decisions (ruled by Gregory, 2026-07-23)
 
 | # | Decision | Ruling |
