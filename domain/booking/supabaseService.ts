@@ -103,6 +103,11 @@ export async function getSupabaseBookingConfirmation(bookingRef: string, token?:
       startAt: row.start_at ?? '',
       endAt: row.end_at ?? '',
       totalCents: Number(row.total_cents ?? 0),
+      paymentDueAt: row.payment_due_at ?? undefined,
+      paidAt: row.paid_at ?? undefined,
+      protectionTier: row.protection_tier ?? undefined,
+      platformFeeCents: row.platform_fee_cents != null ? Number(row.platform_fee_cents) : undefined,
+      protectionTotalCents: row.protection_total_cents != null ? Number(row.protection_total_cents) : undefined,
     },
   };
 }

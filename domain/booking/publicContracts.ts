@@ -20,6 +20,13 @@ export type PublicBookingConfirmation = {
     startAt: string;
     endAt: string;
     totalCents: number;
+    /** M6b payment fields — absent until the backend patch is applied, which
+     * doubles as the staging gate for the pay CTA. */
+    paymentDueAt?: string;
+    paidAt?: string;
+    protectionTier?: string;
+    platformFeeCents?: number;
+    protectionTotalCents?: number;
   };
 };
 
