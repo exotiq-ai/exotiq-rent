@@ -8,12 +8,13 @@
 
 | # | Decision | Ruling |
 |---|----------|--------|
-| M6-D1 | Charge sequencing | **One card entry, two charges.** Checkout charges the **Exotiq portion on the platform account** (fee + protection, `EXOTIQ.RENT`) and saves the card (`setup_future_usage: off_session`); the webhook then clones the payment method to the operator's connected account and creates the **rental as a direct charge there** (operator's own descriptor). Renter sees two statement lines. *Mechanics note:* Stripe only clones payment methods platform → connected, and the Command Center already uses direct charges on connected accounts — this ordering is the buildable one, and it makes M6-D2 automatic (each account pays its own processing fee natively). Full design in `patches/m6a-payment-foundations/README.md`. |
+| M6-D1 | Charge sequencing | **One card entry, two charges — big charge first** (rev 2, per Lovable's 2026-07-23 review): Checkout charges the **operator rental on-session** on the platform account as a **destination charge** (`on_behalf_of` + `transfer_data` → operator's descriptor on the statement) and saves the card platform-side (`setup_future_usage: off_session`); the webhook then charges the smaller **Exotiq fee + protection off-session on the platform** (`EXOTIQ RENT` suffix). SCA clears the large charge in-session; the unattended charge is the small one. **No payment-method cloning in the payment path.** Partial-failure surface: "rental paid, fee retrying" — the benign direction. Full design in `patches/m6a-payment-foundations/README.md`. |
 | M6-D2 | Processing fees | **Each party absorbs their own.** Operator nets rental minus Stripe's cut; Exotiq absorbs the cut on its own charge. No renter surcharges. |
 | M6-D3 | Deposit hold | **Operator places it at pickup** via the Command Center (`stripe-create-hold`, already live). No scheduled auto-holds — avoids the 7-day authorization-expiry trap. |
-| M6-D4 | Payment window | **48 hours** from operator approval. Unpaid bookings expire and the dates release back to the calendar. |
+| M6-D4 | Payment window | **48 hours** from operator approval, **clamped to pickup − 2h** (floor: now + 2h) so a booking never sits `pending_payment` past its own pickup. Unpaid bookings expire and the dates release back to the calendar. |
 | M6-D5 | Refunds (defaults, legal review pending) | ≥72h before pickup: full refund of both charges (matches live UI copy). <72h: booking fee + protection non-refundable, operator rental per operator policy. Operator decline after payment: automatic full refund of both charges. |
-| M6-D6 | Descriptors | Platform charge: `EXOTIQ.RENT`. Operator charge: the operator's own Stripe descriptor. |
+| M6-D6 | Descriptors | Platform charge: `statement_descriptor_suffix: 'EXOTIQ RENT'` (charset-safe, composes with the account prefix). Operator charge: the operator's own descriptor via `on_behalf_of`. |
+| M6-D7 | <72h operator-rental refund default | **Non-refundable** (ruled 2026-07-23, after Lovable flag #7). Matches fee/protection treatment; operators can override upward later. |
 
 ## 2. Sandbox-first: what differs between test and live
 
@@ -52,9 +53,13 @@ without operator approval.
   `payment_due_at = now() + 48h`.
 
 ### M6b — Renter checkout + webhook (spark patch + rent PR)
-- `rent-create-payment` (anon, confirmation-token-gated): booking must be
-  `pending_payment` and unexpired; server re-derives amounts from the fee
-  snapshot; mints the Checkout session per M6-D1; returns hosted URL.
+- **`rent-checkout` evolved in place** (the function Lovable deployed
+  2026-07-22 — no parallel `rent-create-payment`; existing PI columns
+  reused): anon, confirmation-token-gated; booking must be `pending_payment`
+  and unexpired; server re-derives amounts from the fee snapshot; mints the
+  Checkout session per M6-D1 (card-only); returns hosted URL. Approval email
+  + due−24h reminder carry the tokened confirmation URL (existing
+  transactional path — Lovable-side dependency).
 - Webhook: `checkout.session.completed` → record operator PI → immediately
   create the off-session platform PI (fee + protection) → both succeeded →
   `confirmed`. Partial-failure path: rental paid but platform charge
