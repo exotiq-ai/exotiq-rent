@@ -7,6 +7,7 @@ import { formatMoney } from '@/domain/booking/totals';
 import { HTitle, Money, PhoneViewport } from './BookingChrome';
 import { ConfirmationActions } from './ConfirmationActions';
 import { IdentityVerificationCard } from './IdentityVerificationCard';
+import { PaymentCard } from './PaymentCard';
 
 export async function ConfirmationScreen({ bookingRef, accessToken }: { bookingRef: string; accessToken?: string }) {
   const lookup = await getBookingConfirmation(bookingRef, accessToken);
@@ -65,11 +66,30 @@ export async function ConfirmationScreen({ bookingRef, accessToken }: { bookingR
             </div>
           </>
         )}
-        {live && (
+        {live && live.status === 'pending_payment' && live.paymentDueAt && accessToken && (
+          <PaymentCard
+            bookingRef={confirmation.bookingRef}
+            accessToken={accessToken}
+            dueAtIso={live.paymentDueAt}
+            rentalCents={live.totalCents}
+            platformFeeCents={live.platformFeeCents ?? 0}
+            protectionTotalCents={live.protectionTotalCents ?? 0}
+            operatorName={cart.operator.name}
+          />
+        )}
+        {live && live.paidAt && (
+          <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
+            <div className="mb-1 text-sm font-medium">Paid — your receipt</div>
+            <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block text-[#9BA1B0]">{cart.operator.name} rental</span><span className="text-xs text-[#5C6272]">Appears as {cart.operator.name} on your statement</span></span><Money cents={live.totalCents} /></div>
+            <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block text-[#9BA1B0]">Booking fee + protection</span><span className="text-xs text-[#5C6272]">Appears as EXOTIQ RENT</span></span><Money cents={(live.platformFeeCents ?? 0) + (live.protectionTotalCents ?? 0)} /></div>
+            <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm font-medium"><span>Total paid</span><Money cents={live.totalCents + (live.platformFeeCents ?? 0) + (live.protectionTotalCents ?? 0)} /></div>
+          </div>
+        )}
+        {live && !live.paidAt && live.status !== 'pending_payment' && (
           <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
             <div className="mb-1 text-sm font-medium">Operator rental total</div>
             <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span className="text-[#9BA1B0]">Charged by {cart.operator.name}</span><Money cents={live.totalCents} /></div>
-            <p className="text-xs leading-5 text-[#5C6272]">Exotiq booking fee and protection are itemized at payment (payment wiring arrives with the money milestone).</p>
+            <p className="text-xs leading-5 text-[#5C6272]">Exotiq booking fee and protection are itemized at payment, after the operator approves your booking.</p>
           </div>
         )}
         <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#C8A664]/10 text-[#C8A664]">DE</div><div className="flex-1"><div className="text-sm font-medium">{cart.operator.name}</div><div className="text-xs text-[#9BA1B0]">Will reach out before pickup</div></div><a href={`tel:${cart.operator.phone}`} className="rounded-full border border-[#C8A664]/30 p-2 text-[#C8A664]" aria-label="Call operator"><Phone size={16} /></a></div></div>

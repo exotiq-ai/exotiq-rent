@@ -164,6 +164,12 @@ export type RpcBookingByRefRow = {
   total_cents: number | null;
   currency: string | null;
   authorized: boolean;
+  /** M6b additions — undefined against a pre-M6b backend. */
+  payment_due_at?: string | null;
+  paid_at?: string | null;
+  protection_tier?: string | null;
+  platform_fee_cents?: number | null;
+  protection_total_cents?: number | null;
 };
 
 export async function fetchBookingByRef(bookingRef: string, token?: string): Promise<RpcBookingByRefRow | null> {
@@ -204,6 +210,28 @@ export async function postCreateBooking(request: CreateBookingRequest): Promise<
     throw new Error(body.error ?? `Booking could not be created (${response.status})`);
   }
   return body as CreateBookingResponse;
+}
+
+/**
+ * M6b: start the hosted payment for an approved (pending_payment) booking.
+ * Returns the Stripe Checkout URL. Distinguishes the partial-failure window
+ * (rental captured, Exotiq leg settling) so the UI can show "finalizing"
+ * instead of a dead pay button.
+ */
+export async function postRenterCheckout(bookingRef: string, token: string): Promise<{ url: string }> {
+  const response = await fetch(`${getFunctionsBaseUrl()}/rent-checkout`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({ booking_ref: bookingRef, token }),
+    cache: 'no-store',
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(body.error ?? `Payment could not be started (${response.status})`);
+    (error as Error & { code?: string }).code = body.code;
+    throw error;
+  }
+  return body as { url: string };
 }
 
 export async function fetchSignedVehicleMedia(teamSlug: string, vehicleSlug: string): Promise<SignedMediaResponse> {
