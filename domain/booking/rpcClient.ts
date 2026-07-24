@@ -234,6 +234,30 @@ export async function postRenterCheckout(bookingRef: string, token: string): Pro
   return body as { url: string };
 }
 
+/**
+ * M6c: renter self-serve cancellation. Inside the forfeit window the server
+ * demands acknowledge_forfeit=true on top of the UI warning.
+ */
+export async function postRenterCancel(
+  bookingRef: string,
+  token: string,
+  acknowledgeForfeit = false,
+): Promise<{ status: string; refunded: boolean }> {
+  const response = await fetch(`${getFunctionsBaseUrl()}/rent-cancel-booking`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({ booking_ref: bookingRef, token, acknowledge_forfeit: acknowledgeForfeit }),
+    cache: 'no-store',
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(body.error ?? `Cancellation failed (${response.status})`);
+    (error as Error & { code?: string }).code = body.code;
+    throw error;
+  }
+  return body as { status: string; refunded: boolean };
+}
+
 export async function fetchSignedVehicleMedia(teamSlug: string, vehicleSlug: string): Promise<SignedMediaResponse> {
   const url = `${getFunctionsBaseUrl()}/rent-public-media?team=${encodeURIComponent(teamSlug)}&vehicle=${encodeURIComponent(vehicleSlug)}`;
   const response = await fetch(url, {
