@@ -5,6 +5,7 @@ import { getBookingConfirmation, createBookingCart } from '@/domain/booking/serv
 import { formatRangeLabel } from '@/domain/booking/dates';
 import { formatMoney } from '@/domain/booking/totals';
 import { HTitle, Money, PhoneViewport } from './BookingChrome';
+import { CancelBookingCard } from './CancelBookingCard';
 import { ConfirmationActions } from './ConfirmationActions';
 import { IdentityVerificationCard } from './IdentityVerificationCard';
 import { PaymentCard } from './PaymentCard';
@@ -35,6 +36,19 @@ export async function ConfirmationScreen({ bookingRef, accessToken }: { bookingR
     : formatRangeLabel(cart.dates.start, cart.dates.end);
   const totalLabel = live ? formatMoney(live.totalCents) : formatMoney(cart.totals.grandTotalCents);
 
+  // M6c: terminal marketplace states get a banner, not the reservation UI.
+  const TERMINAL: Record<string, { badge: string; title: string; note: string }> = {
+    cancelled: { badge: 'Cancelled', title: 'This booking was cancelled.', note: 'The dates have been released. Book again any time.' },
+    refunded: { badge: 'Refunded', title: 'Cancelled & refunded in full.', note: 'Both charges were refunded — allow 5–10 business days to appear on your statement.' },
+    declined: { badge: 'Declined', title: 'The operator declined this booking.', note: 'Any captured payment is refunded in full automatically.' },
+    payment_expired: { badge: 'Expired', title: 'The payment window closed.', note: 'The dates were released. Book again any time — approval is usually faster the second time.' },
+  };
+  const terminal = live ? TERMINAL[live.status] : undefined;
+  const cancellable = Boolean(
+    live && accessToken && !terminal && live.platformFeeCents !== undefined &&
+    ['requested', 'pending_documents', 'pending_payment', 'confirmed'].includes(live.status),
+  );
+
   return (
     <PhoneViewport step={8} className="font-[var(--font-drive-inter)]">
       <section className="flex-1 overflow-y-auto px-4 pb-8 pt-2 [scrollbar-width:none]">
@@ -44,11 +58,16 @@ export async function ConfirmationScreen({ bookingRef, accessToken }: { bookingR
             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#161922]" />
             {/* One-time celebration: a single champagne-gold sheen across the car. */}
             <div aria-hidden className="animate-gold-sheen pointer-events-none absolute inset-y-0 w-1/3" />
-            <div className="animate-reserve-pop absolute right-3 top-3 rounded-full bg-[#C8A664]/10 px-3 py-1 text-xs text-[#C8A664]"><span className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-[#C8A664]" />Reserved</div>
+            <div className={`animate-reserve-pop absolute right-3 top-3 rounded-full px-3 py-1 text-xs ${terminal ? 'bg-[#2A2E3A]/60 text-[#9BA1B0]' : 'bg-[#C8A664]/10 text-[#C8A664]'}`}>{!terminal && <span className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-[#C8A664]" />}{terminal ? terminal.badge : 'Reserved'}</div>
           </div>
-          <div className="p-4"><HTitle>Your {cart.vehicle.make} is reserved.</HTitle><p className="mt-2 text-sm text-[#9BA1B0]">Booking {confirmation.bookingRef}</p></div>
+          <div className="p-4"><HTitle>{terminal ? terminal.title : `Your ${cart.vehicle.make} is reserved.`}</HTitle><p className="mt-2 text-sm text-[#9BA1B0]">Booking {confirmation.bookingRef}</p></div>
         </div>
-        <IdentityVerificationCard bookingRef={confirmation.bookingRef} initialStatus={live && live.status !== 'pending_documents' ? 'verified' : undefined} />
+        {terminal && (
+          <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm leading-6 text-[#9BA1B0]">{terminal.note}</div>
+        )}
+        {!terminal && (
+          <IdentityVerificationCard bookingRef={confirmation.bookingRef} initialStatus={live && live.status !== 'pending_documents' ? 'verified' : undefined} />
+        )}
         <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm"><Detail label="Dates" value={dateLabel} /><Detail label="Pickup" value={cart.pickupTime} /><Detail label="Location" value={live ? `${cart.operator.city}, ${cart.operator.state}` : cart.vehicle.pickupLocation.address} /><Detail label="Total" value={totalLabel} /></div>
         {!live && (
           <>
@@ -77,7 +96,7 @@ export async function ConfirmationScreen({ bookingRef, accessToken }: { bookingR
             operatorName={cart.operator.name}
           />
         )}
-        {live && live.paidAt && (
+        {live && live.paidAt && !terminal && (
           <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
             <div className="mb-1 text-sm font-medium">Paid — your receipt</div>
             <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block text-[#9BA1B0]">{cart.operator.name} rental</span><span className="text-xs text-[#5C6272]">Appears as {cart.operator.name} on your statement</span></span><Money cents={live.totalCents} /></div>
@@ -85,26 +104,40 @@ export async function ConfirmationScreen({ bookingRef, accessToken }: { bookingR
             <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm font-medium"><span>Total paid</span><Money cents={live.totalCents + (live.platformFeeCents ?? 0) + (live.protectionTotalCents ?? 0)} /></div>
           </div>
         )}
-        {live && !live.paidAt && live.status !== 'pending_payment' && (
+        {live && !terminal && !live.paidAt && live.status !== 'pending_payment' && (
           <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
             <div className="mb-1 text-sm font-medium">Operator rental total</div>
             <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span className="text-[#9BA1B0]">Charged by {cart.operator.name}</span><Money cents={live.totalCents} /></div>
             <p className="text-xs leading-5 text-[#5C6272]">Exotiq booking fee and protection are itemized at payment, after the operator approves your booking.</p>
           </div>
         )}
-        <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#C8A664]/10 text-[#C8A664]">DE</div><div className="flex-1"><div className="text-sm font-medium">{cart.operator.name}</div><div className="text-xs text-[#9BA1B0]">Will reach out before pickup</div></div><a href={`tel:${cart.operator.phone}`} className="rounded-full border border-[#C8A664]/30 p-2 text-[#C8A664]" aria-label="Call operator"><Phone size={16} /></a></div></div>
-        <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="mb-3 flex items-center gap-2 text-sm font-medium"><Sparkles size={16} className="text-[#C8A664]" />What happens next</div>{['Verify your identity above to confirm the booking.', 'Operator confirms final handoff details.', 'You receive pickup reminders before the rental.', 'Security deposit hold is placed on your card after your identity is verified.'].map((item, index) => <div key={item} className="flex gap-3 border-t border-[#2A2E3A] py-3 text-sm text-[#9BA1B0]"><span className="text-[#C8A664]">0{index + 1}</span>{item}</div>)}</div>
-        <ConfirmationActions
-          bookingRef={confirmation.bookingRef}
-          vehicleName={cart.vehicle.name}
-          teamSlug={cart.operator.slug}
-          vehicleSlug={cart.vehicle.slug}
-          startDate={live ? live.startAt.slice(0, 10) : cart.dates.start}
-          endDate={live ? live.endAt.slice(0, 10) : cart.dates.end}
-          pickupTime={cart.pickupTime}
-          location={live ? `${cart.operator.city}, ${cart.operator.state}` : cart.vehicle.pickupLocation.address}
-        />
-        <p className="mt-5 rounded-xl border border-dashed border-[#2A2E3A] p-3 text-center text-[11.5px] leading-5 text-[#5C6272]">Exotiq never stores your ID — identity documents are processed securely by Stripe, our verification partner. Verified status lasts until your document expires.</p>
+        <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#C8A664]/10 text-[#C8A664]">DE</div><div className="flex-1"><div className="text-sm font-medium">{cart.operator.name}</div><div className="text-xs text-[#9BA1B0]">{terminal ? 'Questions about this booking? Call any time.' : 'Will reach out before pickup'}</div></div><a href={`tel:${cart.operator.phone}`} className="rounded-full border border-[#C8A664]/30 p-2 text-[#C8A664]" aria-label="Call operator"><Phone size={16} /></a></div></div>
+        {!terminal && (
+          <>
+            <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="mb-3 flex items-center gap-2 text-sm font-medium"><Sparkles size={16} className="text-[#C8A664]" />What happens next</div>{['Verify your identity above to confirm the booking.', 'Operator confirms final handoff details.', 'You receive pickup reminders before the rental.', 'Security deposit hold is placed on your card after your identity is verified.'].map((item, index) => <div key={item} className="flex gap-3 border-t border-[#2A2E3A] py-3 text-sm text-[#9BA1B0]"><span className="text-[#C8A664]">0{index + 1}</span>{item}</div>)}</div>
+            <ConfirmationActions
+              bookingRef={confirmation.bookingRef}
+              vehicleName={cart.vehicle.name}
+              teamSlug={cart.operator.slug}
+              vehicleSlug={cart.vehicle.slug}
+              startDate={live ? live.startAt.slice(0, 10) : cart.dates.start}
+              endDate={live ? live.endAt.slice(0, 10) : cart.dates.end}
+              pickupTime={cart.pickupTime}
+              location={live ? `${cart.operator.city}, ${cart.operator.state}` : cart.vehicle.pickupLocation.address}
+            />
+          </>
+        )}
+        {cancellable && live && accessToken && (
+          <CancelBookingCard
+            bookingRef={confirmation.bookingRef}
+            accessToken={accessToken}
+            pickupAtIso={live.startAt}
+            paid={Boolean(live.paidAt)}
+          />
+        )}
+        {!terminal && (
+          <p className="mt-5 rounded-xl border border-dashed border-[#2A2E3A] p-3 text-center text-[11.5px] leading-5 text-[#5C6272]">Exotiq never stores your ID — identity documents are processed securely by Stripe, our verification partner. Verified status lasts until your document expires.</p>
+        )}
       </section>
     </PhoneViewport>
   );

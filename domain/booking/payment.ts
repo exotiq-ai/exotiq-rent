@@ -11,6 +11,17 @@ export function paymentWindowState(dueAtIso: string, nowMs: number): PaymentWind
   return due - nowMs <= URGENT_THRESHOLD_MS ? 'urgent' : 'open';
 }
 
+/** M6-D5: free cancellation until 72h before pickup; forfeit after. */
+export type CancellationWindowState = 'free' | 'forfeit';
+
+const FREE_CANCELLATION_MS = 72 * 60 * 60 * 1000;
+
+export function cancellationWindowState(pickupAtIso: string, nowMs: number): CancellationWindowState {
+  const pickup = Date.parse(pickupAtIso);
+  if (!Number.isFinite(pickup)) return 'forfeit';
+  return pickup - nowMs >= FREE_CANCELLATION_MS ? 'free' : 'forfeit';
+}
+
 /** "41h 12m left" / "58m left" / "expired" — compact, for the pay card. */
 export function paymentCountdownLabel(dueAtIso: string, nowMs: number): string {
   const due = Date.parse(dueAtIso);

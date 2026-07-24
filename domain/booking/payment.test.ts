@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { paymentCountdownLabel, paymentWindowState } from './payment';
+import { cancellationWindowState, paymentCountdownLabel, paymentWindowState } from './payment';
 
 const NOW = Date.parse('2026-07-23T12:00:00Z');
 
@@ -9,6 +9,13 @@ describe('payment window (M6-D4)', () => {
     expect(paymentWindowState('2026-07-23T17:00:00Z', NOW)).toBe('urgent');
     expect(paymentWindowState('2026-07-23T11:59:00Z', NOW)).toBe('expired');
     expect(paymentWindowState('not-a-date', NOW)).toBe('expired');
+  });
+
+  it('splits free vs forfeit cancellation at 72h before pickup (M6-D5)', () => {
+    expect(cancellationWindowState('2026-07-27T12:00:00Z', NOW)).toBe('free');
+    expect(cancellationWindowState('2026-07-26T12:00:00Z', NOW)).toBe('free'); // exactly 72h
+    expect(cancellationWindowState('2026-07-26T11:59:00Z', NOW)).toBe('forfeit');
+    expect(cancellationWindowState('garbage', NOW)).toBe('forfeit');
   });
 
   it('formats the countdown compactly', () => {
