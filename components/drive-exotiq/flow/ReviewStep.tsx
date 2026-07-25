@@ -86,7 +86,7 @@ export function ReviewStep({
 function DepositHoldCard({ amountCents }: { amountCents: number }) {
   return (
     <div className="mt-4 rounded-xl border border-dashed border-[#5C6272] bg-[#10131A] p-4 text-sm">
-      <div className="flex items-center justify-between gap-3"><span className="text-[#9BA1B0]">Security deposit hold</span><Money cents={amountCents} /></div>
+      <div className="flex items-center justify-between gap-3"><span className="text-[#9BA1B0]">Refundable hold at pickup</span><Money cents={amountCents} /></div>
       <p className="mt-2 text-xs leading-5 text-[#848A9A]">Authorization only — not charged.</p>
       <p className="text-xs leading-5 text-[#848A9A]">Released within 48h of return if no damage.</p>
     </div>

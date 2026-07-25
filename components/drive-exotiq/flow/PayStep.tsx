@@ -89,7 +89,7 @@ export function PayStep({
             per-vehicle override) as part of the deposit-hold work. */}
         {m.depositHoldCents > 0 && (
           <div className="mt-4 rounded-xl border border-dashed border-[#5C6272] bg-[#10131A] p-4 text-sm">
-            <div className="flex items-center justify-between gap-3"><span className="text-[#9BA1B0]">Security deposit hold</span><Money cents={m.depositHoldCents} /></div>
+            <div className="flex items-center justify-between gap-3"><span className="text-[#9BA1B0]">Refundable hold at pickup</span><Money cents={m.depositHoldCents} /></div>
             <p className="mt-2 text-xs leading-5 text-[#848A9A]">Authorization only — not charged. Released within 48h of return if no damage.</p>
           </div>
         )}
