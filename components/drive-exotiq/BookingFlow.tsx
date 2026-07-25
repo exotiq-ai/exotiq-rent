@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BookingChrome } from './BookingChrome';
-import { DRIVER_EMAIL_STORAGE_KEY } from './IdentityVerificationCard';
 import { createBookingCart, createRenterBooking } from '@/domain/booking/service';
 import { getDataMode } from '@/domain/booking/config';
 import { loadQuote, quoteKey, quotingEnabled, QuoteUnavailableError, type QuoteState } from '@/domain/booking/quote';
@@ -80,13 +79,9 @@ export function BookingFlow({ operator, vehicle }: { operator: Operator; vehicle
     if (reserving) return;
     setReserving(true);
     setReserveError(undefined);
-    // Hand the driver email to the confirmation page (session-local only) so
-    // post-payment identity verification can start without re-asking (V1 ruling).
-    try {
-      if (cart.driver.email) sessionStorage.setItem(DRIVER_EMAIL_STORAGE_KEY, cart.driver.email);
-    } catch {
-      // Storage unavailable (private mode) — the identity card asks instead.
-    }
+    // No driver email is stashed for the confirmation page: identity
+    // verification is authorized by the booking's confirmation_token, which
+    // travels on the ?t= link below.
     try {
       // Mock mode: fixed demo ref. Supabase mode: rent-create-booking with a
       // server-side re-quote and transactional double-booking guard.

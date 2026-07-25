@@ -9,37 +9,43 @@ import type { IdentityVerificationStatus } from '@/domain/booking/publicContract
 const POLL_INTERVAL_MS = 2000;
 const MAX_POLLS = 90; // ~3 minutes, then show the still-processing note
 
-/** Set by the booking flow at payment so the guest confirmation page can start verification without re-asking. */
-export const DRIVER_EMAIL_STORAGE_KEY = 'exotiq.driverEmail';
-
-function storedDriverEmail(): string {
-  try {
-    return sessionStorage.getItem(DRIVER_EMAIL_STORAGE_KEY) ?? '';
-  } catch {
-    return '';
-  }
-}
-
 /**
  * Post-payment identity verification (ID plan V1 ruling): payment is done,
  * verification is the step that confirms the booking. Mock mode simulates;
  * supabase mode opens the Stripe Identity modal and trusts the webhook-backed
  * status endpoint.
+ *
+ * `confirmationToken` is the D4 per-booking secret carried on the confirmation
+ * (?t=) and verify (?token=) links. The backend requires it and derives the
+ * customer from the booking it unlocks, so the renter is never asked to
+ * re-identify themselves. We deliberately do NOT send an email alongside it:
+ * the token already is the secret, and the old sessionStorage email was a
+ * single global key, so a renter with two bookings could have booking B's
+ * email cached while viewing booking A — which the backend's strict match
+ * would 404, breaking a verification that token-only completes.
  */
-export function IdentityVerificationCard({ bookingRef, initialStatus }: { bookingRef: string; initialStatus?: 'verified' }) {
+export function IdentityVerificationCard({
+  bookingRef,
+  confirmationToken,
+  initialStatus,
+}: {
+  bookingRef: string;
+  confirmationToken?: string;
+  initialStatus?: 'verified';
+}) {
   const [status, setStatus] = useState<IdentityVerificationStatus | 'idle'>(initialStatus ?? 'idle');
   const [errorReason, setErrorReason] = useState<string | undefined>();
-  const [email, setEmail] = useState('');
-  const [needsEmail, setNeedsEmail] = useState(false);
   /** Stripe-hosted verification URL, surfaced as an anchor once a session exists. */
   const [hostedUrl, setHostedUrl] = useState<string | null>(null);
   const [slowNote, setSlowNote] = useState(false);
   const sessionRef = useRef<string | null>(null);
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const isLive = getDataMode() === 'supabase';
+  // A bare-ref visit (D4 restricted view) can show status but can never start
+  // a session, so say so rather than offering a button that 400s.
+  const missingToken = isLive && !confirmationToken;
 
   useEffect(() => {
-    setEmail(storedDriverEmail());
     return () => {
       if (pollTimer.current) clearInterval(pollTimer.current);
     };
@@ -67,15 +73,10 @@ export function IdentityVerificationCard({ bookingRef, initialStatus }: { bookin
   };
 
   const begin = async () => {
-    const driverEmail = email.trim() || storedDriverEmail();
-    if (isLive && !driverEmail.includes('@')) {
-      setNeedsEmail(true);
-      return;
-    }
-    setNeedsEmail(false);
+    if (missingToken) return;
     setStatus('processing');
     try {
-      const start = await startIdentityVerification(bookingRef, driverEmail || undefined);
+      const start = await startIdentityVerification(bookingRef, { confirmationToken });
       if (start.status === 'verified') {
         setStatus('verified');
         return;
@@ -151,19 +152,12 @@ export function IdentityVerificationCard({ bookingRef, initialStatus }: { bookin
         <div className="flex-1">
           <div className="text-sm font-medium text-[#F0F2F5]">Confirm your booking — verify your identity</div>
           <p className="mt-1 text-xs leading-5 text-[#9BA1B0]">Takes about two minutes. Have your driver&apos;s license ready. Exotiq never stores your ID — documents are processed securely by Stripe, our verification partner.</p>
-          {isLive && needsEmail && (
-            <label className="mt-3 block">
-              <span className="text-[10px] uppercase tracking-[0.18em] text-[#848A9A]">Driver email on the booking</span>
-              <input
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="you@example.com"
-                className="mt-1 w-full rounded-lg border border-[#2A2E3A] bg-[#10131A] px-3 py-2.5 text-sm text-[#F0F2F5] outline-none transition placeholder:text-[#3D4250] focus:border-[#C8A664]/60"
-              />
-            </label>
-          )}
-          {hostedUrl ? (
+          {missingToken ? (
+            <p className="mt-3 rounded-lg border border-[#2A2E3A] bg-[#10131A] px-3 py-2.5 text-xs leading-5 text-[#9BA1B0]">
+              Open the link in your confirmation email to verify — it carries the
+              secure access code for this booking.
+            </p>
+          ) : hostedUrl ? (
             <>
               <a
                 href={hostedUrl}
