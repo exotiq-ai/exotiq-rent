@@ -77,7 +77,7 @@ refinements:
 |------|--------|
 | **#16** — no auto-selected extras | **Shipped** (PR #42). Removed `defaultSelected` entirely, mock *and* live, so nothing is ever pre-charged. |
 | **#26** — misleading "Final payment" copy | **Shipped** (PR #42). Step 07 is now *"Reserve your dates. / Nothing is charged yet."*, the total reads *"Total once approved"*, the CTA is *"Request this booking"*, and a line explains the operator-review-then-emailed-link sequence. |
-| **#24** — server quote authoritative in the frontend | **In progress**, shipping as its own PR. See §4. |
+| **#24** — server quote authoritative in the frontend | **Shipped** (PR #45). `public_vehicle_quote` is now what the renter agrees to at Review and Reserve; the `?? 10` fee fallback is gone from every committed figure. Verified against the live backend. See §4. |
 | Insurance-verification flow for Phase 6 | **Blocked on spec** — see §5. |
 
 Also shipped earlier today from the deep audit (all frontend, all verified in a
@@ -98,10 +98,13 @@ No extra frontend work needed for Phase 5.
 
 ---
 
-## 4. #24 — server-authoritative quote
+## 4. #24 — server-authoritative quote — SHIPPED (PR #45)
 
 Agreed on the principle: `public_vehicle_quote` is the money source of truth,
 frontend renders as-is, no local arithmetic, no `?? 10` fee fallback.
+**This is now merged and deployed.** The rest of this section is the design
+rationale and the verification evidence — read §4.1 at the end for what you can
+rely on.
 
 I'm being deliberate about *how*, because this is the one change that could
 regress a working money flow days before launch. The live constraint that shapes
@@ -136,15 +139,22 @@ booking created against numbers the renter never saw. That removes the `?? 10`
 fee fallback from everything a renter agrees to, while leaving the demo and the
 calendar untouched. Separate PR with tests for quote failure and rapid toggling.
 
-**Two more server-truth violations the mapping turned up on my side** (both fold
-into this PR, flagging so you know they exist):
-- `ProtectStep` **hardcodes** protection pricing (28900 / 8900) in the component,
-  so a repriced protection catalog would silently disagree with the quote.
+**Two more server-truth violations the mapping turned up on my side:**
 - `adapters.adaptFleetVehicle` **hardcodes `securityDepositCents: 0`** for every
   live vehicle — which is why the renter UI showed no deposit even though
   `public_vehicle_quote` already returns `deposit_cents` ($1,500 on the Audi
-  today). Wiring the quote fixes this automatically, and your Phase 5 resolution
-  will flow straight through.
+  today). **Fixed as a side effect of rendering the quote** — the deposit hold
+  card now appears with the server's amount, and your Phase 5 resolution will
+  flow straight through with no further frontend work.
+- `ProtectStep` **hardcoded** protection pricing (28900 / 8900) as literals in
+  the component. Now reads `PROTECTION_DAILY_RATES` from the totals engine, so
+  the rate on the card is by construction the rate that tier charges. **Residual
+  gap, flagging honestly:** this is one frontend source of truth, not the
+  server's — the selection card is shown *before* a quote exists for that tier,
+  so if you reprice the protection catalog server-side, the card would advertise
+  the old rate while Review correctly shows the new one. If you ever expose
+  protection rates on a public RPC I'll render them; until then, treat $289/$89
+  as a value that must change in both places.
 
 **Verified, so this actually closes the loop:** I checked the deployed code and
 neither `rent-checkout` nor `rent-payment-webhook` re-quotes — both charge from
@@ -158,6 +168,40 @@ point of #17/#24. No further backend change needed for it.
 (Also spotted: `mirrorPayment` is already wired in the webhook across three
 call sites covering both legs, so your Phase 1 item 7 looks largely done —
 worth a check that refunds mirror too.)
+
+### 4.1 What you can rely on now
+
+Behaviour, as merged:
+
+| Situation | What the renter sees |
+| --- | --- |
+| Quote returns | Server figures at Review and Reserve — subtotal, fee, protection, deposit, grand total. Nothing computed locally. |
+| Quote in flight | Shimmer rows, **no figures**, button disabled reading "Getting final pricing…" |
+| Quote fails / no rows | Amber card + **Try again**, Proceed/Reserve **disabled**, and **zero dollar figures rendered** — never `$0`, never a stale number, never client math |
+| Renter edits dates or protection then returns | Old quote is distrusted immediately (state carries the key it was fetched for), re-fetch, blocked until it lands |
+| Pickup time changed | **No refetch** — the RPC ignores pickup time |
+| Mock mode (demo.exotiq.rent, `/preview`) | Unchanged, client math, **zero** quote calls |
+
+The deliberate non-goal: the step-02 running total and the calendar's day-count
+still come from the client engine, because `cart.totals.days` gates calendar
+navigation and mock mode has no quote function. That preview is not an
+independent estimate — `vehicle.dailyRateCents` and the server's
+`rental_subtotal_cents` both read `vehicles.current_rate`, so it restates one
+server field rather than computing a price. Every point where the renter is
+asked to **commit** to a number is server-governed.
+
+**Verification against the live backend** (live build, real
+`public_vehicle_quote`, Audi R8, 3 days):
+- Review rendered server **Total due today $839**
+- **Security deposit hold $1,500 now appears** — the `adaptFleetVehicle` zero was
+  masking a value your RPC had been returning all along
+- Failure path forced by intercepting `fetch` for `public_vehicle_quote` only:
+  error card shown, Proceed disabled, and a DOM sweep for dollar figures
+  returned **an empty list**
+- Mock build rendered **$4,824** with **0** quote RPC calls
+
+Gate: 41/41 tests (6 new, covering the `start === end` guard and pickup-time
+key stability), tsc clean, lint 0 errors, both site-mode builds green.
 
 ---
 

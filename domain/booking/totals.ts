@@ -3,7 +3,10 @@ import type { BookingTotals, ExtraSelection, ProtectionTier } from './types';
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 // D5 (docs/rent/DECISIONS.md, 2026-07-15): Standard $89/day, Premium $289/day.
-const PROTECTION_DAILY_RATES: Record<ProtectionTier, number> = {
+// Exported so the protection step advertises the same rate this engine charges —
+// duplicating the literals let the two drift, which would price a tier
+// differently on the card than in the total.
+export const PROTECTION_DAILY_RATES: Record<ProtectionTier, number> = {
   premium: 28900,
   standard: 8900,
   decline: 0,
