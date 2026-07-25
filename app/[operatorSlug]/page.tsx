@@ -75,14 +75,14 @@ export default async function TeamStorefrontRoute({ params }: Props) {
           <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
             <p className="text-[13px] leading-5 text-[#9BA1B0]">{team.about ?? 'A concierge-approved fleet with mobile-first booking, verified drivers, transparent rental charges, and optional Exotiq Protect shown separately.'}</p>
             <div className="mt-4 grid grid-cols-3 gap-2 text-center text-[11px]">
-              <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[#C8A664]">{vehicles.length}</div><div className="mt-1 text-[#5C6272]">Vehicles</div></div>
-              <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[#C8A664]">From <Money cents={minRate} /></div><div className="mt-1 text-[#5C6272]">Per day</div></div>
-              <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[#C8A664]">{minDays}+ day</div><div className="mt-1 text-[#5C6272]">Minimum</div></div>
+              <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[#C8A664]">{vehicles.length}</div><div className="mt-1 text-[#848A9A]">Vehicles</div></div>
+              <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[#C8A664]">From <Money cents={minRate} /></div><div className="mt-1 text-[#848A9A]">Per day</div></div>
+              <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[#C8A664]">{minDays}+ day</div><div className="mt-1 text-[#848A9A]">Minimum</div></div>
             </div>
           </div>
 
           <div className="mt-5 flex items-center justify-between px-1">
-            <div className="text-[10px] uppercase tracking-[0.24em] text-[#5C6272]">Available now</div>
+            <h2 className="text-[10px] uppercase tracking-[0.24em] text-[#848A9A]">Available now</h2>
             <div className="text-[11px] text-[#9BA1B0]">{vehicles.length} vehicles</div>
           </div>
           <div className="mt-3 space-y-3">
@@ -95,7 +95,9 @@ export default async function TeamStorefrontRoute({ params }: Props) {
                   <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-3">
                     <div className="min-w-0">
                       <div className="text-[11px] uppercase tracking-[0.18em] text-[#C8A664]">From <Money cents={vehicle.dailyRateCents} />/day</div>
-                      <div className="mt-1 truncate text-base font-medium text-[#F0F2F5]">{vehicle.name}</div>
+                      {/* h3 (under the team h1 and the section h2): gives the fleet list
+                          real document structure for screen readers and search engines. */}
+                      <h3 className="mt-1 truncate text-base font-medium text-[#F0F2F5]">{vehicle.name}</h3>
                       <div className="mt-1 flex items-center gap-2 text-xs text-[#9BA1B0]"><CarFront size={13} />{vehicle.specs ? `${vehicle.specs.power} · ${vehicle.specs.zeroToSixty} 0–60` : `${vehicle.year} ${vehicle.make}`.trim()}</div>
                     </div>
                     <span className="rounded-full bg-[#C8A664] px-3 py-1 text-[11px] font-medium text-[#1A1308]">View</span>
@@ -110,9 +112,9 @@ export default async function TeamStorefrontRoute({ params }: Props) {
               <div className="mb-3 flex items-center gap-2 text-sm font-medium"><FileCheck2 size={16} className="text-[#C8A664]" />Rental policies</div>
               {policyRows.map((row) => (
                 <div key={row.label} className="flex items-start gap-3 border-t border-[#2A2E3A] py-3">
-                  <row.icon size={15} className="mt-0.5 shrink-0 text-[#5C6272]" />
+                  <row.icon size={15} className="mt-0.5 shrink-0 text-[#848A9A]" />
                   <div className="min-w-0">
-                    <div className="text-[11px] uppercase tracking-[0.16em] text-[#5C6272]">{row.label}</div>
+                    <div className="text-[11px] uppercase tracking-[0.16em] text-[#848A9A]">{row.label}</div>
                     <div className="mt-0.5 text-[13px] leading-5 text-[#D7DAE0]">{row.value}</div>
                   </div>
                 </div>

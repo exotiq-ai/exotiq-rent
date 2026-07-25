@@ -45,7 +45,7 @@ export function ExtrasStep({ cart, setCart, next }: { cart: BookingCart; setCart
             );
           })}
         </div>
-        <button type="button" onClick={next} className="mt-5 w-full text-center text-[10px] uppercase tracking-[0.22em] text-[#5C6272]">Skip — nothing here is required</button>
+        <button type="button" onClick={next} className="mt-5 w-full text-center text-[10px] uppercase tracking-[0.22em] text-[#848A9A]">Skip — nothing here is required</button>
       </ScreenShell>
       <Sticky>
         {cart.extras.length > 0 && <RunningTotalCard label={`${cart.extras.length} ${cart.extras.length === 1 ? 'extra' : 'extras'} added`} amountCents={cart.totals.extrasSubtotalCents} accent={false} />}

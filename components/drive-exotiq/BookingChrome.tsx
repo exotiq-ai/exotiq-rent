@@ -11,7 +11,7 @@ function StepIndicator({ step, total = 8, variant = 'bars' }: { step: number; to
     const labels = ['Vehicle', 'Dates', 'Driver', 'Extras', 'Protect', 'Review', 'Pay', 'Done'];
 
     return (
-      <div className="flex items-center gap-3 px-6 pb-4 pt-1 text-[11px] uppercase tracking-[0.16em] text-[#5C6272]">
+      <div className="flex items-center gap-3 px-6 pb-4 pt-1 text-[11px] uppercase tracking-[0.16em] text-[#848A9A]">
         <div className="tabular-nums"><b className="font-semibold text-[#C8A664]">{String(step).padStart(2, '0')}</b><span> / {String(total).padStart(2, '0')}</span></div>
         <div className="relative h-px flex-1 overflow-hidden rounded bg-[#2A2E3A]">
           <span className="absolute inset-y-0 left-0 bg-[#C8A664]" style={{ width: pct }} />

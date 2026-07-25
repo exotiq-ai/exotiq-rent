@@ -46,7 +46,7 @@ export function CancelBookingCard({
   if (!confirming) {
     return (
       <div className="mt-5 text-center">
-        <button type="button" onClick={() => setConfirming(true)} className="text-xs text-[#5C6272] underline decoration-[#2A2E3A] underline-offset-4 transition hover:text-[#9BA1B0]">
+        <button type="button" onClick={() => setConfirming(true)} className="text-xs text-[#848A9A] underline decoration-[#2A2E3A] underline-offset-4 transition hover:text-[#9BA1B0]">
           Cancel this booking
         </button>
         <p className="mt-1 text-[11px] text-[#3D4250]">
