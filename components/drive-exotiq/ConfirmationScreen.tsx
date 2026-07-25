@@ -66,7 +66,15 @@ export async function ConfirmationScreen({ bookingRef, accessToken }: { bookingR
           <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm leading-6 text-[#9BA1B0]">{terminal.note}</div>
         )}
         {!terminal && (
-          <IdentityVerificationCard bookingRef={confirmation.bookingRef} initialStatus={live && live.status !== 'pending_documents' ? 'verified' : undefined} />
+          // Identity state is NOT inferable from booking status: an operator
+          // approving or editing a booking moves it out of pending_documents
+          // without any verification having happened, and claiming "identity
+          // verified" then is a false assurance to the renter and the operator.
+          // The card resolves the truth from the identity endpoints instead
+          // (an already-verified email returns verified+reused on first tap).
+          // TODO(backend): expose identity_verified on public_booking_by_ref so
+          // this can render verified without requiring a tap.
+          <IdentityVerificationCard bookingRef={confirmation.bookingRef} />
         )}
         <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm"><Detail label="Dates" value={dateLabel} /><Detail label="Pickup" value={cart.pickupTime} /><Detail label="Location" value={live ? `${cart.operator.city}, ${cart.operator.state}` : cart.vehicle.pickupLocation.address} /><Detail label="Total" value={totalLabel} /></div>
         {!live && (
