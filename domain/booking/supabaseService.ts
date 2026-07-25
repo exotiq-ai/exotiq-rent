@@ -7,9 +7,38 @@ import {
   fetchSignedVehicleMedia,
   fetchVehicleAvailability,
   postCreateBooking,
+  type RpcBookingByRefRow,
 } from './rpcClient';
 import type { BookingCart } from './types';
 import type { BookingLookupResult, CreateBookingResult, PublicTeamStorefront, PublicVehicleContext } from './publicContracts';
+
+/**
+ * Minimal, safe context from the token-authorized booking row, for when the
+ * catalog fetch fails (vehicle unlisted / in maintenance / tenant hidden after
+ * booking). Carries the identifiers and names the confirmation needs to render
+ * and keep Pay/Cancel working; visual extras (hero image, specs, exact pickup
+ * address) are absent by necessity and the UI degrades gracefully. In the live
+ * confirmation path all money comes from the row's `live.*` fields, never from
+ * these placeholder totals.
+ */
+function synthesizeContextFromRow(row: RpcBookingByRefRow): PublicVehicleContext {
+  const teamSlug = row.team_slug ?? '';
+  const vehicleSlug = row.vehicle_slug ?? '';
+  const vehicleName = row.vehicle_name ?? 'Your vehicle';
+  return {
+    team: {
+      id: '', slug: teamSlug, name: row.team_name ?? 'Your operator',
+      city: '', state: '', phone: '',
+    },
+    vehicle: {
+      id: '', slug: vehicleSlug, operatorId: '', name: vehicleName,
+      shortName: vehicleName, year: 0, make: vehicleName.split(' ')[0] ?? '', model: '',
+      dailyRateCents: 0, minRentalDays: 1, securityDepositCents: 0,
+      photos: [], heroImage: '', footnote: '',
+      pickupLocation: { name: '', address: '', city: '', state: '' },
+    },
+  };
+}
 
 /**
  * Supabase-mode reads (M4): real storefronts from the five public RPCs.
@@ -88,11 +117,13 @@ export async function getSupabaseBookingConfirmation(bookingRef: string, token?:
     return { restricted: true, bookingRef: row.booking_ref, status: row.status };
   }
 
-  const context = await getSupabaseVehicleContext(row.team_slug, row.vehicle_slug);
-  if (!context) {
-    // Vehicle dropped off the marketplace after booking — still show the summary.
-    return { restricted: true, bookingRef: row.booking_ref, status: row.status };
-  }
+  // The catalog fetch is gated by marketplace visibility, so it fails if the
+  // operator unlists the car, flags it 'maintenance', or the tenant is hidden
+  // AFTER the booking exists. The renter still holds a token-authorized booking
+  // and must keep their Pay/Cancel buttons, so fall back to a minimal context
+  // built from the token row rather than dropping them to the restricted view.
+  const context = (await getSupabaseVehicleContext(row.team_slug, row.vehicle_slug))
+    ?? synthesizeContextFromRow(row);
 
   return {
     bookingRef: row.booking_ref,

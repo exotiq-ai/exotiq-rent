@@ -54,7 +54,9 @@ export async function ConfirmationScreen({ bookingRef, accessToken }: { bookingR
       <section className="flex-1 overflow-y-auto px-4 pb-8 pt-2 [scrollbar-width:none]">
         <div className="relative overflow-hidden rounded-2xl border border-[#2A2E3A] bg-[#161922]">
           <div className="relative h-56">
-            <Image src={cart.vehicle.heroImage} alt={cart.vehicle.name} fill sizes="393px" className="object-cover" />
+            {cart.vehicle.heroImage
+              ? <Image src={cart.vehicle.heroImage} alt={cart.vehicle.name} fill sizes="393px" className="object-cover" />
+              : <div className="absolute inset-0 bg-gradient-to-br from-[#1E2230] to-[#0D0F14]" />}
             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#161922]" />
             {/* One-time celebration: a single champagne-gold sheen across the car. */}
             <div aria-hidden className="animate-gold-sheen pointer-events-none absolute inset-y-0 w-1/3" />

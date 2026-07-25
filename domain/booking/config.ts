@@ -27,7 +27,15 @@ export function getSiteMode(): SiteMode {
 
 export function getDataMode(): DataMode {
   if (process.env.NEXT_PUBLIC_EXOTIQ_RENT_DATA_MODE !== 'supabase') return 'mock';
-  if (!getSupabaseUrl() || !getSupabaseAnonKey()) return 'mock';
+  // A deploy that ASKS for supabase mode but is missing its URL/key must fail
+  // loud, not silently degrade to mock — otherwise a dropped or rotated env var
+  // on book.exotiq.rent would serve fabricated confirmation pages for real
+  // booking refs. (The mock demo never sets DATA_MODE, so it is unaffected.)
+  if (!getSupabaseUrl() || !getSupabaseAnonKey()) {
+    throw new Error(
+      'NEXT_PUBLIC_EXOTIQ_RENT_DATA_MODE=supabase but NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY is missing — refusing to fall back to mock data on a live deploy.',
+    );
+  }
   return 'supabase';
 }
 
