@@ -1,7 +1,10 @@
 import type { BookingCart } from '@/domain/booking/types';
 import { calculateBookingTotals } from '@/domain/booking/totals';
 
-const taxRate = 0.078;
+// The backend quote charges no separate operator tax (public_vehicle_quote =
+// rental + fee + protection only), so any client-side tax produces a shown
+// total that never matches what is actually charged. Keep it at zero.
+const taxRate = 0;
 
 export function recomputeBookingCart(cart: BookingCart): BookingCart {
   return {

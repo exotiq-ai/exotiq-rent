@@ -10,12 +10,20 @@ export function ReviewStep({ cart, goTo, next }: { cart: BookingCart; goTo: (ste
   const dateLabel = formatRangeLabel(cart.dates.start, cart.dates.end);
   const platformPercent = Math.round(cart.totals.platformFeeRate * 100);
 
+  // Only show operator line-items that carry a real amount — extras and the
+  // operator tax are zero in the live flow, and a "$0" line reads as noise.
+  const operatorRows: [string, string, number, (() => void)?][] = [
+    ['Rental', `${cart.totals.days} × ${formatMoney(cart.vehicle.dailyRateCents)}`, cart.totals.rentalSubtotalCents, () => goTo(1)],
+  ];
+  if (cart.totals.extrasSubtotalCents > 0) operatorRows.push(['Extras', `${cart.extras.length} selected`, cart.totals.extrasSubtotalCents, () => goTo(3)]);
+  if (cart.totals.operatorTaxesCents > 0) operatorRows.push(['Taxes & fees', 'Operator tax estimate', cart.totals.operatorTaxesCents]);
+
   return (
     <>
       <ScreenShell>
         <StepHeader eyebrow="Step 06" title="Here's the breakdown." sub="Review your details before payment." />
         <div className="grid grid-cols-3 gap-2 rounded-xl border border-[#2A2E3A] bg-[#161922] p-3 text-center text-[11px]"><div><span className="block text-[#848A9A]">Dates</span>{dateLabel}</div><div><span className="block text-[#848A9A]">Pickup</span>{cart.pickupTime}</div><div><span className="block text-[#848A9A]">Location</span>{cart.operator.city}</div></div>
-        <Breakdown title="Operator" note={`Charge from ${cart.operator.name}`} rows={[['Rental', `${cart.totals.days} × ${formatMoney(cart.vehicle.dailyRateCents)}`, cart.totals.rentalSubtotalCents, () => goTo(1)], ['Extras', `${cart.extras.length} selected`, cart.totals.extrasSubtotalCents, () => goTo(3)], ['Taxes & fees', 'Operator tax estimate', cart.totals.operatorTaxesCents]]} total={cart.totals.operatorTotalCents} />
+        <Breakdown title="Operator" note={`Charge from ${cart.operator.name}`} rows={operatorRows} total={cart.totals.operatorTotalCents} />
         <Breakdown title="Exotiq.Rent" note="Booking fee + protection, charged separately by EXOTIQ.RENT" rows={[[`Booking fee (${platformPercent}%)`, 'Platform fee', cart.totals.platformFeeCents], ['Protection plan', cart.protection === 'decline' ? 'Declined — hold required later' : `${cart.protection} · ${cart.totals.days} days`, cart.totals.protectionTotalCents, () => goTo(4)]]} total={cart.totals.exotiqTotalCents} />
         <div className="mt-4 rounded-xl border border-[#C8A664] bg-[#14130F] p-4"><div className="flex items-center justify-between"><span className="text-sm text-[#9BA1B0]">Total due today</span><Money cents={cart.totals.grandTotalCents} large /></div></div>
         <DepositHoldCard amountCents={cart.totals.depositHoldCents} />

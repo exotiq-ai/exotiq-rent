@@ -20,7 +20,27 @@ import {
 import { RunningTotalCard, ScreenShell, StepHeader, Sticky } from './shared';
 import { recomputeBookingCart } from './state';
 
-const PICKUP_TIMES = ['8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', 'Request after-hours pickup'];
+// value is what the booking stores and what the backend casts into a
+// timestamp (`<date> <value>`), so every value MUST be a parseable time.
+// The after-hours option therefore submits a concrete evening time (the
+// operator "reaches out before pickup" to confirm exact timing); it must
+// never send free text like "Request after-hours pickup", which crashes the
+// booking SQL with an invalid-timestamp cast. Backend hardening (regex
+// validation of pickup_time + a real after-hours flag) is tracked in the
+// Lovable handoff.
+const PICKUP_TIMES: Array<{ value: string; label: string }> = [
+  { value: '8:00 AM', label: '8:00 AM' },
+  { value: '9:00 AM', label: '9:00 AM' },
+  { value: '10:00 AM', label: '10:00 AM' },
+  { value: '11:00 AM', label: '11:00 AM' },
+  { value: '12:00 PM', label: '12:00 PM' },
+  { value: '1:00 PM', label: '1:00 PM' },
+  { value: '2:00 PM', label: '2:00 PM' },
+  { value: '3:00 PM', label: '3:00 PM' },
+  { value: '4:00 PM', label: '4:00 PM' },
+  { value: '5:00 PM', label: '5:00 PM' },
+  { value: '8:00 PM', label: 'After-hours pickup (8:00 PM+, operator confirms)' },
+];
 
 function todayIsoDate(): string {
   const now = new Date();
@@ -47,17 +67,40 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
     return false;
   };
 
+  // Explicit two-tap selection. `awaitingEnd` tracks the phase directly rather
+  // than inferring it from totals — the old inference (days >= min) meant the
+  // second tap always reset instead of extending, capping every booking at the
+  // minimum stay. First tap sets the start (with a minimum-length provisional
+  // range so totals stay valid); second tap sets the end when it is after the
+  // start, long enough, and crosses no blocked day; anything else restarts.
+  const [awaitingEnd, setAwaitingEnd] = useState(false);
+  const minDays = cart.vehicle.minRentalDays;
+
+  const startNewRange = (iso: string) => {
+    let end = addDays(iso, minDays);
+    while (end > iso && rangeCrossesBlocked(iso, end)) end = addDays(end, -1);
+    setCart(recomputeBookingCart({ ...cart, dates: { start: iso, end } }));
+    setAwaitingEnd(true);
+  };
+
   const selectDay = (iso: string) => {
     if (isBlocked(iso)) return;
-    if (!startIso || iso <= startIso || cart.totals.days >= cart.vehicle.minRentalDays) {
-      let end = addDays(iso, cart.vehicle.minRentalDays);
-      // Pull the default end back so the range never spans an unavailable day.
-      while (end > iso && rangeCrossesBlocked(iso, end)) end = addDays(end, -1);
-      setCart(recomputeBookingCart({ ...cart, dates: { start: iso, end } }));
+    if (!awaitingEnd || iso <= startIso) {
+      startNewRange(iso);
       return;
     }
-    if (rangeCrossesBlocked(startIso, iso)) return;
-    setCart(recomputeBookingCart({ ...cart, dates: { ...cart.dates, end: iso } }));
+    // Second tap, iso > startIso: extend if valid, else start over at iso.
+    if (rangeCrossesBlocked(startIso, iso)) {
+      startNewRange(iso);
+      return;
+    }
+    if (countRentalDays(startIso, iso) < minDays) {
+      // Too short to satisfy the minimum — snap the end to the minimum stay.
+      startNewRange(startIso);
+      return;
+    }
+    setCart(recomputeBookingCart({ ...cart, dates: { start: startIso, end: iso } }));
+    setAwaitingEnd(false);
   };
 
   const canGoPrev = compareMonthKeys(visibleMonth, minMonth) > 0;
@@ -103,7 +146,7 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
         <div className="mt-3 text-center text-[10px] uppercase tracking-[0.18em] text-[#848A9A]">Tap start, then end · {cart.vehicle.minRentalDays}-day minimum{hasBlockedDays ? ' · Crossed-out dates are unavailable' : ''}</div>
         <label className="mt-5 block text-xs uppercase tracking-[0.22em] text-[#848A9A]">Pickup time</label>
         <select value={cart.pickupTime} onChange={(event) => setCart(recomputeBookingCart({ ...cart, pickupTime: event.target.value }))} className="mt-2 w-full rounded-xl border border-[#2A2E3A] bg-[#161922] px-4 py-3 text-sm text-[#F0F2F5]">
-          {PICKUP_TIMES.map((time) => <option key={time}>{time}</option>)}
+          {PICKUP_TIMES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
         </select>
       </ScreenShell>
       <Sticky>

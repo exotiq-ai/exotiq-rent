@@ -350,7 +350,7 @@ export function createInitialCart(overrides: { operator?: Operator; vehicle?: Ve
       endDate: dates.end,
       extras: selectedExtras,
       protection,
-      operatorTaxRate: 0.078,
+      operatorTaxRate: 0,
       platformFeeRate: (operator.platformFeePercent ?? 10) / 100,
       depositHoldCents: vehicle.securityDepositCents,
     }),

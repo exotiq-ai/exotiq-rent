@@ -3,6 +3,7 @@
 import { Camera, Check, Clock3, Truck, UserPlus } from 'lucide-react';
 import { Money, PrimaryButton } from '../BookingChrome';
 import { getCuratedExtras } from '@/domain/booking/service';
+import { getDataMode } from '@/domain/booking/config';
 import type { BookingCart, ExtraSelection } from '@/domain/booking/types';
 import { CheckCircle, RunningTotalCard, ScreenShell, SelectableCard, StepHeader, Sticky } from './shared';
 import { recomputeBookingCart } from './state';
@@ -20,6 +21,40 @@ export function ExtrasStep({ cart, setCart, next }: { cart: BookingCart; setCart
     setCart(recomputeBookingCart({ ...cart, extras: exists ? cart.extras.filter((item) => item.id !== extra.id) : [...cart.extras, extra] }));
   };
   const extras = getCuratedExtras();
+
+  // Live mode: extras are not part of the booking-create contract yet (M6 §5
+  // defers them to operator-collected-at-pickup). Selecting one here would bill
+  // it in the UI total and promise it to the renter while the operator's
+  // booking never receives it. So present add-ons as a coordinate-at-pickup
+  // list with no prices, no selection, and no effect on the total.
+  if (getDataMode() === 'supabase') {
+    return (
+      <>
+        <ScreenShell>
+          <StepHeader eyebrow="Step 04" title="Add-ons" sub="Arrange any of these with your operator at pickup — nothing is charged now." />
+          <div className="space-y-3">
+            {extras.map((extra) => {
+              const Icon = extraIcons[extra.id as keyof typeof extraIcons] ?? Check;
+              return (
+                <div key={extra.id} className="rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[#1E2230] text-[#848A9A]"><Icon size={18} strokeWidth={1.6} /></div>
+                    <div className="min-w-0 flex-1">
+                      <span className="text-sm font-medium text-[#F0F2F5]">{extra.name}</span>
+                      <p className="mt-1 text-xs leading-5 text-[#848A9A]">{extra.description}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <p className="mt-4 rounded-xl border border-dashed border-[#2A2E3A] p-3 text-center text-[11.5px] leading-5 text-[#848A9A]">Your operator will confirm availability and pricing for any add-ons before pickup.</p>
+        </ScreenShell>
+        <Sticky><PrimaryButton onClick={next}>Continue</PrimaryButton></Sticky>
+      </>
+    );
+  }
+
   return (
     <>
       <ScreenShell>

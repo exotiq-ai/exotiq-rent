@@ -11,9 +11,10 @@ describe('data mode switch', () => {
     expect(getDataMode()).toBe('mock');
   });
 
-  it('stays mock when supabase mode is requested but env is incomplete', () => {
+  it('THROWS (fails loud) when supabase mode is requested but env is incomplete', () => {
+    // A live deploy missing its URL/key must not silently serve mock data.
     vi.stubEnv('NEXT_PUBLIC_EXOTIQ_RENT_DATA_MODE', 'supabase');
-    expect(getDataMode()).toBe('mock');
+    expect(() => getDataMode()).toThrow(/refusing to fall back to mock/);
   });
 
   it('enters supabase mode with the full env set', () => {
