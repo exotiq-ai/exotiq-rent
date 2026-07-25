@@ -2,9 +2,11 @@
 
 Standalone (no repo pull needed). Distilled from a 217-agent deep audit of both
 repos plus live sandbox testing. Renter-frontend blockers are already fixed and
-shipped by Claude (exotiq-rent PRs #35–40); **everything below is backend /
-Command Center and owned by Lovable or is a Gregory decision.** Findings are
-verified against the *deployed* spark code unless noted.
+shipped by Claude (exotiq-rent PRs #35–46, incl. server-authoritative pricing
+#45 — the renter now commits to `public_vehicle_quote` figures, no client math,
+no `?? 10` fee reaching a renter); **everything below is backend / Command
+Center and owned by Lovable or is a Gregory decision.** Findings are verified
+against the *deployed* spark code unless noted.
 
 Ordered by severity. Several share one root cause — the **partial-failure money
 state** (rental leg captured, Exotiq leg not) — called out first because fixing
@@ -198,7 +200,8 @@ promotes a booking after the renter verifies late (item 8). And the
 `supabase/migrations/20260405032534_85a856d9-ce2d-4b3e-97ee-1e32b7ec3a6c.sql`:7
 
 - **Impact:** A renter books the pilot operator (Saucy Rentals / fredo-d-lima, confirmed marketplace-visible in REDTEAM_REPORT_2026-07-24.md F6) whose platform_fee_percent is still the 0.00 default. PayStep shows "Exotiq booking fee (10%) — $150" and "Reserve for $2,517"; public_vehicle_quote returns platform_fee_cents = 0; rent-create-booking snapshots platform_fee_cents = 0; the webhook charges the Exotiq leg = 0 + protection only. Exotiq collects zero booking fee on every booking for that operator, and the renter is shown a fee line that is never charged. (The M6b E2E on the Exotiq team shows $1,017 = $1
-- **Fix:** Backend: set platform_fee_percent explicitly for every marketplace team, change the column default to 10.00 (or make approve_marketplace_request/marketplace readiness require a non-zero fee for marketplace_visible teams), and drop the misleading coalesce. Frontend: expose platform_fee_percent from public_team_by_slug, map it in adaptTeam, and remove the `?? 10` fallbacks in state.ts:16 / mockData.ts:354 so live mode can never display a fee it will not charge.
+- **Fix — now BACKEND-ONLY:** set platform_fee_percent explicitly for every marketplace team, change the column default to 10.00 (or make approve_marketplace_request/marketplace readiness require a non-zero fee for marketplace_visible teams), and drop the misleading coalesce. **This is the whole blocker now** — as long as `public_vehicle_quote` returns 0 for that operator, the renter is charged a 0% fee, because the frontend renders exactly what the quote returns.
+- **Frontend status (Claude, shipped PR #45):** the renter now commits to the server quote's `platform_fee_cents` at Review and Reserve, and `adaptQuote` maps `platform_fee_percent` from the quote row. The `?? 10` literals still exist in `state.ts:19` / `mockData.ts:356` but are **inert in live mode** — that client math only feeds the step-02 rental-only preview (no fee line) and mock mode; live commit steps are quote-blocked and never render it. So no `?? 10` reaches a live renter. Residual cleanup on my side: `adaptTeam` still doesn't map `platform_fee_percent` onto the operator object, so the literals are defused rather than deleted — I'll remove them once you expose the field on `public_team_by_slug`, but nothing is renter-visible until then.
 
 ## 18. [HIGH] — Lovable
 **identity-create-session: anon caller can hijack any customer's ID verification — customer chosen by an unescaped LIKE pattern, no confirmation token**
