@@ -233,3 +233,34 @@ B1 is verified.
   This remains a launch gate independent of B1.
 - **M6e live flip** (secrets swap + one ~$1 statement check) — after B1.
 - Rotate the Command Center password shared in chat during this audit.
+
+---
+
+## Addendum — 2026-07-25: 217-agent audit landed; frontend fixes shipped; re-verdict
+
+The deep audit fleet completed (88 verified findings; 14 blocker, 23
+launch-blocking). Resolution status as of 2026-07-25:
+
+**Fixed by Lovable, verified live:** B1 marketplace approval (BK-03456 → 
+`pending_payment`); photo bucket public (H1/F5); availability status sets
+aligned (F2); persistent rate limiting, enumeration closed, invalid-tier 400,
+scheduler cron (red-team F1/F3/F4/F7).
+
+**Fixed by Claude, shipped (exotiq-rent):**
+- PRs #35/#36 — WCAG AA contrast, heading semantics, brand metadata, secure-link 404
+- PR #37 — no false "identity verified" from booking status (B3)
+- PR #38 — identity-verification dead-end + dead tel: links (B2, H2)
+- PR #40 — six audit blockers/highs: after-hours pickup 500, min-stay cap,
+  demo-PII prefill, extras billed-not-sent, phantom 7.8% operator tax,
+  confirmation survives unlisting; plus fail-loud on dropped env var
+
+**Still open — all backend/Gregory — see `LOVABLE_HANDOFF_CONSOLIDATED_2026-07-25.md`:**
+Cluster A (partial-failure money state: cancel/refund/expiry don't account for
+a captured rental leg), Cluster B (CC money integrity: paid-shows-unpaid,
+decline-of-paid issues no refund, edit reprices), Cluster C (identity-hijack
+via unescaped email ILIKE — confirmed exploitable live), plus the deposit-hold
+gap, `pending_documents` terminal state, and the decline-terms legal copy.
+
+**Re-verdict: NO-GO for live payments.** The frontend is launch-ready; the
+money and identity layers are not until Cluster A–C and the deposit-hold gap
+are closed and re-tested with the §7 gate.
