@@ -314,7 +314,9 @@ export const mockVehicles: Vehicle[] = [
 export const mockVehicle = mockVehicles[0];
 
 export const curatedExtras: ExtraSelection[] = [
-  { id: 'delivery', name: 'Concierge delivery', description: 'We bring it to your hotel · 25-mile radius', priceCents: 15000, unit: 'flat', defaultSelected: true },
+  // No extra is ever auto-selected: a renter must never be charged for
+  // something they did not choose (ruling 2026-07-25).
+  { id: 'delivery', name: 'Concierge delivery', description: 'We bring it to your hotel · 25-mile radius', priceCents: 15000, unit: 'flat' },
   { id: 'driver', name: 'Additional driver', description: 'Second verified driver on the rental.', priceCents: 4500, unit: 'day' },
   { id: 'photo', name: 'Photo package', description: '90-minute shoot · 30 edited images.', priceCents: 40000, unit: 'flat' },
   { id: 'late-return', name: 'Late return', description: 'Until 6 PM on the final day.', priceCents: 7500, unit: 'flat' },
