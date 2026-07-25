@@ -97,6 +97,50 @@ export function CheckCircle({ checked }: { checked: boolean }) {
   );
 }
 
+/**
+ * Shown in place of money when the server quote is pending or unavailable.
+ * Deliberately renders no figures: a stale or invented number that looks
+ * plausible is worse than an honest absence, because the renter would agree
+ * to it.
+ */
+export function QuoteNotice({
+  pending,
+  message,
+  onRetry,
+}: {
+  pending?: boolean;
+  message?: string;
+  onRetry?: () => void;
+}) {
+  if (pending) {
+    return (
+      <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4" aria-busy="true">
+        <div className="text-sm font-medium text-[#F0F2F5]">Confirming final pricing…</div>
+        <p className="mt-1 text-xs leading-5 text-[#848A9A]">Checking today&apos;s rate and availability with the operator.</p>
+        <div className="mt-4 space-y-2">
+          {[0, 1, 2].map((row) => (
+            <div key={row} className="flex items-center justify-between gap-4">
+              <div className="animate-shimmer h-3 w-1/2 rounded bg-[#1E2230]" />
+              <div className="animate-shimmer h-3 w-16 rounded bg-[#1E2230]" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-4 rounded-xl border border-[#FFB84D]/45 bg-[#FFB84D]/10 p-4">
+      <div className="text-sm font-medium text-[#FFB84D]">We couldn&apos;t confirm final pricing</div>
+      <p className="mt-1 text-xs leading-5 text-[#F0F2F5]">{message ?? 'Please try again in a moment.'}</p>
+      {onRetry && (
+        <button type="button" onClick={onRetry} className="mt-3 rounded-lg border border-[#FFB84D]/45 px-4 py-2 text-xs font-semibold text-[#F0F2F5]">
+          Try again
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function Breakdown({
   title,
   note,

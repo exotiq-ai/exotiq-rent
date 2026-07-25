@@ -4,10 +4,50 @@ import { LockKeyhole } from 'lucide-react';
 import { Money, PrimaryButton } from '../BookingChrome';
 import { formatMoney } from '@/domain/booking/totals';
 import type { BookingCart } from '@/domain/booking/types';
-import { ScreenShell, StepHeader, Sticky } from './shared';
+import type { PublicQuote } from '@/domain/booking/publicContracts';
+import { QuoteNotice, ScreenShell, StepHeader, Sticky } from './shared';
 
-export function PayStep({ cart, onPay, paying = false, payError }: { cart: BookingCart; onPay: () => void; paying?: boolean; payError?: string }) {
-  const platformPercent = Math.round(cart.totals.platformFeeRate * 100);
+export function PayStep({
+  cart,
+  onPay,
+  paying = false,
+  payError,
+  quote,
+  quotePending,
+  quoteError,
+  onRetryQuote,
+  blocked,
+}: {
+  cart: BookingCart;
+  onPay: () => void;
+  paying?: boolean;
+  payError?: string;
+  /** Server figures; when present these are what the renter is agreeing to. */
+  quote?: PublicQuote | null;
+  quotePending?: boolean;
+  quoteError?: string;
+  onRetryQuote?: () => void;
+  /** True when live pricing is unconfirmed — the renter must not reserve. */
+  blocked?: boolean;
+}) {
+  // Server quote governs; the client engine is the mock-mode fallback only.
+  const m = quote ?? cart.totals;
+  const platformPercent = Math.round(m.platformFeeRate * 100);
+  // The quote has no fee-base column; per D1/D9 the base IS the rental
+  // subtotal (extras and deposit excluded), which is what the copy states.
+  const feeBaseCents = quote ? quote.rentalSubtotalCents : cart.totals.platformFeeBaseCents;
+
+  if (blocked) {
+    return (
+      <>
+        <ScreenShell>
+          <StepHeader eyebrow="Step 07" title="Reserve your dates." sub="Nothing is charged yet." />
+          <QuoteNotice pending={quotePending} message={quoteError} onRetry={onRetryQuote} />
+        </ScreenShell>
+        <Sticky><PrimaryButton onClick={onPay} disabled>{quotePending ? 'Getting final pricing…' : 'Request this booking'}</PrimaryButton></Sticky>
+      </>
+    );
+  }
 
   return (
     <>
@@ -19,37 +59,37 @@ export function PayStep({ cart, onPay, paying = false, payError }: { cart: Booki
         <StepHeader eyebrow="Step 07" title="Reserve your dates." sub="Nothing is charged yet." />
         <div className="rounded-xl border border-[#C8A664] bg-[#14130F] p-4 shadow-[0_0_0_1px_#C8A664,0_0_24px_rgba(200,166,100,.10)]">
           <div className="text-xs uppercase tracking-[0.22em] text-[#848A9A]">Total once approved</div>
-          <div className="mt-2"><Money cents={cart.totals.grandTotalCents} large /></div>
+          <div className="mt-2"><Money cents={m.grandTotalCents} large /></div>
           <p className="mt-2 text-xs leading-5 text-[#9BA1B0]">{cart.operator.name} reviews your request, then we email you a secure payment link. Your card is only charged when you pay from that link.</p>
         </div>
 
         <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm">
           <div className="flex justify-between gap-3">
             <span className="text-[#9BA1B0]">Operator rental charge</span>
-            <Money cents={cart.totals.operatorTotalCents} />
+            <Money cents={m.operatorTotalCents} />
           </div>
           <div className="mt-2 text-xs leading-5 text-[#848A9A]">Charged by {cart.operator.name} — appears as its own line on your statement.</div>
           <div className="mt-3 flex justify-between gap-3 border-t border-[#2A2E3A] pt-3">
             <span className="text-[#9BA1B0]">Exotiq booking fee ({platformPercent}%)</span>
-            <Money cents={cart.totals.platformFeeCents} />
+            <Money cents={m.platformFeeCents} />
           </div>
-          <div className="mt-1 text-xs leading-5 text-[#848A9A]">Calculated on the {formatMoney(cart.totals.platformFeeBaseCents)} rental only; extras and deposits excluded.</div>
+          <div className="mt-1 text-xs leading-5 text-[#848A9A]">Calculated on the {formatMoney(feeBaseCents)} rental only; extras and deposits excluded.</div>
           <div className="mt-3 flex justify-between gap-3 border-t border-[#2A2E3A] pt-3">
             <span className="text-[#9BA1B0]">Exotiq protection plan</span>
-            <Money cents={cart.totals.protectionTotalCents} />
+            <Money cents={m.protectionTotalCents} />
           </div>
           <div className="mt-3 flex justify-between gap-3 border-t border-[#2A2E3A] pt-3 font-medium text-[#F0F2F5]">
             <span>Exotiq total</span>
-            <Money cents={cart.totals.exotiqTotalCents} />
+            <Money cents={m.exotiqTotalCents} />
           </div>
         </div>
 
         {/* Only disclose a deposit once there is an amount — "hold: $0" reads as
             a bug. The backend resolves the real amount (tenant default /
             per-vehicle override) as part of the deposit-hold work. */}
-        {cart.totals.depositHoldCents > 0 && (
+        {m.depositHoldCents > 0 && (
           <div className="mt-4 rounded-xl border border-dashed border-[#5C6272] bg-[#10131A] p-4 text-sm">
-            <div className="flex items-center justify-between gap-3"><span className="text-[#9BA1B0]">Security deposit hold</span><Money cents={cart.totals.depositHoldCents} /></div>
+            <div className="flex items-center justify-between gap-3"><span className="text-[#9BA1B0]">Security deposit hold</span><Money cents={m.depositHoldCents} /></div>
             <p className="mt-2 text-xs leading-5 text-[#848A9A]">Authorization only — not charged. Released within 48h of return if no damage.</p>
           </div>
         )}
