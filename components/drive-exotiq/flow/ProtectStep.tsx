@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { Money, PrimaryButton } from '../BookingChrome';
+import { PROTECTION_DAILY_RATES } from '@/domain/booking/totals';
 import type { BookingCart, ProtectionTier } from '@/domain/booking/types';
 import { ScreenShell, SelectableCard, StepHeader, Sticky } from './shared';
 import { recomputeBookingCart } from './state';
@@ -14,10 +15,13 @@ export function ProtectStep({ cart, setCart, next }: { cart: BookingCart; setCar
     setCart(recomputeBookingCart({ ...cart, protection }));
   };
   const canContinue = cart.protection !== 'decline' || declineAcknowledged;
-  // D5 pricing (docs/rent/DECISIONS.md): Premium $289/day (default), Standard $89/day.
+  // Rates come from the totals engine (D5, docs/rent/DECISIONS.md: Premium
+  // $289/day default, Standard $89/day) so the price on the card is by
+  // construction the price charged for that tier. The server quote is still
+  // what the renter finally commits to at Review.
   const tiers = [
-    { id: 'premium' as const, name: 'Premium', price: 28900, detail: '$0 deductible. Collision, theft, liability up to $250K. Roadside included.', badge: 'Recommended' },
-    { id: 'standard' as const, name: 'Standard', price: 8900, detail: '$2,500 deductible. Collision and theft up to $150K.', badge: '' },
+    { id: 'premium' as const, name: 'Premium', price: PROTECTION_DAILY_RATES.premium, detail: '$0 deductible. Collision, theft, liability up to $250K. Roadside included.', badge: 'Recommended' },
+    { id: 'standard' as const, name: 'Standard', price: PROTECTION_DAILY_RATES.standard, detail: '$2,500 deductible. Collision and theft up to $150K.', badge: '' },
   ];
   // Decline terms per D5. Final legal copy is pending Gregory's approval;
   // the substance (cash-value liability + insurance verification) is decided.
