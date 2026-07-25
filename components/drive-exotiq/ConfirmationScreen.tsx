@@ -76,7 +76,7 @@ export async function ConfirmationScreen({ bookingRef, accessToken }: { bookingR
           // (an already-verified email returns verified+reused on first tap).
           // TODO(backend): expose identity_verified on public_booking_by_ref so
           // this can render verified without requiring a tap.
-          <IdentityVerificationCard bookingRef={confirmation.bookingRef} />
+          <IdentityVerificationCard bookingRef={confirmation.bookingRef} confirmationToken={accessToken} />
         )}
         <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm"><Detail label="Dates" value={dateLabel} /><Detail label="Pickup" value={cart.pickupTime} /><Detail label="Location" value={live ? `${cart.operator.city}, ${cart.operator.state}` : cart.vehicle.pickupLocation.address} /><Detail label="Total" value={totalLabel} /></div>
         {!live && (

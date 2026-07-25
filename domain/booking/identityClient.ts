@@ -7,8 +7,10 @@ import type { IdentityVerificationStart, IdentityVerificationState } from './pub
  * exotiq-spark-mvp-flow (identity-create-session / identity-session-status).
  *
  * The anon key is sent as the bearer token: it satisfies the functions
- * gateway's JWT check while keeping the caller anonymous — the guest path is
- * authorized server-side by re-deriving the customer from the email.
+ * gateway's JWT check while keeping the caller anonymous. The guest path is
+ * authorized by the booking's opaque `confirmation_token` (D4): the backend
+ * looks the booking up by ref, requires the token to match, and derives the
+ * customer from that row. Client-supplied identity is never trusted.
  */
 
 function headers(): Record<string, string> {
@@ -20,13 +22,24 @@ function headers(): Record<string, string> {
 }
 
 export async function createLiveIdentitySession(input: {
-  email: string;
   bookingRef: string;
+  /** D4 access token from the confirmation/verify link. Required by the backend. */
+  confirmationToken: string;
+  /**
+   * Optional second factor. When sent it must equal the booking's stored
+   * customer email or the backend 404s, so only send an email we actually
+   * believe belongs to this booking — never a value the renter guessed.
+   */
+  email?: string;
 }): Promise<IdentityVerificationStart> {
   const response = await fetch(`${getFunctionsBaseUrl()}/identity-create-session`, {
     method: 'POST',
     headers: headers(),
-    body: JSON.stringify({ email: input.email, booking_ref: input.bookingRef }),
+    body: JSON.stringify({
+      booking_ref: input.bookingRef,
+      confirmation_token: input.confirmationToken,
+      ...(input.email ? { email: input.email } : {}),
+    }),
   });
   const body = await response.json().catch(() => ({}));
 

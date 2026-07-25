@@ -76,11 +76,22 @@ export function getCuratedExtras(): ExtraSelection[] {
  */
 export async function startIdentityVerification(
   bookingRef: string,
-  email?: string,
+  options: { confirmationToken?: string; email?: string } = {},
 ): Promise<IdentityVerificationStart> {
   if (getDataMode() === 'supabase') {
-    if (!email) throw new Error('email is required to start verification');
-    return createLiveIdentitySession({ email, bookingRef });
+    // The token is the credential (D4). Without it the backend returns 400,
+    // so fail here with copy the card can actually show a renter rather than
+    // surfacing a raw validation error from the edge function.
+    if (!options.confirmationToken) {
+      throw new Error(
+        'This verification link is incomplete. Open the link from your confirmation email to verify your ID.',
+      );
+    }
+    return createLiveIdentitySession({
+      bookingRef,
+      confirmationToken: options.confirmationToken,
+      email: options.email,
+    });
   }
   return startMockIdentityVerification(bookingRef);
 }
