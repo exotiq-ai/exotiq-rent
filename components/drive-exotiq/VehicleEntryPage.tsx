@@ -54,7 +54,7 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug }: { operator
         </div>
 
         <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
-          <div className="mb-3 flex items-center gap-2 text-sm font-medium"><CalendarDays size={16} className="text-[#C8A664]" />Booking preview</div>
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-medium"><CalendarDays size={16} className="text-[#C8A664]" />Booking preview</h2>
           <div className="grid grid-cols-3 gap-2 text-center text-[11px]">
             <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[#C8A664]"><Money cents={vehicle.dailyRateCents} /></div><div className="mt-1 text-[#848A9A]">Per day</div></div>
             <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[#C8A664]">{vehicle.minRentalDays} days</div><div className="mt-1 text-[#848A9A]">Minimum</div></div>
@@ -64,13 +64,13 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug }: { operator
         </div>
 
         <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
-          <div className="mb-3 flex items-center gap-2 text-sm font-medium"><MapPin size={16} className="text-[#C8A664]" />Pickup location</div>
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-medium"><MapPin size={16} className="text-[#C8A664]" />Pickup location</h2>
           <div className="text-sm text-[#F0F2F5]">{vehicle.pickupLocation.name}</div>
           <div className="mt-1 text-xs text-[#9BA1B0]">{vehicle.pickupLocation.address}, {vehicle.pickupLocation.city}, {vehicle.pickupLocation.state}</div>
         </div>
 
         <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
-          <div className="mb-3 flex items-center gap-2 text-sm font-medium"><ShieldCheck size={16} className="text-[#C8A664]" />Before pickup</div>
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-medium"><ShieldCheck size={16} className="text-[#C8A664]" />Before pickup</h2>
           {['Choose dates and pickup time.', 'Verify driver and insurance documents.', 'Review the charge breakdown before single Stripe Checkout.'].map((item, index) => <div key={item} className="flex gap-3 border-t border-[#2A2E3A] py-3 text-sm text-[#9BA1B0]"><span className="text-[#C8A664]">0{index + 1}</span>{item}</div>)}
         </div>
       </div>
