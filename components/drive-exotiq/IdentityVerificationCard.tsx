@@ -31,6 +31,8 @@ export function IdentityVerificationCard({ bookingRef, initialStatus }: { bookin
   const [errorReason, setErrorReason] = useState<string | undefined>();
   const [email, setEmail] = useState('');
   const [needsEmail, setNeedsEmail] = useState(false);
+  /** Stripe-hosted verification URL, surfaced as an anchor once a session exists. */
+  const [hostedUrl, setHostedUrl] = useState<string | null>(null);
   const [slowNote, setSlowNote] = useState(false);
   const sessionRef = useRef<string | null>(null);
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -95,9 +97,15 @@ export function IdentityVerificationCard({ bookingRef, initialStatus }: { bookin
           return;
         }
       } else if (isLive && start.hostedUrl) {
-        // No publishable key configured — hand off to Stripe's hosted page in a
-        // new tab and keep polling here; the webhook flips the status either way.
-        window.open(start.hostedUrl, '_blank', 'noopener');
+        // No publishable key configured — verification happens on Stripe's
+        // hosted page. Do NOT window.open() here: this runs after an await, so
+        // the user-gesture context is gone and browsers block the popup,
+        // stranding the renter on "Verifying…" with no way to continue
+        // (observed live, 2026-07-24). Surface a real anchor instead — the
+        // renter's tap on it is a trusted gesture that always opens. A new tab
+        // (not a redirect) is required because the session has no return_url,
+        // so a redirect would strand them on Stripe's page.
+        setHostedUrl(start.hostedUrl);
       }
       poll();
     } catch (err) {
@@ -155,14 +163,31 @@ export function IdentityVerificationCard({ bookingRef, initialStatus }: { bookin
               />
             </label>
           )}
-          <button
-            type="button"
-            onClick={begin}
-            disabled={status === 'processing'}
-            className="mt-3 w-full rounded-xl bg-[#C8A664] px-5 py-3.5 text-sm font-semibold text-[#1A1308] transition disabled:opacity-60"
-          >
-            {status === 'processing' ? 'Verifying…' : 'Verify identity'}
-          </button>
+          {hostedUrl ? (
+            <>
+              <a
+                href={hostedUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#C8A664] px-5 py-3.5 text-sm font-semibold text-[#1A1308] transition active:scale-[0.99]"
+              >
+                <ShieldCheck size={16} />
+                Continue to secure verification
+              </a>
+              <p className="mt-2 text-center text-[11px] leading-4 text-[#848A9A]">
+                Opens Stripe in a new tab. Leave this page open — it updates on its own when you&apos;re done.
+              </p>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={begin}
+              disabled={status === 'processing'}
+              className="mt-3 w-full rounded-xl bg-[#C8A664] px-5 py-3.5 text-sm font-semibold text-[#1A1308] transition disabled:opacity-60"
+            >
+              {status === 'processing' ? 'Verifying…' : 'Verify identity'}
+            </button>
+          )}
           {status === 'processing' && slowNote && (
             <p className="mt-2 text-center text-[11px] text-[#848A9A]">Still processing — you can close this page; the operator sees the result either way.</p>
           )}

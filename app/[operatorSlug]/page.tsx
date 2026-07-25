@@ -28,6 +28,10 @@ export default async function TeamStorefrontRoute({ params }: Props) {
   const storefront = await getPublicTeamStorefront(teamSlug);
   if (!storefront) notFound();
   const { team, vehicles } = storefront;
+  // Live (supabase) teams intentionally expose no phone — the public RPCs
+  // withhold operator PII — so `tel:` affordances must not render there or
+  // they become dead links (observed live, 2026-07-24). Mock/demo data has one.
+  const hasPhone = Boolean(team.phone);
 
   if (vehicles.length === 0) {
     return (
@@ -36,8 +40,10 @@ export default async function TeamStorefrontRoute({ params }: Props) {
           <section className="flex flex-1 flex-col items-center justify-center px-6 text-center">
             <div className="grid h-14 w-14 place-items-center rounded-full border border-[#2A2E3A] bg-[#161922] text-[#C8A664]"><CarFront size={24} /></div>
             <HTitle className="mt-5 text-[24px]">{team.name}</HTitle>
-            <p className="mt-3 text-sm leading-6 text-[#9BA1B0]">No vehicles are listed right now. The fleet is being refreshed — check back soon or call to ask about upcoming availability.</p>
-            <a href={`tel:${team.phone}`} className="mt-6 flex items-center gap-2 rounded-xl border border-[#C8A664]/35 bg-[#161922] px-5 py-3 text-sm font-semibold text-[#F0F2F5]"><Phone size={15} />Call {team.name}</a>
+            <p className="mt-3 text-sm leading-6 text-[#9BA1B0]">No vehicles are listed right now. The fleet is being refreshed — check back soon{hasPhone ? ' or call to ask about upcoming availability' : ''}.</p>
+            {hasPhone && (
+              <a href={`tel:${team.phone}`} className="mt-6 flex items-center gap-2 rounded-xl border border-[#C8A664]/35 bg-[#161922] px-5 py-3 text-sm font-semibold text-[#F0F2F5]"><Phone size={15} />Call {team.name}</a>
+            )}
           </section>
         </PhoneViewport>
       </div>
@@ -61,7 +67,7 @@ export default async function TeamStorefrontRoute({ params }: Props) {
   return (
     <div className={driveFontClassName}>
       <PhoneViewport step={1} stepStyle="numbered" className="font-[var(--font-drive-inter)]">
-        <section className="flex-1 overflow-y-auto px-4 pb-32 pt-2 [scrollbar-width:none]">
+        <section className={`min-h-0 flex-1 overflow-y-auto px-4 pt-2 [scrollbar-width:none] ${hasPhone ? 'pb-32' : 'pb-8'}`}>
           <div className="relative -mx-4 mt-[-8px] h-64 overflow-hidden bg-[#161922]">
             {heroVehicle.heroImage && <Image src={heroVehicle.heroImage} alt={heroVehicle.name} fill priority sizes="480px" className="object-cover object-[50%_52%]" />}
             <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-[#0D0F14]/20 to-[#0D0F14]" />
@@ -127,9 +133,11 @@ export default async function TeamStorefrontRoute({ params }: Props) {
             {['Operator-owned rental charge stays clear.', 'Exotiq Protect is shown separately.', 'Documents are verified before pickup.', 'Concierge handoff details are coordinated before arrival.'].map((item) => <div key={item} className="border-t border-[#2A2E3A] py-3 text-sm text-[#9BA1B0]">{item}</div>)}
           </div>
         </section>
-        <div className="absolute bottom-5 left-0 right-0 z-10 border-t border-[#2A2E3A] bg-[#0D0F14] px-4 pb-4 pt-3 shadow-[0_-24px_42px_rgba(13,15,20,.96)]">
-          <a href={`tel:${team.phone}`} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#C8A664]/35 bg-[#161922] px-5 py-4 text-sm font-semibold text-[#F0F2F5]"><Phone size={16} />Call {team.name}</a>
-        </div>
+        {hasPhone && (
+          <div className="absolute bottom-5 left-0 right-0 z-10 border-t border-[#2A2E3A] bg-[#0D0F14] px-4 pb-4 pt-3 shadow-[0_-24px_42px_rgba(13,15,20,.96)]">
+            <a href={`tel:${team.phone}`} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#C8A664]/35 bg-[#161922] px-5 py-4 text-sm font-semibold text-[#F0F2F5]"><Phone size={16} />Call {team.name}</a>
+          </div>
+        )}
       </PhoneViewport>
     </div>
   );
