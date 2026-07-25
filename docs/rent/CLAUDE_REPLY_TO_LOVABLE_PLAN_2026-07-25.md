@@ -110,14 +110,41 @@ your anonymous endpoints are rate-limited — so a naive "fetch the quote on eve
 change" would both feel laggy and risk 429-ing a fidgety renter mid-flow. Mock
 mode (demo.exotiq.rent) also has no backend at all and must keep working.
 
-I'm shipping it as: **server quote authoritative wherever a number is
-committed to** (Review, Reserve/Pay, Confirmation), with the dates-step running
-total clearly a preview, a single debounced quote fetch per (dates, protection)
-change, and a hard rule that **Reserve is blocked if the server quote can't be
-obtained** — better a retry prompt than a booking created against numbers the
-renter never saw. That keeps the `?? 10` fallback out of anything a renter is
-asked to agree to. Separate PR, with tests for quote-fetch failure and rapid
-toggling.
+I mapped all **32 money-rendering sites** across the renter flow before touching
+anything, and the mapping killed the naive version of this change. Three findings
+that constrain the design:
+
+1. **`cart.totals` is navigation, not just money.** `DatesStep` gates Continue on
+   `cart.totals.days >= vehicle.minRentalDays` and uses `countRentalDays` for
+   range selection. Deleting the client engine breaks the calendar.
+2. **Mock mode has no quote at all** — `mockService.ts` has no quote function and
+   `getDataMode()` defaults to mock. Deleting client math blanks every price on
+   demo.exotiq.rent, the whole 6-step flow, `/preview`, and the confirmation
+   page's non-live branch.
+3. **`public_vehicle_quote` returns zero rows when `_end_date <= _start_date`**,
+   and the flow shows a rental subtotal at step 02 *before* protection is chosen —
+   and the RPC defaults `_options` to premium. So quoting early would silently
+   fold $289/day of protection into a figure labelled "rental".
+
+So the design is: **keep the client engine for day-counting, gating, the
+step-02 rental-only preview, and all of mock mode — and make the server quote
+authoritative at every point the renter is asked to commit** (Review, Reserve,
+Confirmation). One quote fetch once dates *and* protection are both settled
+(entering Review), server numbers rendered from there on, and **Reserve blocked
+with a retry prompt if the quote can't be obtained** — better that than a
+booking created against numbers the renter never saw. That removes the `?? 10`
+fee fallback from everything a renter agrees to, while leaving the demo and the
+calendar untouched. Separate PR with tests for quote failure and rapid toggling.
+
+**Two more server-truth violations the mapping turned up on my side** (both fold
+into this PR, flagging so you know they exist):
+- `ProtectStep` **hardcodes** protection pricing (28900 / 8900) in the component,
+  so a repriced protection catalog would silently disagree with the quote.
+- `adapters.adaptFleetVehicle` **hardcodes `securityDepositCents: 0`** for every
+  live vehicle — which is why the renter UI showed no deposit even though
+  `public_vehicle_quote` already returns `deposit_cents` ($1,500 on the Audi
+  today). Wiring the quote fixes this automatically, and your Phase 5 resolution
+  will flow straight through.
 
 **Verified, so this actually closes the loop:** I checked the deployed code and
 neither `rent-checkout` nor `rent-payment-webhook` re-quotes — both charge from
