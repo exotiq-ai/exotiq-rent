@@ -12,10 +12,15 @@ export function PayStep({ cart, onPay, paying = false, payError }: { cart: Booki
   return (
     <>
       <ScreenShell>
-        <StepHeader eyebrow="Step 07" title="Final payment." />
+        {/* Nothing is charged at this step: Reserve creates the request, the
+            operator reviews it, and only then do we email a payment link. The
+            copy has to say that plainly — "Final payment / due today" read as a
+            charge that never happened. */}
+        <StepHeader eyebrow="Step 07" title="Reserve your dates." sub="Nothing is charged yet." />
         <div className="rounded-xl border border-[#C8A664] bg-[#14130F] p-4 shadow-[0_0_0_1px_#C8A664,0_0_24px_rgba(200,166,100,.10)]">
-          <div className="text-xs uppercase tracking-[0.22em] text-[#848A9A]">Estimated total due today</div>
+          <div className="text-xs uppercase tracking-[0.22em] text-[#848A9A]">Total once approved</div>
           <div className="mt-2"><Money cents={cart.totals.grandTotalCents} large /></div>
+          <p className="mt-2 text-xs leading-5 text-[#9BA1B0]">{cart.operator.name} reviews your request, then we email you a secure payment link. Your card is only charged when you pay from that link.</p>
         </div>
 
         <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm">
@@ -39,10 +44,15 @@ export function PayStep({ cart, onPay, paying = false, payError }: { cart: Booki
           </div>
         </div>
 
-        <div className="mt-4 rounded-xl border border-dashed border-[#5C6272] bg-[#10131A] p-4 text-sm">
-          <div className="flex items-center justify-between gap-3"><span className="text-[#9BA1B0]">Security deposit hold</span><Money cents={cart.totals.depositHoldCents} /></div>
-          <p className="mt-2 text-xs leading-5 text-[#848A9A]">Authorization only — not charged. Released within 48h of return if no damage.</p>
-        </div>
+        {/* Only disclose a deposit once there is an amount — "hold: $0" reads as
+            a bug. The backend resolves the real amount (tenant default /
+            per-vehicle override) as part of the deposit-hold work. */}
+        {cart.totals.depositHoldCents > 0 && (
+          <div className="mt-4 rounded-xl border border-dashed border-[#5C6272] bg-[#10131A] p-4 text-sm">
+            <div className="flex items-center justify-between gap-3"><span className="text-[#9BA1B0]">Security deposit hold</span><Money cents={cart.totals.depositHoldCents} /></div>
+            <p className="mt-2 text-xs leading-5 text-[#848A9A]">Authorization only — not charged. Released within 48h of return if no damage.</p>
+          </div>
+        )}
 
         <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
           <div className="flex items-start gap-3">
@@ -58,7 +68,9 @@ export function PayStep({ cart, onPay, paying = false, payError }: { cart: Booki
       </ScreenShell>
       <Sticky>
         {payError && <p className="rounded-xl border border-[#FFB84D]/45 bg-[#FFB84D]/10 p-3 text-center text-xs leading-5 text-[#F0F2F5]">{payError}</p>}
-        <PrimaryButton onClick={onPay} disabled={paying}>{paying ? 'Reserving…' : `Reserve for ${formatMoney(cart.totals.grandTotalCents)}`}</PrimaryButton>
+        {/* "Reserve for $X" implied an immediate charge of $X. It requests the
+            booking; payment is a later, separate step. */}
+        <PrimaryButton onClick={onPay} disabled={paying}>{paying ? 'Sending request…' : 'Request this booking'}</PrimaryButton>
       </Sticky>
     </>
   );

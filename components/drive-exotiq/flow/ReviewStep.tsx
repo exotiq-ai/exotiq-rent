@@ -26,7 +26,10 @@ export function ReviewStep({ cart, goTo, next }: { cart: BookingCart; goTo: (ste
         <Breakdown title="Operator" note={`Charge from ${cart.operator.name}`} rows={operatorRows} total={cart.totals.operatorTotalCents} />
         <Breakdown title="Exotiq.Rent" note="Booking fee + protection, charged separately by EXOTIQ.RENT" rows={[[`Booking fee (${platformPercent}%)`, 'Platform fee', cart.totals.platformFeeCents], ['Protection plan', cart.protection === 'decline' ? 'Declined — hold required later' : `${cart.protection} · ${cart.totals.days} days`, cart.totals.protectionTotalCents, () => goTo(4)]]} total={cart.totals.exotiqTotalCents} />
         <div className="mt-4 rounded-xl border border-[#C8A664] bg-[#14130F] p-4"><div className="flex items-center justify-between"><span className="text-sm text-[#9BA1B0]">Total due today</span><Money cents={cart.totals.grandTotalCents} large /></div></div>
-        <DepositHoldCard amountCents={cart.totals.depositHoldCents} />
+        {/* Live bookings carry no deposit amount until the backend resolves one
+            (tenant default / per-vehicle override), and "hold: $0" reads as an
+            error. Show the card only when there is an amount to disclose. */}
+        {cart.totals.depositHoldCents > 0 && <DepositHoldCard amountCents={cart.totals.depositHoldCents} />}
         <details className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm text-[#F0F2F5]">
           <summary className="cursor-pointer font-medium">Free cancellation</summary>
           <p className="mt-3 text-xs leading-5 text-[#9BA1B0]">Cancel up to 72 hours before pickup for a full refund.</p>
