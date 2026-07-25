@@ -43,7 +43,7 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug }: { operator
         <div className="mt-4 grid grid-cols-2 gap-2">
           {specs.map((spec) => (
             <div key={spec.label} className="rounded-xl border border-[#2A2E3A] bg-[#161922] p-[14px]">
-              <div className="text-[11px] uppercase tracking-[0.16em] text-[#5C6272]">{spec.label}</div>
+              <div className="text-[11px] uppercase tracking-[0.16em] text-[#848A9A]">{spec.label}</div>
               <div className="mt-2 flex items-baseline gap-1 text-[#F0F2F5]">
                 <spec.icon className="mr-1 text-[#C8A664]" size={15} />
                 <span className="text-[22px] font-medium leading-none tracking-[-0.02em] tabular-nums">{spec.value.split(' ')[0]}</span>
@@ -56,9 +56,9 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug }: { operator
         <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
           <div className="mb-3 flex items-center gap-2 text-sm font-medium"><CalendarDays size={16} className="text-[#C8A664]" />Booking preview</div>
           <div className="grid grid-cols-3 gap-2 text-center text-[11px]">
-            <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[#C8A664]"><Money cents={vehicle.dailyRateCents} /></div><div className="mt-1 text-[#5C6272]">Per day</div></div>
-            <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[#C8A664]">{vehicle.minRentalDays} days</div><div className="mt-1 text-[#5C6272]">Minimum</div></div>
-            <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[#C8A664]">Verified</div><div className="mt-1 text-[#5C6272]">Drivers</div></div>
+            <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[#C8A664]"><Money cents={vehicle.dailyRateCents} /></div><div className="mt-1 text-[#848A9A]">Per day</div></div>
+            <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[#C8A664]">{vehicle.minRentalDays} days</div><div className="mt-1 text-[#848A9A]">Minimum</div></div>
+            <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[#C8A664]">Verified</div><div className="mt-1 text-[#848A9A]">Drivers</div></div>
           </div>
           <p className="mt-3 text-[12px] leading-5 text-[#9BA1B0]">{vehicle.footnote}. Final availability, deposit holds, and payment collection will be handled through the secure booking step.</p>
         </div>

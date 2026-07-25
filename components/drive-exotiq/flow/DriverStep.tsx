@@ -37,21 +37,21 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
         <StepHeader eyebrow="Step 03" title="Who's driving?" sub="We verify ahead of pickup · 60 seconds." />
         <div className="rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
           <label className="block">
-            <span className="text-[10px] uppercase tracking-[0.18em] text-[#5C6272]">Full name</span>
+            <span className="text-[10px] uppercase tracking-[0.18em] text-[#848A9A]">Full name</span>
             <input type="text" value={cart.driver.name} onChange={(event) => setDriver({ name: event.target.value })} placeholder="Name as it appears on your license" autoComplete="name" className={fieldClass} />
           </label>
           <div className="mt-3 grid grid-cols-2 gap-3">
             <label className="block">
-              <span className="text-[10px] uppercase tracking-[0.18em] text-[#5C6272]">Date of birth</span>
+              <span className="text-[10px] uppercase tracking-[0.18em] text-[#848A9A]">Date of birth</span>
               <input type="date" value={cart.driver.dob} onChange={(event) => setDriver({ dob: event.target.value })} autoComplete="bday" className={fieldClass} />
             </label>
             <label className="block">
-              <span className="text-[10px] uppercase tracking-[0.18em] text-[#5C6272]">Phone</span>
+              <span className="text-[10px] uppercase tracking-[0.18em] text-[#848A9A]">Phone</span>
               <input type="tel" value={cart.driver.phone} onChange={(event) => setDriver({ phone: event.target.value })} placeholder="+1 (555) 555-0100" autoComplete="tel" className={fieldClass} />
             </label>
           </div>
           <label className="mt-3 block">
-            <span className="text-[10px] uppercase tracking-[0.18em] text-[#5C6272]">Email</span>
+            <span className="text-[10px] uppercase tracking-[0.18em] text-[#848A9A]">Email</span>
             <input type="email" value={cart.driver.email ?? ''} onChange={(event) => setDriver({ email: event.target.value })} placeholder="Where we send your confirmation" autoComplete="email" className={fieldClass} />
           </label>
         </div>
@@ -60,7 +60,7 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
             {cart.operator.name} requires drivers to be {minAge}+ on the pickup date for this rental.
           </p>
         )}
-        <div className="mt-4 px-1 text-[10px] uppercase tracking-[0.24em] text-[#5C6272]">Verification</div>
+        <div className="mt-4 px-1 text-[10px] uppercase tracking-[0.24em] text-[#848A9A]">Verification</div>
         <div className="mt-3 flex items-start gap-3 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
           <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#C8A664]/10 text-[#C8A664]"><IdCard size={18} /></div>
           <div>

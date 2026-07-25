@@ -145,7 +145,7 @@ export function IdentityVerificationCard({ bookingRef, initialStatus }: { bookin
           <p className="mt-1 text-xs leading-5 text-[#9BA1B0]">Takes about two minutes. Have your driver&apos;s license ready. Exotiq never stores your ID — documents are processed securely by Stripe, our verification partner.</p>
           {isLive && needsEmail && (
             <label className="mt-3 block">
-              <span className="text-[10px] uppercase tracking-[0.18em] text-[#5C6272]">Driver email on the booking</span>
+              <span className="text-[10px] uppercase tracking-[0.18em] text-[#848A9A]">Driver email on the booking</span>
               <input
                 type="email"
                 value={email}
@@ -164,7 +164,7 @@ export function IdentityVerificationCard({ bookingRef, initialStatus }: { bookin
             {status === 'processing' ? 'Verifying…' : 'Verify identity'}
           </button>
           {status === 'processing' && slowNote && (
-            <p className="mt-2 text-center text-[11px] text-[#5C6272]">Still processing — you can close this page; the operator sees the result either way.</p>
+            <p className="mt-2 text-center text-[11px] text-[#848A9A]">Still processing — you can close this page; the operator sees the result either way.</p>
           )}
         </div>
       </div>

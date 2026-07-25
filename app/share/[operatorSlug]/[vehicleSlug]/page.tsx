@@ -66,7 +66,7 @@ export default async function SharePage({ params }: Props) {
             Explore the {team.name} fleet
           </Link>
         </div>
-        <p className="mt-auto pt-10 text-center text-[11px] leading-5 text-[#5C6272]">Curated exotic &amp; luxury rentals · drive.exotiq</p>
+        <p className="mt-auto pt-10 text-center text-[11px] leading-5 text-[#848A9A]">Curated exotic &amp; luxury rentals · drive.exotiq</p>
       </div>
     </main>
   );
