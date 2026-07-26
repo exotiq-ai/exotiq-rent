@@ -5,7 +5,7 @@ import { formatRangeLabel } from '@/domain/booking/dates';
 import { formatMoney } from '@/domain/booking/totals';
 import type { BookingCart } from '@/domain/booking/types';
 import type { PublicQuote } from '@/domain/booking/publicContracts';
-import { Breakdown, QuoteNotice, ScreenShell, StepHeader, Sticky } from './shared';
+import { Breakdown, DepositHoldCard, QuoteNotice, ScreenShell, StepHeader, Sticky } from './shared';
 
 export function ReviewStep({
   cart,
@@ -63,10 +63,12 @@ export function ReviewStep({
         <Breakdown title="Operator" note={`Charge from ${cart.operator.name}`} rows={operatorRows} total={m.operatorTotalCents} />
         <Breakdown title="Exotiq.Rent" note="Booking fee + protection, charged separately by EXOTIQ.RENT" rows={[[`Booking fee (${platformPercent}%)`, 'Platform fee', m.platformFeeCents], ['Protection plan', cart.protection === 'decline' ? 'Declined — hold required later' : `${cart.protection} · ${days} days`, m.protectionTotalCents, () => goTo(4)]]} total={m.exotiqTotalCents} />
         <div className="mt-4 rounded-xl border border-[#C8A664] bg-[#14130F] p-4"><div className="flex items-center justify-between"><span className="text-sm text-[#9BA1B0]">Total due today</span><Money cents={m.grandTotalCents} large /></div></div>
-        {/* Live bookings carry no deposit amount until the backend resolves one
-            (tenant default / per-vehicle override), and "hold: $0" reads as an
-            error. Show the card only when there is an amount to disclose. */}
-        {m.depositHoldCents > 0 && <DepositHoldCard amountCents={m.depositHoldCents} />}
+        {/* Only disclose a deposit when there is an amount — "hold: $0" reads as
+            an error. The amount is the operator's own setting, resolved
+            server-side (per-vehicle override → tenant default). */}
+        {m.depositHoldCents > 0 && (
+          <DepositHoldCard amountCents={m.depositHoldCents} operatorName={cart.operator.name} />
+        )}
         <details className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm text-[#F0F2F5]">
           <summary className="cursor-pointer font-medium">Free cancellation</summary>
           <p className="mt-3 text-xs leading-5 text-[#9BA1B0]">Cancel up to 72 hours before pickup for a full refund.</p>
@@ -83,12 +85,3 @@ export function ReviewStep({
   );
 }
 
-function DepositHoldCard({ amountCents }: { amountCents: number }) {
-  return (
-    <div className="mt-4 rounded-xl border border-dashed border-[#5C6272] bg-[#10131A] p-4 text-sm">
-      <div className="flex items-center justify-between gap-3"><span className="text-[#9BA1B0]">Refundable hold at pickup</span><Money cents={amountCents} /></div>
-      <p className="mt-2 text-xs leading-5 text-[#848A9A]">Authorization only — not charged.</p>
-      <p className="text-xs leading-5 text-[#848A9A]">Released within 48h of return if no damage.</p>
-    </div>
-  );
-}

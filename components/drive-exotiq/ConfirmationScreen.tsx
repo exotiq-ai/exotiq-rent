@@ -89,9 +89,9 @@ export async function ConfirmationScreen({ bookingRef, accessToken }: { bookingR
               <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm font-medium"><span>Exotiq total</span><Money cents={cart.totals.exotiqTotalCents} /></div>
             </div>
             <div className="mt-4 rounded-xl border border-dashed border-[#5C6272] bg-[#10131A] p-4">
-              <div className="mb-3 flex items-center gap-2 text-sm font-medium"><LockKeyhole size={16} className="text-[#C8A664]" />Security deposit</div>
-              <div className="flex justify-between text-sm"><span className="text-[#9BA1B0]">Authorized on your card</span><Money cents={cart.totals.depositHoldCents} /></div>
-              <p className="mt-2 text-xs leading-5 text-[#848A9A]">Released within 48h of return if no damage.</p>
+              <div className="mb-3 flex items-center gap-2 text-sm font-medium"><LockKeyhole size={16} className="text-[#C8A664]" />Damage deposit</div>
+              <div className="flex justify-between text-sm"><span className="text-[#9BA1B0]">Held by {cart.operator.name} at pickup</span><Money cents={cart.totals.depositHoldCents} /></div>
+              <p className="mt-2 text-xs leading-5 text-[#848A9A]">An authorization, not a charge — released after return unless there&apos;s damage.</p>
             </div>
           </>
         )}
@@ -124,7 +124,12 @@ export async function ConfirmationScreen({ bookingRef, accessToken }: { bookingR
         <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#C8A664]/10 text-[#C8A664]">DE</div><div className="flex-1"><div className="text-sm font-medium">{cart.operator.name}</div><div className="text-xs text-[#9BA1B0]">{terminal ? (cart.operator.phone ? 'Questions about this booking? Call any time.' : 'Questions about this booking? Reply to your confirmation email.') : 'Will reach out before pickup'}</div></div>{cart.operator.phone && <a href={`tel:${cart.operator.phone}`} className="rounded-full border border-[#C8A664]/30 p-2 text-[#C8A664]" aria-label="Call operator"><Phone size={16} /></a>}</div></div>
         {!terminal && (
           <>
-            <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="mb-3 flex items-center gap-2 text-sm font-medium"><Sparkles size={16} className="text-[#C8A664]" />What happens next</div>{['Verify your identity above to confirm the booking.', 'Operator confirms final handoff details.', 'You receive pickup reminders before the rental.', 'Security deposit hold is placed on your card after your identity is verified.'].map((item, index) => <div key={item} className="flex gap-3 border-t border-[#2A2E3A] py-3 text-sm text-[#9BA1B0]"><span className="text-[#C8A664]">0{index + 1}</span>{item}</div>)}</div>
+            <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="mb-3 flex items-center gap-2 text-sm font-medium"><Sparkles size={16} className="text-[#C8A664]" />What happens next</div>{/* The deposit line names the operator and the 72-hour window on purpose.
+                The hold is authorized on the OPERATOR'S Stripe account, not ours, and
+                a card authorization only lasts about 7 days — so it cannot follow ID
+                verification (which happens months earlier on a far-out booking), which
+                is what this list used to promise. */}
+              {['Verify your identity above to confirm the booking.', 'Operator confirms final handoff details.', 'You receive pickup reminders before the rental.', `${cart.operator.name} emails you a secure link about 72 hours before pickup to put a card on file for the refundable damage hold.`].map((item, index) => <div key={item} className="flex gap-3 border-t border-[#2A2E3A] py-3 text-sm text-[#9BA1B0]"><span className="text-[#C8A664]">0{index + 1}</span>{item}</div>)}</div>
             <ConfirmationActions
               bookingRef={confirmation.bookingRef}
               vehicleName={cart.vehicle.name}
