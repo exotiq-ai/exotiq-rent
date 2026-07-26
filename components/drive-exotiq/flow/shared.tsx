@@ -168,8 +168,13 @@ export function DepositHoldCard({
         <span className="text-[#9BA1B0]">Refundable hold at pickup</span>
         <Money cents={amountCents} />
       </div>
+      {/* Names the operator but does NOT contrast them against Exotiq: the pilot
+          tenant is itself called "Drive Exotiq", so "held by X, not Exotiq"
+          rendered as "Held by Drive Exotiq, not Exotiq" — self-contradictory
+          (caught in production). Who and when is what the renter needs; which
+          Stripe account holds the funds is our concern, not theirs. */}
       <p className="mt-2 text-xs leading-5 text-[#848A9A]">
-        Held by {operatorName}, not Exotiq. They&apos;ll email you a secure link about 72 hours
+        Collected by {operatorName} — they&apos;ll email you a secure link about 72 hours
         before pickup to put a card on file.
       </p>
       <p className="mt-1 text-xs leading-5 text-[#848A9A]">
