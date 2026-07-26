@@ -5,7 +5,7 @@ import { Money, PrimaryButton } from '../BookingChrome';
 import { formatMoney } from '@/domain/booking/totals';
 import type { BookingCart } from '@/domain/booking/types';
 import type { PublicQuote } from '@/domain/booking/publicContracts';
-import { QuoteNotice, ScreenShell, StepHeader, Sticky } from './shared';
+import { DepositHoldCard, QuoteNotice, ScreenShell, StepHeader, Sticky } from './shared';
 
 export function PayStep({
   cart,
@@ -85,13 +85,9 @@ export function PayStep({
         </div>
 
         {/* Only disclose a deposit once there is an amount — "hold: $0" reads as
-            a bug. The backend resolves the real amount (tenant default /
-            per-vehicle override) as part of the deposit-hold work. */}
+            a bug. The amount is the operator's own setting, resolved server-side. */}
         {m.depositHoldCents > 0 && (
-          <div className="mt-4 rounded-xl border border-dashed border-[#5C6272] bg-[#10131A] p-4 text-sm">
-            <div className="flex items-center justify-between gap-3"><span className="text-[#9BA1B0]">Refundable hold at pickup</span><Money cents={m.depositHoldCents} /></div>
-            <p className="mt-2 text-xs leading-5 text-[#848A9A]">Authorization only — not charged. Released within 48h of return if no damage.</p>
-          </div>
+          <DepositHoldCard amountCents={m.depositHoldCents} operatorName={cart.operator.name} />
         )}
 
         <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">

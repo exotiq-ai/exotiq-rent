@@ -141,6 +141,44 @@ export function QuoteNotice({
   );
 }
 
+/**
+ * Damage deposit disclosure. Deliberately explicit that the OPERATOR collects
+ * this, not Exotiq: the deposit is authorized on the operator's own Stripe
+ * account and never passes through us, so promising it as an Exotiq step would
+ * misrepresent who holds the renter's money.
+ *
+ * Timing is stated because it is load-bearing, not decoration — a card
+ * authorization is only good for about 7 days, so it cannot be placed at
+ * booking for a rental months out. The operator emails a card-on-file link
+ * inside the 72-hour window and authorizes from there.
+ *
+ * Shared by Review and Pay: these were duplicated blocks, which is how the
+ * two drift apart into quoting different terms for the same money.
+ */
+export function DepositHoldCard({
+  amountCents,
+  operatorName,
+}: {
+  amountCents: number;
+  operatorName: string;
+}) {
+  return (
+    <div className="mt-4 rounded-xl border border-dashed border-[#5C6272] bg-[#10131A] p-4 text-sm">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-[#9BA1B0]">Refundable hold at pickup</span>
+        <Money cents={amountCents} />
+      </div>
+      <p className="mt-2 text-xs leading-5 text-[#848A9A]">
+        Held by {operatorName}, not Exotiq. They&apos;ll email you a secure link about 72 hours
+        before pickup to put a card on file.
+      </p>
+      <p className="mt-1 text-xs leading-5 text-[#848A9A]">
+        An authorization, not a charge — released after return unless there&apos;s damage.
+      </p>
+    </div>
+  );
+}
+
 export function Breakdown({
   title,
   note,
