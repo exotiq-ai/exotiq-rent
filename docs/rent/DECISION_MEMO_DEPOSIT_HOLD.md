@@ -1,8 +1,52 @@
 # Decision memo — how the security deposit hold actually gets placed
 
 **Audience:** Gregory (decides), Lovable (implements)
-**Status:** blocking the deposit smoke matrix, and one live UI promise
+**Status: DECIDED 2026-07-25 — see "Decision" below. The options analysis is kept for the record.**
 **Verified against:** deployed edge functions + live DB (2026-07-25), not the repo
+
+---
+
+## Decision (2026-07-25)
+
+**The damage deposit is handed off entirely to the operator tenant.** Authorized
+on their connected account, never passing through Exotiq, amount set by them in
+the Command Center. Exotiq charges the rental + booking fee + protection at
+booking — that is what secures the vehicle. The deposit is the only money an
+operator collects directly.
+
+Mechanically: renter saves a card to the **operator's** account via a
+setup-mode Checkout (~T-72h), operator authorizes from the Command Center, then
+releases or partially captures after return. Card-present at the counter stays
+available as a fallback.
+
+This resolves the custody problem the options below were wrestling with, rather
+than picking a side of it: Exotiq never holds deposit funds, so the
+balance-sheet and state-by-state deposit questions sit with the party that has
+the damage relationship and the vehicle.
+
+Two things were rejected along the way, both worth recording:
+
+- **Charging the deposit instead of authorizing it.** Stripe does not return
+  processing fees on refunds, so charge-then-refund burns ~2.9% on money always
+  intended to go back — ~$290 on a $10,000 deposit, per rental, which can exceed
+  the entire Exotiq booking fee on a short booking. Stripe's own guidance
+  recommends manual auth/capture for exactly this pattern. It also doesn't solve
+  the card-limit worry that motivated it: an authorization consumes the renter's
+  available credit identically to a charge.
+- **A Stripe Payment Link for the deposit.** Payment Links don't support setup
+  mode, so they *charge*. Setup-mode Checkout is the primitive that saves a card
+  for free.
+
+Superseded by this decision: the 7-day-window framing below is still true, but
+it's now the operator's constraint to manage inside the 72-hour window, not an
+Exotiq scheduling problem. Extended authorizations (30 days, free on the
+vehicle-rental MCC) remain worth confirming with Stripe as headroom.
+
+Follow-ups: `docs/rent/OPERATOR_SOP_DAMAGE_DEPOSIT.md` (tenant-facing SOP) and
+the Lovable handoff covering the setup-mode flow plus off-session confirm in
+`stripe-create-hold`.
+
+---
 
 ---
 
