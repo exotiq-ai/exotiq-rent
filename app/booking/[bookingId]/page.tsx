@@ -5,7 +5,13 @@ import { driveFontClassName } from '@/components/drive-exotiq/fonts';
 import { getSiteMode } from '@/domain/booking/config';
 import { getBookingConfirmation } from '@/domain/booking/service';
 
-type Props = { params: { bookingId: string }; searchParams: { t?: string } };
+type Props = {
+  params: { bookingId: string };
+  // `deposit` comes from the operator-account setup Checkout, `payment` from
+  // rent-checkout. Both Stripe redirects also carry `t` so the page still
+  // resolves the full confirmation rather than the restricted view.
+  searchParams: { t?: string; deposit?: string; payment?: string };
+};
 
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   // Marketplace-mode deploys (exotiq.rent) do not route the booking flow.
@@ -23,5 +29,14 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 }
 
 export default function ConfirmationRoute({ params, searchParams }: Props) {
-  return <div className={driveFontClassName}><ConfirmationScreen bookingRef={params.bookingId} accessToken={searchParams.t} /></div>;
+  return (
+    <div className={driveFontClassName}>
+      <ConfirmationScreen
+        bookingRef={params.bookingId}
+        accessToken={searchParams.t}
+        deposit={searchParams.deposit}
+        payment={searchParams.payment}
+      />
+    </div>
+  );
 }

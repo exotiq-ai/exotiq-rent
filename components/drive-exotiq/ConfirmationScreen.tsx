@@ -10,7 +10,19 @@ import { ConfirmationActions } from './ConfirmationActions';
 import { IdentityVerificationCard } from './IdentityVerificationCard';
 import { PaymentCard } from './PaymentCard';
 
-export async function ConfirmationScreen({ bookingRef, accessToken }: { bookingRef: string; accessToken?: string }) {
+export async function ConfirmationScreen({
+  bookingRef,
+  accessToken,
+  deposit,
+  payment,
+}: {
+  bookingRef: string;
+  accessToken?: string;
+  /** `?deposit=` from stripe-create-deposit-setup-session's return URLs. */
+  deposit?: string;
+  /** `?payment=` from rent-checkout's success/cancel URLs. */
+  payment?: string;
+}) {
   const lookup = await getBookingConfirmation(bookingRef, accessToken);
   if (!lookup) notFound();
 
@@ -44,6 +56,7 @@ export async function ConfirmationScreen({ bookingRef, accessToken }: { bookingR
     payment_expired: { badge: 'Expired', title: 'The payment window closed.', note: 'The dates were released. Book again any time — approval is usually faster the second time.' },
   };
   const terminal = live ? TERMINAL[live.status] : undefined;
+  const returnNotice = resolveReturnNotice({ deposit, payment, operatorName: cart.operator.name });
   const cancellable = Boolean(
     live && accessToken && !terminal && live.platformFeeCents !== undefined &&
     ['requested', 'pending_documents', 'pending_payment', 'confirmed'].includes(live.status),
@@ -52,6 +65,7 @@ export async function ConfirmationScreen({ bookingRef, accessToken }: { bookingR
   return (
     <PhoneViewport step={8} className="font-[var(--font-drive-inter)]">
       <section className="flex-1 overflow-y-auto px-4 pb-8 pt-2 [scrollbar-width:none]">
+        {returnNotice && <ReturnNotice {...returnNotice} />}
         <div className="relative overflow-hidden rounded-2xl border border-[#2A2E3A] bg-[#161922]">
           <div className="relative h-56">
             {cart.vehicle.heroImage
@@ -155,6 +169,73 @@ export async function ConfirmationScreen({ bookingRef, accessToken }: { bookingR
         )}
       </section>
     </PhoneViewport>
+  );
+}
+
+type ReturnNoticeProps = { tone: 'good' | 'warn'; title: string; body: string };
+
+/**
+ * Acknowledges a renter coming back from a Stripe-hosted page.
+ *
+ * Both redirects land here and, before this, were silently ignored — the renter
+ * completed a Stripe screen and the page looked identical, which reads as "did
+ * that work?" and generates support contacts.
+ *
+ * `payment=success` deliberately does NOT claim the booking is confirmed:
+ * Stripe redirects on its own schedule and the webhook that promotes the
+ * booking may not have landed yet, so a "confirmed!" banner would contradict a
+ * status still showing pending_payment two inches below it.
+ */
+function resolveReturnNotice({
+  deposit,
+  payment,
+  operatorName,
+}: {
+  deposit?: string;
+  payment?: string;
+  operatorName: string;
+}): ReturnNoticeProps | null {
+  if (deposit === 'saved') {
+    return {
+      tone: 'good',
+      title: 'Card saved for your deposit',
+      body: `${operatorName} will place the refundable hold shortly before pickup. Nothing has been charged.`,
+    };
+  }
+  if (deposit === 'cancelled') {
+    return {
+      tone: 'warn',
+      title: 'Card not saved yet',
+      body: `${operatorName} needs a card on file before pickup. Use the link in your email whenever you're ready — it stays valid.`,
+    };
+  }
+  if (payment === 'success') {
+    return {
+      tone: 'good',
+      title: 'Payment received',
+      body: "We're confirming it with your bank. This page updates on its own — no need to pay again.",
+    };
+  }
+  if (payment === 'cancelled') {
+    return {
+      tone: 'warn',
+      title: 'Payment not completed',
+      body: 'Your dates are still held. You can pay from this page any time before the deadline below.',
+    };
+  }
+  return null;
+}
+
+function ReturnNotice({ tone, title, body }: ReturnNoticeProps) {
+  const good = tone === 'good';
+  return (
+    <div
+      role="status"
+      className={`mb-3 rounded-xl border p-4 ${good ? 'border-[#C8A664] bg-[#14130F]' : 'border-[#FFB84D]/45 bg-[#FFB84D]/10'}`}
+    >
+      <div className={`text-sm font-medium ${good ? 'text-[#C8A664]' : 'text-[#FFB84D]'}`}>{title}</div>
+      <p className="mt-1 text-xs leading-5 text-[#F0F2F5]">{body}</p>
+    </div>
   );
 }
 
