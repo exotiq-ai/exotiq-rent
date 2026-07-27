@@ -23,14 +23,23 @@ Set this on every vehicle you list. A blank deposit with no tenant default
 falls back to a $1,000 platform floor, which is not what you want on a
 six-figure car.
 
-### 2. Renter puts a card on file (~72 hours before pickup)
+### 2. Get a card on file
 
-The renter is emailed a secure Stripe link to save a card **to your account**.
-Nothing is charged. You'll see the card appear against the booking in Command
-Center.
+**Normally you'll do this at pickup, in person** — same as any rental counter.
 
-This is deliberately not at time of booking: a card authorization is only good
-for about **7 days**, so a hold placed weeks ahead would lapse before pickup.
+Two ways, both landing the card on *your* Stripe account:
+
+- **At the counter (default):** open the booking → **Request card**. The renter
+  gets a secure Stripe link and completes it on their own phone in about 30
+  seconds. Your staff never touch the card number.
+- **Ahead of time (optional):** send the same **Request card** link earlier if
+  you'd rather know before you prep the vehicle. Useful on high-value cars.
+
+Nothing is charged at this step. You'll see the card appear against the booking.
+
+Why not at time of booking: a card authorization is only good for about
+**7 days**, so a hold placed weeks ahead lapses before pickup. The card can be
+saved any time; the *hold* has to be close to pickup.
 
 ### 3. Place the hold
 
@@ -38,7 +47,8 @@ Open the booking → **Place hold**. One click. The amount comes from your
 settings — you never type a number.
 
 This is an *authorization*: the funds are reserved on the renter's card, not
-taken. Place it inside the 72-hour window, not earlier.
+taken. Place it at pickup, or at most a few days before — never more than a week
+out, or it expires before the rental starts.
 
 ### 4. After return — release or capture
 
@@ -52,25 +62,23 @@ Release promptly. A stale authorization on a renter's card is the single most
 common complaint in vehicle rental, and it's the kind of thing that turns into
 a chargeback and a bad review.
 
-### 5. If there's no card on file by 24 hours before pickup
+### 5. If the renter can't cover the deposit
 
-Your call, and you should make it before the vehicle is prepped:
+It happens, and it's a decision to make at the counter before you release keys —
+not something to wave through.
 
-- collect at handoff before releasing the keys, or
-- cancel the reservation.
+- **Don't hand over a vehicle with no deposit authorization in place.**
+- A different card is usually the fix. The link can be re-sent as many times as
+  needed.
+- If they genuinely can't cover it, note it on the booking so Exotiq support has
+  the context, and tell us the same day. The renter has already paid the rental
+  in full, so this needs handling rather than leaving.
 
-Don't hand over a vehicle with no deposit authorization in place. If you cancel
-for this reason, note it on the booking so Exotiq support has the context.
+### Don't key card numbers in by hand
 
-### At the counter
-
-If you'd rather handle it in person, **re-send the same link** and let the
-renter complete it on their own phone — 30 seconds, and your staff never touch
-the card number.
-
-Avoid keying card numbers in by hand. It carries worse rates, you take on full
-fraud liability with no authentication, and it pulls your staff into PCI scope.
-If you want true card-present, use Stripe Tap to Pay on your own account.
+It carries worse rates, you take on full fraud liability with no authentication,
+and it pulls your staff into PCI scope. The **Request card** link is faster and
+safer. If you want true card-present, use Stripe Tap to Pay on your own account.
 
 ### What Exotiq has already charged
 
@@ -95,7 +103,21 @@ renter pushes back on this, that's the distinction.
 - Deposit collection is the **operator's** responsibility. Worth stating
   explicitly in the operator agreement so a missed deposit is unambiguously
   their loss, not an Exotiq liability. **Legal to confirm.**
-- Steps 2 and 3 depend on Lovable shipping the setup-mode card-on-file flow and
-  the off-session confirm in `stripe-create-hold`. Until then step 5's
-  "collect at handoff" is the only working path — don't send this SOP to tenants
-  before that lands, or it describes a button that isn't there.
+- Steps 2–4 are **shipped**: `stripe-create-deposit-setup-session` (Request
+  card), `stripe-create-hold` mode=off_session (Place hold), plus capture and
+  release, all driven from the DepositPanel in the Payments tab. This SOP is
+  sendable once the flow has been smoke-tested end to end.
+- **The T-72h automatic sweep was deliberately parked, not forgotten.** Nothing
+  emails the renter on a schedule; the operator initiates. Rationale: we have no
+  data on how often a renter can't cover a deposit, and pre-window collection is
+  a genuine tradeoff rather than an obvious win — asking before free
+  cancellation expires surfaces an unaffordable deposit while the booking can
+  still be lost cheaply, but it also hands a wavering renter an exit. Gregory is
+  asking local customers which they prefer before we build to either.
+- If we do automate later, note that **saving a card is not a funds check** —
+  only placing the hold tests affordability. So a scheduled *card request* before
+  the cancellation cutoff proves nothing; it would have to be a scheduled
+  *hold* (feasible at ~4 days out, inside the 7-day window).
+- Still open for Gregory: if a renter never produces a workable card, do they get
+  a refund despite the cancellation policy? Recommend yes — they've paid in full
+  and received no vehicle, which is a dispute they'd likely win anyway.
