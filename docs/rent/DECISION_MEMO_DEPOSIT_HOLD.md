@@ -1,12 +1,62 @@
 # Decision memo — how the security deposit hold actually gets placed
 
 **Audience:** Gregory (decides), Lovable (implements)
-**Status: DECIDED 2026-07-25 — see "Decision" below. The options analysis is kept for the record.**
+**Status: FINAL — superseded by the 2026-07-26 decision below. Everything after it is kept for the record only.**
 **Verified against:** deployed edge functions + live DB (2026-07-25), not the repo
 
 ---
 
-## Decision (2026-07-25)
+## FINAL DECISION (2026-07-26) — Exotiq is out of the deposit entirely
+
+**Exotiq does not touch the damage deposit at any point.** No hold, no charge,
+no card on file, no amount quoted, no Stripe object. The renter settles the
+deposit **with the operator, at pickup**, by whatever method that operator
+accepts — card, cash, or their own terminal.
+
+Gregory confirmed this with operators directly, and their reasoning is the
+deciding factor: keeping it offline **widens the payment methods they can
+accept**. Any Exotiq-mediated flow narrows it to cards.
+
+What Exotiq still collects at booking, unchanged: the full rental, the Exotiq
+booking fee, and the protection plan. That is what secures the vehicle.
+
+This supersedes the 2026-07-25 decision below (operator-owned hold via
+setup-mode Checkout on the connected account). That design was correct given
+its constraints, but it solved a problem we no longer have.
+
+**What this retires:**
+- the setup-mode card-on-file flow and `stripe-create-deposit-setup-session`
+- the `depositCardRequested` email and the deposit sentence in `receiptConfirmed`
+- `?deposit=saved` / `?deposit=cancelled` return handling in the renter app
+- every renter-facing deposit amount and "refundable hold" mechanic
+- the T-72h/T-96h scheduler debate, permanently
+- extended-authorization MCC enrollment — no longer needed
+
+**What survives, repurposed:** `resolve_deposit_cents`, `teams.default_deposit_cents`
+and `vehicles.deposit_override_cents` become **operator reference data** — what
+to ask for at the counter, visible in the Command Center only, never sent to a
+renter. Worth keeping: it's already built, and it gives operators somewhere to
+record their own policy.
+
+**The one thing that can break money here.** `public_vehicle_quote` currently
+rolls the deposit *into* `operator_total_cents` and `grand_total_cents`, and
+`adapters.adaptQuote` subtracts it back out (`adapters.ts:101-116`).
+`rent-create-booking` does the same for `_total_value`. So removing
+`deposit_cents` from the quote **without** also removing it from those totals
+inflates every total by the deposit — $10,000 on the Bugatti. The safe change is
+to stop including it in the totals *and* return `deposit_cents = 0`, which makes
+the frontend's subtraction a harmless no-op and means neither side can break
+totals independently of the other. Order does not matter if it is done that way.
+
+**Still worth doing, unrelated to deposits:** swap the marketplace-readiness
+gate from `deposit_source_confirmed_at` to an explicitly-set
+`platform_fee_percent`. The deposit gate now guards something outside Exotiq's
+money flow, while 17 of 18 tenants sit at a 0% fee — which is the condition that
+actually costs Exotiq revenue on onboarding.
+
+---
+
+## Decision (2026-07-25) — SUPERSEDED, kept for the record
 
 **The damage deposit is handed off entirely to the operator tenant.** Authorized
 on their connected account, never passing through Exotiq, amount set by them in
