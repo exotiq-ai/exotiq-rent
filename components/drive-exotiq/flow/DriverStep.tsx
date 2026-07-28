@@ -34,7 +34,7 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
   return (
     <>
       <ScreenShell>
-        <StepHeader eyebrow="Step 03" title="Who's driving?" sub="We verify ahead of pickup · 60 seconds." />
+        <StepHeader eyebrow="Step 03" title="Who's driving?" sub="Takes about a minute." />
         <div className="rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
           <label className="block">
             <span className="text-[10px] uppercase tracking-[0.18em] text-[#848A9A]">Full name</span>

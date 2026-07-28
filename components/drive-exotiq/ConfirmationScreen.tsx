@@ -26,7 +26,7 @@ export async function ConfirmationScreen({
   // D4: a booking ref without its access token shows existence + status only.
   if ('restricted' in lookup) {
     return (
-      <PhoneViewport step={8} className="font-[var(--font-drive-inter)]">
+      <PhoneViewport step={6} className="font-[var(--font-drive-inter)]">
         <section className="flex flex-1 flex-col items-center justify-center px-6 text-center">
           <div className="grid h-14 w-14 place-items-center rounded-full border border-[#2A2E3A] bg-[#161922] text-[#C8A664]"><LockKeyhole size={24} /></div>
           <HTitle className="mt-5 text-[24px]">Booking {lookup.bookingRef}</HTitle>
@@ -60,7 +60,7 @@ export async function ConfirmationScreen({
   );
 
   return (
-    <PhoneViewport step={8} className="font-[var(--font-drive-inter)]">
+    <PhoneViewport step={6} className="font-[var(--font-drive-inter)]">
       <section className="flex-1 overflow-y-auto px-4 pb-8 pt-2 [scrollbar-width:none]">
         {returnNotice && <ReturnNotice {...returnNotice} />}
         <div className="relative overflow-hidden rounded-2xl border border-[#2A2E3A] bg-[#161922]">
@@ -95,8 +95,8 @@ export async function ConfirmationScreen({
             <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
               <div className="mb-3 text-sm font-medium">Charges</div>
               <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block">Operator rental charge</span><span className="text-xs text-[#C8A664]">Charged by {cart.operator.name}</span></span><Money cents={cart.totals.operatorTotalCents} /></div>
-              <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block">Exotiq booking fee ({platformPercent}%)</span><span className="text-xs text-[#C8A664]">Calculated on the rental only</span></span><Money cents={cart.totals.platformFeeCents} /></div>
-              <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block">Exotiq protection plan</span><span className="text-xs text-[#C8A664]">Included in EXOTIQ.RENT charge</span></span><Money cents={cart.totals.protectionTotalCents} /></div>
+              <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block">Trip Fees ({platformPercent}%)</span><span className="text-xs text-[#C8A664]">Calculated on the rental only</span></span><Money cents={cart.totals.platformFeeCents} /></div>
+              <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block">Protection (included)</span><span className="text-xs text-[#C8A664]">Included in EXOTIQ.RENT charge</span></span><Money cents={cart.totals.protectionTotalCents} /></div>
               <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm font-medium"><span>Exotiq total</span><Money cents={cart.totals.exotiqTotalCents} /></div>
             </div>
             <div className="mt-4 rounded-xl border border-dashed border-[#5C6272] bg-[#10131A] p-4">
@@ -121,7 +121,7 @@ export async function ConfirmationScreen({
           <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
             <div className="mb-1 text-sm font-medium">Paid — your receipt</div>
             <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block text-[#9BA1B0]">{cart.operator.name} rental</span><span className="text-xs text-[#848A9A]">Appears as {cart.operator.name} on your statement</span></span><Money cents={live.totalCents} /></div>
-            <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block text-[#9BA1B0]">Booking fee + protection</span><span className="text-xs text-[#848A9A]">Appears as EXOTIQ RENT</span></span><Money cents={(live.platformFeeCents ?? 0) + (live.protectionTotalCents ?? 0)} /></div>
+            <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block text-[#9BA1B0]">Trip Fees + protection</span><span className="text-xs text-[#848A9A]">Appears as EXOTIQ RENT</span></span><Money cents={(live.platformFeeCents ?? 0) + (live.protectionTotalCents ?? 0)} /></div>
             <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm font-medium"><span>Total paid</span><Money cents={live.totalCents + (live.platformFeeCents ?? 0) + (live.protectionTotalCents ?? 0)} /></div>
           </div>
         )}
@@ -129,7 +129,7 @@ export async function ConfirmationScreen({
           <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
             <div className="mb-1 text-sm font-medium">Operator rental total</div>
             <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span className="text-[#9BA1B0]">Charged by {cart.operator.name}</span><Money cents={live.totalCents} /></div>
-            <p className="text-xs leading-5 text-[#848A9A]">Exotiq booking fee and protection are itemized at payment, after the operator approves your booking.</p>
+            <p className="text-xs leading-5 text-[#848A9A]">Trip Fees and protection are itemized at payment, once the operator approves.</p>
           </div>
         )}
         <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#C8A664]/10 text-[#C8A664]">DE</div><div className="flex-1"><div className="text-sm font-medium">{cart.operator.name}</div><div className="text-xs text-[#9BA1B0]">{terminal ? (cart.operator.phone ? 'Questions about this booking? Call any time.' : 'Questions about this booking? Reply to your confirmation email.') : 'Will reach out before pickup'}</div></div>{cart.operator.phone && <a href={`tel:${cart.operator.phone}`} className="rounded-full border border-[#C8A664]/30 p-2 text-[#C8A664]" aria-label="Call operator"><Phone size={16} /></a>}</div></div>

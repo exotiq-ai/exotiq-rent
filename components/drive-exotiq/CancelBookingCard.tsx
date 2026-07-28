@@ -65,7 +65,7 @@ export function CancelBookingCard({
             ? 'You are inside the free window — both charges will be refunded in full and the dates released.'
             : 'Nothing has been charged — the reservation is simply released.'
           : paid
-            ? 'The 72-hour window has passed: the rental, booking fee, and protection are non-refundable. Cancelling releases the dates without a refund.'
+            ? 'The 72-hour window has passed: the rental, Trip Fees, and protection are non-refundable. Cancelling releases the dates without a refund.'
             : 'The 72-hour window has passed. Nothing has been charged; the reservation is released.'}
       </p>
       <div className="mt-3 flex gap-2">

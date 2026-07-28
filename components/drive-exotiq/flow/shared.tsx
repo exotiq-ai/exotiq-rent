@@ -1,37 +1,8 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { Check, CheckCircle2, FileText } from 'lucide-react';
+import { CheckCircle2, FileText } from 'lucide-react';
 import { HTitle, Money } from '../BookingChrome';
-
-export function SelectableCard({
-  children,
-  selected = false,
-  warning = false,
-  dashed = false,
-  onClick,
-}: {
-  children: ReactNode;
-  selected?: boolean;
-  warning?: boolean;
-  dashed?: boolean;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="w-full rounded-xl p-4 text-left transition"
-      style={{
-        backgroundColor: selected ? (warning ? 'rgba(255,184,77,0.08)' : 'rgba(200,166,100,0.10)') : '#161922',
-        border: `${selected ? '1.5px' : '1px'} ${dashed ? 'dashed' : 'solid'} ${selected ? (warning ? '#FFB84D' : '#C8A664') : '#2A2E3A'}`,
-        boxShadow: selected && !warning ? '0 0 0 1px #C8A664, 0 0 20px rgba(200,166,100,0.10)' : 'none',
-      }}
-    >
-      {children}
-    </button>
-  );
-}
 
 export function StepHeader({ eyebrow, title, sub }: { eyebrow: string; title: string; sub?: string }) {
   return (
@@ -86,14 +57,6 @@ export function RunningTotalCard({
         <Money cents={amountCents} large />
       </div>
     </div>
-  );
-}
-
-export function CheckCircle({ checked }: { checked: boolean }) {
-  return (
-    <span className={`mt-1 grid h-5 w-5 shrink-0 place-items-center rounded-full border ${checked ? 'border-[#C8A664] bg-[#C8A664]/15 text-[#C8A664]' : 'border-[#2A2E3A] text-transparent'}`}>
-      {checked && <Check size={12} />}
-    </span>
   );
 }
 
@@ -167,14 +130,8 @@ export function DepositDisclosure({ operatorName }: { operatorName: string }) {
     <div className="mt-4 rounded-xl border border-dashed border-[#5C6272] bg-[#10131A] p-4 text-sm">
       <div className="text-[#F0F2F5]">Damage deposit at pickup</div>
       <p className="mt-2 text-xs leading-5 text-[#848A9A]">
-        {operatorName} collects a refundable damage deposit at pickup. Amount and accepted
-        payment methods vary by operator — they&apos;ll confirm before handoff.
-      </p>
-      {/* Position-neutral on purpose: Review renders the total ABOVE this card
-          and Pay renders it below, so "the total below" was wrong on one of
-          them (caught in production). */}
-      <p className="mt-1 text-xs leading-5 text-[#848A9A]">
-        Separate from the total you pay Exotiq today.
+        {operatorName} collects a refundable deposit at pickup. Amount and accepted methods
+        vary by operator. Separate from the total you pay Exotiq today.
       </p>
     </div>
   );

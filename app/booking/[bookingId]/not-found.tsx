@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 export default function BookingNotFound() {
   return (
     <div className={driveFontClassName}>
-      <PhoneViewport step={8} className="font-[var(--font-drive-inter)]">
+      <PhoneViewport step={6} className="font-[var(--font-drive-inter)]">
         <section className="flex flex-1 flex-col items-center justify-center px-6 text-center">
           <div className="grid h-14 w-14 place-items-center rounded-full border border-[#2A2E3A] bg-[#161922] text-[#C8A664]">
             <LockKeyhole size={24} />
