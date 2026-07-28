@@ -344,7 +344,10 @@ export default function VehicleDetailPage({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
                   { icon: Shield, title: 'Free Cancellation', desc: 'Cancel before Oct 9 at no charge' },
-                  { icon: CreditCard, title: '$50 Deposit', desc: 'Pay just $50 to reserve' },
+                  // No amount, and not framed as reserving the car: the deposit is
+                  // the operator's, collected at pickup, and the rental is what
+                  // secures the booking (docs/rent/DECISION_MEMO_DEPOSIT_HOLD.md).
+                  { icon: CreditCard, title: 'Deposit at Pickup', desc: 'Refundable, collected by the operator' },
                   { icon: Gauge, title: '500 mi Included', desc: 'Extra miles at $0.75/mi' },
                   { icon: Shield, title: 'Standard Protection', desc: 'Insurance included in price' },
                 ].map((item, i) => (

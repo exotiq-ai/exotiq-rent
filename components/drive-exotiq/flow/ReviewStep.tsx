@@ -5,7 +5,7 @@ import { formatRangeLabel } from '@/domain/booking/dates';
 import { formatMoney } from '@/domain/booking/totals';
 import type { BookingCart } from '@/domain/booking/types';
 import type { PublicQuote } from '@/domain/booking/publicContracts';
-import { Breakdown, DepositHoldCard, QuoteNotice, ScreenShell, StepHeader, Sticky } from './shared';
+import { Breakdown, DepositDisclosure, QuoteNotice, ScreenShell, StepHeader, Sticky } from './shared';
 
 export function ReviewStep({
   cart,
@@ -61,14 +61,11 @@ export function ReviewStep({
         <StepHeader eyebrow="Step 06" title="Here's the breakdown." sub="Review your details before payment." />
         <div className="grid grid-cols-3 gap-2 rounded-xl border border-[#2A2E3A] bg-[#161922] p-3 text-center text-[11px]"><div><span className="block text-[#848A9A]">Dates</span>{dateLabel}</div><div><span className="block text-[#848A9A]">Pickup</span>{cart.pickupTime}</div><div><span className="block text-[#848A9A]">Location</span>{cart.operator.city}</div></div>
         <Breakdown title="Operator" note={`Charge from ${cart.operator.name}`} rows={operatorRows} total={m.operatorTotalCents} />
-        <Breakdown title="Exotiq.Rent" note="Booking fee + protection, charged separately by EXOTIQ.RENT" rows={[[`Booking fee (${platformPercent}%)`, 'Platform fee', m.platformFeeCents], ['Protection plan', cart.protection === 'decline' ? 'Declined — hold required later' : `${cart.protection} · ${days} days`, m.protectionTotalCents, () => goTo(4)]]} total={m.exotiqTotalCents} />
+        <Breakdown title="Exotiq.Rent" note="Booking fee + protection, charged separately by EXOTIQ.RENT" rows={[[`Booking fee (${platformPercent}%)`, 'Platform fee', m.platformFeeCents], ['Protection plan', cart.protection === 'decline' ? 'Declined — larger deposit at pickup' : `${cart.protection} · ${days} days`, m.protectionTotalCents, () => goTo(4)]]} total={m.exotiqTotalCents} />
         <div className="mt-4 rounded-xl border border-[#C8A664] bg-[#14130F] p-4"><div className="flex items-center justify-between"><span className="text-sm text-[#9BA1B0]">Total due today</span><Money cents={m.grandTotalCents} large /></div></div>
-        {/* Only disclose a deposit when there is an amount — "hold: $0" reads as
-            an error. The amount is the operator's own setting, resolved
-            server-side (per-vehicle override → tenant default). */}
-        {m.depositHoldCents > 0 && (
-          <DepositHoldCard amountCents={m.depositHoldCents} operatorName={cart.operator.name} />
-        )}
+        {/* Unconditional: the deposit is the operator's to collect at pickup and
+            Exotiq quotes no amount, so there is no value to gate on. */}
+        <DepositDisclosure operatorName={cart.operator.name} />
         <details className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm text-[#F0F2F5]">
           <summary className="cursor-pointer font-medium">Free cancellation</summary>
           <p className="mt-3 text-xs leading-5 text-[#9BA1B0]">Cancel up to 72 hours before pickup for a full refund.</p>

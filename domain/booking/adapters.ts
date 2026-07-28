@@ -94,12 +94,19 @@ export function adaptBusyRanges(rows: RpcBusyRangeRow[]): UnavailableDateRange[]
 }
 
 export function adaptQuote(row: RpcQuoteRow): PublicQuote {
-  // The 2026-07-22 backend fee update rolled the security deposit into
-  // operator_total_cents and grand_total_cents. Renter-facing semantics keep
-  // the deposit as a separate authorization hold (matching mock totals), so
-  // strip it back out of the charge lines here.
+  // No deposit arithmetic here any more. The 2026-07-22 quote rolled the
+  // deposit INTO operator_total_cents/grand_total_cents and this adapter
+  // subtracted it back out; as of the 2026-07-26 decision the backend excludes
+  // it from both and returns deposit_cents = 0, verified against production
+  // before this was removed (Bugatti: operator_total == rental_subtotal ==
+  // 1_500_000, grand_total 1_736_700, deposit_cents 0).
+  //
+  // Deliberately still reads row.deposit_cents rather than hardcoding 0: if the
+  // backend ever reintroduces a non-zero value, depositHoldCents carries it and
+  // the totals stay untouched, which fails visibly rather than silently
+  // mis-stating a total.
   const depositCents = Number(row.deposit_cents ?? 0);
-  const operatorChargeCents = Number(row.operator_total_cents) - depositCents;
+  const operatorChargeCents = Number(row.operator_total_cents);
   return {
     currency: 'usd',
     rentalDays: row.rental_days,
@@ -113,7 +120,7 @@ export function adaptQuote(row: RpcQuoteRow): PublicQuote {
     protectionDailyRateCents: Number(row.protection_daily_cents),
     protectionTotalCents: Number(row.protection_total_cents),
     exotiqTotalCents: Number(row.exotiq_total_cents),
-    grandTotalCents: Number(row.grand_total_cents) - depositCents,
+    grandTotalCents: Number(row.grand_total_cents),
     depositHoldCents: depositCents,
     cancellationPolicy: {
       freeCancellationHours: 72,

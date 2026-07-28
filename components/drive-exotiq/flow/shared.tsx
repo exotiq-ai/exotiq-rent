@@ -142,43 +142,36 @@ export function QuoteNotice({
 }
 
 /**
- * Damage deposit disclosure. Deliberately explicit that the OPERATOR collects
- * this, not Exotiq: the deposit is authorized on the operator's own Stripe
- * account and never passes through us, so promising it as an Exotiq step would
- * misrepresent who holds the renter's money.
+ * Damage-deposit disclosure (FINAL decision, docs/rent/DECISION_MEMO_DEPOSIT_HOLD.md
+ * 2026-07-26). Exotiq never touches the deposit: no hold, no charge, no card on
+ * file, no Stripe object. The renter settles it with the operator at pickup, by
+ * whatever method that operator accepts — which is the point, since keeping it
+ * offline is what lets operators take methods a card-only flow would exclude.
  *
- * Timing is stated because it is load-bearing, not decoration — a card
- * authorization is only good for about 7 days, so it cannot be placed at
- * booking for a rental months out. The operator emails a card-on-file link
- * inside the 72-hour window and authorizes from there.
+ * Quotes NO amount, by design. Operators set and vary their own figures, so a
+ * number here is a promise Exotiq cannot keep and would be argued back at us
+ * when the counter asks for something different.
  *
- * Shared by Review and Pay: these were duplicated blocks, which is how the
- * two drift apart into quoting different terms for the same money.
+ * Rendered UNCONDITIONALLY, not gated on a value. The previous card was gated on
+ * `depositHoldCents > 0`, so the moment the backend started returning 0 the whole
+ * disclosure silently vanished — leaving renters to discover a five-figure
+ * deposit at handoff with no warning. Verified that had already happened in
+ * production. An expectation this consequential must not hinge on a number.
+ *
+ * Still names the operator but does not contrast them against Exotiq: the pilot
+ * tenant is itself called "Drive Exotiq", which turned "not Exotiq" phrasing
+ * into "Drive Exotiq, not Exotiq".
  */
-export function DepositHoldCard({
-  amountCents,
-  operatorName,
-}: {
-  amountCents: number;
-  operatorName: string;
-}) {
+export function DepositDisclosure({ operatorName }: { operatorName: string }) {
   return (
     <div className="mt-4 rounded-xl border border-dashed border-[#5C6272] bg-[#10131A] p-4 text-sm">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-[#9BA1B0]">Refundable hold at pickup</span>
-        <Money cents={amountCents} />
-      </div>
-      {/* Names the operator but does NOT contrast them against Exotiq: the pilot
-          tenant is itself called "Drive Exotiq", so "held by X, not Exotiq"
-          rendered as "Held by Drive Exotiq, not Exotiq" — self-contradictory
-          (caught in production). Who and when is what the renter needs; which
-          Stripe account holds the funds is our concern, not theirs. */}
+      <div className="text-[#F0F2F5]">Damage deposit at pickup</div>
       <p className="mt-2 text-xs leading-5 text-[#848A9A]">
-        Collected by {operatorName} — they&apos;ll email you a secure link about 72 hours
-        before pickup to put a card on file.
+        {operatorName} collects a refundable damage deposit at pickup. Amount and accepted
+        payment methods vary by operator — they&apos;ll confirm before handoff.
       </p>
       <p className="mt-1 text-xs leading-5 text-[#848A9A]">
-        An authorization, not a charge — released after return unless there&apos;s damage.
+        Not included in the total below.
       </p>
     </div>
   );

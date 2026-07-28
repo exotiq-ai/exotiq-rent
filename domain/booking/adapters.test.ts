@@ -120,29 +120,56 @@ describe('M4 adapters (RPC rows -> domain, dollars -> cents)', () => {
     expect(quote.operatorTaxesCents).toBe(0);
   });
 
-  it('strips the deposit out of the charge lines (2026-07-22 quote shape)', () => {
-    // Live sample: $500/day x 3, 10% fee, premium protection, $1,500 deposit
-    // rolled into operator_total and grand_total by the backend.
+  it('passes the backend totals through untouched — the deposit is excluded server-side (2026-07-26 decision)', () => {
+    // Real production shape, read off public_vehicle_quote for the Bugatti:
+    // the backend no longer rolls the deposit into operator_total/grand_total
+    // and returns deposit_cents = 0. Verified before the adapter's subtraction
+    // was removed. Replaces the old "strips the deposit out" test, which pinned
+    // arithmetic that would now double-subtract.
     const quoteRow: RpcQuoteRow = {
       currency: 'usd',
       rental_days: 3,
-      daily_rate_cents: 50000,
-      rental_subtotal_cents: 150000,
-      deposit_cents: 150000,
-      operator_total_cents: 300000,
+      daily_rate_cents: 500000,
+      rental_subtotal_cents: 1500000,
+      deposit_cents: 0,
+      operator_total_cents: 1500000,
       platform_fee_percent: 10,
-      platform_fee_cents: 15000,
+      platform_fee_cents: 150000,
       protection_tier: 'premium',
       protection_daily_cents: 28900,
       protection_total_cents: 86700,
-      exotiq_total_cents: 101700,
-      grand_total_cents: 401700,
+      exotiq_total_cents: 236700,
+      grand_total_cents: 1736700,
     };
     const quote = adaptQuote(quoteRow);
-    // Charges exclude the hold: $1,500 rental + $150 fee + $867 protection.
-    expect(quote.operatorTotalCents).toBe(150000);
+    expect(quote.operatorTotalCents).toBe(1500000);
     expect(quote.operatorTaxesCents).toBe(0);
-    expect(quote.grandTotalCents).toBe(251700);
-    expect(quote.depositHoldCents).toBe(150000);
+    expect(quote.grandTotalCents).toBe(1736700);
+    expect(quote.depositHoldCents).toBe(0);
+  });
+
+  it('never subtracts a non-zero deposit_cents from the totals', () => {
+    // Guard against a regression to the old behaviour. If the backend ever
+    // returns a non-zero deposit again, it must surface on depositHoldCents and
+    // leave the charge lines alone — silently reducing a total the renter is
+    // asked to pay is the worse failure of the two.
+    const quote = adaptQuote({
+      currency: 'usd',
+      rental_days: 1,
+      daily_rate_cents: 100000,
+      rental_subtotal_cents: 100000,
+      deposit_cents: 250000,
+      operator_total_cents: 100000,
+      platform_fee_percent: 10,
+      platform_fee_cents: 10000,
+      protection_tier: 'standard',
+      protection_daily_cents: 8900,
+      protection_total_cents: 8900,
+      exotiq_total_cents: 18900,
+      grand_total_cents: 118900,
+    });
+    expect(quote.operatorTotalCents).toBe(100000);
+    expect(quote.grandTotalCents).toBe(118900);
+    expect(quote.depositHoldCents).toBe(250000);
   });
 });
