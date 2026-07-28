@@ -89,6 +89,10 @@ export type PublicQuote = {
   platformFeeCents: number;
   protectionDailyRateCents: number;
   protectionTotalCents: number;
+  /** 2% Exotiq take + Stripe's fee on the Exotiq leg (server-computed). */
+  processingFeeCents: number;
+  /** Per-day state vehicle-rental surcharge (server-computed). */
+  stateFeeCents: number;
   exotiqTotalCents: number;
   grandTotalCents: number;
   depositHoldCents: number;
