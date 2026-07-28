@@ -78,6 +78,20 @@ export function PayStep({
             <span className="text-[#9BA1B0]">Protection (included)</span>
             <Money cents={m.protectionTotalCents} />
           </div>
+          {/* Itemise everything the server folded into exotiqTotalCents —
+              otherwise the rows and the total disagree. */}
+          {quote?.stateFeeCents ? (
+            <div className="mt-3 flex justify-between gap-3 border-t border-[#2A2E3A] pt-3">
+              <span className="text-[#9BA1B0]">State rental fee</span>
+              <Money cents={quote.stateFeeCents} />
+            </div>
+          ) : null}
+          {quote?.processingFeeCents ? (
+            <div className="mt-3 flex justify-between gap-3 border-t border-[#2A2E3A] pt-3">
+              <span className="text-[#9BA1B0]">Processing fees</span>
+              <Money cents={quote.processingFeeCents} />
+            </div>
+          ) : null}
           <div className="mt-3 flex justify-between gap-3 border-t border-[#2A2E3A] pt-3 font-medium text-[#F0F2F5]">
             <span>Exotiq total</span>
             <Money cents={m.exotiqTotalCents} />

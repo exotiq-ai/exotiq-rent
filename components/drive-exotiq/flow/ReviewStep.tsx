@@ -46,6 +46,17 @@ export function ReviewStep({
   ];
   if (m.operatorTaxesCents > 0) operatorRows.push(['Taxes & fees', 'Operator tax estimate', m.operatorTaxesCents]);
 
+  // Every component of exotiqTotalCents must be itemised. The server added
+  // processing and state fees into that total, and rendering only the first two
+  // rows left $264 of a $1,842 section unexplained — visible in production.
+  // These come straight off the quote; mock mode has neither and shows neither.
+  const exotiqRows: [string, string, number, (() => void)?][] = [
+    ['Trip Fees', `${platformPercent}% of the rental`, m.platformFeeCents],
+    ['Protection', `Included · ${days} days`, m.protectionTotalCents],
+  ];
+  if (quote?.stateFeeCents) exotiqRows.push(['State rental fee', `${days} days`, quote.stateFeeCents]);
+  if (quote?.processingFeeCents) exotiqRows.push(['Processing fees', 'Card processing', quote.processingFeeCents]);
+
   if (blocked) {
     return (
       <>
@@ -67,7 +78,7 @@ export function ReviewStep({
         {/* Protection is included, not chosen — the tier step is gone, so this
             row states what is covered rather than offering a way back to a
             selection that no longer exists. */}
-        <Breakdown title="Exotiq.Rent" note="Charged separately by EXOTIQ.RENT" rows={[['Trip Fees', `${platformPercent}% of the rental`, m.platformFeeCents], ['Protection', `Included · ${days} days`, m.protectionTotalCents]]} total={m.exotiqTotalCents} />
+        <Breakdown title="Exotiq.Rent" note="Charged separately by EXOTIQ.RENT" rows={exotiqRows} total={m.exotiqTotalCents} />
         <div className="mt-4 rounded-xl border border-[#C8A664] bg-[#14130F] p-4"><div className="flex items-center justify-between"><span className="text-sm text-[#9BA1B0]">Total due today</span><Money cents={m.grandTotalCents} large /></div></div>
         {/* Unconditional: the deposit is the operator's to collect at pickup and
             Exotiq quotes no amount, so there is no value to gate on. */}

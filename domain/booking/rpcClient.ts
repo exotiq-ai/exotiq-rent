@@ -69,6 +69,10 @@ export type RpcQuoteRow = {
   protection_tier: string;
   protection_daily_cents: number;
   protection_total_cents: number;
+  /** 2% Exotiq take + Stripe's fee on the Exotiq leg. Added 2026-07-28. */
+  processing_fee_cents?: number;
+  /** Per-day state vehicle-rental surcharge. Added 2026-07-28. */
+  state_fee_cents?: number;
   exotiq_total_cents: number;
   grand_total_cents: number;
 };

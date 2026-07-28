@@ -119,6 +119,12 @@ export function adaptQuote(row: RpcQuoteRow): PublicQuote {
     platformFeeCents: Number(row.platform_fee_cents),
     protectionDailyRateCents: Number(row.protection_daily_cents),
     protectionTotalCents: Number(row.protection_total_cents),
+    // Optional on the wire so an older quote shape still adapts; a missing
+    // column becomes 0 and simply renders no row. They are NOT added into
+    // exotiqTotalCents here — the server already includes them, and adding
+    // them again would double-count.
+    processingFeeCents: Number(row.processing_fee_cents ?? 0),
+    stateFeeCents: Number(row.state_fee_cents ?? 0),
     exotiqTotalCents: Number(row.exotiq_total_cents),
     grandTotalCents: Number(row.grand_total_cents),
     depositHoldCents: depositCents,

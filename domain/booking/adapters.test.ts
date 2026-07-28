@@ -148,6 +148,51 @@ describe('M4 adapters (RPC rows -> domain, dollars -> cents)', () => {
     expect(quote.depositHoldCents).toBe(0);
   });
 
+  it('exposes every component of exotiqTotalCents so the itemisation can add up', () => {
+    // Production regression, 2026-07-28: the backend added processing and state
+    // fees INTO exotiq_total_cents. The UI itemised only Trip Fees + protection,
+    // so a $1,842 section showed rows summing to $1,578 and $264 of the renter's
+    // money went unexplained. Adapting the fields is what makes the rows able to
+    // reconcile; this pins that they are carried and NOT re-added to the total.
+    const quote = adaptQuote({
+      currency: 'usd',
+      rental_days: 2,
+      daily_rate_cents: 500000,
+      rental_subtotal_cents: 1000000,
+      deposit_cents: 0,
+      operator_total_cents: 1000000,
+      platform_fee_percent: 10,
+      platform_fee_cents: 100000,
+      protection_tier: 'premium',
+      protection_daily_cents: 28900,
+      protection_total_cents: 57800,
+      processing_fee_cents: 25220,
+      state_fee_cents: 1178,
+      exotiq_total_cents: 184198,
+      grand_total_cents: 1184198,
+    });
+    expect(quote.processingFeeCents).toBe(25220);
+    expect(quote.stateFeeCents).toBe(1178);
+    // The four itemised rows reconcile exactly to the section total.
+    expect(
+      quote.platformFeeCents + quote.protectionTotalCents + quote.stateFeeCents + quote.processingFeeCents,
+    ).toBe(quote.exotiqTotalCents);
+    // And the server total is passed through, never recomputed.
+    expect(quote.grandTotalCents).toBe(1184198);
+  });
+
+  it('defaults the new fee columns to 0 when an older quote omits them', () => {
+    const quote = adaptQuote({
+      currency: 'usd', rental_days: 1, daily_rate_cents: 100000,
+      rental_subtotal_cents: 100000, deposit_cents: 0, operator_total_cents: 100000,
+      platform_fee_percent: 10, platform_fee_cents: 10000, protection_tier: 'premium',
+      protection_daily_cents: 28900, protection_total_cents: 28900,
+      exotiq_total_cents: 38900, grand_total_cents: 138900,
+    });
+    expect(quote.processingFeeCents).toBe(0);
+    expect(quote.stateFeeCents).toBe(0);
+  });
+
   it('never subtracts a non-zero deposit_cents from the totals', () => {
     // Guard against a regression to the old behaviour. If the backend ever
     // returns a non-zero deposit again, it must surface on depositHoldCents and
