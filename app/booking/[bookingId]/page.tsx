@@ -7,10 +7,10 @@ import { getBookingConfirmation } from '@/domain/booking/service';
 
 type Props = {
   params: { bookingId: string };
-  // `deposit` comes from the operator-account setup Checkout, `payment` from
-  // rent-checkout. Both Stripe redirects also carry `t` so the page still
-  // resolves the full confirmation rather than the restricted view.
-  searchParams: { t?: string; deposit?: string; payment?: string };
+  // `payment` comes from rent-checkout's success/cancel URLs, which also carry
+  // `t` so the page resolves the full confirmation rather than the restricted
+  // view. (`deposit` is gone — Exotiq no longer sends renters to a deposit page.)
+  searchParams: { t?: string; payment?: string };
 };
 
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
@@ -34,7 +34,6 @@ export default function ConfirmationRoute({ params, searchParams }: Props) {
       <ConfirmationScreen
         bookingRef={params.bookingId}
         accessToken={searchParams.t}
-        deposit={searchParams.deposit}
         payment={searchParams.payment}
       />
     </div>

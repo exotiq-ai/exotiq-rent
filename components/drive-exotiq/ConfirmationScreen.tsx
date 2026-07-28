@@ -13,13 +13,10 @@ import { PaymentCard } from './PaymentCard';
 export async function ConfirmationScreen({
   bookingRef,
   accessToken,
-  deposit,
   payment,
 }: {
   bookingRef: string;
   accessToken?: string;
-  /** `?deposit=` from stripe-create-deposit-setup-session's return URLs. */
-  deposit?: string;
   /** `?payment=` from rent-checkout's success/cancel URLs. */
   payment?: string;
 }) {
@@ -56,7 +53,7 @@ export async function ConfirmationScreen({
     payment_expired: { badge: 'Expired', title: 'The payment window closed.', note: 'The dates were released. Book again any time — approval is usually faster the second time.' },
   };
   const terminal = live ? TERMINAL[live.status] : undefined;
-  const returnNotice = resolveReturnNotice({ deposit, payment, operatorName: cart.operator.name });
+  const returnNotice = resolveReturnNotice({ payment });
   const cancellable = Boolean(
     live && accessToken && !terminal && live.platformFeeCents !== undefined &&
     ['requested', 'pending_documents', 'pending_payment', 'confirmed'].includes(live.status),
@@ -98,14 +95,14 @@ export async function ConfirmationScreen({
             <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
               <div className="mb-3 text-sm font-medium">Charges</div>
               <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block">Operator rental charge</span><span className="text-xs text-[#C8A664]">Charged by {cart.operator.name}</span></span><Money cents={cart.totals.operatorTotalCents} /></div>
-              <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block">Exotiq booking fee ({platformPercent}%)</span><span className="text-xs text-[#C8A664]">On rental only; extras & deposit excluded</span></span><Money cents={cart.totals.platformFeeCents} /></div>
+              <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block">Exotiq booking fee ({platformPercent}%)</span><span className="text-xs text-[#C8A664]">Calculated on the rental only</span></span><Money cents={cart.totals.platformFeeCents} /></div>
               <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block">Exotiq protection plan</span><span className="text-xs text-[#C8A664]">Included in EXOTIQ.RENT charge</span></span><Money cents={cart.totals.protectionTotalCents} /></div>
               <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm font-medium"><span>Exotiq total</span><Money cents={cart.totals.exotiqTotalCents} /></div>
             </div>
             <div className="mt-4 rounded-xl border border-dashed border-[#5C6272] bg-[#10131A] p-4">
-              <div className="mb-3 flex items-center gap-2 text-sm font-medium"><LockKeyhole size={16} className="text-[#C8A664]" />Damage deposit</div>
-              <div className="flex justify-between text-sm"><span className="text-[#9BA1B0]">Held by {cart.operator.name} at pickup</span><Money cents={cart.totals.depositHoldCents} /></div>
-              <p className="mt-2 text-xs leading-5 text-[#848A9A]">An authorization, not a charge — released after return unless there&apos;s damage.</p>
+              <div className="mb-3 flex items-center gap-2 text-sm font-medium"><LockKeyhole size={16} className="text-[#C8A664]" />Damage deposit at pickup</div>
+              <p className="text-xs leading-5 text-[#848A9A]">{cart.operator.name} collects a refundable damage deposit at pickup. Amount and accepted payment methods vary by operator — they&apos;ll confirm before handoff.</p>
+              <p className="mt-1 text-xs leading-5 text-[#848A9A]">Not included in the charges above.</p>
             </div>
           </>
         )}
@@ -138,12 +135,10 @@ export async function ConfirmationScreen({
         <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#C8A664]/10 text-[#C8A664]">DE</div><div className="flex-1"><div className="text-sm font-medium">{cart.operator.name}</div><div className="text-xs text-[#9BA1B0]">{terminal ? (cart.operator.phone ? 'Questions about this booking? Call any time.' : 'Questions about this booking? Reply to your confirmation email.') : 'Will reach out before pickup'}</div></div>{cart.operator.phone && <a href={`tel:${cart.operator.phone}`} className="rounded-full border border-[#C8A664]/30 p-2 text-[#C8A664]" aria-label="Call operator"><Phone size={16} /></a>}</div></div>
         {!terminal && (
           <>
-            <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="mb-3 flex items-center gap-2 text-sm font-medium"><Sparkles size={16} className="text-[#C8A664]" />What happens next</div>{/* The deposit line names the operator and the 72-hour window on purpose.
-                The hold is authorized on the OPERATOR'S Stripe account, not ours, and
-                a card authorization only lasts about 7 days — so it cannot follow ID
-                verification (which happens months earlier on a far-out booking), which
-                is what this list used to promise. */}
-              {['Verify your identity above to confirm the booking.', 'Operator confirms final handoff details.', 'You receive pickup reminders before the rental.', `${cart.operator.name} emails you a secure link about 72 hours before pickup to put a card on file for the refundable damage hold.`].map((item, index) => <div key={item} className="flex gap-3 border-t border-[#2A2E3A] py-3 text-sm text-[#9BA1B0]"><span className="text-[#C8A664]">0{index + 1}</span>{item}</div>)}</div>
+            <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="mb-3 flex items-center gap-2 text-sm font-medium"><Sparkles size={16} className="text-[#C8A664]" />What happens next</div>{/* The deposit step describes an in-person handoff, not a link: Exotiq
+                takes no part in the deposit, so there is nothing for us to email and
+                no amount for us to quote. */}
+              {['Verify your identity above to confirm the booking.', 'Operator confirms final handoff details.', 'You receive pickup reminders before the rental.', `${cart.operator.name} collects a refundable damage deposit when you pick up the car.`].map((item, index) => <div key={item} className="flex gap-3 border-t border-[#2A2E3A] py-3 text-sm text-[#9BA1B0]"><span className="text-[#C8A664]">0{index + 1}</span>{item}</div>)}</div>
             <ConfirmationActions
               bookingRef={confirmation.bookingRef}
               vehicleName={cart.vehicle.name}
@@ -175,40 +170,20 @@ export async function ConfirmationScreen({
 type ReturnNoticeProps = { tone: 'good' | 'warn'; title: string; body: string };
 
 /**
- * Acknowledges a renter coming back from a Stripe-hosted page.
- *
- * Both redirects land here and, before this, were silently ignored — the renter
- * completed a Stripe screen and the page looked identical, which reads as "did
- * that work?" and generates support contacts.
+ * Acknowledges a renter coming back from Stripe Checkout. Without it the renter
+ * completes a Stripe screen, returns to a visually identical page, and has no
+ * idea whether it worked — which generates support contacts.
  *
  * `payment=success` deliberately does NOT claim the booking is confirmed:
  * Stripe redirects on its own schedule and the webhook that promotes the
  * booking may not have landed yet, so a "confirmed!" banner would contradict a
  * status still showing pending_payment two inches below it.
+ *
+ * The `?deposit=` branches are gone with the 2026-07-26 decision — Exotiq no
+ * longer sends renters to any deposit-related Stripe page, so there is no such
+ * return to acknowledge.
  */
-function resolveReturnNotice({
-  deposit,
-  payment,
-  operatorName,
-}: {
-  deposit?: string;
-  payment?: string;
-  operatorName: string;
-}): ReturnNoticeProps | null {
-  if (deposit === 'saved') {
-    return {
-      tone: 'good',
-      title: 'Card saved for your deposit',
-      body: `${operatorName} will place the refundable hold shortly before pickup. Nothing has been charged.`,
-    };
-  }
-  if (deposit === 'cancelled') {
-    return {
-      tone: 'warn',
-      title: 'Card not saved yet',
-      body: `${operatorName} needs a card on file before pickup. Use the link in your email whenever you're ready — it stays valid.`,
-    };
-  }
+function resolveReturnNotice({ payment }: { payment?: string }): ReturnNoticeProps | null {
   if (payment === 'success') {
     return {
       tone: 'good',

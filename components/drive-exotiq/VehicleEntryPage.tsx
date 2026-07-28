@@ -60,7 +60,7 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug }: { operator
             <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[#C8A664]">{vehicle.minRentalDays} days</div><div className="mt-1 text-[#848A9A]">Minimum</div></div>
             <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[#C8A664]">Verified</div><div className="mt-1 text-[#848A9A]">Drivers</div></div>
           </div>
-          <p className="mt-3 text-[12px] leading-5 text-[#9BA1B0]">{vehicle.footnote}. Final availability, deposit holds, and payment collection will be handled through the secure booking step.</p>
+          <p className="mt-3 text-[12px] leading-5 text-[#9BA1B0]">{vehicle.footnote}. Final availability and payment collection will be handled through the secure booking step.</p>
         </div>
 
         <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">

@@ -28,7 +28,12 @@ export function ProtectStep({ cart, setCart, next }: { cart: BookingCart; setCar
   const declineTerms = [
     'You are personally responsible for the total cash value of the vehicle for any damage, theft, loss of use, or total loss during the rental.',
     'You must carry personal auto insurance that covers this rental, and provide proof for verification before pickup.',
-    'A $5,000 authorization hold will be placed on your card before the rental begins.',
+    // Was "A $5,000 authorization hold will be placed on your card before the
+    // rental begins." Exotiq places no holds and sets no deposit amounts as of
+    // the 2026-07-26 decision, so both the mechanic and the figure were false.
+    // Substance kept (declining means a larger deposit); the number and the
+    // actor are now the operator's. Legal copy still pending Gregory.
+    'The operator will require a larger refundable deposit at pickup, collected directly by them.',
   ];
   return (
     <ScreenShell>
@@ -47,7 +52,7 @@ export function ProtectStep({ cart, setCart, next }: { cart: BookingCart; setCar
           </SelectableCard>
         ))}
         <SelectableCard selected={cart.protection === 'decline'} warning dashed onClick={() => setTier('decline')}>
-          <div className="flex justify-between gap-4"><div><div className="text-sm font-medium text-[#FFB84D]">Self-cover · decline protection</div><p className="mt-2 text-xs leading-5 text-[#9BA1B0]">You accept full financial responsibility. A $5,000 authorization hold is required later.</p></div><span className="text-sm">$0</span></div>
+          <div className="flex justify-between gap-4"><div><div className="text-sm font-medium text-[#FFB84D]">Self-cover · decline protection</div><p className="mt-2 text-xs leading-5 text-[#9BA1B0]">You accept full financial responsibility. The operator will require a larger deposit at pickup.</p></div><span className="text-sm">$0</span></div>
         </SelectableCard>
       </div>
       {cart.protection === 'decline' && (

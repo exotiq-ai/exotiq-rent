@@ -5,7 +5,7 @@ import { Money, PrimaryButton } from '../BookingChrome';
 import { formatMoney } from '@/domain/booking/totals';
 import type { BookingCart } from '@/domain/booking/types';
 import type { PublicQuote } from '@/domain/booking/publicContracts';
-import { DepositHoldCard, QuoteNotice, ScreenShell, StepHeader, Sticky } from './shared';
+import { DepositDisclosure, QuoteNotice, ScreenShell, StepHeader, Sticky } from './shared';
 
 export function PayStep({
   cart,
@@ -34,7 +34,7 @@ export function PayStep({
   const m = quote ?? cart.totals;
   const platformPercent = Math.round(m.platformFeeRate * 100);
   // The quote has no fee-base column; per D1/D9 the base IS the rental
-  // subtotal (extras and deposit excluded), which is what the copy states.
+  // subtotal, which is what the copy states.
   const feeBaseCents = quote ? quote.rentalSubtotalCents : cart.totals.platformFeeBaseCents;
 
   if (blocked) {
@@ -73,7 +73,7 @@ export function PayStep({
             <span className="text-[#9BA1B0]">Exotiq booking fee ({platformPercent}%)</span>
             <Money cents={m.platformFeeCents} />
           </div>
-          <div className="mt-1 text-xs leading-5 text-[#848A9A]">Calculated on the {formatMoney(feeBaseCents)} rental only; extras and deposits excluded.</div>
+          <div className="mt-1 text-xs leading-5 text-[#848A9A]">Calculated on the {formatMoney(feeBaseCents)} rental only.</div>
           <div className="mt-3 flex justify-between gap-3 border-t border-[#2A2E3A] pt-3">
             <span className="text-[#9BA1B0]">Exotiq protection plan</span>
             <Money cents={m.protectionTotalCents} />
@@ -84,11 +84,9 @@ export function PayStep({
           </div>
         </div>
 
-        {/* Only disclose a deposit once there is an amount — "hold: $0" reads as
-            a bug. The amount is the operator's own setting, resolved server-side. */}
-        {m.depositHoldCents > 0 && (
-          <DepositHoldCard amountCents={m.depositHoldCents} operatorName={cart.operator.name} />
-        )}
+        {/* Unconditional: the deposit is the operator's to collect at pickup and
+            Exotiq quotes no amount, so there is no value to gate on. */}
+        <DepositDisclosure operatorName={cart.operator.name} />
 
         <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
           <div className="flex items-start gap-3">
