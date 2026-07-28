@@ -170,8 +170,11 @@ export function DepositDisclosure({ operatorName }: { operatorName: string }) {
         {operatorName} collects a refundable damage deposit at pickup. Amount and accepted
         payment methods vary by operator — they&apos;ll confirm before handoff.
       </p>
+      {/* Position-neutral on purpose: Review renders the total ABOVE this card
+          and Pay renders it below, so "the total below" was wrong on one of
+          them (caught in production). */}
       <p className="mt-1 text-xs leading-5 text-[#848A9A]">
-        Not included in the total below.
+        Separate from the total you pay Exotiq today.
       </p>
     </div>
   );
