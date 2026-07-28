@@ -5,10 +5,13 @@ import { ArrowLeft, X } from 'lucide-react';
 
 type StepStyle = 'bars' | 'numbered';
 
-function StepIndicator({ step, total = 8, variant = 'bars' }: { step: number; total?: number; variant?: StepStyle }) {
+// 6, not 8: Extras and Protect were removed from the flow. `total` and `labels`
+// must stay the same length or the bar fills to a fraction the renter is not on
+// and the label lookup runs off the end.
+function StepIndicator({ step, total = 6, variant = 'bars' }: { step: number; total?: number; variant?: StepStyle }) {
   if (variant === 'numbered') {
     const pct = `${Math.max(0, Math.min(1, step / total)) * 100}%`;
-    const labels = ['Vehicle', 'Dates', 'Driver', 'Extras', 'Protect', 'Review', 'Pay', 'Done'];
+    const labels = ['Vehicle', 'Dates', 'Driver', 'Review', 'Pay', 'Done'];
 
     return (
       <div className="flex items-center gap-3 px-6 pb-4 pt-1 text-[11px] uppercase tracking-[0.16em] text-[#848A9A]">

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Money, PrimaryButton } from '../BookingChrome';
 import { formatRangeLabel } from '@/domain/booking/dates';
 import { formatMoney } from '@/domain/booking/totals';
@@ -34,20 +35,22 @@ export function ReviewStep({
   const m = quote ?? cart.totals;
   const days = quote ? quote.rentalDays : cart.totals.days;
   const platformPercent = Math.round(m.platformFeeRate * 100);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
-  // Only show operator line-items that carry a real amount — extras and the
-  // operator tax are zero in the live flow, and a "$0" line reads as noise.
+  // Only the rental row is navigable now. The extras and protection rows used
+  // to link to goTo(3)/goTo(4); with those steps deleted those indices are
+  // Review and Pay, so tapping "protection" would have jumped the renter
+  // FORWARD to payment. Extras can no longer be non-zero either.
   const operatorRows: [string, string, number, (() => void)?][] = [
     ['Rental', `${days} × ${formatMoney(quote ? quote.dailyRateCents : cart.vehicle.dailyRateCents)}`, m.rentalSubtotalCents, () => goTo(1)],
   ];
-  if (m.extrasSubtotalCents > 0) operatorRows.push(['Extras', `${cart.extras.length} selected`, m.extrasSubtotalCents, () => goTo(3)]);
   if (m.operatorTaxesCents > 0) operatorRows.push(['Taxes & fees', 'Operator tax estimate', m.operatorTaxesCents]);
 
   if (blocked) {
     return (
       <>
         <ScreenShell>
-          <StepHeader eyebrow="Step 06" title="Here's the breakdown." sub="Review your details before payment." />
+          <StepHeader eyebrow="Step 04" title="Here's the breakdown." sub="Review your details before payment." />
           <QuoteNotice pending={quotePending} message={quoteError} onRetry={onRetryQuote} />
         </ScreenShell>
         <Sticky><PrimaryButton onClick={next} disabled>{quotePending ? 'Getting final pricing…' : 'Proceed to payment'}</PrimaryButton></Sticky>
@@ -58,26 +61,36 @@ export function ReviewStep({
   return (
     <>
       <ScreenShell>
-        <StepHeader eyebrow="Step 06" title="Here's the breakdown." sub="Review your details before payment." />
+        <StepHeader eyebrow="Step 04" title="Here's the breakdown." />
         <div className="grid grid-cols-3 gap-2 rounded-xl border border-[#2A2E3A] bg-[#161922] p-3 text-center text-[11px]"><div><span className="block text-[#848A9A]">Dates</span>{dateLabel}</div><div><span className="block text-[#848A9A]">Pickup</span>{cart.pickupTime}</div><div><span className="block text-[#848A9A]">Location</span>{cart.operator.city}</div></div>
         <Breakdown title="Operator" note={`Charge from ${cart.operator.name}`} rows={operatorRows} total={m.operatorTotalCents} />
-        <Breakdown title="Exotiq.Rent" note="Booking fee + protection, charged separately by EXOTIQ.RENT" rows={[[`Booking fee (${platformPercent}%)`, 'Platform fee', m.platformFeeCents], ['Protection plan', cart.protection === 'decline' ? 'Declined — larger deposit at pickup' : `${cart.protection} · ${days} days`, m.protectionTotalCents, () => goTo(4)]]} total={m.exotiqTotalCents} />
+        {/* Protection is included, not chosen — the tier step is gone, so this
+            row states what is covered rather than offering a way back to a
+            selection that no longer exists. */}
+        <Breakdown title="Exotiq.Rent" note="Charged separately by EXOTIQ.RENT" rows={[['Trip Fees', `${platformPercent}% of the rental`, m.platformFeeCents], ['Protection', `Included · ${days} days`, m.protectionTotalCents]]} total={m.exotiqTotalCents} />
         <div className="mt-4 rounded-xl border border-[#C8A664] bg-[#14130F] p-4"><div className="flex items-center justify-between"><span className="text-sm text-[#9BA1B0]">Total due today</span><Money cents={m.grandTotalCents} large /></div></div>
         {/* Unconditional: the deposit is the operator's to collect at pickup and
             Exotiq quotes no amount, so there is no value to gate on. */}
         <DepositDisclosure operatorName={cart.operator.name} />
+        {/* One collapsed policy affordance, not three. Cancellation terms and
+            what protection covers were separate blocks competing for the same
+            attention; neither is read at this moment, both must be available. */}
         <details className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm text-[#F0F2F5]">
-          <summary className="cursor-pointer font-medium">Free cancellation</summary>
-          <p className="mt-3 text-xs leading-5 text-[#9BA1B0]">Cancel up to 72 hours before pickup for a full refund.</p>
-          <div className="mt-3 space-y-1 text-xs leading-5 text-[#9BA1B0]">
-            <div>After the free cancellation window:</div>
-            <div>Booking fee ({platformPercent}%): non-refundable</div>
-            <div>Protection plan: non-refundable</div>
-            <div>Operator rental: per operator&apos;s cancellation policy</div>
-          </div>
+          <summary className="cursor-pointer font-medium">Cancellation &amp; coverage</summary>
+          <p className="mt-3 text-xs leading-5 text-[#9BA1B0]">Free cancellation up to 72 hours before pickup. After that, Trip Fees and protection are non-refundable and the rental follows {cart.operator.name}&apos;s policy.</p>
+          <p className="mt-3 text-xs leading-5 text-[#9BA1B0]">Protection is included on every booking: $0 deductible, collision, theft and liability to $250K, roadside assistance.</p>
         </details>
+        <label className="mt-4 flex gap-3 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-xs leading-5 text-[#F0F2F5]">
+          <input
+            type="checkbox"
+            checked={termsAccepted}
+            onChange={(event) => setTermsAccepted(event.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 accent-[#C8A664]"
+          />
+          <span>I agree to the <span className="text-[#C8A664] underline underline-offset-2">Rental Terms &amp; Conditions</span>.</span>
+        </label>
       </ScreenShell>
-      <Sticky><PrimaryButton onClick={next}>Proceed to payment</PrimaryButton></Sticky>
+      <Sticky><PrimaryButton onClick={next} disabled={!termsAccepted}>Proceed to payment</PrimaryButton></Sticky>
     </>
   );
 }

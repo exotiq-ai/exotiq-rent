@@ -137,7 +137,7 @@ export function PaymentCard({
       </div>
       <div className="mt-4 space-y-2 border-t border-[#2A2E3A] pt-3 text-sm">
         <div className="flex justify-between gap-3"><span className="text-[#9BA1B0]">{operatorName} rental</span><Money cents={rentalCents} /></div>
-        <div className="flex justify-between gap-3"><span className="text-[#9BA1B0]">Exotiq booking fee + protection</span><Money cents={exotiqCents} /></div>
+        <div className="flex justify-between gap-3"><span className="text-[#9BA1B0]">Trip Fees + protection</span><Money cents={exotiqCents} /></div>
         <div className="flex justify-between gap-3 border-t border-[#2A2E3A] pt-2 font-medium text-[#F0F2F5]"><span>Total due</span><Money cents={rentalCents + exotiqCents} large /></div>
       </div>
       <p className="mt-2 text-xs leading-5 text-[#848A9A]">Two charges on your statement: the operator&apos;s rental, and an EXOTIQ RENT charge for fee + protection. One card entry.</p>
