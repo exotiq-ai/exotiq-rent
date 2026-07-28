@@ -1,3 +1,18 @@
+> # ⚠️ OBSOLETE — DO NOT SEND
+>
+> Superseded by the FINAL 2026-07-26 decision
+> (`DECISION_MEMO_DEPOSIT_HOLD.md`): Exotiq exited the deposit entirely, so the
+> renter is never asked to save a card and the question these replies answer —
+> *"why am I being asked for a card again?"* — can no longer arise.
+>
+> `stripe-create-deposit-setup-session` now returns 410, the
+> `depositCardRequested` email is deleted, and no renter email mentions a
+> deposit. Sending any of this would describe a flow that does not exist.
+>
+> Kept only as a record of the reasoning. The one piece still worth reusing is
+> the wording rule: **never call a deposit a "payment."** It is not a payment,
+> and renters who hear "payment" open disputes.
+
 # Canned replies — "why am I being asked for a card again?"
 
 Three audiences. Send the first to renters, give the second to tenant support
