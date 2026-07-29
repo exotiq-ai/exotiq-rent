@@ -70,7 +70,10 @@ export default async function TeamStorefrontRoute({ params }: Props) {
         <section className={`min-h-0 flex-1 overflow-y-auto px-4 pt-2 [scrollbar-width:none] ${hasPhone ? 'pb-32' : 'pb-8'}`}>
           <div className="relative -mx-4 mt-[-8px] h-64 overflow-hidden bg-[#161922]">
             {heroVehicle.heroImage && <Image src={heroVehicle.heroImage} alt={heroVehicle.name} fill priority sizes="480px" className="object-cover object-[50%_52%]" />}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-[#0D0F14]/20 to-[#0D0F14]" />
+            {/* Same treatment as the vehicle hero: the team name and location sit
+                over a tenant-supplied photo we do not art-direct, so the ramp has to
+                hold on a bright one. 20% at the midpoint did not. */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.10)_0%,rgba(13,15,20,0.35)_44%,rgba(13,15,20,0.92)_78%,#0D0F14_100%)]" />
             <div className="absolute bottom-4 left-4 right-4">
               <div className="inline-flex items-center gap-2 rounded-full border border-[#C8A664]/25 bg-[#0D0F14]/70 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-[#C8A664] backdrop-blur"><Sparkles size={12} /> Partner fleet</div>
               <HTitle className="mt-3 text-[27px]">{team.name}</HTitle>
@@ -91,22 +94,59 @@ export default async function TeamStorefrontRoute({ params }: Props) {
             <h2 className="text-[10px] uppercase tracking-[0.24em] text-[#848A9A]">Available now</h2>
             <div className="text-[11px] text-[#9BA1B0]">{vehicles.length} vehicles</div>
           </div>
-          <div className="mt-3 space-y-3">
+          {/* Vehicle cards put NO text over the photo. The previous overlay put the
+              price — the topmost line — above where its scrim actually became
+              opaque, so gold-on-silver bodywork measured ~1.8:1 contrast and was
+              effectively illegible on light cars (Koenigsegg, AMG One). On the
+              solid band below it measures ~7:1 on every photo, which is the point:
+              a multi-tenant fleet means designing for the worst photo we will ever
+              be sent, not the best one we happen to have. */}
+          <div className="mt-3 space-y-4">
             {vehicles.map((vehicle) => (
-              <Link key={vehicle.id} href={`/${team.slug}/${vehicle.slug}`} className="block overflow-hidden rounded-xl border border-[#2A2E3A] bg-[#161922] transition hover:border-[#C8A664]/45">
-                <div className="relative h-44 bg-[#1E2230]">
-                  {vehicle.heroImage && <Image src={vehicle.heroImage} alt={vehicle.name} fill sizes="448px" className="object-cover" />}
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#161922]" />
-                  <div className="absolute left-3 top-3 rounded-full border border-[#C8A664]/25 bg-[#0D0F14]/70 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-[#C8A664] backdrop-blur">{vehicle.minRentalDays}-day min</div>
-                  <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="text-[11px] uppercase tracking-[0.18em] text-[#C8A664]">From <Money cents={vehicle.dailyRateCents} />/day</div>
-                      {/* h3 (under the team h1 and the section h2): gives the fleet list
-                          real document structure for screen readers and search engines. */}
-                      <h3 className="mt-1 truncate text-base font-medium text-[#F0F2F5]">{vehicle.name}</h3>
-                      <div className="mt-1 flex items-center gap-2 text-xs text-[#9BA1B0]"><CarFront size={13} />{vehicle.specs ? `${vehicle.specs.power} · ${vehicle.specs.zeroToSixty} 0–60` : `${vehicle.year} ${vehicle.make}`.trim()}</div>
+              <Link
+                key={vehicle.id}
+                href={`/${team.slug}/${vehicle.slug}`}
+                className="group block overflow-hidden rounded-2xl border border-[#2A2E3A] bg-[#161922] transition-colors duration-300 hover:border-[#C8A664]/45"
+              >
+                {/* 4:3 and unobstructed — the car is the product, and the old
+                    scrim was eating the stance and wheels. */}
+                <div className="relative aspect-[4/3] overflow-hidden bg-[#1E2230]">
+                  {vehicle.heroImage && (
+                    <Image
+                      src={vehicle.heroImage}
+                      alt={vehicle.name}
+                      fill
+                      sizes="448px"
+                      className="object-cover transition-transform duration-[600ms] ease-out group-hover:scale-[1.03]"
+                    />
+                  )}
+                  {/* The one thing that may sit on the photo: a pill carries its own
+                      backdrop, so its contrast holds regardless of what is behind it. */}
+                  <div className="absolute left-3 top-3 rounded-full border border-[#C8A664]/25 bg-[#0D0F14]/70 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-[#C8A664] backdrop-blur">
+                    {vehicle.minRentalDays}-day min
+                  </div>
+                </div>
+                <div className="border-t border-[#2A2E3A] px-4 pb-4 pt-3.5">
+                  <div className="flex items-baseline justify-between gap-4">
+                    {/* h3 under the team h1 and the section h2 — real document
+                        structure for screen readers and search engines. Serif to
+                        match the display face; the vehicle name is the headline. */}
+                    <h3
+                      className="min-w-0 truncate text-[17px] leading-[1.2] text-[#F0F2F5]"
+                      style={{ fontFamily: 'var(--font-drive-newsreader), Georgia, serif', fontWeight: 500, letterSpacing: '-0.014em' }}
+                    >
+                      {vehicle.name}
+                    </h3>
+                    <div className="shrink-0 text-[17px] leading-[1.2] text-[#C8A664]">
+                      <Money cents={vehicle.dailyRateCents} />
                     </div>
-                    <span className="rounded-full bg-[#C8A664] px-3 py-1 text-[11px] font-medium text-[#1A1308]">View</span>
+                  </div>
+                  <div className="mt-1.5 flex items-baseline justify-between gap-4">
+                    <div className="min-w-0 truncate text-[12px] text-[#9BA1B0]">
+                      {vehicle.specs ? `${vehicle.specs.power} · ${vehicle.specs.zeroToSixty} 0–60` : `${vehicle.year} ${vehicle.make}`.trim()}
+                    </div>
+                    {/* Unit split off the number so the figure reads as the figure. */}
+                    <div className="shrink-0 text-[10px] uppercase tracking-[0.16em] text-[#5C6272]">per day</div>
                   </div>
                 </div>
               </Link>
