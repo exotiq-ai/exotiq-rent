@@ -174,6 +174,10 @@ export type RpcBookingByRefRow = {
   protection_tier?: string | null;
   platform_fee_cents?: number | null;
   protection_total_cents?: number | null;
+  /** M6d fee columns. The Exotiq leg is these FOUR summed — reading only the
+   * first two under-quotes the renter on the payment screen. */
+  state_fee_cents?: number | null;
+  processing_fee_cents?: number | null;
 };
 
 export async function fetchBookingByRef(bookingRef: string, token?: string): Promise<RpcBookingByRefRow | null> {
