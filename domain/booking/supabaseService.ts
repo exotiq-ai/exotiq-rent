@@ -139,6 +139,8 @@ export async function getSupabaseBookingConfirmation(bookingRef: string, token?:
       protectionTier: row.protection_tier ?? undefined,
       platformFeeCents: row.platform_fee_cents != null ? Number(row.platform_fee_cents) : undefined,
       protectionTotalCents: row.protection_total_cents != null ? Number(row.protection_total_cents) : undefined,
+      stateFeeCents: row.state_fee_cents != null ? Number(row.state_fee_cents) : undefined,
+      processingFeeCents: row.processing_fee_cents != null ? Number(row.processing_fee_cents) : undefined,
     },
   };
 }

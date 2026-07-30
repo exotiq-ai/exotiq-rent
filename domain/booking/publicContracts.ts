@@ -27,6 +27,10 @@ export type PublicBookingConfirmation = {
     protectionTier?: string;
     platformFeeCents?: number;
     protectionTotalCents?: number;
+    /** The Exotiq leg is FOUR components, not two. Omitting these under-quoted
+     * the renter on the payment screen by the state + processing amounts. */
+    stateFeeCents?: number;
+    processingFeeCents?: number;
   };
 };
 

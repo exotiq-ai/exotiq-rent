@@ -54,6 +54,12 @@ export async function ConfirmationScreen({
   };
   const terminal = live ? TERMINAL[live.status] : undefined;
   const returnNotice = resolveReturnNotice({ payment });
+  // Computed ONCE. This sum was open-coded in three places and every one of them
+  // summed only platform + protection, so the payment screen quoted $1,224 on a
+  // booking that charged $1,258.70. Four components, one definition.
+  const exotiqLegCents = live
+    ? (live.platformFeeCents ?? 0) + (live.protectionTotalCents ?? 0) + (live.stateFeeCents ?? 0) + (live.processingFeeCents ?? 0)
+    : 0;
   const cancellable = Boolean(
     live && accessToken && !terminal && live.platformFeeCents !== undefined &&
     ['requested', 'pending_documents', 'pending_payment', 'confirmed'].includes(live.status),
@@ -114,6 +120,8 @@ export async function ConfirmationScreen({
             rentalCents={live.totalCents}
             platformFeeCents={live.platformFeeCents ?? 0}
             protectionTotalCents={live.protectionTotalCents ?? 0}
+            stateFeeCents={live.stateFeeCents ?? 0}
+            processingFeeCents={live.processingFeeCents ?? 0}
             operatorName={cart.operator.name}
           />
         )}
@@ -121,8 +129,8 @@ export async function ConfirmationScreen({
           <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
             <div className="mb-1 text-sm font-medium">Paid — your receipt</div>
             <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block text-[#9BA1B0]">{cart.operator.name} rental</span><span className="text-xs text-[#848A9A]">Appears as {cart.operator.name} on your statement</span></span><Money cents={live.totalCents} /></div>
-            <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block text-[#9BA1B0]">Trip Fees + protection</span><span className="text-xs text-[#848A9A]">Appears as EXOTIQ RENT</span></span><Money cents={(live.platformFeeCents ?? 0) + (live.protectionTotalCents ?? 0)} /></div>
-            <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm font-medium"><span>Total paid</span><Money cents={live.totalCents + (live.platformFeeCents ?? 0) + (live.protectionTotalCents ?? 0)} /></div>
+            <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block text-[#9BA1B0]">Trip Fees + protection</span><span className="text-xs text-[#848A9A]">Appears as EXOTIQ RENT</span></span><Money cents={exotiqLegCents} /></div>
+            <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm font-medium"><span>Total paid</span><Money cents={live.totalCents + exotiqLegCents} /></div>
           </div>
         )}
         {live && !terminal && !live.paidAt && live.status !== 'pending_payment' && (

@@ -24,6 +24,8 @@ export function PaymentCard({
   rentalCents,
   platformFeeCents,
   protectionTotalCents,
+  stateFeeCents = 0,
+  processingFeeCents = 0,
   operatorName,
 }: {
   bookingRef: string;
@@ -32,6 +34,11 @@ export function PaymentCard({
   rentalCents: number;
   platformFeeCents: number;
   protectionTotalCents: number;
+  /** The Exotiq leg has four components. Defaulting these to 0 is safe only
+   * because the backend returns 0 for bookings predating the fee columns —
+   * for anything newer, omitting them under-quotes the renter. */
+  stateFeeCents?: number;
+  processingFeeCents?: number;
   operatorName: string;
 }) {
   const router = useRouter();
@@ -41,7 +48,10 @@ export function PaymentCard({
   const [nowMs, setNowMs] = useState(() => Date.now());
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const exotiqCents = platformFeeCents + protectionTotalCents;
+  // Must equal what rent-checkout charges as the Exotiq leg, which is all four
+  // snapshot columns. Summing only two showed "Total due $1,224" on a booking
+  // that charged $1,258.70 — verified live on BK-03459.
+  const exotiqCents = platformFeeCents + protectionTotalCents + stateFeeCents + processingFeeCents;
   const windowState = paymentWindowState(dueAtIso, nowMs);
 
   // Live countdown + return-from-Stripe handling.
