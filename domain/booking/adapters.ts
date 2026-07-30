@@ -40,7 +40,9 @@ export function adaptTeam(row: RpcTeamRow): Operator {
 }
 
 function footnoteFor(minRentalDays: number, mileageLimit: number | null | undefined): string {
-  const minimum = minRentalDays > 1 ? `${minRentalDays}-day minimum` : 'No minimum';
+  // A 1-day minimum is still a minimum. "No minimum" contradicted the booking
+  // preview tile beside it, which read the same field and said "Minimum: 1 day".
+  const minimum = `${minRentalDays}-day minimum`;
   const mileage = mileageLimit ? `${mileageLimit} miles/day included` : 'Mileage per operator policy';
   return `${minimum} · ${mileage}`;
 }
@@ -81,7 +83,12 @@ export function adaptVehicleDetail(row: RpcVehicleDetailRow, team: Operator, med
     heroImage: photos[0] ?? base.heroImage,
     footnote: footnoteFor(base.minRentalDays, row.default_mileage_limit),
     pickupLocation: {
-      name: `${team.name} pickup`,
+      // No fabricated name. The public RPCs expose no pickup address or venue
+      // name, and `${team.name} pickup` rendered as "Drive Exotiq pickup" under a
+      // "Pickup location" heading on a page that already names the operator —
+      // the word "pickup" twice and no new information. Empty means the UI shows
+      // only what we actually know (city/state).
+      name: '',
       address: '',
       city: row.pickup_city ?? team.city,
       state: row.pickup_state ?? team.state,

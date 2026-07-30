@@ -41,7 +41,6 @@ export function VehicleGallery({
             topmost and lowest-contrast element — sat right there: ~1.8:1 on light
             bodywork. These stops put every text row at 4.5:1 or better on any photo. */}
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_0%,rgba(13,15,20,0.35)_44%,rgba(13,15,20,0.92)_78%,#0D0F14_100%)]" />
-        <div className="pointer-events-none absolute inset-0 opacity-[0.10] [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] [background-size:4px_4px]" />
         <div className="absolute bottom-4 left-4 right-4">
           <div className="text-[11px] uppercase tracking-[0.18em] text-[#C8A664]">{operatorName} · From <Money cents={dailyRateCents} />/day</div>
           <HTitle className="mt-2 text-[26px]">{vehicleName}</HTitle>
