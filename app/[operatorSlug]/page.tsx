@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { CalendarX2, CarFront, FileCheck2, Fuel, Gauge, MapPin, Phone, ShieldCheck, Sparkles, Truck } from 'lucide-react';
+import { CalendarX2, CarFront, FileCheck2, Fuel, Gauge, Phone, ShieldCheck, Truck } from 'lucide-react';
 import { driveFontClassName } from '@/components/drive-exotiq/fonts';
 import { HTitle, Money, PhoneViewport } from '@/components/drive-exotiq/BookingChrome';
 import { getSiteMode } from '@/domain/booking/config';
@@ -68,17 +68,22 @@ export default async function TeamStorefrontRoute({ params }: Props) {
     <div className={driveFontClassName}>
       <PhoneViewport step={1} stepStyle="numbered" className="font-[var(--font-drive-inter)]">
         <section className={`min-h-0 flex-1 overflow-y-auto px-4 pt-2 [scrollbar-width:none] ${hasPhone ? 'pb-32' : 'pb-8'}`}>
-          <div className="relative -mx-4 mt-[-8px] h-64 overflow-hidden bg-[#161922]">
+          {/* Aman route: the photograph is never degraded to accommodate type, and
+              the type is quieter than instinct wants. No scrim, nothing over the
+              image, and the operator name sits below in the serif at 22px with the
+              location as small tracked caps. The drama is the photograph and the
+              whitespace — not the typography.
+
+              Removed the gold "Partner fleet" chip: it badged a commercial
+              relationship in the most prominent position on the page, and it was the
+              third element competing in a block that should hold one. If partner
+              status needs disclosing it belongs in copy, not a gold pill over a car. */}
+          <div className="relative -mx-4 mt-[-8px] aspect-[3/2] overflow-hidden bg-[#161922]">
             {heroVehicle.heroImage && <Image src={heroVehicle.heroImage} alt={heroVehicle.name} fill priority sizes="480px" className="object-cover object-[50%_52%]" />}
-            {/* Same treatment as the vehicle hero: the team name and location sit
-                over a tenant-supplied photo we do not art-direct, so the ramp has to
-                hold on a bright one. 20% at the midpoint did not. */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.10)_0%,rgba(13,15,20,0.35)_44%,rgba(13,15,20,0.92)_78%,#0D0F14_100%)]" />
-            <div className="absolute bottom-4 left-4 right-4">
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#C8A664]/25 bg-[#0D0F14]/70 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-[#C8A664] backdrop-blur"><Sparkles size={12} /> Partner fleet</div>
-              <HTitle className="mt-3 text-[27px]">{team.name}</HTitle>
-              <p className="mt-2 flex items-center gap-2 text-sm text-[#D7DAE0]"><MapPin size={15} className="text-[#C8A664]" />{team.city}, {team.state}</p>
-            </div>
+          </div>
+          <div className="mt-4">
+            <HTitle className="text-[22px]">{team.name}</HTitle>
+            <p className="mt-1.5 text-[11px] uppercase tracking-[0.2em] text-[#848A9A]">{team.city}, {team.state}</p>
           </div>
 
           <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
