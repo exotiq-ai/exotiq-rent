@@ -8,6 +8,21 @@ import { HTitle, Money } from './BookingChrome';
 /**
  * Vehicle hero + tappable gallery. Tapping a thumbnail promotes it into the
  * hero slot; the active thumbnail is ringed in gold.
+ *
+ * Auction-catalogue order: image → thumbnails → title block. Nothing sits on the
+ * photo.
+ *
+ * The title used to be overlaid on the hero, which forced a trade this page
+ * cannot afford: the scrim needed to make gold and white type legible also
+ * darkened the bottom of the car, and on a black vehicle the wheels and lower
+ * body disappeared into it. Legible text or a visible car, not both. Moving the
+ * type onto the page surface removes the trade — and matches the storefront
+ * card, the confirmation screen and the share card, all of which keep text off
+ * tenant photos. Text never touches a photo we did not art-direct.
+ *
+ * The title sits BELOW the thumbnails, not between them and the hero: the strip
+ * has to stay adjacent to the image it controls or it stops reading as that
+ * image's gallery.
  */
 export function VehicleGallery({
   vehicleName,
@@ -32,20 +47,10 @@ export function VehicleGallery({
 
   return (
     <>
-      <div className="relative -mx-4 mt-[-4px] h-[260px] overflow-hidden bg-[#161922]">
+      {/* No scrim. Nothing sits over the photo any more, so the car keeps its full
+          frame — including the lower body and wheels the old gradient ate. */}
+      <div className="relative -mx-4 mt-[-4px] aspect-[4/3] overflow-hidden bg-[#161922]">
         {activePhoto && <Image src={activePhoto} alt={vehicleName} fill sizes="480px" priority className="object-cover object-[50%_52%]" />}
-        {/* Explicit stops, not `via-…/10`. This hero stays immersive (the thumbnail
-            strip sits directly beneath it, so a text band would split the gallery),
-            which means the scrim has to do the work the band does elsewhere. The old
-            ramp was 10% opaque at its midpoint while the GOLD price line — the
-            topmost and lowest-contrast element — sat right there: ~1.8:1 on light
-            bodywork. These stops put every text row at 4.5:1 or better on any photo. */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_0%,rgba(13,15,20,0.35)_44%,rgba(13,15,20,0.92)_78%,#0D0F14_100%)]" />
-        <div className="absolute bottom-4 left-4 right-4">
-          <div className="text-[11px] uppercase tracking-[0.18em] text-[#C8A664]">{operatorName} · From <Money cents={dailyRateCents} />/day</div>
-          <HTitle className="mt-2 text-[26px]">{vehicleName}</HTitle>
-          <p className="mt-2 flex items-center gap-2 text-[13px] text-[#D7DAE0]"><MapPin size={14} className="text-[#C8A664]" />{city}, {state} · Concierge-approved rental</p>
-        </div>
       </div>
 
       {photos.length > 1 && (
@@ -71,6 +76,16 @@ export function VehicleGallery({
           })}
         </div>
       )}
+
+      {/* Title on the page surface, after the gallery. Same rule as the storefront
+          card: gold and white type only ever sit on #0D0F14 or #161922, never on a
+          photo, so contrast is a property of the design rather than a property of
+          whichever image a tenant uploaded. */}
+      <div className="mt-4">
+        <div className="text-[11px] uppercase tracking-[0.18em] text-[#C8A664]">{operatorName} · From <Money cents={dailyRateCents} />/day</div>
+        <HTitle className="mt-2 text-[26px]">{vehicleName}</HTitle>
+        <p className="mt-2 flex items-center gap-2 text-[13px] text-[#9BA1B0]"><MapPin size={14} className="text-[#C8A664]" />{city}, {state} · Concierge-approved rental</p>
+      </div>
     </>
   );
 }
