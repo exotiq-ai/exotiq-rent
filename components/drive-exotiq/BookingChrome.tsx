@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, X } from 'lucide-react';
+import { ExotiqLockup } from './ExotiqLockup';
 
 type StepStyle = 'bars' | 'numbered';
 
@@ -58,7 +58,11 @@ export function PhoneViewport({
             <ArrowLeft size={20} />
           </button>
           <div className="flex items-center justify-center">
-            <Image src="/images/logos/drive-exotiq-logo-white.png" alt="Drive Exotiq" width={122} height={18} className="opacity-95" style={{ height: '18px', width: 'auto' }} priority />
+            {/* 26px, not the old wordmark's 18: the lockup carries a circular
+                mark, so the word is ~2/3 of total height — at 18px it becomes
+                illegible. 26px keeps the word at the old optical size inside
+                the 40px header row. */}
+            <ExotiqLockup height={26} className="opacity-95" />
           </div>
           <Link href="/" className="grid h-10 w-10 place-items-center rounded-lg text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5]" aria-label="Close booking flow">
             <X size={20} />
