@@ -10,6 +10,13 @@ import { ConfirmationActions } from './ConfirmationActions';
 import { IdentityVerificationCard } from './IdentityVerificationCard';
 import { PaymentCard } from './PaymentCard';
 
+// Operator avatar initials — was a hardcoded "DE" (Drive Exotiq) for every
+// tenant (T-8). Two significant words max, so "Exotics By The Bay" → "EB".
+function initialsOf(name: string): string {
+  const words = name.split(/\s+/).filter((w) => /^[a-z0-9]/i.test(w));
+  return words.slice(0, 2).map((w) => w[0]!.toUpperCase()).join('') || '•';
+}
+
 export async function ConfirmationScreen({
   bookingRef,
   accessToken,
@@ -74,7 +81,7 @@ export async function ConfirmationScreen({
   );
 
   return (
-    <PhoneViewport step={6} className="font-[var(--font-drive-inter)]">
+    <PhoneViewport step={6} className="font-[var(--font-drive-inter)]" closeHref={`/${cart.operator.slug}`}>
       <section className="flex-1 overflow-y-auto px-4 pb-8 pt-2 [scrollbar-width:none]">
         {returnNotice && <ReturnNotice {...returnNotice} />}
         <div className="relative overflow-hidden rounded-2xl border border-[#2A2E3A] bg-[#161922]">
@@ -148,7 +155,7 @@ export async function ConfirmationScreen({
             <p className="text-xs leading-5 text-[#848A9A]">Trip Fees and protection are itemized at payment, once the operator approves.</p>
           </div>
         )}
-        <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#C8A664]/10 text-[#C8A664]">DE</div><div className="flex-1"><div className="text-sm font-medium">{cart.operator.name}</div><div className="text-xs text-[#9BA1B0]">{terminal ? (cart.operator.phone ? 'Questions about this booking? Call any time.' : 'Questions about this booking? Reply to your confirmation email.') : 'Will reach out before pickup'}</div></div>{cart.operator.phone && <a href={`tel:${cart.operator.phone}`} className="rounded-full border border-[#C8A664]/30 p-2 text-[#C8A664]" aria-label="Call operator"><Phone size={16} /></a>}</div></div>
+        <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#C8A664]/10 text-[#C8A664]">{initialsOf(cart.operator.name)}</div><div className="flex-1"><div className="text-sm font-medium">{cart.operator.name}</div><div className="text-xs text-[#9BA1B0]">{terminal ? (cart.operator.phone ? 'Questions about this booking? Call any time.' : 'Questions about this booking? Reply to your confirmation email.') : 'Will reach out before pickup'}</div></div>{cart.operator.phone && <a href={`tel:${cart.operator.phone}`} className="rounded-full border border-[#C8A664]/30 p-2 text-[#C8A664]" aria-label="Call operator"><Phone size={16} /></a>}</div></div>
         {!terminal && (
           <>
             <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="mb-3 flex items-center gap-2 text-sm font-medium"><Sparkles size={16} className="text-[#C8A664]" />What happens next</div>{/* The deposit step describes an in-person handoff, not a link: Exotiq
@@ -158,6 +165,7 @@ export async function ConfirmationScreen({
             <ConfirmationActions
               bookingRef={confirmation.bookingRef}
               vehicleName={cart.vehicle.name}
+              operatorName={cart.operator.name}
               teamSlug={cart.operator.slug}
               vehicleSlug={cart.vehicle.slug}
               startDate={live ? live.startAt.slice(0, 10) : cart.dates.start}

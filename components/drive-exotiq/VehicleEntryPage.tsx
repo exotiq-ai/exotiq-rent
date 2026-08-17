@@ -33,7 +33,7 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug }: { operator
     .filter(Boolean);
 
   return (
-    <PhoneViewport step={1} stepStyle="numbered" className="font-[var(--font-drive-inter)]">
+    <PhoneViewport step={1} stepStyle="numbered" className="font-[var(--font-drive-inter)]" closeHref={`/${operator.slug}`}>
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-36 pt-1 [scrollbar-width:none]">
         <VehicleGallery
           vehicleName={vehicle.name}

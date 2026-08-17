@@ -13,6 +13,7 @@ import { CalendarPlus, Check, Share2 } from 'lucide-react';
 export function ConfirmationActions({
   bookingRef,
   vehicleName,
+  operatorName,
   teamSlug,
   vehicleSlug,
   startDate,
@@ -22,6 +23,9 @@ export function ConfirmationActions({
 }: {
   bookingRef: string;
   vehicleName: string;
+  /** The tenant the renter actually booked with — share/calendar assets carry
+   * this, not the platform-owner brand (T-8). */
+  operatorName: string;
   teamSlug: string;
   vehicleSlug: string;
   /** YYYY-MM-DD, inclusive range. */
@@ -34,10 +38,10 @@ export function ConfirmationActions({
 
   const share = async () => {
     const url = `${window.location.origin}/share/${teamSlug}/${vehicleSlug}`;
-    const text = `Just reserved the ${vehicleName} on Drive Exotiq.`;
+    const text = `Just reserved the ${vehicleName} with ${operatorName}.`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'Drive Exotiq', text, url });
+        await navigator.share({ title: operatorName, text, url });
         return;
       }
     } catch (err) {
@@ -66,13 +70,13 @@ export function ConfirmationActions({
     const lines = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
-      'PRODID:-//Drive Exotiq//Booking//EN',
+      'PRODID:-//Exotiq//Booking//EN',
       'BEGIN:VEVENT',
       `UID:${bookingRef}@exotiq.rent`,
       `DTSTAMP:${stamp}`,
       `DTSTART;VALUE=DATE:${compact(startDate)}`,
       `DTEND;VALUE=DATE:${dayAfter(endDate)}`,
-      `SUMMARY:${escape(`${vehicleName} — Drive Exotiq`)}`,
+      `SUMMARY:${escape(`${vehicleName} — ${operatorName}`)}`,
       `LOCATION:${escape(location)}`,
       `DESCRIPTION:${escape(`Booking ${bookingRef}. Pickup ${pickupTime}.`)}\\n${escape(window.location.href)}`,
       'END:VEVENT',
@@ -82,7 +86,7 @@ export function ConfirmationActions({
     const href = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = href;
-    anchor.download = `drive-exotiq-${bookingRef}.ics`;
+    anchor.download = `booking-${bookingRef}.ics`;
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();

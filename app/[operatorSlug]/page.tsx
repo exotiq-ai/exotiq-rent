@@ -36,7 +36,7 @@ export default async function TeamStorefrontRoute({ params }: Props) {
   if (vehicles.length === 0) {
     return (
       <div className={driveFontClassName}>
-        <PhoneViewport step={1} stepStyle="numbered" className="font-[var(--font-drive-inter)]">
+        <PhoneViewport step={1} stepStyle="numbered" className="font-[var(--font-drive-inter)]" closeHref={`/${team.slug}`}>
           <section className="flex flex-1 flex-col items-center justify-center px-6 text-center">
             <div className="grid h-14 w-14 place-items-center rounded-full border border-[#2A2E3A] bg-[#161922] text-[#C8A664]"><CarFront size={24} /></div>
             <HTitle className="mt-5 text-[24px]">{team.name}</HTitle>
@@ -66,7 +66,7 @@ export default async function TeamStorefrontRoute({ params }: Props) {
 
   return (
     <div className={driveFontClassName}>
-      <PhoneViewport step={1} stepStyle="numbered" className="font-[var(--font-drive-inter)]">
+      <PhoneViewport step={1} stepStyle="numbered" className="font-[var(--font-drive-inter)]" closeHref={`/${team.slug}`}>
         <section className={`min-h-0 flex-1 overflow-y-auto px-4 pt-2 [scrollbar-width:none] ${hasPhone ? 'pb-32' : 'pb-8'}`}>
           {/* Aman route: the photograph is never degraded to accommodate type, and
               the type is quieter than instinct wants. No scrim, nothing over the

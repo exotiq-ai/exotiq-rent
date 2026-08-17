@@ -30,15 +30,15 @@ export default function BookingNotFound() {
           <HTitle className="mt-5 text-[24px]">This booking needs its secure link.</HTitle>
           <p className="mt-3 text-sm leading-6 text-[#9BA1B0]">
             Booking pages open only from the full link in your confirmation email — it carries a private
-            access key, so the address alone won&apos;t do it. Open the most recent Drive Exotiq email and
+            access key, so the address alone won&apos;t do it. Open your most recent booking email and
             tap the button there.
           </p>
           <p className="mt-4 text-xs leading-5 text-[#848A9A]">
-            Can&apos;t find the email? Reply to any Drive Exotiq message or call your operator and
+            Can&apos;t find the email? Reply to your booking confirmation or call your operator and
             they&apos;ll resend it.
           </p>
-          <Link href="/" className="mt-6 rounded-xl bg-[#C8A664] px-6 py-3.5 text-sm font-semibold text-[#1A1308]">
-            Browse the fleet
+          <Link href={`/${process.env.NEXT_PUBLIC_DEFAULT_TEAM_SLUG ?? 'exotiq'}`} className="mt-6 rounded-xl bg-[#C8A664] px-6 py-3.5 text-sm font-semibold text-[#1A1308]">
+            Continue browsing
           </Link>
         </section>
       </PhoneViewport>
