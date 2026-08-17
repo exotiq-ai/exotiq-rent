@@ -105,6 +105,10 @@ export function PrimaryButton({ children, onClick, disabled = false }: { childre
 }
 
 export function Money({ cents, large = false }: { cents: number; large?: boolean }) {
-  const value = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(cents / 100);
+  // Statement parity (T-7): an amount that will be charged as $1,730.66 must
+  // render as $1,730.66 — rounding here meant "Total due" never matched the
+  // renter's card statement. Whole dollars keep the clean display.
+  const digits = cents % 100 === 0 ? 0 : 2;
+  const value = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: digits, maximumFractionDigits: digits }).format(cents / 100);
   return <span className={large ? 'text-[28px] font-medium tabular-nums' : 'tabular-nums'}>{value}</span>;
 }

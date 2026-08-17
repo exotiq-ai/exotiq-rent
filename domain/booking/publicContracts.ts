@@ -97,6 +97,10 @@ export type PublicQuote = {
   processingFeeCents: number;
   /** Per-day state vehicle-rental surcharge (server-computed). */
   stateFeeCents: number;
+  /** Server-authoritative name for the state fee line ("FL rental fee") —
+   * absent on pre-2026-08-17 quote shapes; renderers fall back to a generic
+   * label rather than guessing a jurisdiction. */
+  stateFeeLabel?: string;
   exotiqTotalCents: number;
   grandTotalCents: number;
   depositHoldCents: number;

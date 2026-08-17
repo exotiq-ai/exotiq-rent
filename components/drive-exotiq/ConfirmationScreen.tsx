@@ -43,7 +43,9 @@ export async function ConfirmationScreen({
   const dateLabel = live
     ? formatRangeLabel(live.startAt.slice(0, 10), live.endAt.slice(0, 10))
     : formatRangeLabel(cart.dates.start, cart.dates.end);
-  const totalLabel = live ? formatMoney(live.totalCents) : formatMoney(cart.totals.grandTotalCents);
+  // totalLabel is defined below, after exotiqLegCents — the headline "Total"
+  // must be the renter's FULL total, and live.totalCents alone is only the
+  // operator leg (T-7).
 
   // M6c: terminal marketplace states get a banner, not the reservation UI.
   const TERMINAL: Record<string, { badge: string; title: string; note: string }> = {
@@ -60,6 +62,12 @@ export async function ConfirmationScreen({
   const exotiqLegCents = live
     ? (live.platformFeeCents ?? 0) + (live.protectionTotalCents ?? 0) + (live.stateFeeCents ?? 0) + (live.processingFeeCents ?? 0)
     : 0;
+  // Under a tile that says "Total", live.totalCents alone understated the
+  // renter's real number by the entire Exotiq leg — on the same screen that
+  // then charges the full amount (T-7, audit-confirmed blocker).
+  const totalLabel = live
+    ? formatMoney(live.totalCents + exotiqLegCents)
+    : formatMoney(cart.totals.grandTotalCents);
   const cancellable = Boolean(
     live && accessToken && !terminal && live.platformFeeCents !== undefined &&
     ['requested', 'pending_documents', 'pending_payment', 'confirmed'].includes(live.status),
@@ -102,7 +110,7 @@ export async function ConfirmationScreen({
               <div className="mb-3 text-sm font-medium">Charges</div>
               <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block">Operator rental charge</span><span className="text-xs text-[#C8A664]">Charged by {cart.operator.name}</span></span><Money cents={cart.totals.operatorTotalCents} /></div>
               <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block">Trip Fees ({platformPercent}%)</span><span className="text-xs text-[#C8A664]">Calculated on the rental only</span></span><Money cents={cart.totals.platformFeeCents} /></div>
-              <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block">Protection (included)</span><span className="text-xs text-[#C8A664]">Included in EXOTIQ.RENT charge</span></span><Money cents={cart.totals.protectionTotalCents} /></div>
+              <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block">Protection (included)</span><span className="text-xs text-[#C8A664]">Included in EXOTIQ RENT charge</span></span><Money cents={cart.totals.protectionTotalCents} /></div>
               <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm font-medium"><span>Exotiq total</span><Money cents={cart.totals.exotiqTotalCents} /></div>
             </div>
             <div className="mt-4 rounded-xl border border-dashed border-[#5C6272] bg-[#10131A] p-4">

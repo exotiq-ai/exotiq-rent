@@ -54,7 +54,7 @@ export function ReviewStep({
     ['Trip Fees', `${platformPercent}% of the rental`, m.platformFeeCents],
     ['Protection', `Included · ${days} days`, m.protectionTotalCents],
   ];
-  if (quote?.stateFeeCents) exotiqRows.push(['State rental fee', `${days} days`, quote.stateFeeCents]);
+  if (quote?.stateFeeCents) exotiqRows.push([quote.stateFeeLabel ?? 'State rental fee', `${days} days`, quote.stateFeeCents]);
   if (quote?.processingFeeCents) exotiqRows.push(['Processing fees', 'Card processing', quote.processingFeeCents]);
 
   if (blocked) {
