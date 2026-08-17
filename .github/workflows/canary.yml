@@ -1,0 +1,44 @@
+# Daily live canaries — see docs/rent/CANARY.md for what these cover, what
+# they deliberately do not (no card entry, no real money), and setup.
+#
+# A red run emails the repo watchers via GitHub's default workflow-failure
+# notification. Both jobs are independently re-runnable via workflow_dispatch.
+name: live-canary
+
+on:
+  schedule:
+    - cron: '0 15 * * *' # 08:00 Phoenix — before the operator's business day
+  workflow_dispatch:
+
+jobs:
+  renter-flow:
+    name: renter flow (quote → book → cancel, no payment)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      # Public by design — the anon key ships in every browser bundle.
+      NEXT_PUBLIC_SUPABASE_URL: https://jlgwbbqydjeokypoenoc.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpsZ3diYnF5ZGplb2t5cG9lbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NzgzNTEsImV4cCI6MjA3NzM1NDM1MX0.CIh8I-Y5bMERvkGLPeegkTNrW8Xbx7dijVhl2zyZ9ac
+      CANARY_TEAM_SLUG: exotiq
+      CANARY_VEHICLE_SLUG: 2017-audi-s8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun scripts/canary/renter-canary.ts
+
+  stripe-config:
+    name: stripe live config (endpoints, prices, portal)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: run monitor (skips until STRIPE_MONITOR_KEY secret is configured)
+        env:
+          STRIPE_MONITOR_KEY: ${{ secrets.STRIPE_MONITOR_KEY }}
+        run: |
+          if [ -z "$STRIPE_MONITOR_KEY" ]; then
+            echo "::notice::STRIPE_MONITOR_KEY not configured — see docs/rent/CANARY.md to enable this job"
+            exit 0
+          fi
+          bun scripts/canary/stripe-live-monitor.ts
