@@ -82,7 +82,7 @@ export function PayStep({
               otherwise the rows and the total disagree. */}
           {quote?.stateFeeCents ? (
             <div className="mt-3 flex justify-between gap-3 border-t border-[#2A2E3A] pt-3">
-              <span className="text-[#9BA1B0]">State rental fee</span>
+              <span className="text-[#9BA1B0]">{quote.stateFeeLabel ?? 'State rental fee'}</span>
               <Money cents={quote.stateFeeCents} />
             </div>
           ) : null}

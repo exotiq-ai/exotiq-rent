@@ -74,11 +74,14 @@ export function calculateBookingTotals(input: {
 
 export function formatMoney(cents: number, options: { showCents?: boolean } = {}): string {
   const dollars = cents / 100;
+  // Same statement-parity rule as the Money component (T-7): non-zero cents
+  // always render, so a displayed total is exactly the charged total.
+  const digits = options.showCents || cents % 100 !== 0 ? 2 : 0;
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
-    minimumFractionDigits: options.showCents ? 2 : 0,
-    maximumFractionDigits: options.showCents ? 2 : 0,
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
   }).format(dollars);
 }
 

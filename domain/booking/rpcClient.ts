@@ -73,6 +73,12 @@ export type RpcQuoteRow = {
   processing_fee_cents?: number;
   /** Per-day state vehicle-rental surcharge. Added 2026-07-28. */
   state_fee_cents?: number;
+  /** Per-tenant state fee fields, added 2026-08-17 (verified live on the
+   * exotics-by-the-bay quote): the server names the fee so the UI never
+   * guesses a jurisdiction. Older responses omit all three. */
+  state_code?: string;
+  state_fee_label?: string;
+  state_fee_daily_cents?: number;
   exotiq_total_cents: number;
   grand_total_cents: number;
 };

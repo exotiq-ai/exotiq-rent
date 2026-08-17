@@ -132,6 +132,7 @@ export function adaptQuote(row: RpcQuoteRow): PublicQuote {
     // them again would double-count.
     processingFeeCents: Number(row.processing_fee_cents ?? 0),
     stateFeeCents: Number(row.state_fee_cents ?? 0),
+    stateFeeLabel: row.state_fee_label ?? undefined,
     exotiqTotalCents: Number(row.exotiq_total_cents),
     grandTotalCents: Number(row.grand_total_cents),
     depositHoldCents: depositCents,

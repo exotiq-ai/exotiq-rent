@@ -66,7 +66,10 @@ describe('booking totals', () => {
   });
 
   it('formats cents as luxury checkout currency', () => {
-    expect(formatMoney(506237)).toBe('$5,062');
-    expect(formatMoney(506237, { showCents: true })).toBe('$5,062.37');
+    // Statement parity (T-7): non-zero cents always render — a displayed
+    // total must equal the charged total. Whole-dollar amounts stay clean.
+    expect(formatMoney(506237)).toBe('$5,062.37');
+    expect(formatMoney(506200)).toBe('$5,062');
+    expect(formatMoney(506200, { showCents: true })).toBe('$5,062.00');
   });
 });
