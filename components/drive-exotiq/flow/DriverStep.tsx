@@ -17,9 +17,13 @@ function ageOn(dobIso: string, onIso: string): number {
 export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart: (cart: BookingCart) => void; next: () => void }) {
   const setDriver = (patch: Partial<Driver>) => setCart({ ...cart, driver: { ...cart.driver, ...patch } });
 
-  const minAge = cart.operator.policies?.minimumDriverAge ?? 25;
+  // Only enforce an age floor the operator actually set. Live (supabase-mode)
+  // operators carry no policies today, and the old `?? 25` fallback fabricated
+  // a "{operator} requires 25+" rule in their name and hard-blocked younger
+  // renters they might happily serve (T-5).
+  const minAge = cart.operator.policies?.minimumDriverAge;
   const driverAge = cart.driver.dob ? ageOn(cart.driver.dob, cart.dates.start) : 0;
-  const tooYoung = Boolean(cart.driver.dob) && driverAge < minAge;
+  const tooYoung = minAge != null && Boolean(cart.driver.dob) && driverAge < minAge;
   const fieldsComplete =
     cart.driver.name.trim().length > 1 &&
     Boolean(cart.driver.dob) &&
@@ -58,6 +62,11 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
         {tooYoung && (
           <p className="mt-3 rounded-xl border border-[#FFB84D]/45 bg-[#FFB84D]/10 p-3 text-[12px] leading-5 text-[#F0F2F5]">
             {cart.operator.name} requires drivers to be {minAge}+ on the pickup date for this rental.
+          </p>
+        )}
+        {minAge == null && (
+          <p className="mt-3 px-1 text-[11px] leading-5 text-[#848A9A]">
+            Age and license requirements are set by {cart.operator.name} and confirmed before pickup.
           </p>
         )}
         <div className="mt-4 px-1 text-[10px] uppercase tracking-[0.24em] text-[#848A9A]">Verification</div>
