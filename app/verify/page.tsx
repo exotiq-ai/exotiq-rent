@@ -145,11 +145,14 @@ function Problem({ title, body }: { title: string; body: string }) {
         {title}
       </h1>
       <p className="mt-3 text-[13px] leading-5 text-[#9BA1B0]">{body}</p>
+      {/* Error path: no booking lookup succeeded, so no tenant is derivable —
+          neutral copy, and the default storefront rather than a brand that may
+          not be the operator the renter booked with (T-8). */}
       <Link
-        href="/"
+        href={`/${process.env.NEXT_PUBLIC_DEFAULT_TEAM_SLUG ?? 'exotiq'}`}
         className="mt-6 inline-block rounded-xl border border-[#2A2E3A] px-5 py-3 text-xs font-semibold text-[#F0F2F5]"
       >
-        Back to Drive Exotiq
+        Back to the booking site
       </Link>
     </>
   );

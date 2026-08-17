@@ -40,12 +40,17 @@ export function PhoneViewport({
   onBack,
   stepStyle = 'bars',
   className = '',
+  closeHref = '/',
 }: {
   step: number;
   children: ReactNode;
   onBack?: () => void;
   stepStyle?: StepStyle;
   className?: string;
+  /** Where the X lands. `/` 307s to the DEFAULT tenant's storefront, which for
+   * a third-party operator's renter is a different business — callers with an
+   * operator in scope must pass that operator's storefront instead (T-8). */
+  closeHref?: string;
 }) {
   return (
     <main className={`min-h-screen bg-[radial-gradient(900px_560px_at_18%_-10%,rgba(200,166,100,0.07),transparent_58%),radial-gradient(760px_520px_at_90%_110%,rgba(200,166,100,0.045),transparent_60%),#06070a] text-[#F0F2F5] ${className}`}>
@@ -64,7 +69,7 @@ export function PhoneViewport({
                 the 40px header row. */}
             <ExotiqLockup height={26} className="opacity-95" />
           </div>
-          <Link href="/" className="grid h-10 w-10 place-items-center rounded-lg text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5]" aria-label="Close booking flow">
+          <Link href={closeHref} className="grid h-10 w-10 place-items-center rounded-lg text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5]" aria-label="Close booking flow">
             <X size={20} />
           </Link>
         </div>
@@ -75,8 +80,8 @@ export function PhoneViewport({
   );
 }
 
-export function BookingChrome({ step, children, onBack }: { step: number; children: ReactNode; onBack?: () => void }) {
-  return <PhoneViewport step={step} onBack={onBack}>{children}</PhoneViewport>;
+export function BookingChrome({ step, children, onBack, closeHref }: { step: number; children: ReactNode; onBack?: () => void; closeHref?: string }) {
+  return <PhoneViewport step={step} onBack={onBack} closeHref={closeHref}>{children}</PhoneViewport>;
 }
 
 export function HTitle({ children, className = '' }: { children: ReactNode; className?: string }) {

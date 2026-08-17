@@ -5,7 +5,14 @@ import { driveFontClassName } from '@/components/drive-exotiq/fonts';
 import { getSiteMode } from '@/domain/booking/config';
 
 export default function NotFound() {
-  const home = getSiteMode() === 'marketplace' ? { href: '/', label: 'Back to Drive Exotiq' } : { href: '/desert-exotic-rentals', label: 'Browse the fleet' };
+  // Booking mode: land on the default tenant's storefront via the same env the
+  // root redirect uses. The old hardcoded '/desert-exotic-rentals' was the MOCK
+  // tenant's slug — a live 404 whose only CTA looped straight back to itself
+  // (T-8, verified live). "Continue browsing", not "Browse the fleet": with
+  // multiple operators there is no single fleet to promise.
+  const home = getSiteMode() === 'marketplace'
+    ? { href: '/', label: 'Back to Drive Exotiq' }
+    : { href: `/${process.env.NEXT_PUBLIC_DEFAULT_TEAM_SLUG ?? 'exotiq'}`, label: 'Continue browsing' };
   return (
     <div className={driveFontClassName}>
       <PhoneViewport step={1} stepStyle="numbered" className="font-[var(--font-drive-inter)]">
