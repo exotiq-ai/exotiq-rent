@@ -122,7 +122,11 @@ export async function getSupabaseBookingConfirmation(bookingRef: string, token?:
   // AFTER the booking exists. The renter still holds a token-authorized booking
   // and must keep their Pay/Cancel buttons, so fall back to a minimal context
   // built from the token row rather than dropping them to the restricted view.
-  const context = (await getSupabaseVehicleContext(row.team_slug, row.vehicle_slug))
+  // The catch matters as much as the ??: the catalog RPCs THROW on any non-OK
+  // response, so without it one transient failure rejects the whole lookup and
+  // error-crashes the page for a renter holding a valid token (T-9). Money on
+  // this path always comes from the row's live.* fields, never the catalog.
+  const context = (await getSupabaseVehicleContext(row.team_slug, row.vehicle_slug).catch(() => null))
     ?? synthesizeContextFromRow(row);
 
   return {
