@@ -171,3 +171,19 @@ Center, because with real IDs the 3-strikes → manual-review path WILL fire.
 
 *Reply-to for questions: Gregory. Renter-app tickets T-5..T-9 land via
 exotiq-rent PRs and do not require Lovable action.*
+
+## 8. NEW BUG (found 2026-08-17 late) — cancelled bookings permanently block their dates at create
+
+Reproduced three times on the live exotiq tenant (2017-audi-s8):
+`public_vehicle_availability` returns NO busy range for a window, but
+`rent-create-booking` 409s "Those dates were just taken" — for exactly the
+windows previously booked and then CANCELLED (canary bookings, e.g. Oct 2–4,
+Oct 8–10, Oct 20–22; a never-touched window creates fine, BK-03491 control).
+
+So the availability RPC excludes cancelled bookings but the create-side
+double-booking guard does not. Renter impact on a live marketplace: every
+cancellation permanently locks those dates — invisible inventory loss, and
+the worst UX shape ("looks free, fails at the last step"). Fix: the overlap
+check in create_marketplace_booking should exclude the same terminal
+statuses the availability RPC excludes (cancelled/declined/refunded/
+payment_expired). Please align both to one status list.
