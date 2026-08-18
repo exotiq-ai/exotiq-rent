@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { LockKeyhole, Phone, Sparkles } from 'lucide-react';
+import { LockKeyhole, Mail, Phone, Sparkles } from 'lucide-react';
 import { getBookingConfirmation, createBookingCart } from '@/domain/booking/service';
 import { formatRangeLabel } from '@/domain/booking/dates';
 import { formatMoney } from '@/domain/booking/totals';
@@ -110,7 +110,17 @@ export async function ConfirmationScreen({
           // this can render verified without requiring a tap.
           <IdentityVerificationCard bookingRef={confirmation.bookingRef} confirmationToken={accessToken} />
         )}
-        <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm"><Detail label="Dates" value={dateLabel} /><Detail label="Pickup" value={cart.pickupTime} /><Detail label="Location" value={live ? `${cart.operator.city}, ${cart.operator.state}` : cart.vehicle.pickupLocation.address} /><Detail label="Total" value={totalLabel} /></div>
+        <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm"><Detail label="Dates" value={dateLabel} /><Detail label="Pickup" value={cart.pickupTime} /><Detail label="Location" value={live ? (live.pickupAddress ?? `${cart.operator.city}, ${cart.operator.state}`) : cart.vehicle.pickupLocation.address} /><Detail label="Total" value={totalLabel} /></div>
+        {/* Booking-time snapshots (T-15): instructions are operator free text —
+            plain text only, never interpreted as HTML or links. */}
+        {live?.pickupInstructions && (
+          <div className="mt-3 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="text-[10px] uppercase tracking-[0.18em] text-[#848A9A]">Pickup instructions</div><p className="mt-2 whitespace-pre-line text-sm leading-6 text-[#9BA1B0]">{live.pickupInstructions}</p></div>
+        )}
+        {live?.mileageLimitPerDay != null && live.mileageLimitPerDay > 0 && (
+          <p className="mt-3 px-1 text-xs leading-5 text-[#848A9A]">
+            {live.mileageLimitPerDay} miles/day included{live.mileageOverageRate ? ` · then $${live.mileageOverageRate.toFixed(2)}/mile` : ''} — terms locked at booking.
+          </p>
+        )}
         {!live && (
           <>
             <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
@@ -163,7 +173,7 @@ export async function ConfirmationScreen({
             <p className="text-xs leading-5 text-[#848A9A]">Trip Fees and protection are itemized at payment, once the operator approves.</p>
           </div>
         )}
-        <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#C8A664]/10 text-[#C8A664]">{initialsOf(cart.operator.name)}</div><div className="flex-1"><div className="text-sm font-medium">{cart.operator.name}</div><div className="text-xs text-[#9BA1B0]">{terminal ? (cart.operator.phone ? 'Questions about this booking? Call any time.' : 'Questions about this booking? Reply to your confirmation email.') : 'Will reach out before pickup'}</div></div>{cart.operator.phone && <a href={`tel:${cart.operator.phone}`} className="rounded-full border border-[#C8A664]/30 p-2 text-[#C8A664]" aria-label="Call operator"><Phone size={16} /></a>}</div></div>
+        <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#C8A664]/10 text-[#C8A664]">{initialsOf(cart.operator.name)}</div><div className="flex-1"><div className="text-sm font-medium">{cart.operator.name}</div><div className="text-xs text-[#9BA1B0]">{terminal ? (cart.operator.phone ? 'Questions about this booking? Call any time.' : 'Questions about this booking? Reply to your confirmation email.') : 'Will reach out before pickup'}</div></div>{(live?.supportEmail ?? cart.operator.supportEmail) && <a href={`mailto:${live?.supportEmail ?? cart.operator.supportEmail}`} className="rounded-full border border-[#C8A664]/30 p-2 text-[#C8A664]" aria-label="Email operator"><Mail size={16} /></a>}{cart.operator.phone && <a href={`tel:${cart.operator.phone}`} className="rounded-full border border-[#C8A664]/30 p-2 text-[#C8A664]" aria-label="Call operator"><Phone size={16} /></a>}</div></div>
         {!terminal && (
           <>
             <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="mb-3 flex items-center gap-2 text-sm font-medium"><Sparkles size={16} className="text-[#C8A664]" />What happens next</div>{/* The deposit step describes an in-person handoff, not a link: Exotiq
@@ -179,7 +189,7 @@ export async function ConfirmationScreen({
               startDate={live ? live.startAt.slice(0, 10) : cart.dates.start}
               endDate={live ? live.endAt.slice(0, 10) : cart.dates.end}
               pickupTime={cart.pickupTime}
-              location={live ? `${cart.operator.city}, ${cart.operator.state}` : cart.vehicle.pickupLocation.address}
+              location={live ? (live.pickupAddress ?? `${cart.operator.city}, ${cart.operator.state}`) : cart.vehicle.pickupLocation.address}
             />
           </>
         )}

@@ -16,7 +16,13 @@ export type Operator = {
   name: string;
   city: string;
   state: string;
+  /** Renter-facing contact number. Live mode fills this from the team's
+   * CC support_phone; empty string hides every Call affordance. */
   phone: string;
+  supportEmail?: string;
+  pickupAddress?: string;
+  /** Operator free text — ALWAYS rendered as plain text, never as HTML/links. */
+  pickupInstructions?: string;
   logoUrl?: string;
   timezone?: string;
   stripeAccountId?: string;
