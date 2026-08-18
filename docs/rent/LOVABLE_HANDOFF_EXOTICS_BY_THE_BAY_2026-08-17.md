@@ -187,3 +187,28 @@ the worst UX shape ("looks free, fails at the last step"). Fix: the overlap
 check in create_marketplace_booking should exclude the same terminal
 statuses the availability RPC excludes (cancelled/declined/refunded/
 payment_expired). Please align both to one status list.
+
+## 9. NEW FEATURE ASK — per-vehicle "unlisted" flag (closed-loop booking links)
+
+Gregory's direction (2026-08-17): tenants will send customers direct
+booking links (`book.exotiq.rent/{team}/{vehicle}`) that keep the renter
+inside that tenant's world. Today the only way to hide a vehicle from the
+public storefront grid while keeping its URL bookable is the no-photo hack
+(the grid filters imageless vehicles; the detail RPC still serves them).
+Make it a real control:
+
+- Per-vehicle **`unlisted` boolean** in Command Center fleet settings
+  (default false).
+- `public_team_fleet` excludes unlisted vehicles (grid + marketplace).
+- `public_vehicle_by_slug` still serves them (direct URL keeps working) —
+  same semantics as a YouTube unlisted video, and explicitly NOT an access
+  control.
+- Renter-side: zero changes needed.
+
+Uses today: the $2 payment-leg test car; operators' private offers;
+staging a car before its photos are ready.
+
+Roadmap heads-up (no action yet, just schema awareness): per-team **custom
+booking domains** (CNAME white-label, e.g. book.exoticsbythebay.com →
+their storefront) are adopted direction — a `custom_domain` field on teams
+will eventually want CC UI. Renter-side routing is ours.
