@@ -73,6 +73,7 @@ export function PaymentCard({
       polls += 1;
       if (polls > CONFIRM_POLL_MAX) {
         if (pollTimer.current) clearInterval(pollTimer.current);
+        pollTimer.current = null;
         setNotice('Payment received — confirmation is taking a little longer than usual. Your payment is safe; reopen your booking link in a minute to see the receipt.');
         return;
       }
@@ -80,6 +81,10 @@ export function PaymentCard({
         const lookup = await getBookingConfirmation(bookingRef, accessToken);
         if (lookup && !('restricted' in lookup) && lookup.live && (lookup.live.paidAt || lookup.live.status !== 'pending_payment')) {
           if (pollTimer.current) clearInterval(pollTimer.current);
+          // Review note: never leave the cleared ref truthy — the start guard
+          // latches and no poll can ever run again (dev StrictMode remounts,
+          // paid_at-before-status refreshes).
+          pollTimer.current = null;
           router.refresh();
         }
       } catch {
@@ -103,6 +108,7 @@ export function PaymentCard({
     return () => {
       clearInterval(tick);
       if (pollTimer.current) clearInterval(pollTimer.current);
+      pollTimer.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookingRef, accessToken, router]);
