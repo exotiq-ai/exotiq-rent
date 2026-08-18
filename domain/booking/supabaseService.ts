@@ -28,7 +28,13 @@ function synthesizeContextFromRow(row: RpcBookingByRefRow): PublicVehicleContext
   return {
     team: {
       id: '', slug: teamSlug, name: row.team_name ?? 'Your operator',
-      city: '', state: '', phone: '',
+      city: '', state: '',
+      // The by_ref row now carries contact + pickup (T-15), so even the
+      // degraded catalog-outage path keeps the renter's contact affordances.
+      phone: row.support_phone ?? '',
+      supportEmail: row.support_email ?? undefined,
+      pickupAddress: row.pickup_address ?? undefined,
+      pickupInstructions: row.pickup_instructions ?? undefined,
     },
     vehicle: {
       id: '', slug: vehicleSlug, operatorId: '', name: vehicleName,
@@ -147,6 +153,15 @@ export async function getSupabaseBookingConfirmation(bookingRef: string, token?:
       processingFeeCents: row.processing_fee_cents != null ? Number(row.processing_fee_cents) : undefined,
       operatorTaxCents: row.operator_tax_cents != null ? Number(row.operator_tax_cents) : undefined,
       operatorTaxLabel: row.operator_tax_label ?? undefined,
+      timezone: row.timezone ?? undefined,
+      identityVerified: row.identity_verified ?? undefined,
+      supportEmail: row.support_email ?? undefined,
+      supportPhone: row.support_phone ?? undefined,
+      pickupAddress: row.pickup_address ?? undefined,
+      pickupInstructions: row.pickup_instructions ?? undefined,
+      mileageLimitPerDay: row.mileage_limit_per_day != null ? Number(row.mileage_limit_per_day) : undefined,
+      mileageOverageRate: row.mileage_overage_rate != null ? Number(row.mileage_overage_rate) : undefined,
+      cancellationPolicy: row.cancellation_policy ?? undefined,
     },
   };
 }

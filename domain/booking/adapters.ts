@@ -32,18 +32,26 @@ export function adaptTeam(row: RpcTeamRow): Operator {
     name: row.name,
     city: row.city ?? '',
     state: row.state ?? '',
-    phone: '',
+    // The team's CC support number IS the renter-facing phone — this single
+    // mapping lights up every existing "Call {operator}" affordance (T-15).
+    phone: row.support_phone ?? '',
+    supportEmail: row.support_email ?? undefined,
+    pickupAddress: row.pickup_address ?? undefined,
+    pickupInstructions: row.pickup_instructions ?? undefined,
     logoUrl: row.logo_url ?? undefined,
     timezone: row.timezone ?? undefined,
     about: row.public_description ?? undefined,
   };
 }
 
-function footnoteFor(minRentalDays: number, mileageLimit: number | null | undefined): string {
+function footnoteFor(minRentalDays: number, mileageLimit: number | null | undefined, overageRate?: number | string | null): string {
   // A 1-day minimum is still a minimum. "No minimum" contradicted the booking
   // preview tile beside it, which read the same field and said "Minimum: 1 day".
   const minimum = `${minRentalDays}-day minimum`;
-  const mileage = mileageLimit ? `${mileageLimit} miles/day included` : 'Mileage per operator policy';
+  // Overage rate shown pre-booking (T-15): the renter must see the terms the
+  // booking snapshot will freeze, before agreeing to them.
+  const overage = overageRate != null && Number(overageRate) > 0 ? ` · then $${Number(overageRate).toFixed(2)}/mile` : '';
+  const mileage = mileageLimit ? `${mileageLimit} miles/day included${overage}` : 'Mileage per operator policy';
   return `${minimum} · ${mileage}`;
 }
 
@@ -81,7 +89,7 @@ export function adaptVehicleDetail(row: RpcVehicleDetailRow, team: Operator, med
     ...base,
     photos,
     heroImage: photos[0] ?? base.heroImage,
-    footnote: footnoteFor(base.minRentalDays, row.default_mileage_limit),
+    footnote: footnoteFor(base.minRentalDays, row.default_mileage_limit, row.mileage_overage_rate),
     pickupLocation: {
       // No fabricated name. The public RPCs expose no pickup address or venue
       // name, and `${team.name} pickup` rendered as "Drive Exotiq pickup" under a

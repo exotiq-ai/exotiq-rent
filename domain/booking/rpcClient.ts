@@ -16,6 +16,12 @@ export type RpcTeamRow = {
   state: string | null;
   timezone: string | null;
   currency: string | null;
+  /** Tenant carryover fields (2026-08-18) — CC Business Profile → "Renter
+   * contact & pickup". Older responses omit them. */
+  support_email?: string | null;
+  support_phone?: string | null;
+  pickup_address?: string | null;
+  pickup_instructions?: string | null;
 };
 
 export type RpcFleetVehicleRow = {
@@ -193,6 +199,18 @@ export type RpcBookingByRefRow = {
   /** Operator tax snapshot (inside total_cents). Added 2026-08-17. */
   operator_tax_cents?: number | null;
   operator_tax_label?: string | null;
+  /** Carryover snapshots + team context (2026-08-18, verified on BK-03500).
+   * pickup/mileage/cancellation are FROZEN at creation; contact + timezone
+   * are live team reads the RPC joins in. */
+  timezone?: string | null;
+  identity_verified?: boolean | null;
+  support_email?: string | null;
+  support_phone?: string | null;
+  pickup_address?: string | null;
+  pickup_instructions?: string | null;
+  mileage_limit_per_day?: number | null;
+  mileage_overage_rate?: number | string | null;
+  cancellation_policy?: string | null;
 };
 
 export async function fetchBookingByRef(bookingRef: string, token?: string): Promise<RpcBookingByRefRow | null> {

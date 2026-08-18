@@ -35,6 +35,18 @@ export type PublicBookingConfirmation = {
      * ("charged by the operator"), never added to any total again. */
     operatorTaxCents?: number;
     operatorTaxLabel?: string;
+    /** Carryover (2026-08-18): pickup + mileage + policy are booking-time
+     * SNAPSHOTS; contact + timezone are team context joined by the RPC. */
+    timezone?: string;
+    identityVerified?: boolean;
+    supportEmail?: string;
+    supportPhone?: string;
+    pickupAddress?: string;
+    pickupInstructions?: string;
+    mileageLimitPerDay?: number;
+    /** Dollars per mile, as the backend stores it (e.g. 4.99). */
+    mileageOverageRate?: number;
+    cancellationPolicy?: string;
   };
 };
 
