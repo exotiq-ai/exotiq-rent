@@ -185,6 +185,12 @@ async function main() {
     n(q.grand_total_cents) === n(q.operator_total_cents) + n(q.exotiq_total_cents),
     `grand_total == operator + exotiq (${q.grand_total_cents})`,
   );
+  // Operator tax (2026-08-17): rides INSIDE the operator leg, and the platform
+  // fee base must stay the UNTAXED rental. Both hold at 0 for no-tax tenants.
+  assert(
+    n(q.operator_total_cents) === n(q.rental_subtotal_cents) + n(q.operator_tax_cents),
+    `operator_total == rental_subtotal + tax (${q.operator_total_cents} = ${q.rental_subtotal_cents} + ${n(q.operator_tax_cents)})`,
+  );
   // Deposit decision 2026-07-26: the renter is never charged or held a deposit.
   // A nonzero here means someone re-enabled deposits server-side.
   assert(n(q.deposit_cents) === 0, 'deposit_cents == 0 (renter never pays a deposit)');

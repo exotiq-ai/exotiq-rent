@@ -64,10 +64,25 @@ export function PayStep({
         </div>
 
         <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm">
-          <div className="flex justify-between gap-3">
-            <span className="text-[#9BA1B0]">Operator rental charge</span>
-            <Money cents={m.operatorTotalCents} />
-          </div>
+          {/* Tax rides INSIDE the operator charge (T-11) — itemised so the
+              operator row plus the tax row sum to what the statement shows. */}
+          {m.operatorTaxesCents > 0 ? (
+            <>
+              <div className="flex justify-between gap-3">
+                <span className="text-[#9BA1B0]">Operator rental</span>
+                <Money cents={m.operatorTotalCents - m.operatorTaxesCents} />
+              </div>
+              <div className="mt-3 flex justify-between gap-3 border-t border-[#2A2E3A] pt-3">
+                <span className="text-[#9BA1B0]">{quote?.operatorTaxLabel ?? 'Tax'}{quote?.operatorTaxRate != null ? ` (${quote.operatorTaxRate}%)` : ''}</span>
+                <Money cents={m.operatorTaxesCents} />
+              </div>
+            </>
+          ) : (
+            <div className="flex justify-between gap-3">
+              <span className="text-[#9BA1B0]">Operator rental charge</span>
+              <Money cents={m.operatorTotalCents} />
+            </div>
+          )}
           <div className="mt-2 text-xs leading-5 text-[#848A9A]">Charged by {cart.operator.name} — appears as its own line on your statement.</div>
           <div className="mt-3 flex justify-between gap-3 border-t border-[#2A2E3A] pt-3">
             <span className="text-[#9BA1B0]">Trip Fees ({platformPercent}%)</span>

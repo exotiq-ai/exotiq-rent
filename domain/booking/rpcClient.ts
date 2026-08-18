@@ -71,6 +71,12 @@ export type RpcQuoteRow = {
   protection_total_cents: number;
   /** 2% Exotiq take + Stripe's fee on the Exotiq leg. Added 2026-07-28. */
   processing_fee_cents?: number;
+  /** Operator sales tax, inside the OPERATOR leg (operator_total_cents =
+   * rental_subtotal + tax; fee base stays the untaxed rental). Set per team
+   * in the Command Center. Added 2026-08-17; older responses omit all three. */
+  operator_tax_rate?: number;
+  operator_tax_label?: string;
+  operator_tax_cents?: number;
   /** Per-day state vehicle-rental surcharge. Added 2026-07-28. */
   state_fee_cents?: number;
   /** Per-tenant state fee fields, added 2026-08-17 (verified live on the
@@ -184,6 +190,9 @@ export type RpcBookingByRefRow = {
    * first two under-quotes the renter on the payment screen. */
   state_fee_cents?: number | null;
   processing_fee_cents?: number | null;
+  /** Operator tax snapshot (inside total_cents). Added 2026-08-17. */
+  operator_tax_cents?: number | null;
+  operator_tax_label?: string | null;
 };
 
 export async function fetchBookingByRef(bookingRef: string, token?: string): Promise<RpcBookingByRefRow | null> {

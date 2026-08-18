@@ -120,7 +120,12 @@ export function adaptQuote(row: RpcQuoteRow): PublicQuote {
     dailyRateCents: Number(row.daily_rate_cents),
     rentalSubtotalCents: Number(row.rental_subtotal_cents),
     extrasSubtotalCents: 0, // extras are outside the fee base (D9) and not in the M3 quote
-    operatorTaxesCents: operatorChargeCents - Number(row.rental_subtotal_cents),
+    // Prefer the explicit server column (2026-08-17); the subtraction is the
+    // fallback for older quote shapes and MUST equal it when both exist —
+    // operator_total = rental_subtotal + tax is the server's own invariant.
+    operatorTaxesCents: Number(row.operator_tax_cents ?? (operatorChargeCents - Number(row.rental_subtotal_cents))),
+    operatorTaxLabel: row.operator_tax_label ?? undefined,
+    operatorTaxRate: row.operator_tax_rate != null ? Number(row.operator_tax_rate) : undefined,
     operatorTotalCents: operatorChargeCents,
     platformFeeRate: Number(row.platform_fee_percent) / 100,
     platformFeeCents: Number(row.platform_fee_cents),
