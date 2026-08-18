@@ -48,7 +48,15 @@ export function ReviewStep({
   const operatorRows: [string, string, number, (() => void)?][] = [
     ['Rental', `${days} × ${formatMoney(quote ? quote.dailyRateCents : cart.vehicle.dailyRateCents)}`, m.rentalSubtotalCents, () => goTo(1)],
   ];
-  if (m.operatorTaxesCents > 0) operatorRows.push(['Taxes & fees', 'Operator tax estimate', m.operatorTaxesCents]);
+  // Server-named tax line (2026-08-17): "Tax · 7.5% — charged by {operator}".
+  // Older quote shapes carry no label/rate and keep the generic copy.
+  if (m.operatorTaxesCents > 0) {
+    operatorRows.push([
+      quote?.operatorTaxLabel ?? 'Taxes & fees',
+      quote?.operatorTaxRate != null ? `${quote.operatorTaxRate}% · charged by ${cart.operator.name}` : 'Operator tax estimate',
+      m.operatorTaxesCents,
+    ]);
+  }
 
   // Every component of exotiqTotalCents must be itemised. The server added
   // processing and state fees into that total, and rendering only the first two

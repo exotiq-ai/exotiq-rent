@@ -31,6 +31,10 @@ export type PublicBookingConfirmation = {
      * the renter on the payment screen by the state + processing amounts. */
     stateFeeCents?: number;
     processingFeeCents?: number;
+    /** Operator tax snapshot — INSIDE totalCents, displayed as its own line
+     * ("charged by the operator"), never added to any total again. */
+    operatorTaxCents?: number;
+    operatorTaxLabel?: string;
   };
 };
 
@@ -88,6 +92,10 @@ export type PublicQuote = {
   rentalSubtotalCents: number;
   extrasSubtotalCents: number;
   operatorTaxesCents: number;
+  /** Server-authoritative tax naming ("Tax", 7.5) — absent on pre-2026-08-17
+   * quote shapes; renderers fall back to generic copy. */
+  operatorTaxLabel?: string;
+  operatorTaxRate?: number;
   operatorTotalCents: number;
   platformFeeRate: number;
   platformFeeCents: number;

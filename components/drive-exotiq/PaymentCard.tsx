@@ -26,6 +26,8 @@ export function PaymentCard({
   protectionTotalCents,
   stateFeeCents = 0,
   processingFeeCents = 0,
+  operatorTaxCents = 0,
+  operatorTaxLabel,
   operatorName,
 }: {
   bookingRef: string;
@@ -39,6 +41,10 @@ export function PaymentCard({
    * for anything newer, omitting them under-quotes the renter. */
   stateFeeCents?: number;
   processingFeeCents?: number;
+  /** Operator tax — INSIDE rentalCents (the operator-leg snapshot). Displayed
+   * as its own line; never added to the total again (T-11). */
+  operatorTaxCents?: number;
+  operatorTaxLabel?: string;
   operatorName: string;
 }) {
   const router = useRouter();
@@ -146,7 +152,10 @@ export function PaymentCard({
         </span>
       </div>
       <div className="mt-4 space-y-2 border-t border-[#2A2E3A] pt-3 text-sm">
-        <div className="flex justify-between gap-3"><span className="text-[#9BA1B0]">{operatorName} rental</span><Money cents={rentalCents} /></div>
+        <div className="flex justify-between gap-3"><span className="text-[#9BA1B0]">{operatorName} rental</span><Money cents={rentalCents - operatorTaxCents} /></div>
+        {operatorTaxCents > 0 && (
+          <div className="flex justify-between gap-3"><span className="text-[#9BA1B0]">{operatorTaxLabel ?? 'Tax'} — {operatorName}</span><Money cents={operatorTaxCents} /></div>
+        )}
         <div className="flex justify-between gap-3"><span className="text-[#9BA1B0]">Protection &amp; fees</span><Money cents={exotiqCents} /></div>
         <div className="flex justify-between gap-3 border-t border-[#2A2E3A] pt-2 font-medium text-[#F0F2F5]"><span>Total due</span><Money cents={rentalCents + exotiqCents} large /></div>
       </div>

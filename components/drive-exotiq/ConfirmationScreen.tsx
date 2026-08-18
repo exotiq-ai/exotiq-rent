@@ -137,13 +137,21 @@ export async function ConfirmationScreen({
             protectionTotalCents={live.protectionTotalCents ?? 0}
             stateFeeCents={live.stateFeeCents ?? 0}
             processingFeeCents={live.processingFeeCents ?? 0}
+            operatorTaxCents={live.operatorTaxCents ?? 0}
+            operatorTaxLabel={live.operatorTaxLabel}
             operatorName={cart.operator.name}
           />
         )}
         {live && live.paidAt && !terminal && (
           <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
             <div className="mb-1 text-sm font-medium">Paid — your receipt</div>
-            <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block text-[#9BA1B0]">{cart.operator.name} rental</span><span className="text-xs text-[#848A9A]">Appears as {cart.operator.name} on your statement</span></span><Money cents={live.totalCents} /></div>
+            {/* Tax is INSIDE totalCents (operator leg snapshot, T-11): itemise
+                it, never add it to a total again. Old bookings carry 0/absent
+                and render the single row exactly as before. */}
+            <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block text-[#9BA1B0]">{cart.operator.name} rental</span><span className="text-xs text-[#848A9A]">{(live.operatorTaxCents ?? 0) > 0 ? `Statement shows ${cart.operator.name} — one charge including tax` : `Appears as ${cart.operator.name} on your statement`}</span></span><Money cents={live.totalCents - (live.operatorTaxCents ?? 0)} /></div>
+            {(live.operatorTaxCents ?? 0) > 0 && (
+              <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span className="text-[#9BA1B0]">{live.operatorTaxLabel ?? 'Tax'} — charged by {cart.operator.name}</span><Money cents={live.operatorTaxCents ?? 0} /></div>
+            )}
             <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block text-[#9BA1B0]">Trip Fees + protection</span><span className="text-xs text-[#848A9A]">Appears as EXOTIQ RENT</span></span><Money cents={exotiqLegCents} /></div>
             <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm font-medium"><span>Total paid</span><Money cents={live.totalCents + exotiqLegCents} /></div>
           </div>
