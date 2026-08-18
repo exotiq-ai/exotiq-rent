@@ -113,8 +113,12 @@ async function main() {
   }
 
   console.log('\n== Availability window ==');
-  let start = '';
-  let end = '';
+  // ALL free windows, not just the first: the availability RPC excludes
+  // cancelled bookings but the create-side guard does not (backend gap found
+  // 2026-08-17, flagged to Lovable), so a window this canary used and
+  // cancelled yesterday looks free yet 409s on create. The create step slides
+  // through this list instead of false-alarming on the canary's own residue.
+  const windows: Array<{ start: string; end: string }> = [];
   {
     const rangeStart = isoDatePlus(WINDOW_START_DAYS);
     const rangeEnd = isoDatePlus(WINDOW_START_DAYS + WINDOW_SLIDE_TRIES * 3 + RENTAL_DAYS);
@@ -129,15 +133,13 @@ async function main() {
       const s = isoDatePlus(WINDOW_START_DAYS + i * 3);
       const e = isoDatePlus(WINDOW_START_DAYS + i * 3 + RENTAL_DAYS);
       const overlaps = busy.some((b) => b.busy_start < e && b.busy_end > s);
-      if (!overlaps) {
-        start = s;
-        end = e;
-        break;
-      }
+      if (!overlaps) windows.push({ start: s, end: e });
     }
-    assert(Boolean(start), `free ${RENTAL_DAYS}-day window found (${start} → ${end})`);
-    if (!start) process.exit(1);
+    assert(windows.length > 0, `free ${RENTAL_DAYS}-day window(s) found (${windows.length}, first ${windows[0]?.start} → ${windows[0]?.end})`);
+    if (windows.length === 0) process.exit(1);
   }
+  let start = windows[0]!.start;
+  let end = windows[0]!.end;
 
   console.log('\n== Quote invariants ==');
   const quotes = await rpc<any[]>('public_vehicle_quote', {
@@ -147,7 +149,7 @@ async function main() {
     _end_date: end,
     _options: { protection: 'premium' },
   });
-  const q = quotes[0];
+  let q = quotes[0];
   assert(Boolean(q), 'quote returned');
   if (!q) process.exit(1);
 
@@ -188,15 +190,35 @@ async function main() {
   assert(n(q.deposit_cents) === 0, 'deposit_cents == 0 (renter never pays a deposit)');
 
   console.log('\n== Booking create → read-back → cancel ==');
-  const create = await fn('rent-create-booking', {
-    team_slug: TEAM_SLUG,
-    vehicle_slug: vehicleSlug,
-    start_date: start,
-    end_date: end,
-    pickup_time: '10:00 AM',
-    protection: 'premium',
-    driver: CANARY_DRIVER,
-  });
+  let create = { status: 0, body: {} as any };
+  for (const w of windows) {
+    if (w.start !== start) {
+      // Re-quote for the slid window: the snapshot-parity checks below must
+      // compare against the quote for the dates actually booked.
+      const requote = await rpc<any[]>('public_vehicle_quote', {
+        _team_slug: TEAM_SLUG,
+        _vehicle_slug: vehicleSlug,
+        _start_date: w.start,
+        _end_date: w.end,
+        _options: { protection: 'premium' },
+      });
+      if (!requote[0]) continue;
+      q = requote[0];
+      start = w.start;
+      end = w.end;
+    }
+    create = await fn('rent-create-booking', {
+      team_slug: TEAM_SLUG,
+      vehicle_slug: vehicleSlug,
+      start_date: start,
+      end_date: end,
+      pickup_time: '10:00 AM',
+      protection: 'premium',
+      driver: CANARY_DRIVER,
+    });
+    if (create.status !== 409) break;
+    console.log(`  WARN  ${start} → ${end} rejected 409 ("${String(create.body?.error ?? '').slice(0, 60)}") — sliding to the next free window`);
+  }
   assert(create.status === 200, `rent-create-booking 200 (got ${create.status} ${JSON.stringify(create.body).slice(0, 200)})`);
   const bookingRef: string | undefined = create.body?.booking_ref;
   const token: string | undefined = create.body?.confirmation_token;
