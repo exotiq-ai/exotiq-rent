@@ -131,12 +131,17 @@ export function ReviewStep({
             attention; neither is read at this moment, both must be available. */}
         <details className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm text-[#F0F2F5]">
           <summary className="cursor-pointer font-medium">Cancellation &amp; coverage</summary>
-          <p className="mt-3 text-xs leading-5 text-[#9BA1B0]">Free cancellation up to 72 hours before pickup. After that, Trip Fees and protection are non-refundable and the rental follows {cart.operator.name}&apos;s policy.</p>
-          {/* Coverage copy is only true when protection is on — and its terms
-              are under review (T-6); this line disappears entirely for a
-              declined booking rather than describing coverage that isn't there. */}
+          {/* T-6: this mirrors the platform-enforced rule (and the derived
+              cancellation_policy text snapshotted on every booking) — the old
+              copy claimed post-72h refunds "follow the operator's policy",
+              which no code implements. */}
+          <p className="mt-3 text-xs leading-5 text-[#9BA1B0]">Free cancellation until 72 hours before your scheduled pickup — both charges refunded in full. Within 72 hours of pickup, the booking total is non-refundable.</p>
+          {/* T-6: no specific coverage figures until the protect-plan T&C are
+              finalized — the old "$0 deductible / $250K liability / roadside"
+              line asserted terms no document backs. Neutral, true, and gone
+              entirely when protection is declined. */}
           {protectionOn && (
-            <p className="mt-3 text-xs leading-5 text-[#9BA1B0]">Protection is included with this booking: $0 deductible, collision, theft and liability to $250K, roadside assistance.</p>
+            <p className="mt-3 text-xs leading-5 text-[#9BA1B0]">Exotiq Protect covers damage to the vehicle during your rental period. Full coverage terms are provided before pickup.</p>
           )}
         </details>
         <label className="mt-4 flex gap-3 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-xs leading-5 text-[#F0F2F5]">

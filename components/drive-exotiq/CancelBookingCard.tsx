@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { cancellationWindowState } from '@/domain/booking/payment';
 import { postRenterCancel } from '@/domain/booking/rpcClient';
-import { formatShortDate } from '@/domain/booking/dates';
+import { formatShortDate, tzDate } from '@/domain/booking/dates';
 
 /**
  * M6c: renter self-serve cancellation, window-aware (M6-D5/D7).
@@ -17,11 +17,14 @@ export function CancelBookingCard({
   accessToken,
   pickupAtIso,
   paid,
+  timezone,
 }: {
   bookingRef: string;
   accessToken: string;
   pickupAtIso: string;
   paid: boolean;
+  /** Team timezone — the 72h deadline renders as the team-local date (T-6). */
+  timezone?: string;
 }) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
@@ -50,7 +53,10 @@ export function CancelBookingCard({
           Cancel this booking
         </button>
         <p className="mt-1 text-[11px] text-[#3D4250]">
-          {free ? `Free cancellation — full refund until 72h before pickup (${formatShortDate(pickupAtIso.slice(0, 10))}).` : 'The free cancellation window has passed.'}
+          {/* The date shown is the CANCEL-BY deadline (pickup − 72h) in the
+              team's timezone — it used to print the pickup date itself, which
+              read as three extra days of free cancellation (T-6). */}
+          {free ? `Free cancellation — full refund until ${formatShortDate(tzDate(new Date(new Date(pickupAtIso).getTime() - 72 * 3600_000).toISOString(), timezone ?? 'UTC'))} (72h before pickup).` : 'The free cancellation window has passed.'}
         </p>
       </div>
     );
