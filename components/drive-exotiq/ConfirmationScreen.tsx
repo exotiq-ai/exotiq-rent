@@ -205,6 +205,7 @@ export async function ConfirmationScreen({
             accessToken={accessToken}
             pickupAtIso={live.startAt}
             paid={Boolean(live.paidAt)}
+            timezone={tz}
           />
         )}
         {!terminal && (
