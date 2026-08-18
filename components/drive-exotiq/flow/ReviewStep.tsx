@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Money, PrimaryButton } from '../BookingChrome';
 import { formatRangeLabel } from '@/domain/booking/dates';
-import { formatMoney, getProtectionDailyRateCents } from '@/domain/booking/totals';
+import { formatMoney } from '@/domain/booking/totals';
 import type { BookingCart, ProtectionTier } from '@/domain/booking/types';
 import type { PublicQuote } from '@/domain/booking/publicContracts';
 import { Breakdown, DepositDisclosure, QuoteNotice, ScreenShell, StepHeader, Sticky } from './shared';
@@ -93,7 +93,10 @@ export function ReviewStep({
                 <div className="text-sm font-medium text-[#F0F2F5]">Exotiq Protect</div>
                 <p className="mt-1 text-xs leading-5 text-[#9BA1B0]">
                   {protectionOn
-                    ? `Premium coverage · ${formatMoney(getProtectionDailyRateCents('premium'))}/day`
+                    ? // Rate from the same source as the charged row (m), not the
+                      // client constant — review note: constant drift would make
+                      // this subtitle contradict the row it sits above.
+                      `Premium coverage · ${formatMoney(m.protectionDailyRateCents)}/day`
                     : `Declined — you're responsible for damage under ${cart.operator.name}'s rental agreement.`}
                 </p>
               </div>
