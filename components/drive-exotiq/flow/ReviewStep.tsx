@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { Money, PrimaryButton } from '../BookingChrome';
 import { formatRangeLabel } from '@/domain/booking/dates';
-import { formatMoney } from '@/domain/booking/totals';
-import type { BookingCart } from '@/domain/booking/types';
+import { formatMoney, getProtectionDailyRateCents } from '@/domain/booking/totals';
+import type { BookingCart, ProtectionTier } from '@/domain/booking/types';
 import type { PublicQuote } from '@/domain/booking/publicContracts';
 import { Breakdown, DepositDisclosure, QuoteNotice, ScreenShell, StepHeader, Sticky } from './shared';
 
@@ -17,6 +17,7 @@ export function ReviewStep({
   quoteError,
   onRetryQuote,
   blocked,
+  onProtectionChange,
 }: {
   cart: BookingCart;
   goTo: (step: number) => void;
@@ -28,6 +29,9 @@ export function ReviewStep({
   onRetryQuote?: () => void;
   /** True when live pricing is unconfirmed — the renter must not advance. */
   blocked?: boolean;
+  /** T-12: premium is the default; the renter may toggle to declined while
+   * the protect-plan T&C are finalized. Only these two tiers are offered. */
+  onProtectionChange?: (tier: Extract<ProtectionTier, 'premium' | 'decline'>) => void;
 }) {
   const dateLabel = formatRangeLabel(cart.dates.start, cart.dates.end);
   // Money comes from the server quote whenever we have one; the client engine
@@ -50,10 +54,13 @@ export function ReviewStep({
   // processing and state fees into that total, and rendering only the first two
   // rows left $264 of a $1,842 section unexplained — visible in production.
   // These come straight off the quote; mock mode has neither and shows neither.
+  const protectionOn = cart.protection !== 'decline';
   const exotiqRows: [string, string, number, (() => void)?][] = [
     ['Trip Fees', `${platformPercent}% of the rental`, m.platformFeeCents],
-    ['Protection', `Included · ${days} days`, m.protectionTotalCents],
   ];
+  // T-12: protection is a choice now — a $0 "Protection" row under a declined
+  // toggle reads as a glitch, so the row exists only when protection does.
+  if (protectionOn) exotiqRows.push(['Exotiq Protect', `Premium · ${days} days`, m.protectionTotalCents]);
   if (quote?.stateFeeCents) exotiqRows.push([quote.stateFeeLabel ?? 'State rental fee', `${days} days`, quote.stateFeeCents]);
   if (quote?.processingFeeCents) exotiqRows.push(['Processing fees', 'Card processing', quote.processingFeeCents]);
 
@@ -75,9 +82,34 @@ export function ReviewStep({
         <StepHeader eyebrow="Step 04" title="Here's the breakdown." />
         <div className="grid grid-cols-3 gap-2 rounded-xl border border-[#2A2E3A] bg-[#161922] p-3 text-center text-[11px]"><div><span className="block text-[#848A9A]">Dates</span>{dateLabel}</div><div><span className="block text-[#848A9A]">Pickup</span>{cart.pickupTime}</div><div><span className="block text-[#848A9A]">Location</span>{cart.operator.city}</div></div>
         <Breakdown title="Operator" note={`Charge from ${cart.operator.name}`} rows={operatorRows} total={m.operatorTotalCents} />
-        {/* Protection is included, not chosen — the tier step is gone, so this
-            row states what is covered rather than offering a way back to a
-            selection that no longer exists. */}
+        {/* T-12: Exotiq Protect is premium-by-default with a single decline
+            toggle (no tier menu). Toggling recomputes the cart; quoteKey
+            includes the tier, so the flow blocks on a fresh server quote
+            before the renter can commit either way. */}
+        {onProtectionChange && (
+          <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-sm font-medium text-[#F0F2F5]">Exotiq Protect</div>
+                <p className="mt-1 text-xs leading-5 text-[#9BA1B0]">
+                  {protectionOn
+                    ? `Premium coverage · ${formatMoney(getProtectionDailyRateCents('premium'))}/day`
+                    : `Declined — you're responsible for damage under ${cart.operator.name}'s rental agreement.`}
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={protectionOn}
+                aria-label="Exotiq Protect"
+                onClick={() => onProtectionChange(protectionOn ? 'decline' : 'premium')}
+                className={`relative h-7 w-12 shrink-0 rounded-full transition ${protectionOn ? 'bg-[#C8A664]' : 'bg-[#2A2E3A]'}`}
+              >
+                <span className={`absolute top-1 h-5 w-5 rounded-full bg-[#F0F2F5] transition-all ${protectionOn ? 'left-6' : 'left-1'}`} />
+              </button>
+            </div>
+          </div>
+        )}
         <Breakdown title="Exotiq.Rent" note="Charged separately by EXOTIQ.RENT" rows={exotiqRows} total={m.exotiqTotalCents} />
         <div className="mt-4 rounded-xl border border-[#C8A664] bg-[#14130F] p-4"><div className="flex items-center justify-between"><span className="text-sm text-[#9BA1B0]">Total due today</span><Money cents={m.grandTotalCents} large /></div></div>
         {/* Unconditional: the deposit is the operator's to collect at pickup and
@@ -89,7 +121,12 @@ export function ReviewStep({
         <details className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm text-[#F0F2F5]">
           <summary className="cursor-pointer font-medium">Cancellation &amp; coverage</summary>
           <p className="mt-3 text-xs leading-5 text-[#9BA1B0]">Free cancellation up to 72 hours before pickup. After that, Trip Fees and protection are non-refundable and the rental follows {cart.operator.name}&apos;s policy.</p>
-          <p className="mt-3 text-xs leading-5 text-[#9BA1B0]">Protection is included on every booking: $0 deductible, collision, theft and liability to $250K, roadside assistance.</p>
+          {/* Coverage copy is only true when protection is on — and its terms
+              are under review (T-6); this line disappears entirely for a
+              declined booking rather than describing coverage that isn't there. */}
+          {protectionOn && (
+            <p className="mt-3 text-xs leading-5 text-[#9BA1B0]">Protection is included with this booking: $0 deductible, collision, theft and liability to $250K, roadside assistance.</p>
+          )}
         </details>
         <label className="mt-4 flex gap-3 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-xs leading-5 text-[#F0F2F5]">
           <input
