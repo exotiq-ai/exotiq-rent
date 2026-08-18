@@ -148,7 +148,7 @@ export async function ConfirmationScreen({
             {/* Tax is INSIDE totalCents (operator leg snapshot, T-11): itemise
                 it, never add it to a total again. Old bookings carry 0/absent
                 and render the single row exactly as before. */}
-            <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block text-[#9BA1B0]">{cart.operator.name} rental</span><span className="text-xs text-[#848A9A]">Appears as {cart.operator.name} on your statement</span></span><Money cents={live.totalCents - (live.operatorTaxCents ?? 0)} /></div>
+            <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block text-[#9BA1B0]">{cart.operator.name} rental</span><span className="text-xs text-[#848A9A]">{(live.operatorTaxCents ?? 0) > 0 ? `Statement shows ${cart.operator.name} — one charge including tax` : `Appears as ${cart.operator.name} on your statement`}</span></span><Money cents={live.totalCents - (live.operatorTaxCents ?? 0)} /></div>
             {(live.operatorTaxCents ?? 0) > 0 && (
               <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span className="text-[#9BA1B0]">{live.operatorTaxLabel ?? 'Tax'} — charged by {cart.operator.name}</span><Money cents={live.operatorTaxCents ?? 0} /></div>
             )}
