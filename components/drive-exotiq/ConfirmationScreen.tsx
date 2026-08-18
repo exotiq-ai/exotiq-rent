@@ -2,7 +2,7 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { LockKeyhole, Mail, Phone, Sparkles } from 'lucide-react';
 import { getBookingConfirmation, createBookingCart } from '@/domain/booking/service';
-import { formatRangeLabel } from '@/domain/booking/dates';
+import { formatRangeLabel, tzDate, tzTimeLabel } from '@/domain/booking/dates';
 import { formatMoney } from '@/domain/booking/totals';
 import { HTitle, Money, PhoneViewport } from './BookingChrome';
 import { CancelBookingCard } from './CancelBookingCard';
@@ -47,9 +47,15 @@ export async function ConfirmationScreen({
   const live = confirmation.live;
   const cart = createBookingCart({ operator: confirmation.team, vehicle: confirmation.vehicle });
   const platformPercent = Math.round(cart.totals.platformFeeRate * 100);
+  // T-3: booking instants render in the TEAM's timezone — `.slice(0, 10)` read
+  // the UTC date and shifted evening pickups a day for eastern tenants; the
+  // "10:00 AM" pickup tile was mock-cart bleed while the renter's real chosen
+  // time (inside start_at) was discarded.
+  const tz = live?.timezone ?? cart.operator.timezone ?? 'UTC';
   const dateLabel = live
-    ? formatRangeLabel(live.startAt.slice(0, 10), live.endAt.slice(0, 10))
+    ? formatRangeLabel(tzDate(live.startAt, tz), tzDate(live.endAt, tz))
     : formatRangeLabel(cart.dates.start, cart.dates.end);
+  const pickupLabel = live ? (tzTimeLabel(live.startAt, tz) || cart.pickupTime) : cart.pickupTime;
   // totalLabel is defined below, after exotiqLegCents — the headline "Total"
   // must be the renter's FULL total, and live.totalCents alone is only the
   // operator leg (T-7).
@@ -110,7 +116,7 @@ export async function ConfirmationScreen({
           // this can render verified without requiring a tap.
           <IdentityVerificationCard bookingRef={confirmation.bookingRef} confirmationToken={accessToken} />
         )}
-        <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm"><Detail label="Dates" value={dateLabel} /><Detail label="Pickup" value={cart.pickupTime} /><Detail label="Location" value={live ? (live.pickupAddress ?? `${cart.operator.city}, ${cart.operator.state}`) : cart.vehicle.pickupLocation.address} /><Detail label="Total" value={totalLabel} /></div>
+        <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm"><Detail label="Dates" value={dateLabel} /><Detail label="Pickup" value={pickupLabel} /><Detail label="Location" value={live ? (live.pickupAddress ?? `${cart.operator.city}, ${cart.operator.state}`) : cart.vehicle.pickupLocation.address} /><Detail label="Total" value={totalLabel} /></div>
         {/* Booking-time snapshots (T-15): instructions are operator free text —
             plain text only, never interpreted as HTML or links. */}
         {live?.pickupInstructions && (
@@ -186,9 +192,9 @@ export async function ConfirmationScreen({
               operatorName={cart.operator.name}
               teamSlug={cart.operator.slug}
               vehicleSlug={cart.vehicle.slug}
-              startDate={live ? live.startAt.slice(0, 10) : cart.dates.start}
-              endDate={live ? live.endAt.slice(0, 10) : cart.dates.end}
-              pickupTime={cart.pickupTime}
+              startDate={live ? tzDate(live.startAt, tz) : cart.dates.start}
+              endDate={live ? tzDate(live.endAt, tz) : cart.dates.end}
+              pickupTime={pickupLabel}
               location={live ? (live.pickupAddress ?? `${cart.operator.city}, ${cart.operator.state}`) : cart.vehicle.pickupLocation.address}
             />
           </>

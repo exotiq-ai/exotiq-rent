@@ -54,3 +54,29 @@ export function formatRangeLabel(startIso: string, endIso: string): string {
   if (sameMonth) return `${formatShortDate(startIso)}–${Number(endIso.slice(8, 10))}`;
   return `${formatShortDate(startIso)} – ${formatShortDate(endIso)}`;
 }
+
+/**
+ * Instant → the team's LOCAL calendar date / clock time (T-3).
+ *
+ * Booking instants (start_at/end_at) are stored as the pickup moment composed
+ * in the team's timezone; rendering them with `.slice(0, 10)` reads the UTC
+ * date, which shifts afternoon/evening pickups to the wrong day for any
+ * tenant east of UTC-0's slice boundary (audit-confirmed for a
+ * America/New_York tenant). Always render through these.
+ */
+export function tzDate(instantIso: string, timeZone: string): string {
+  // en-CA formats as YYYY-MM-DD.
+  try {
+    return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(instantIso));
+  } catch {
+    return instantIso.slice(0, 10);
+  }
+}
+
+export function tzTimeLabel(instantIso: string, timeZone: string): string {
+  try {
+    return new Intl.DateTimeFormat('en-US', { timeZone, hour: 'numeric', minute: '2-digit' }).format(new Date(instantIso));
+  } catch {
+    return '';
+  }
+}
