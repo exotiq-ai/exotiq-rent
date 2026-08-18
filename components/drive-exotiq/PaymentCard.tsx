@@ -60,39 +60,57 @@ export function PaymentCard({
   const exotiqCents = platformFeeCents + protectionTotalCents + stateFeeCents + processingFeeCents;
   const windowState = paymentWindowState(dueAtIso, nowMs);
 
+  // T-4: the poll exits on ANY post-payment movement — paid_at set, or the
+  // status leaving pending_payment (confirmed, active, even an operator edit
+  // back to pending_documents). The old exit condition was status ===
+  // 'confirmed' only, so every other landing state spun the poll to its cap
+  // and then showed a promise ("this page will update automatically") that
+  // nothing kept.
+  const startConfirmPoll = () => {
+    if (pollTimer.current) return; // one poll, however many entry points
+    let polls = 0;
+    pollTimer.current = setInterval(async () => {
+      polls += 1;
+      if (polls > CONFIRM_POLL_MAX) {
+        if (pollTimer.current) clearInterval(pollTimer.current);
+        pollTimer.current = null;
+        setNotice('Payment received — confirmation is taking a little longer than usual. Your payment is safe; reopen your booking link in a minute to see the receipt.');
+        return;
+      }
+      try {
+        const lookup = await getBookingConfirmation(bookingRef, accessToken);
+        if (lookup && !('restricted' in lookup) && lookup.live && (lookup.live.paidAt || lookup.live.status !== 'pending_payment')) {
+          if (pollTimer.current) clearInterval(pollTimer.current);
+          // Review note: never leave the cleared ref truthy — the start guard
+          // latches and no poll can ever run again (dev StrictMode remounts,
+          // paid_at-before-status refreshes).
+          pollTimer.current = null;
+          router.refresh();
+        }
+      } catch {
+        // transient — keep polling
+      }
+    }, CONFIRM_POLL_MS);
+  };
+
   // Live countdown + return-from-Stripe handling.
   useEffect(() => {
     const tick = setInterval(() => setNowMs(Date.now()), 30_000);
     const params = new URLSearchParams(window.location.search);
     if (params.get('payment') === 'success') {
       // Rental captured; the webhook is finishing the Exotiq leg. Poll until
-      // the booking flips, then re-render the server page as the receipt.
+      // the booking moves, then re-render the server page as the receipt.
       setFinalizing(true);
-      let polls = 0;
-      pollTimer.current = setInterval(async () => {
-        polls += 1;
-        if (polls > CONFIRM_POLL_MAX) {
-          if (pollTimer.current) clearInterval(pollTimer.current);
-          setNotice('Payment received — confirmation is taking longer than usual. This page will update automatically; you can safely close it.');
-          return;
-        }
-        try {
-          const lookup = await getBookingConfirmation(bookingRef, accessToken);
-          if (lookup && !('restricted' in lookup) && lookup.live?.status === 'confirmed') {
-            if (pollTimer.current) clearInterval(pollTimer.current);
-            router.refresh();
-          }
-        } catch {
-          // transient — keep polling
-        }
-      }, CONFIRM_POLL_MS);
+      startConfirmPoll();
     } else if (params.get('payment') === 'cancelled') {
       setNotice('Payment was not completed — your reservation is still held. Pick up where you left off below.');
     }
     return () => {
       clearInterval(tick);
       if (pollTimer.current) clearInterval(pollTimer.current);
+      pollTimer.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookingRef, accessToken, router]);
 
   const pay = async () => {
@@ -105,7 +123,11 @@ export function PaymentCard({
     } catch (err) {
       const code = err instanceof Error ? (err as Error & { code?: string }).code : undefined;
       if (code === 'rental_already_paid') {
+        // T-4/audit: this used to strand a PAID renter on a permanent
+        // "finalizing" card — no poll, no refresh, ever. Same poll as the
+        // return-from-Stripe path.
         setFinalizing(true);
+        startConfirmPoll();
       } else {
         setNotice(err instanceof Error ? err.message : 'Payment could not be started — please try again.');
       }
