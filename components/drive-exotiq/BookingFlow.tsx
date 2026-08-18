@@ -108,6 +108,11 @@ export function BookingFlow({ operator, vehicle }: { operator: Operator; vehicle
           quoteError={quoteState.status === 'error' && quoteState.key === currentKey ? quoteState.message : undefined}
           onRetryQuote={refreshQuote}
           blocked={quoteBlocking}
+          // T-12: premium stays the default; the renter may decline. quoteKey
+          // includes the tier, so this recompute invalidates the current quote
+          // and the blocked state holds the renter until fresh numbers arrive —
+          // no path to committing against the old tier's total.
+          onProtectionChange={(tier) => setCart(recomputeBookingCart({ ...cart, protection: tier }))}
         />
       )}
       {step === 4 && (

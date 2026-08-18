@@ -74,10 +74,14 @@ export function PayStep({
             <Money cents={m.platformFeeCents} />
           </div>
           <div className="mt-1 text-xs leading-5 text-[#848A9A]">Calculated on the {formatMoney(feeBaseCents)} rental only.</div>
-          <div className="mt-3 flex justify-between gap-3 border-t border-[#2A2E3A] pt-3">
-            <span className="text-[#9BA1B0]">Protection (included)</span>
-            <Money cents={m.protectionTotalCents} />
-          </div>
+          {/* T-12: protection is declinable — a $0 row for a declined booking
+              reads as a glitch, so the row exists only when protection does. */}
+          {m.protectionTotalCents > 0 ? (
+            <div className="mt-3 flex justify-between gap-3 border-t border-[#2A2E3A] pt-3">
+              <span className="text-[#9BA1B0]">Exotiq Protect (premium)</span>
+              <Money cents={m.protectionTotalCents} />
+            </div>
+          ) : null}
           {/* Itemise everything the server folded into exotiqTotalCents —
               otherwise the rows and the total disagree. */}
           {quote?.stateFeeCents ? (
