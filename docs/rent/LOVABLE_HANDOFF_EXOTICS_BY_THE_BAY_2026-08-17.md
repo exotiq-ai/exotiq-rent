@@ -172,21 +172,36 @@ Center, because with real IDs the 3-strikes → manual-review path WILL fire.
 *Reply-to for questions: Gregory. Renter-app tickets T-5..T-9 land via
 exotiq-rent PRs and do not require Lovable action.*
 
-## 8. NEW BUG (found 2026-08-17 late) — cancelled bookings permanently block their dates at create
+## 8. CORRECTED (2026-08-17, after Lovable's challenge) — the create guard is off-by-one at the checkout/checkin boundary; cancelled bookings are NOT the cause
 
-Reproduced three times on the live exotiq tenant (2017-audi-s8):
-`public_vehicle_availability` returns NO busy range for a window, but
-`rent-create-booking` 409s "Those dates were just taken" — for exactly the
-windows previously booked and then CANCELLED (canary bookings, e.g. Oct 2–4,
-Oct 8–10, Oct 20–22; a never-touched window creates fine, BK-03491 control).
+Lovable was right to push back: cancelled/refunded bookings are excluded
+everywhere, confirmed by experiment. The REAL bug, isolated with four live
+create attempts on exotiq/2017-audi-s8 (all cleaned up):
 
-So the availability RPC excludes cancelled bookings but the create-side
-double-booking guard does not. Renter impact on a live marketplace: every
-cancellation permanently locks those dates — invisible inventory loss, and
-the worst UX shape ("looks free, fails at the last step"). Fix: the overlap
-check in create_marketplace_booking should exclude the same terminal
-statuses the availability RPC excludes (cancelled/declined/refunded/
-payment_expired). Please align both to one status list.
+| Test | Window | Adjacency | Result |
+| --- | --- | --- | --- |
+| A | Nov 8–10 | isolated (≥2-day gaps) | created (BK-03494) |
+| B | Nov 11–13 | END = existing booking's START (Nov 13) | **409 "just taken"** |
+| C | Nov 6–8 | START = existing booking's END (Nov 6) | created (BK-03495) |
+| D | Nov 10–12 | 1-day gap before busy start | created (BK-03496) |
+
+So: `create_marketplace_booking` treats `new_end >= existing_start` as a
+collision (inclusive at exact equality, one side only), while
+`public_vehicle_availability` is exclusive on both sides. Every window that
+ends the day another booking starts LOOKS bookable and then 409s — the
+original three "reproductions" (Oct 2–4, 8–10, 20–22) were all exactly this
+shape. Renter impact: back-to-back turnover days look free and fail at the
+last step, on every calendar, all the time.
+
+Decision needed before fixing (Gregory): **is same-day checkout→checkin
+turnover allowed?**
+- If YES → fix the guard to strict `>` so it matches the availability RPC.
+- If NO (prep/detail buffer is intentional) → the guard is right and the
+  AVAILABILITY RPC is wrong: it must mark turnover days busy so renters
+  never see them as bookable. (Then decide whether the buffer is symmetric —
+  today a renter CAN check in on another booking's checkout day.)
+Either way: one shared overlap rule used by both, not two implementations.
+
 
 ## 9. NEW FEATURE ASK — per-vehicle "unlisted" flag (closed-loop booking links)
 
