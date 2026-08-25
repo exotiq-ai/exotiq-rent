@@ -44,19 +44,29 @@ export function VehicleGallery({
   state: string;
 }) {
   const [activePhoto, setActivePhoto] = useState(heroImage);
+  // Photo URLs come from tenant data and can die under us (expired signed
+  // tokens, deleted storage objects). A broken frame is worse than no photo:
+  // drop failed URLs and degrade to the same dark-surface placeholder the
+  // confirmation screen uses.
+  const [failedPhotos, setFailedPhotos] = useState<string[]>([]);
+  const markFailed = (url: string) => setFailedPhotos((prev) => (prev.includes(url) ? prev : [...prev, url]));
+  const gallery = photos.filter((photo) => photo && !failedPhotos.includes(photo));
+  const hero = activePhoto && !failedPhotos.includes(activePhoto) ? activePhoto : gallery[0];
 
   return (
     <>
       {/* No scrim. Nothing sits over the photo any more, so the car keeps its full
           frame — including the lower body and wheels the old gradient ate. */}
       <div className="relative -mx-4 mt-[-4px] aspect-[4/3] overflow-hidden bg-[#161922]">
-        {activePhoto && <Image src={activePhoto} alt={vehicleName} fill sizes="480px" priority className="object-cover object-[50%_52%]" />}
+        {hero
+          ? <Image src={hero} alt={vehicleName} fill sizes="480px" priority className="object-cover object-[50%_52%]" onError={() => markFailed(hero)} />
+          : <div className="absolute inset-0 bg-gradient-to-br from-[#1E2230] to-[#0D0F14]" />}
       </div>
 
-      {photos.length > 1 && (
+      {gallery.length > 1 && (
         <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]" aria-label="Vehicle gallery">
-          {photos.map((photo, index) => {
-            const active = photo === activePhoto;
+          {gallery.map((photo, index) => {
+            const active = photo === hero;
             return (
               <button
                 key={photo}
@@ -70,7 +80,7 @@ export function VehicleGallery({
                   boxShadow: active ? '0 0 0 1px #C8A664, 0 0 14px rgba(200,166,100,.20)' : 'none',
                 }}
               >
-                <Image src={photo} alt={`${shortName} photo ${index + 1}`} fill sizes="128px" className="object-cover" />
+                <Image src={photo} alt={`${shortName} photo ${index + 1}`} fill sizes="128px" className="object-cover" onError={() => markFailed(photo)} />
               </button>
             );
           })}

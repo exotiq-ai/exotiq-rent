@@ -303,8 +303,12 @@ export async function fetchSignedVehicleMedia(teamSlug: string, vehicleSlug: str
   const url = `${getFunctionsBaseUrl()}/rent-public-media?team=${encodeURIComponent(teamSlug)}&vehicle=${encodeURIComponent(vehicleSlug)}`;
   const response = await fetch(url, {
     headers: headers(),
-    // Signed URLs expire in 1h; never cache past a fraction of that.
-    next: { revalidate: 300 },
+    // Never cache this response: it contains 1-hour bearer-token URLs, and any
+    // cache that outlives the token serves dead images. `revalidate: 300` was
+    // not enough — Netlify's durable data cache served one build-time result
+    // for six days (2026-08-19 → 08-25), so every EBTB detail page rendered
+    // signed URLs that had expired an hour after the deploy.
+    cache: 'no-store',
   });
   if (!response.ok) {
     // Media is progressive enhancement — a photo-less vehicle should not

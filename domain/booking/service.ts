@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { getDataMode } from './config';
 import { createLiveIdentitySession, getLiveIdentityState } from './identityClient';
 import {
@@ -24,6 +25,11 @@ import type {
 } from './publicContracts';
 import type { BookingCart, ExtraSelection, Operator, Vehicle } from './types';
 
+// React.cache exists in the server build Next runs this module in; vitest
+// loads the client React build, which lacks it. Identity is a correct
+// substitute there — the tests don't exercise per-request dedupe.
+const perRequest: typeof cache = typeof cache === 'function' ? cache : (fn) => fn;
+
 /**
  * Stable Exotiq Rent frontend service facade.
  *
@@ -36,10 +42,16 @@ export async function getPublicTeamStorefront(teamSlug: string): Promise<PublicT
   return getMockPublicTeamStorefront(teamSlug);
 }
 
-export async function getPublicVehicleContext(teamSlug: string, vehicleSlug: string): Promise<PublicVehicleContext | null> {
-  if (getDataMode() === 'supabase') return getSupabaseVehicleContext(teamSlug, vehicleSlug);
-  return getMockPublicVehicleContext(teamSlug, vehicleSlug);
-}
+// React cache(): generateMetadata and the page body both call this per
+// request, and the signed-media fetch inside is deliberately uncacheable
+// (see fetchSignedVehicleMedia) — dedupe within the request so the vehicle
+// route costs one context load, not two.
+export const getPublicVehicleContext = perRequest(
+  async (teamSlug: string, vehicleSlug: string): Promise<PublicVehicleContext | null> => {
+    if (getDataMode() === 'supabase') return getSupabaseVehicleContext(teamSlug, vehicleSlug);
+    return getMockPublicVehicleContext(teamSlug, vehicleSlug);
+  },
+);
 
 export async function getBookingStartContext(teamSlug: string, vehicleSlug: string): Promise<PublicVehicleContext | null> {
   return getPublicVehicleContext(teamSlug, vehicleSlug);

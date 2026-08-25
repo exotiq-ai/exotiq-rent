@@ -46,7 +46,10 @@ export default async function SharePage({ params }: Props) {
         <div className="text-center text-[11px] uppercase tracking-[0.32em] text-[#C8A664]">Drive Exotiq</div>
         <div className="relative mt-6 overflow-hidden rounded-2xl border border-[#C8A664]/40 shadow-[0_0_0_1px_rgba(200,166,100,0.15),0_24px_60px_rgba(0,0,0,0.55)]">
           <div className="relative h-[300px]">
-            <Image src={vehicle.heroImage} alt={vehicle.name} fill sizes="480px" priority className="object-cover" />
+            {/* A photo-less vehicle must degrade, not throw — <Image src=""> crashes the route. */}
+            {vehicle.heroImage
+              ? <Image src={vehicle.heroImage} alt={vehicle.name} fill sizes="480px" priority className="object-cover" />
+              : <div className="absolute inset-0 bg-gradient-to-br from-[#1E2230] to-[#0D0F14]" />}
             <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-[#0B0D12]" />
             <div className="absolute left-4 top-4 rounded-full bg-[#0B0D12]/70 px-3 py-1.5 text-[10px] uppercase tracking-[0.22em] text-[#C8A664] backdrop-blur">
               <span className="mr-2 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#C8A664] align-middle" />

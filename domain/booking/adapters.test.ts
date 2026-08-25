@@ -82,10 +82,45 @@ describe('M4 adapters (RPC rows -> domain, dollars -> cents)', () => {
     expect(vehicle.footnote).toContain('150 miles/day');
   });
 
-  it('falls back to the RPC hero image when no signed media exists', () => {
+  it('falls back to the stored RPC gallery when no signed media exists', () => {
+    // 2026-08-25 photo incident: when rent-public-media fails or returns
+    // nothing, the detail RPC's own photos array is the next-best source —
+    // degrading straight to the single hero threw away a gallery the
+    // response already contained.
     const team = adaptTeam(teamRow);
     const vehicle = adaptVehicleDetail(vehicleRow, team, { photos: [], expiresIn: 0 });
+    expect(vehicle.photos).toEqual(['https://x.supabase.co/storage/a.jpg']);
+    expect(vehicle.heroImage).toBe('https://x.supabase.co/storage/a.jpg');
+  });
+
+  it('falls back to the RPC hero image when there is no media and no stored gallery', () => {
+    const team = adaptTeam(teamRow);
+    const vehicle = adaptVehicleDetail({ ...vehicleRow, photos: null }, team, { photos: [], expiresIn: 0 });
     expect(vehicle.heroImage).toBe(vehicleRow.hero_image_url);
+    expect(vehicle.photos).toEqual([vehicleRow.hero_image_url]);
+  });
+
+  it('drops non-https photo values the Command Center is known to persist', () => {
+    // vehicles.image_url and vehicle_photos.url carry "/src/assets/…" and
+    // "/lovable-uploads/…" filesystem paths that only the Command Center's
+    // client-side filters hide. Resolved against this app's origin they 404.
+    const team = adaptTeam(teamRow);
+    const fleet = adaptFleetVehicle({ ...vehicleRow, hero_image_url: '/src/assets/vehicles/roma.jpg' }, team);
+    expect(fleet.heroImage).toBe('');
+    expect(fleet.photos).toEqual([]);
+
+    const detail = adaptVehicleDetail(
+      {
+        ...vehicleRow,
+        photos: [
+          { url: '/lovable-uploads/abc.png', thumbnail_url: null, display_order: 1 },
+          { url: 'https://x.supabase.co/storage/b.jpg', thumbnail_url: null, display_order: 2 },
+        ],
+      },
+      team,
+      { photos: [], expiresIn: 0 },
+    );
+    expect(detail.photos).toEqual(['https://x.supabase.co/storage/b.jpg']);
   });
 
   it('maps busy ranges straight through as unavailable ISO date ranges', () => {

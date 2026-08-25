@@ -44,6 +44,14 @@ export function adaptTeam(row: RpcTeamRow): Operator {
   };
 }
 
+// The DB's photo URL columns carry values only the Command Center can render:
+// relative filesystem paths ("/src/assets/…", "/lovable-uploads/…") that its
+// UI filters out client-side before display. Resolved against this app's
+// origin they 404, so only absolute https URLs cross the adapter boundary.
+function publicImageUrl(url: string | null | undefined): string | null {
+  return url && url.startsWith('https://') ? url : null;
+}
+
 function footnoteFor(minRentalDays: number, mileageLimit: number | null | undefined, overageRate?: number | string | null): string {
   // A 1-day minimum is still a minimum. "No minimum" contradicted the booking
   // preview tile beside it, which read the same field and said "Minimum: 1 day".
@@ -57,6 +65,7 @@ function footnoteFor(minRentalDays: number, mileageLimit: number | null | undefi
 
 export function adaptFleetVehicle(row: RpcFleetVehicleRow, team: Operator): Vehicle {
   const minRentalDays = row.min_rental_days ?? 1;
+  const heroImage = publicImageUrl(row.hero_image_url);
   return {
     id: `veh:${team.slug}:${row.vehicle_slug}`,
     slug: row.vehicle_slug,
@@ -69,8 +78,8 @@ export function adaptFleetVehicle(row: RpcFleetVehicleRow, team: Operator): Vehi
     dailyRateCents: dollarsToCents(row.daily_rate),
     minRentalDays,
     securityDepositCents: 0, // not publicly exposed; quoted server-side at booking (M5)
-    photos: row.hero_image_url ? [row.hero_image_url] : [],
-    heroImage: row.hero_image_url ?? '',
+    photos: heroImage ? [heroImage] : [],
+    heroImage: heroImage ?? '',
     footnote: footnoteFor(minRentalDays, null),
     pickupLocation: { name: `${team.name} pickup`, address: '', city: team.city, state: team.state },
   };
@@ -81,9 +90,18 @@ export function adaptVehicleDetail(row: RpcVehicleDetailRow, team: Operator, med
   const signedPhotos = (media?.photos ?? [])
     .slice()
     .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
-    .map((photo) => photo.signedUrl)
-    .filter(Boolean);
-  const photos = signedPhotos.length > 0 ? signedPhotos : base.photos;
+    .map((photo) => publicImageUrl(photo.signedUrl))
+    .filter((url): url is string => url !== null);
+  // The detail RPC already returns the stored gallery; when the media edge
+  // function fails or returns nothing, those URLs beat degrading to a
+  // one-image page. Fresh signed URLs still win — stored ones can be
+  // long-lived tokens that eventually expire.
+  const storedPhotos = (row.photos ?? [])
+    .slice()
+    .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+    .map((photo) => publicImageUrl(photo.url))
+    .filter((url): url is string => url !== null);
+  const photos = signedPhotos.length > 0 ? signedPhotos : storedPhotos.length > 0 ? storedPhotos : base.photos;
 
   return {
     ...base,

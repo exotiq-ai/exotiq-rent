@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: `${vehicle.name} | Drive Exotiq`,
       description: `From ${formatMoney(vehicle.dailyRateCents)}/day. ${team.city}, ${team.state}.`,
-      images: [vehicle.heroImage],
+      images: vehicle.heroImage ? [vehicle.heroImage] : [],
     },
   };
 }
