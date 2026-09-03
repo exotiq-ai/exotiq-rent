@@ -130,3 +130,47 @@ export type PublicQuote = {
     protectionRefundableInWindow: true;
   };
 };
+/* ------------------------------------------------------------------ */
+/* Marketplace (M7 / MP-2) — cross-tenant browse contracts.            */
+/* Composed from the existing Operator/Vehicle domain types so a       */
+/* listing is exactly "a vehicle, and the operator you'd book it from".*/
+/* ------------------------------------------------------------------ */
+
+export type MarketplaceSort = 'featured' | 'price_asc' | 'price_desc' | 'newest';
+
+/** Filters live in the URL and nowhere else; this is the parsed, clamped form. */
+export type MarketplaceQuery = {
+  city?: string;
+  state?: string;
+  /** Structured make filter (exact, case-insensitive) — never a name-substring match. */
+  makes: string[];
+  minDailyRateCents?: number;
+  maxDailyRateCents?: number;
+  sort: MarketplaceSort;
+  /** Hard-capped server-side; the RPC contract caps at 60 too. */
+  limit: number;
+  offset: number;
+};
+
+export type MarketplaceListing = {
+  team: Operator;
+  vehicle: Vehicle;
+  photoCount: number;
+  /** Exotiq Verified — rendered when the backend exposes it (VET-8); absent until then. */
+  verified?: boolean;
+};
+
+export type MarketplaceFacetValue = { value: string; label: string; count: number };
+
+export type MarketplaceFacets = {
+  cities: MarketplaceFacetValue[];
+  makes: MarketplaceFacetValue[];
+  priceBands: MarketplaceFacetValue[];
+};
+
+export type MarketplacePage = {
+  listings: MarketplaceListing[];
+  totalCount: number;
+  limit: number;
+  offset: number;
+};

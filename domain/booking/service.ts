@@ -15,11 +15,15 @@ import {
   getMockPublicVehicleContext,
   startMockIdentityVerification,
 } from './mockService';
+import { getMockMarketplaceFacets, getMockMarketplaceListings } from './mockMarketplaceService';
 import type {
   BookingLookupResult,
   CreateBookingResult,
   IdentityVerificationStart,
   IdentityVerificationState,
+  MarketplaceFacets,
+  MarketplacePage,
+  MarketplaceQuery,
   PublicTeamStorefront,
   PublicVehicleContext,
 } from './publicContracts';
@@ -37,6 +41,24 @@ const perRequest: typeof cache = typeof cache === 'function' ? cache : (fn) => f
  * facade to public-safe Supabase RPCs / edge functions without changing route
  * components or booking-flow UI internals.
  */
+/**
+ * Marketplace reads (MP-2). Mock mode is fully implemented; supabase mode is
+ * the M7c fan-out (MP-4) — until it lands, live mode returns an empty page
+ * rather than throwing, and the /browse route (MP-3) is env-guarded so no
+ * live host can reach this branch by accident.
+ */
+export async function getMarketplaceListings(query: MarketplaceQuery): Promise<MarketplacePage> {
+  if (getDataMode() === 'supabase') {
+    return { listings: [], totalCount: 0, limit: query.limit, offset: query.offset };
+  }
+  return getMockMarketplaceListings(query);
+}
+
+export async function getMarketplaceFacets(): Promise<MarketplaceFacets> {
+  if (getDataMode() === 'supabase') return { cities: [], makes: [], priceBands: [] };
+  return getMockMarketplaceFacets();
+}
+
 export async function getPublicTeamStorefront(teamSlug: string): Promise<PublicTeamStorefront | null> {
   if (getDataMode() === 'supabase') return getSupabaseTeamStorefront(teamSlug);
   return getMockPublicTeamStorefront(teamSlug);
