@@ -25,6 +25,16 @@ export function getSiteMode(): SiteMode {
   return process.env.NEXT_PUBLIC_SITE_MODE === 'marketplace' ? 'marketplace' : 'booking';
 }
 
+/**
+ * Cross-tenant browse (/browse, M7). Only a booking-mode deploy that opts in
+ * serves it — demo.exotiq.rent (mock) would publish fictitious operators as
+ * inventory, and book.exotiq.rent stays a set of storefronts until launch.
+ * Also gates every "Browse the fleet" link, so no host links to its own 404.
+ */
+export function browseEnabled(): boolean {
+  return getSiteMode() === 'booking' && process.env.NEXT_PUBLIC_MARKETPLACE_BROWSE === 'on';
+}
+
 export function getDataMode(): DataMode {
   if (process.env.NEXT_PUBLIC_EXOTIQ_RENT_DATA_MODE !== 'supabase') return 'mock';
   // A deploy that ASKS for supabase mode but is missing its URL/key must fail
