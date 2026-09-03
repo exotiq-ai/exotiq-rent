@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { posthogHost, posthogKey, posthogSnippet, track } from '../../components/analytics/posthog';
+import { posthogHost, posthogKey, posthogSnippet, redactCredentialUrls, track } from '../../components/analytics/posthog';
 import { browseEnabled, siteUrl } from './config';
 import { robotsPolicy as robots } from './seo';
 
@@ -20,15 +20,35 @@ describe('PostHog gating', () => {
     expect(s).not.toContain('identify(');
   });
 
-  it('redacts the confirmation access token from every URL property PostHog records', () => {
-    const s = posthogSnippet('phc_test', 'https://us.i.posthog.com');
-    const body = s.slice(s.indexOf('sanitize_properties:') + 'sanitize_properties:'.length);
-    const fn = new Function(`return (${body.slice(0, body.lastIndexOf('}') )})`)() as (p: Record<string, unknown>) => Record<string, unknown>;
-    const out = fn({ $current_url: 'https://book.exotiq.rent/booking/BK-1?t=secret123&payment=success', $referrer: 'https://x/?a=1&t=abc#h', $pathname: '/booking/BK-1', other: 'keep' });
+  it('redacts both renter credentials from every string property, whatever its key', () => {
+    const out = redactCredentialUrls({
+      $current_url: 'https://book.exotiq.rent/booking/BK-1?t=secret123&payment=success',
+      $referrer: 'https://book.exotiq.rent/verify?ref=BK-1&token=secretTOKEN#h',
+      $session_entry_url: 'https://book.exotiq.rent/booking/BK-1?T=upper',
+      $pathname: '/booking/BK-1',
+      other: 'keep',
+      n: 3,
+    });
     expect(out.$current_url).toBe('https://book.exotiq.rent/booking/BK-1?t=redacted&payment=success');
-    expect(out.$referrer).toBe('https://x/?a=1&t=redacted#h');
+    expect(out.$referrer).toBe('https://book.exotiq.rent/verify?ref=BK-1&token=redacted#h');
+    expect(out.$session_entry_url).toBe('https://book.exotiq.rent/booking/BK-1?T=redacted');
     expect(out.other).toBe('keep');
-    expect(JSON.stringify(out)).not.toContain('secret123');
+    expect(out.n).toBe(3);
+    expect(JSON.stringify(out)).not.toMatch(/secret/);
+  });
+
+  it('embeds the redactor in the snippet through before_send (not the deprecated hook) and it runs standalone', () => {
+    const s = posthogSnippet('phc_test', 'https://us.i.posthog.com');
+    expect(s).not.toContain('sanitize_properties');
+    const start = s.indexOf('before_send:') + 'before_send:'.length;
+    // The hook is the last config entry: keep its closing brace, drop the init call's `});`.
+    const body = s.slice(start, s.lastIndexOf('}});') + 1);
+    const hook = new Function(`return (${body})`)() as (e: { properties?: Record<string, unknown>; $set_once?: Record<string, unknown> } | null) => unknown;
+    expect(hook(null)).toBeNull();
+    const event = { properties: { $session_entry_url: 'https://x/booking/BK-1?t=SECRET' }, $set_once: { $initial_referrer: 'https://x/verify?ref=BK-1&token=SECRET2' } };
+    const out = hook(event) as typeof event;
+    expect(JSON.stringify(out)).not.toContain('SECRET');
+    expect(out.properties.$session_entry_url).toBe('https://x/booking/BK-1?t=redacted');
   });
 
   it('track() is a no-op without the snippet and forwards to capture with it', () => {

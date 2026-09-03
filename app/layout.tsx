@@ -58,8 +58,10 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans">
-        {children}
+        {/* Before the page on purpose: an inline script here runs at parse
+            time, so the analytics stub exists before any page effect fires. */}
         <PostHogInit />
+        {children}
       </body>
     </html>
   );
