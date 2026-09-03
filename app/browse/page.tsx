@@ -16,13 +16,19 @@ import { getMarketplaceFacets, getMarketplaceListings } from '@/domain/booking/s
 // loading.tsx on this route: its Suspense boundary streams a 200 shell before
 // notFound() or the offset redirect() below can set the status — verified
 // 2026-09-03 — and the page renders from the revalidate cache in ~30ms anyway.
-export function generateMetadata(): Metadata {
+export function generateMetadata({ searchParams }: { searchParams: SearchParamsLike }): Metadata {
   if (!browseEnabled()) notFound();
+  const query = parseMarketplaceQuery(searchParams);
+  // One canonical grid. Every facet, sort and page permutation points back
+  // at /browse and stays out of the index (follow stays on so the crawler
+  // still reaches the cars), so faceted crawl cannot multiply the page.
+  const permutation =
+    Boolean(query.city) || query.makes.length > 0 || query.minDailyRateCents !== undefined || query.maxDailyRateCents !== undefined || query.offset > 0 || query.sort !== 'featured';
   return {
     title: 'Browse the fleet | Drive Exotiq',
     description: 'Every exotic and luxury car on Drive Exotiq, across every operator — each one rented from a single accountable business.',
-    // Staging-only until the SEO pass (M7e / MP-6) turns indexing on per host.
-    robots: { index: false, follow: false },
+    alternates: { canonical: '/browse' },
+    robots: permutation ? { index: false, follow: true } : { index: true, follow: true },
   };
 }
 

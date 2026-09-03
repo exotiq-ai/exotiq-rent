@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { BookingChrome, Money } from './BookingChrome';
 import { createBookingCart, createRenterBooking } from '@/domain/booking/service';
 import { getDataMode } from '@/domain/booking/config';
+import { track } from '@/components/analytics/posthog';
 import { loadQuote, quoteKey, quotingEnabled, QuoteUnavailableError, type QuoteState } from '@/domain/booking/quote';
 import { recomputeBookingCart } from './flow/state';
 import type { BookingCart, Operator, Vehicle } from '@/domain/booking/types';
@@ -34,6 +35,12 @@ export function BookingFlow({ operator, vehicle }: { operator: Operator; vehicle
   const [reserveError, setReserveError] = useState<string | undefined>();
   const next = () => setStep((value) => Math.min(value + 1, 4));
   const back = step > 1 ? () => setStep((value) => value - 1) : undefined;
+
+  // Funnel: one event per step reached after the first (the book page's own
+  // mount already records book_start). Renter details never ride along.
+  useEffect(() => {
+    if (step > 1) track('book_step', { step, team: operator.slug, vehicle: vehicle.slug });
+  }, [step, operator.slug, vehicle.slug]);
 
   // Server-authoritative pricing for the commit steps (review + reserve).
   // The state carries the key it was fetched for, and readers only trust it
@@ -88,6 +95,8 @@ export function BookingFlow({ operator, vehicle }: { operator: Operator; vehicle
       // server-side re-quote and transactional double-booking guard.
       const result = await createRenterBooking(cart);
       const query = result.confirmationToken ? `?t=${encodeURIComponent(result.confirmationToken)}` : '';
+      // The ref only — the confirmation token is the renter's credential.
+      track('booking_created', { booking: result.bookingRef, team: operator.slug, vehicle: vehicle.slug, protection: cart.protection });
       router.push(`/booking/${result.bookingRef}${query}`);
     } catch (error) {
       setReserveError(error instanceof Error ? error.message : 'Something went wrong — please try again.');
