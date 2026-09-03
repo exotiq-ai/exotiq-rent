@@ -11,9 +11,11 @@ import { getSiteMode } from '@/domain/booking/config';
 import { parseMarketplaceQuery, toMarketplaceSearchParams, type SearchParamsLike } from '@/domain/booking/marketplaceQuery';
 import { getMarketplaceFacets, getMarketplaceListings } from '@/domain/booking/service';
 
-// The guard runs here, before streaming starts, so a guarded host answers a
-// real 404 — thrown only from the page body, loading.tsx's Suspense boundary
-// would flush a 200 shell first (same rule as app/[operatorSlug]/page.tsx).
+// The guard runs here, before the page body, so a guarded host answers a real
+// 404 (same rule as app/[operatorSlug]/page.tsx). There is deliberately no
+// loading.tsx on this route: its Suspense boundary streams a 200 shell before
+// notFound() or the offset redirect() below can set the status — verified
+// 2026-09-03 — and the page renders from the revalidate cache in ~30ms anyway.
 export function generateMetadata(): Metadata {
   if (!browseEnabled()) notFound();
   return {
