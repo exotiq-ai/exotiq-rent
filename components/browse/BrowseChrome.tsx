@@ -27,7 +27,7 @@ export function BrowseChrome({ children, view = 'browse_view' }: { children: Rea
         </div>
       </header>
       <main>{children}</main>
-      {view && <TrackView event={view} />}
+      {view && <TrackView event={view} withQuery />}
       <footer className="mt-20 border-t border-[#2A2E3A]">
         <div className={`${containerClassName} flex flex-col gap-6 py-10 text-[12px] text-[#848A9A] sm:flex-row sm:items-center sm:justify-between`}>
           <div className="flex items-center gap-4">

@@ -16,7 +16,19 @@ describe('PostHog gating', () => {
     expect(s).toContain('posthog.init("phc_test"');
     expect(s).toContain('api_host:"https://eu.i.posthog.com"');
     expect(s).toContain("person_profiles:'identified_only'");
+    expect(s).toContain('disable_session_recording:true');
     expect(s).not.toContain('identify(');
+  });
+
+  it('redacts the confirmation access token from every URL property PostHog records', () => {
+    const s = posthogSnippet('phc_test', 'https://us.i.posthog.com');
+    const body = s.slice(s.indexOf('sanitize_properties:') + 'sanitize_properties:'.length);
+    const fn = new Function(`return (${body.slice(0, body.lastIndexOf('}') )})`)() as (p: Record<string, unknown>) => Record<string, unknown>;
+    const out = fn({ $current_url: 'https://book.exotiq.rent/booking/BK-1?t=secret123&payment=success', $referrer: 'https://x/?a=1&t=abc#h', $pathname: '/booking/BK-1', other: 'keep' });
+    expect(out.$current_url).toBe('https://book.exotiq.rent/booking/BK-1?t=redacted&payment=success');
+    expect(out.$referrer).toBe('https://x/?a=1&t=redacted#h');
+    expect(out.other).toBe('keep');
+    expect(JSON.stringify(out)).not.toContain('secret123');
   });
 
   it('track() is a no-op without the snippet and forwards to capture with it', () => {
