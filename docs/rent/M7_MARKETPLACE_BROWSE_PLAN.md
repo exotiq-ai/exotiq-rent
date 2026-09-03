@@ -398,3 +398,43 @@ controlling the ranking. Decide the self-preferencing and disclosure position
 **before** the first operator recruiting call, because it is far harder to
 change after launch than any decision on this page. Sorting is a `_sort`
 parameter; the promise you make to operators about placement is not.
+
+---
+
+## 2026-08-21 REFRESH — verified deltas since this plan was written (plan remains authoritative with these amendments)
+
+**Done since 2026-07-30, delete from scope:** T-8 shipped the tenant-aware
+close-X (`closeHref` prop — M7d's exact ask); `platform_fee_percent` backfilled
+2026-07-31 (standalone #1 done); the five renter money functions are committed
+to the spark repo (standalone #2 done, verified in the 08-17 audit);
+`ProtectStep` was DELETED (protection is now a Review-step toggle, T-12) — its
+nesting landmine no longer exists; the flow is 4 steps + confirmation, not 6.
+
+**Step-zero facts, re-verified 2026-08-21:** (1) NO cross-tenant RPC exists
+(`public_marketplace_fleet`/`_teams` both PGRST202) — fan-out first, send the
+contract below to Lovable in parallel. (2) Two tenants marketplace-visible:
+`exotiq` + `exotics-by-the-bay`; `fredo-d-lima` confirmed hidden. (3) Photo
+counts need a fresh pull at build time. (4) Netlify topology: staging gets its
+OWN new site (decision below), making the toml-vs-URL_MAP question moot for M7.
+
+**New decisions (Gregory, 2026-08-21):** BRAND = "Drive Exotiq" everywhere
+(closes the open brand-string question; driveexotiq.com will eventually point
+at the exotiq.rent marketplace). STAGING: build in this repo behind the
+existing env guards, deploy a NEW Netlify site for staging; formal launch is
+an env flip on the exotiq.rent site — no code port. GOVERNANCE: published
+ranking criteria (Verified > listing quality > renter sort), applied
+identically to Exotiq's own fleet, disclosed publicly — locked before operator
+recruiting. ANALYTICS: PostHog. DESIGN: the cyan mockup's LAYOUT is the
+confirmed reference (Gregory: liked everything but the colors) — port layout,
+render in booking-flow gold, exactly as M7b already specifies.
+
+**New integration since planning: Exotiq Verified** (kb/wiki/
+exotiq-verified-program.md). The browse grid carries the Verified badge and
+the ranking criteria above; VET-8 (badge surfaces) and M7b/M7c should land as
+neighbors. Also: T-13 (prefilled ?start&end links) now exists — the plan's
+"deep-link with dates" non-goal is partially superseded; cards still link to
+the detail page, but detail→book may carry dates once T-13 ships.
+
+**Sequencing note:** availability-date filtering stays out of v1 (unchanged),
+and the availability-instants contract Lovable owes (T-16) is unrelated to the
+browse grid — do not couple them.
