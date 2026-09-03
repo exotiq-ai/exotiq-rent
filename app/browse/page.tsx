@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { SlidersHorizontal } from 'lucide-react';
 import { BrowseChrome } from '@/components/browse/BrowseChrome';
 import { EmptyState } from '@/components/browse/EmptyState';
@@ -11,12 +11,18 @@ import { getSiteMode } from '@/domain/booking/config';
 import { parseMarketplaceQuery, toMarketplaceSearchParams, type SearchParamsLike } from '@/domain/booking/marketplaceQuery';
 import { getMarketplaceFacets, getMarketplaceListings } from '@/domain/booking/service';
 
-export const metadata: Metadata = {
-  title: 'Browse the fleet | Drive Exotiq',
-  description: 'Every exotic and luxury car on Drive Exotiq, across every operator — each one rented from a single accountable business.',
-  // Staging-only until the SEO pass (M7e / MP-6) turns indexing on per host.
-  robots: { index: false, follow: false },
-};
+// The guard runs here, before streaming starts, so a guarded host answers a
+// real 404 — thrown only from the page body, loading.tsx's Suspense boundary
+// would flush a 200 shell first (same rule as app/[operatorSlug]/page.tsx).
+export function generateMetadata(): Metadata {
+  if (!browseEnabled()) notFound();
+  return {
+    title: 'Browse the fleet | Drive Exotiq',
+    description: 'Every exotic and luxury car on Drive Exotiq, across every operator — each one rented from a single accountable business.',
+    // Staging-only until the SEO pass (M7e / MP-6) turns indexing on per host.
+    robots: { index: false, follow: false },
+  };
+}
 
 /**
  * Cross-tenant browse (MP-3 / M7b).
@@ -35,14 +41,24 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
 
   const query = parseMarketplaceQuery(searchParams);
   const [page, facets] = await Promise.all([getMarketplaceListings(query), getMarketplaceFacets()]);
-  const catalogTotal = facets.cities.reduce((n, c) => n + c.count, 0);
-  const activeFilters = (query.city ? 1 : 0) + query.makes.length + (query.minDailyRateCents !== undefined || query.maxDailyRateCents !== undefined ? 1 : 0);
-
   const pageLink = (offset: number) => {
     const params = toMarketplaceSearchParams({ ...query, offset });
     const qs = params.toString();
     return qs ? `/browse?${qs}` : '/browse';
   };
+  // An offset past the end (stale link, hand-edited URL) lands on the last
+  // real page instead of an empty one captioned "9007199254740992–10 of 10".
+  if (page.totalCount > 0 && query.offset >= page.totalCount) {
+    redirect(pageLink(Math.floor((page.totalCount - 1) / query.limit) * query.limit));
+  }
+  const catalogTotal = facets.cities.reduce((n, c) => n + c.count, 0);
+  const activeFilters = (query.city ? 1 : 0) + query.makes.length + (query.minDailyRateCents !== undefined || query.maxDailyRateCents !== undefined ? 1 : 0);
+  // The app router keeps this subtree mounted across search-param-only
+  // navigations, and the form's inputs are uncontrolled — without a key tied
+  // to the query, "Clear all" left the old boxes checked and the next change
+  // re-submitted them. Keyed on the query, the form remounts with fresh defaults.
+  const filterKey = toMarketplaceSearchParams(query).toString();
+
   const hasPrev = query.offset > 0;
   const hasNext = query.offset + query.limit < page.totalCount;
 
@@ -64,7 +80,7 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
             <details> sheet — no client state, no hydration risk, keyboard-safe. */}
         <aside className="hidden lg:block">
           <div className="sticky top-24 rounded-2xl border border-[#2A2E3A] bg-[#0D0F14] p-5">
-            <FilterForm facets={facets} query={query} idPrefix="rail" />
+            <FilterForm key={filterKey} facets={facets} query={query} idPrefix="rail" />
           </div>
         </aside>
 
@@ -79,7 +95,7 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
                 <SlidersHorizontal size={14} className="text-[#C8A664]" /> Filters &amp; sort
               </summary>
               <div className="absolute right-0 z-30 mt-2 w-[min(92vw,22rem)] rounded-2xl border border-[#2A2E3A] bg-[#0D0F14] p-5 shadow-[0_24px_60px_-20px_rgba(0,0,0,.8)]">
-                <FilterForm facets={facets} query={query} idPrefix="sheet" />
+                <FilterForm key={filterKey} facets={facets} query={query} idPrefix="sheet" />
               </div>
             </details>
           </div>
