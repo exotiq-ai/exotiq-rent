@@ -1,9 +1,27 @@
+'use client';
+
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, X } from 'lucide-react';
 import { ExotiqLockup } from './ExotiqLockup';
 
 type StepStyle = 'bars' | 'numbered';
+
+/**
+ * How the frame behaves from `lg` (1024px) up. Below `lg` every layout is the
+ * phone frame exactly as it shipped before M7d — the mobile DOM and classes
+ * are unchanged, so mobile is pixel-identical.
+ *
+ * - 'phone': the 480px cage at every width. Default; not-found and restricted
+ *   views keep it.
+ * - 'page':  storefront and vehicle detail. The cage opens into a 1200px page:
+ *   the phone header row and step bar hide, a quiet site bar takes over, and
+ *   the page owns its desktop grid.
+ * - 'panel': booking flow and confirmation. The cage stays 480px — every step
+ *   component renders unchanged — centered as a rounded panel, with an optional
+ *   summary rail beside it.
+ */
+export type FrameLayout = 'phone' | 'page' | 'panel';
 
 // 6, not 8: Extras and Protect were removed from the flow. `total` and `labels`
 // must stay the same length or the bar fills to a fraction the renter is not on
@@ -41,6 +59,9 @@ export function PhoneViewport({
   stepStyle = 'bars',
   className = '',
   closeHref = '/',
+  layout = 'phone',
+  rail,
+  desktopNav,
 }: {
   step: number;
   children: ReactNode;
@@ -51,37 +72,65 @@ export function PhoneViewport({
    * a third-party operator's renter is a different business — callers with an
    * operator in scope must pass that operator's storefront instead (T-8). */
   closeHref?: string;
+  layout?: FrameLayout;
+  /** 'panel' only: summary column shown beside the panel from `lg` up. */
+  rail?: ReactNode;
+  /** 'page' only: right-hand links in the desktop site bar. */
+  desktopNav?: ReactNode;
 }) {
+  const page = layout === 'page';
+  const panel = layout === 'panel';
+  const frameDesktop = page
+    ? 'lg:h-auto lg:max-w-[1200px] lg:overflow-visible lg:bg-transparent lg:shadow-none'
+    : panel
+      ? 'lg:mx-0 lg:h-[min(900px,calc(100dvh-5rem))] lg:rounded-2xl lg:border lg:border-[#2A2E3A]'
+      : '';
+
+  const stepBar = <StepIndicator step={step} variant={stepStyle} />;
+
   return (
     <main className={`min-h-screen bg-[radial-gradient(900px_560px_at_18%_-10%,rgba(200,166,100,0.07),transparent_58%),radial-gradient(760px_520px_at_90%_110%,rgba(200,166,100,0.045),transparent_60%),#06070a] text-[#F0F2F5] ${className}`}>
-      {/* h-dvh (not min-h): the frame needs a definite height so flex-1 children
-          scroll internally — with min-h alone the frame grows to content and
-          the "sticky" footer lands below the fold on long steps. */}
-      <div className="relative mx-auto flex h-dvh w-full max-w-[480px] flex-col overflow-hidden bg-[#0D0F14] shadow-[0_40px_90px_-20px_rgba(0,0,0,.72),0_18px_42px_-18px_rgba(200,166,100,.18)]">
-        <div className="grid flex-shrink-0 grid-cols-[40px_1fr_40px] items-center px-4 pb-1 pt-[calc(env(safe-area-inset-top)+10px)]">
-          <button type="button" onClick={onBack} disabled={!onBack} className="grid h-10 w-10 place-items-center rounded-lg text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5] disabled:opacity-30" aria-label="Back">
-            <ArrowLeft size={20} />
-          </button>
-          <div className="flex items-center justify-center">
-            {/* 26px, not the old wordmark's 18: the lockup carries a circular
-                mark, so the word is ~2/3 of total height — at 18px it becomes
-                illegible. 26px keeps the word at the old optical size inside
-                the 40px header row. */}
-            <ExotiqLockup height={26} className="opacity-95" />
+      {page && (
+        <div className="hidden border-b border-[#2A2E3A]/70 lg:block">
+          <div className="mx-auto flex h-16 w-full max-w-[1200px] items-center justify-between px-8">
+            <Link href={closeHref} className="flex items-center" aria-label="Home">
+              <ExotiqLockup height={24} className="opacity-95" />
+            </Link>
+            {desktopNav && <nav className="flex items-center gap-7 text-[11px] uppercase tracking-[0.18em] text-[#9BA1B0]">{desktopNav}</nav>}
           </div>
-          <Link href={closeHref} className="grid h-10 w-10 place-items-center rounded-lg text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5]" aria-label="Close booking flow">
-            <X size={20} />
-          </Link>
         </div>
-        <StepIndicator step={step} variant={stepStyle} />
-        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+      )}
+      <div className={panel ? 'lg:mx-auto lg:flex lg:w-full lg:max-w-[1200px] lg:items-start lg:justify-center lg:gap-10 lg:px-8 lg:py-10' : ''}>
+        {panel && rail && <aside className="hidden lg:sticky lg:top-10 lg:block lg:w-80 lg:shrink-0">{rail}</aside>}
+        {/* h-dvh (not min-h): the frame needs a definite height so flex-1 children
+            scroll internally — with min-h alone the frame grows to content and
+            the "sticky" footer lands below the fold on long steps. */}
+        <div className={`relative mx-auto flex h-dvh w-full max-w-[480px] flex-col overflow-hidden bg-[#0D0F14] shadow-[0_40px_90px_-20px_rgba(0,0,0,.72),0_18px_42px_-18px_rgba(200,166,100,.18)] ${frameDesktop}`}>
+          <div className={`grid flex-shrink-0 grid-cols-[40px_1fr_40px] items-center px-4 pb-1 pt-[calc(env(safe-area-inset-top)+10px)] ${page ? 'lg:hidden' : ''}`}>
+            <button type="button" onClick={onBack} disabled={!onBack} className="grid h-10 w-10 place-items-center rounded-lg text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5] disabled:opacity-30" aria-label="Back">
+              <ArrowLeft size={20} />
+            </button>
+            <div className="flex items-center justify-center">
+              {/* 26px, not the old wordmark's 18: the lockup carries a circular
+                  mark, so the word is ~2/3 of total height — at 18px it becomes
+                  illegible. 26px keeps the word at the old optical size inside
+                  the 40px header row. */}
+              <ExotiqLockup height={26} className="opacity-95" />
+            </div>
+            <Link href={closeHref} className="grid h-10 w-10 place-items-center rounded-lg text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5]" aria-label="Close booking flow">
+              <X size={20} />
+            </Link>
+          </div>
+          {page ? <div className="lg:hidden">{stepBar}</div> : stepBar}
+          <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+        </div>
       </div>
     </main>
   );
 }
 
-export function BookingChrome({ step, children, onBack, closeHref }: { step: number; children: ReactNode; onBack?: () => void; closeHref?: string }) {
-  return <PhoneViewport step={step} onBack={onBack} closeHref={closeHref}>{children}</PhoneViewport>;
+export function BookingChrome({ step, children, onBack, closeHref, rail }: { step: number; children: ReactNode; onBack?: () => void; closeHref?: string; rail?: ReactNode }) {
+  return <PhoneViewport step={step} onBack={onBack} closeHref={closeHref} layout="panel" rail={rail}>{children}</PhoneViewport>;
 }
 
 export function HTitle({ children, className = '' }: { children: ReactNode; className?: string }) {

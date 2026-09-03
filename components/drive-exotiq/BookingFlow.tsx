@@ -1,8 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { BookingChrome } from './BookingChrome';
+import { BookingChrome, Money } from './BookingChrome';
 import { createBookingCart, createRenterBooking } from '@/domain/booking/service';
 import { getDataMode } from '@/domain/booking/config';
 import { loadQuote, quoteKey, quotingEnabled, QuoteUnavailableError, type QuoteState } from '@/domain/booking/quote';
@@ -94,8 +95,29 @@ export function BookingFlow({ operator, vehicle }: { operator: Operator; vehicle
     }
   };
 
+  // Desktop summary rail (M7d): what the renter is booking, beside the panel.
+  // Facts only — dates and money are owned by the steps and the server quote,
+  // and a second copy of a total is a second place for it to be wrong.
+  const rail = (
+    <div className="overflow-hidden rounded-2xl border border-[#2A2E3A] bg-[#0D0F14]">
+      <div className="relative aspect-[4/3] bg-[#161922]">
+        {vehicle.heroImage && <Image src={vehicle.heroImage} alt={vehicle.name} fill sizes="320px" className="object-cover" />}
+      </div>
+      <div className="p-5">
+        <div className="text-[11px] uppercase tracking-[0.18em] text-[#C8A664]">{operator.name}</div>
+        <h2 className="mt-2 text-[20px] leading-[1.15] text-[#F0F2F5]" style={{ fontFamily: 'var(--font-drive-newsreader), Georgia, serif', fontWeight: 500, letterSpacing: '-0.014em' }}>{vehicle.name}</h2>
+        <p className="mt-1 text-[12px] text-[#9BA1B0]">{operator.city}, {operator.state}</p>
+        <dl className="mt-4 space-y-2 border-t border-[#2A2E3A] pt-4 text-[13px]">
+          <div className="flex justify-between gap-4"><dt className="text-[#9BA1B0]">Daily rate</dt><dd className="text-[#F0F2F5]"><Money cents={vehicle.dailyRateCents} /></dd></div>
+          <div className="flex justify-between gap-4"><dt className="text-[#9BA1B0]">Minimum</dt><dd className="text-[#F0F2F5]">{vehicle.minRentalDays} {vehicle.minRentalDays === 1 ? 'day' : 'days'}</dd></div>
+        </dl>
+        <p className="mt-4 text-[11px] leading-5 text-[#848A9A]">Your dates and total are confirmed in the steps. {operator.name} reviews every request before payment.</p>
+      </div>
+    </div>
+  );
+
   return (
-    <BookingChrome step={step + 1} onBack={back} closeHref={`/${cart.operator.slug}`}>
+    <BookingChrome step={step + 1} onBack={back} closeHref={`/${cart.operator.slug}`} rail={rail}>
       {step === 1 && <DatesStep cart={cart} setCart={setCart} next={next} />}
       {step === 2 && <DriverStep cart={cart} setCart={setCart} next={next} />}
       {step === 3 && (

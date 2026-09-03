@@ -7,7 +7,7 @@ import { EmptyState } from '@/components/browse/EmptyState';
 import { FilterForm } from '@/components/browse/FilterForm';
 import { ListingGrid } from '@/components/browse/ListingGrid';
 import { containerClassName, serifStyle } from '@/components/browse/tokens';
-import { getSiteMode } from '@/domain/booking/config';
+import { browseEnabled } from '@/domain/booking/config';
 import { parseMarketplaceQuery, toMarketplaceSearchParams, type SearchParamsLike } from '@/domain/booking/marketplaceQuery';
 import { getMarketplaceFacets, getMarketplaceListings } from '@/domain/booking/service';
 
@@ -27,17 +27,12 @@ export function generateMetadata(): Metadata {
 }
 
 /**
- * Cross-tenant browse (MP-3 / M7b).
- *
- * Ships WITH its guard: this route is live on every deploy of `main` the
- * moment it merges, and on demo.exotiq.rent (mock mode) it would publish
- * three fictitious operators as real inventory. Absence of the env flag
- * means 404 — set it only on the staging site until launch.
+ * Cross-tenant browse (MP-3 / M7b). Ships WITH its guard (`browseEnabled`,
+ * domain/booking/config.ts): this route is live on every deploy of `main`, and
+ * on demo.exotiq.rent (mock mode) it would publish three fictitious operators
+ * as real inventory. Absence of the env flag means 404 — set it only on the
+ * staging site until launch.
  */
-function browseEnabled(): boolean {
-  return getSiteMode() === 'booking' && process.env.NEXT_PUBLIC_MARKETPLACE_BROWSE === 'on';
-}
-
 export default async function BrowsePage({ searchParams }: { searchParams: SearchParamsLike }) {
   if (!browseEnabled()) notFound();
 
