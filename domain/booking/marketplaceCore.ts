@@ -63,21 +63,28 @@ export function applyMarketplaceQuery(listings: MarketplaceListing[], query: Mar
 
 /** Facet counts over the FULL catalog, so every option shows what choosing it yields. */
 export function computeFacets(listings: MarketplaceListing[]): MarketplaceFacets {
-  const cities = new Map<string, { label: string; count: number }>();
-  const makes = new Map<string, number>();
+  // Keyed the way the filter compares (case-insensitive), and cities by
+  // city+state so two same-named cities in different states stay two facets.
+  // The make label keeps the first spelling seen so "McLaren" and "MCLAREN"
+  // from two tenants count as one make instead of two rows.
+  const cities = new Map<string, { value: string; label: string; count: number }>();
+  const makes = new Map<string, { label: string; count: number }>();
   for (const { team, vehicle } of listings) {
-    const key = norm(team.city);
-    const entry = cities.get(key) ?? { label: `${team.city}, ${team.state}`, count: 0 };
-    entry.count += 1;
-    cities.set(key, entry);
-    makes.set(vehicle.make, (makes.get(vehicle.make) ?? 0) + 1);
+    const cityKey = `${norm(team.city)}|${norm(team.state)}`;
+    const city = cities.get(cityKey) ?? { value: team.city, label: `${team.city}, ${team.state}`, count: 0 };
+    city.count += 1;
+    cities.set(cityKey, city);
+    const makeKey = norm(vehicle.make);
+    const make = makes.get(makeKey) ?? { label: vehicle.make, count: 0 };
+    make.count += 1;
+    makes.set(makeKey, make);
   }
   return {
-    cities: Array.from(cities.entries())
-      .map(([, v]) => ({ value: v.label.split(',')[0]!, label: v.label, count: v.count }))
+    cities: Array.from(cities.values())
+      .map(({ value, label, count }) => ({ value, label, count }))
       .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
-    makes: Array.from(makes.entries())
-      .map(([value, count]) => ({ value, label: value, count }))
+    makes: Array.from(makes.values())
+      .map(({ label, count }) => ({ value: label, label, count }))
       .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
     priceBands: PRICE_BANDS.map((band) => ({
       value: band.value,

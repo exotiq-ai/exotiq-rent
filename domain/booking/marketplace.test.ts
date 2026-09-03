@@ -105,6 +105,21 @@ describe('marketplace core over the mock catalog', () => {
   });
 });
 
+describe('facet keys', () => {
+  it('keeps same-named cities in different states apart', () => {
+    const [a, ...rest] = all;
+    const twin = { ...a, team: { ...a.team, slug: 'twin', state: 'XX' } };
+    const same = computeFacets([a, twin, ...rest]).cities.filter((c) => c.value.toLowerCase() === a.team.city.toLowerCase());
+    expect(same.map((c) => c.label).sort()).toEqual([`${a.team.city}, ${a.team.state}`, `${a.team.city}, XX`].sort());
+  });
+
+  it('merges make spellings the way the filter compares them', () => {
+    const [a] = all;
+    const shouty = { ...a, vehicle: { ...a.vehicle, slug: 'shouty', make: a.vehicle.make.toUpperCase() } };
+    expect(computeFacets([a, shouty]).makes).toEqual([{ value: a.vehicle.make, label: a.vehicle.make, count: 2 }]);
+  });
+});
+
 describe('facade in mock mode', () => {
   it('serves listings and facets through service.ts', async () => {
     const page = await getMarketplaceListings(base);
