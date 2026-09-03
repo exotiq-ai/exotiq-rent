@@ -1,23 +1,22 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { PostHogInit } from '../../components/analytics/PostHogInit';
-import { track } from '../../components/analytics/posthog';
+import { posthogHost, posthogKey, posthogSnippet, track } from '../../components/analytics/posthog';
 import { browseEnabled, siteUrl } from './config';
 import { robotsPolicy as robots } from './seo';
 
 describe('PostHog gating', () => {
-  it('renders nothing without a key', () => {
+  it('has no key unless the deploy sets one, and defaults to the US host', () => {
     delete process.env.NEXT_PUBLIC_POSTHOG_KEY;
-    expect(PostHogInit()).toBeNull();
+    delete process.env.NEXT_PUBLIC_POSTHOG_HOST;
+    expect(posthogKey()).toBe('');
+    expect(posthogHost()).toBe('https://us.i.posthog.com');
   });
 
-  it('mounts the snippet with the public key and host when configured', () => {
-    process.env.NEXT_PUBLIC_POSTHOG_KEY = 'phc_test';
-    process.env.NEXT_PUBLIC_POSTHOG_HOST = 'https://eu.i.posthog.com';
-    const el = PostHogInit() as unknown as { props: { id: string; children: string } };
-    expect(el.props.id).toBe('posthog-init');
-    expect(el.props.children).toContain('posthog.init("phc_test"');
-    expect(el.props.children).toContain('"https://eu.i.posthog.com"');
-    expect(el.props.children).toContain("person_profiles:'identified_only'");
+  it('builds the snippet with the public key, host and anonymous profiles', () => {
+    const s = posthogSnippet('phc_test', 'https://eu.i.posthog.com');
+    expect(s).toContain('posthog.init("phc_test"');
+    expect(s).toContain('api_host:"https://eu.i.posthog.com"');
+    expect(s).toContain("person_profiles:'identified_only'");
+    expect(s).not.toContain('identify(');
   });
 
   it('track() is a no-op without the snippet and forwards to capture with it', () => {
