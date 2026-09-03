@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import type { FunnelEvent } from '@/components/analytics/posthog';
+import { TrackView } from '@/components/analytics/TrackView';
 import { driveFontClassName } from '@/components/drive-exotiq/fonts';
 import { containerClassName } from './tokens';
 
@@ -9,10 +11,11 @@ import { containerClassName } from './tokens';
  * that only links to things that exist. Layout ported from the cyan mockup's
  * nav/footer; rendered in the booking flow's gold editorial language.
  *
- * Deliberately no legal links yet — /terms and /privacy arrive with M7e (MP-6);
- * a dead footer link is the exact audit class this program keeps removing.
+ * Footer links only to routes that exist: /terms and /privacy shipped with
+ * M7e (MP-6), guarded by the same flag as /browse, so the link can never be
+ * live while its target 404s.
  */
-export function BrowseChrome({ children }: { children: ReactNode }) {
+export function BrowseChrome({ children, view = 'browse_view' }: { children: ReactNode; /** Funnel event fired on mount; null for pages that are not a funnel step (legal). */ view?: FunnelEvent | null }) {
   return (
     <div className={`${driveFontClassName} min-h-screen bg-[#06070a] text-[#F0F2F5] font-[var(--font-drive-inter)]`}>
       <header className="sticky top-0 z-40 border-b border-[#2A2E3A]/70 bg-[#06070a]/85 backdrop-blur-md">
@@ -24,6 +27,7 @@ export function BrowseChrome({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main>{children}</main>
+      {view && <TrackView event={view} withQuery />}
       <footer className="mt-20 border-t border-[#2A2E3A]">
         <div className={`${containerClassName} flex flex-col gap-6 py-10 text-[12px] text-[#848A9A] sm:flex-row sm:items-center sm:justify-between`}>
           <div className="flex items-center gap-4">
@@ -32,6 +36,8 @@ export function BrowseChrome({ children }: { children: ReactNode }) {
           </div>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
             <span>Every car is rented from one accountable operator.</span>
+            <Link href="/terms" className="transition hover:text-[#F0F2F5]">Terms</Link>
+            <Link href="/privacy" className="transition hover:text-[#F0F2F5]">Privacy</Link>
             <a href="mailto:hello@exotiq.ai?subject=Listing%20my%20fleet%20on%20Drive%20Exotiq" className="text-[#C8A664] underline decoration-[#C8A664]/40 underline-offset-4 transition hover:decoration-[#C8A664]">Operators — list your fleet</a>
           </div>
         </div>

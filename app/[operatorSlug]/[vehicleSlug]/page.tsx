@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { TrackView } from '@/components/analytics/TrackView';
 import { VehicleEntryPage } from '@/components/drive-exotiq/VehicleEntryPage';
 import { driveFontClassName } from '@/components/drive-exotiq/fonts';
 import { getSiteMode } from '@/domain/booking/config';
@@ -28,5 +29,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function VehicleRoute({ params }: Props) {
-  return <div className={driveFontClassName}>{await VehicleEntryPage({ operatorSlug: params.operatorSlug, vehicleSlug: params.vehicleSlug })}</div>;
+  return (
+    <div className={driveFontClassName}>
+      {await VehicleEntryPage({ operatorSlug: params.operatorSlug, vehicleSlug: params.vehicleSlug })}
+      <TrackView event="vehicle_view" properties={{ team: params.operatorSlug, vehicle: params.vehicleSlug }} />
+    </div>
+  );
 }
