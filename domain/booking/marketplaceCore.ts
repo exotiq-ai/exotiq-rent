@@ -70,14 +70,20 @@ export function computeFacets(listings: MarketplaceListing[]): MarketplaceFacets
   const cities = new Map<string, { value: string; label: string; count: number }>();
   const makes = new Map<string, { label: string; count: number }>();
   for (const { team, vehicle } of listings) {
-    const cityKey = `${norm(team.city)}|${norm(team.state)}`;
-    const city = cities.get(cityKey) ?? { value: team.city, label: `${team.city}, ${team.state}`, count: 0 };
-    city.count += 1;
-    cities.set(cityKey, city);
-    const makeKey = norm(vehicle.make);
-    const make = makes.get(makeKey) ?? { label: vehicle.make, count: 0 };
-    make.count += 1;
-    makes.set(makeKey, make);
+    // A tenant with no city or a car with no make gets no facet row: the
+    // filter drops an empty value, so the row would be a ", " that does nothing.
+    if (team.city) {
+      const cityKey = `${norm(team.city)}|${norm(team.state)}`;
+      const city = cities.get(cityKey) ?? { value: team.city, label: `${team.city}, ${team.state}`, count: 0 };
+      city.count += 1;
+      cities.set(cityKey, city);
+    }
+    if (vehicle.make) {
+      const makeKey = norm(vehicle.make);
+      const make = makes.get(makeKey) ?? { label: vehicle.make, count: 0 };
+      make.count += 1;
+      makes.set(makeKey, make);
+    }
   }
   return {
     cities: Array.from(cities.values())

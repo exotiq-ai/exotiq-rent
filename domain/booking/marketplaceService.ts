@@ -24,10 +24,15 @@ import type { MarketplaceFacets, MarketplaceListing, MarketplacePage, Marketplac
 const perRequest: typeof cache = typeof cache === 'function' ? cache : (fn) => fn;
 
 export function configuredMarketplaceTeamSlugs(): string[] {
-  return (process.env.MARKETPLACE_TEAM_SLUGS ?? '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
+  // Deduped: a slug listed twice would double every listing and facet count.
+  return Array.from(
+    new Set(
+      (process.env.MARKETPLACE_TEAM_SLUGS ?? '')
+        .split(',')
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  );
 }
 
 async function loadTenant(slug: string): Promise<MarketplaceListing[]> {
