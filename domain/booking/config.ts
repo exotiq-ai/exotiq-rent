@@ -35,6 +35,17 @@ export function browseEnabled(): boolean {
   return getSiteMode() === 'booking' && process.env.NEXT_PUBLIC_MARKETPLACE_BROWSE === 'on';
 }
 
+/**
+ * Absolute origin of THIS deploy, for canonical URLs, the sitemap and OG
+ * images. One build serves several hosts, so it must come from the
+ * environment: NEXT_PUBLIC_SITE_URL when set, else the URL Netlify injects per
+ * site, else the dev server. Never a trailing slash.
+ */
+export function siteUrl(): string {
+  const raw = process.env.NEXT_PUBLIC_SITE_URL || process.env.URL || 'http://localhost:3000';
+  return raw.replace(/\/+$/, '');
+}
+
 export function getDataMode(): DataMode {
   if (process.env.NEXT_PUBLIC_EXOTIQ_RENT_DATA_MODE !== 'supabase') return 'mock';
   // A deploy that ASKS for supabase mode but is missing its URL/key must fail

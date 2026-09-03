@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { PostHogInit } from "@/components/analytics/PostHogInit";
+import { siteUrl } from "@/domain/booking/config";
 import "./globals.css";
 
 // Booking deploys (book./demo.exotiq.rent) are Drive Exotiq; the marketplace
@@ -26,10 +28,11 @@ const BRAND = isMarketplace
     };
 
 export const metadata: Metadata = {
-  // Absolute base for OG/twitter image URLs. Netlify sets URL per site
-  // (exotiq.rent / book.exotiq.rent / demo.exotiq.rent); without this,
-  // generated opengraph-image URLs resolve to localhost in production.
-  metadataBase: new URL(process.env.URL || "http://localhost:3000"),
+  // Absolute base for OG/twitter image URLs and canonicals. Per deploy —
+  // NEXT_PUBLIC_SITE_URL, else the URL Netlify sets per site (exotiq.rent /
+  // book.exotiq.rent / demo.exotiq.rent); without it, generated
+  // opengraph-image URLs resolve to localhost in production.
+  metadataBase: new URL(siteUrl()),
   title: BRAND.title,
   description: BRAND.description,
   openGraph: {
@@ -56,6 +59,7 @@ export default function RootLayout({
       </head>
       <body className="font-sans">
         {children}
+        <PostHogInit />
       </body>
     </html>
   );

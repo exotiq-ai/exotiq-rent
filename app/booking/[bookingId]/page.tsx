@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { TrackView } from '@/components/analytics/TrackView';
 import { ConfirmationScreen } from '@/components/drive-exotiq/ConfirmationScreen';
 import { driveFontClassName } from '@/components/drive-exotiq/fonts';
 import { getSiteMode } from '@/domain/booking/config';
@@ -36,6 +37,8 @@ export default function ConfirmationRoute({ params, searchParams }: Props) {
         accessToken={searchParams.t}
         payment={searchParams.payment}
       />
+      {/* The ref is the only identifier sent; the access token never leaves the URL. */}
+      <TrackView event="confirmation_view" properties={{ booking: params.bookingId, payment: searchParams.payment ?? '' }} />
     </div>
   );
 }

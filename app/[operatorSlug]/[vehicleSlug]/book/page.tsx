@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { TrackView } from '@/components/analytics/TrackView';
 import { BookingFlow } from '@/components/drive-exotiq/BookingFlow';
 import { driveFontClassName } from '@/components/drive-exotiq/fonts';
 import { getSiteMode } from '@/domain/booking/config';
@@ -23,5 +24,10 @@ export default async function BookRoute({ params }: Props) {
   const teamSlug = params.operatorSlug;
   const result = await getBookingStartContext(teamSlug, params.vehicleSlug);
   if (!result) notFound();
-  return <div className={driveFontClassName}><BookingFlow operator={result.team} vehicle={result.vehicle} /></div>;
+  return (
+    <div className={driveFontClassName}>
+      <BookingFlow operator={result.team} vehicle={result.vehicle} />
+      <TrackView event="book_start" properties={{ team: params.operatorSlug, vehicle: params.vehicleSlug }} />
+    </div>
+  );
 }
