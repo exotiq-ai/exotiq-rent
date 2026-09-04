@@ -21,6 +21,34 @@ export const PRICE_BANDS: ReadonlyArray<{ value: string; label: string; minCents
   { value: '2000-plus', label: '$2,000 and up', minCents: 200_000 },
 ];
 
+/**
+ * Vehicle body types (MP-9). The slugs are the DB vocabulary — the check
+ * constraint on vehicles.body_type lists exactly these — and the labels are
+ * what renters see, in sentence case like every other renter-facing label
+ * (the Command Center shows the same words in Title Case; do not align).
+ * An unknown slug in a URL simply matches nothing.
+ */
+export const BODY_TYPES: ReadonlyArray<{ value: string; label: string }> = [
+  { value: 'hypercar', label: 'Hypercar' },
+  { value: 'supercar', label: 'Supercar' },
+  { value: 'sports-car', label: 'Sports car' },
+  { value: 'grand-tourer', label: 'Grand tourer' },
+  { value: 'convertible', label: 'Convertible' },
+  { value: 'luxury-sedan', label: 'Luxury sedan' },
+  { value: 'luxury-suv', label: 'Luxury SUV' },
+];
+
+export function bodyTypeLabel(slug: string): string {
+  const known = BODY_TYPES.find((t) => t.value === slug);
+  if (known) return known.label;
+  // Vocabulary drift guard: a slug the DB accepts before the app knows it
+  // still gets a readable label ('electric-suv' → 'Electric SUV').
+  return slug
+    .split('-')
+    .map((w, i) => (['suv', 'gt', 'ev'].includes(w) ? w.toUpperCase() : i === 0 ? w.charAt(0).toUpperCase() + w.slice(1) : w))
+    .join(' ');
+}
+
 export type SearchParamsLike = Record<string, string | string[] | undefined>;
 
 function first(value: string | string[] | undefined): string | undefined {
@@ -63,6 +91,7 @@ export function parseMarketplaceQuery(params: SearchParamsLike = {}): Marketplac
     city,
     state,
     makes: all(params.make),
+    types: Array.from(new Set(all(params.type).map((t) => t.toLowerCase()))),
     minDailyRateCents,
     maxDailyRateCents: maxDailyRateCents !== undefined && minDailyRateCents !== undefined && maxDailyRateCents < minDailyRateCents
       ? undefined // inverted range: ignore the max rather than returning nothing
@@ -79,6 +108,7 @@ export function toMarketplaceSearchParams(query: Partial<MarketplaceQuery> & { b
   if (query.city) p.set('city', query.city);
   if (query.state) p.set('state', query.state);
   for (const make of query.makes ?? []) p.append('make', make);
+  for (const type of query.types ?? []) p.append('type', type);
   if (query.band) p.set('band', query.band);
   else {
     if (query.minDailyRateCents !== undefined) p.set('min', String(query.minDailyRateCents / 100));

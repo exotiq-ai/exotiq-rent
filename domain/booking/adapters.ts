@@ -82,6 +82,7 @@ export function adaptFleetVehicle(row: RpcFleetVehicleRow, team: Operator): Vehi
     heroImage: heroImage ?? '',
     footnote: footnoteFor(minRentalDays, null),
     pickupLocation: { name: `${team.name} pickup`, address: '', city: team.city, state: team.state },
+    bodyType: row.body_type ?? undefined,
   };
 }
 
