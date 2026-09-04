@@ -92,7 +92,7 @@ export function VehicleGallery({
           photo, so contrast is a property of the design rather than a property of
           whichever image a tenant uploaded. */}
       <div className="mt-4">
-        <div className="text-[11px] uppercase tracking-[0.18em] text-[#C8A664]">{operatorName} · From <Money cents={dailyRateCents} />/day</div>
+        <div className="text-[11px] uppercase tracking-[0.2em] text-[#C8A664]">{operatorName} · From <Money cents={dailyRateCents} />/day</div>
         <HTitle className="mt-2 text-[26px] lg:text-[36px]">{vehicleName}</HTitle>
         <p className="mt-2 flex items-center gap-2 text-[13px] text-[#9BA1B0]"><MapPin size={14} className="text-[#C8A664]" />{city}, {state} · Concierge-approved rental</p>
       </div>

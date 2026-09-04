@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, X } from 'lucide-react';
-import { ExotiqLockup } from './ExotiqLockup';
+import Image from 'next/image';
 import { groundClassName } from '@/components/browse/tokens';
 
 type StepStyle = 'bars' | 'numbered';
@@ -33,7 +33,7 @@ function StepIndicator({ step, total = 6, variant = 'bars' }: { step: number; to
     const labels = ['Vehicle', 'Dates', 'Driver', 'Review', 'Pay', 'Done'];
 
     return (
-      <div className="flex items-center gap-3 px-6 pb-4 pt-1 text-[11px] uppercase tracking-[0.16em] text-[#848A9A]">
+      <div className="flex items-center gap-3 px-6 pb-4 pt-1 text-[11px] uppercase tracking-[0.2em] text-[#848A9A]">
         <div className="tabular-nums"><b className="font-semibold text-[#C8A664]">{String(step).padStart(2, '0')}</b><span> / {String(total).padStart(2, '0')}</span></div>
         <div className="relative h-px flex-1 overflow-hidden rounded bg-[#2A2E3A]">
           <span className="absolute inset-y-0 left-0 bg-[#C8A664]" style={{ width: pct }} />
@@ -96,12 +96,15 @@ export function PhoneViewport({
   return (
     <main className={`min-h-screen ${groundClassName} text-[#F0F2F5] ${className}`}>
       {page && (
-        <div className="hidden border-b border-[#2A2E3A]/70 lg:block">
+        <div className="sticky top-0 z-40 hidden border-b border-[#2A2E3A]/70 bg-[#06070a]/85 backdrop-blur-md lg:block">
+          {/* The same bar as the browse chrome (MP-12): sticky, blurred, Drive
+              Exotiq lockup — one header across the marketplace, storefronts and
+              car pages (brand decision 2026-08-21). */}
           <div className="mx-auto flex h-16 w-full max-w-[1200px] items-center justify-between px-8">
-            <Link href={closeHref} className="flex items-center" aria-label="Home">
-              <ExotiqLockup height={24} className="opacity-95" />
+            <Link href={closeHref} className="flex items-center" aria-label="Drive Exotiq — home">
+              <Image src="/images/logos/drive-exotiq-lockup-transparent.png" alt="Drive Exotiq" width={100} height={20} priority style={{ height: 20, width: 'auto' }} className="opacity-95" />
             </Link>
-            {desktopNav && <nav className="flex items-center gap-7 text-[11px] uppercase tracking-[0.18em] text-[#9BA1B0]">{desktopNav}</nav>}
+            {desktopNav && <nav className="flex items-center gap-7 text-[11px] uppercase tracking-[0.2em] text-[#9BA1B0]">{desktopNav}</nav>}
           </div>
         </div>
       )}
@@ -116,11 +119,9 @@ export function PhoneViewport({
               <ArrowLeft size={20} />
             </button>
             <div className="flex items-center justify-center">
-              {/* 26px, not the old wordmark's 18: the lockup carries a circular
-                  mark, so the word is ~2/3 of total height — at 18px it becomes
-                  illegible. 26px keeps the word at the old optical size inside
-                  the 40px header row. */}
-              <ExotiqLockup height={26} className="opacity-95" />
+              {/* The Drive Exotiq lockup at 22px sits at the same optical size the
+                  old 26px mark did inside the 40px header row (MP-12). */}
+              <Image src="/images/logos/drive-exotiq-lockup-transparent.png" alt="Drive Exotiq" width={110} height={22} priority style={{ height: 22, width: 'auto' }} className="opacity-95" />
             </div>
             <Link href={closeHref} className="grid h-10 w-10 place-items-center rounded-lg text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5]" aria-label="Close booking flow">
               <X size={20} />
@@ -142,7 +143,7 @@ export function HTitle({ children, className = '' }: { children: ReactNode; clas
   return (
     <h1
       className={`text-[22px] leading-[1.12] text-[#F0F2F5] ${className}`}
-      style={{ fontFamily: 'var(--font-drive-newsreader), Georgia, serif', fontWeight: 500, letterSpacing: '-0.018em', fontVariationSettings: "'opsz' 32" }}
+      style={{ fontFamily: 'var(--font-drive-newsreader), Georgia, serif', fontWeight: 500, letterSpacing: '-0.014em', fontVariationSettings: "'opsz' 32" }}
     >
       {children}
     </h1>

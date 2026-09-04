@@ -82,7 +82,7 @@ export default async function VerifyRoute({ searchParams }: Props) {
 
   return (
     <VerifyShell>
-      <div className="text-[10px] uppercase tracking-[0.28em] text-[#848A9A]">Booking {lookup.bookingRef}</div>
+      <div className="text-[10px] uppercase tracking-[0.16em] text-[#848A9A]">Booking {lookup.bookingRef}</div>
       <h1
         className="mt-3 text-[26px] leading-[1.1] tracking-[-0.01em] text-[#F0F2F5]"
         style={{ fontFamily: 'var(--font-drive-playfair), Georgia, serif' }}
@@ -137,7 +137,7 @@ function Row({ label, value }: { label: string; value: string }) {
 function Problem({ title, body }: { title: string; body: string }) {
   return (
     <>
-      <div className="text-[10px] uppercase tracking-[0.28em] text-[#848A9A]">Identity verification</div>
+      <div className="text-[10px] uppercase tracking-[0.16em] text-[#848A9A]">Identity verification</div>
       <h1
         className="mt-3 text-[24px] leading-[1.15] tracking-[-0.01em] text-[#F0F2F5]"
         style={{ fontFamily: 'var(--font-drive-playfair), Georgia, serif' }}

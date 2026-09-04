@@ -7,7 +7,7 @@ import { HTitle, Money } from '../BookingChrome';
 export function StepHeader({ eyebrow, title, sub }: { eyebrow: string; title: string; sub?: string }) {
   return (
     <div className="mb-4">
-      <div className="text-[10px] uppercase tracking-[0.28em] text-[#848A9A]">{eyebrow}</div>
+      <div className="text-[10px] uppercase tracking-[0.16em] text-[#848A9A]">{eyebrow}</div>
       <HTitle className="mt-2">{title}</HTitle>
       {sub && <p className="mt-2 text-[13px] leading-5 text-[#9BA1B0]">{sub}</p>}
     </div>
@@ -155,7 +155,7 @@ export function Breakdown({
           <div className="text-sm font-medium">{title}</div>
           <div className="mt-1 text-[11px] text-[#C8A664]">{note}</div>
         </div>
-        <FileText size={18} className="text-[#848A9A]" />
+        <FileText size={16} className="text-[#848A9A]" />
       </div>
       {rows.map(([label, detail, amount, action]) => (
         <button key={label} type="button" onClick={action} className="flex w-full justify-between border-t border-[#2A2E3A] py-3 text-left text-sm">

@@ -187,7 +187,7 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
             );
           })}
         </div>
-        <div className="mt-3 text-center text-[10px] uppercase tracking-[0.18em] text-[#848A9A]">Tap start, then end · {cart.vehicle.minRentalDays}-day minimum{hasBlockedDays ? (captureOn ? ' · Crossed-out dates are taken — tap one for an alert' : ' · Crossed-out dates are unavailable') : ''}</div>
+        <div className="mt-3 text-center text-[10px] uppercase tracking-[0.16em] text-[#848A9A]">Tap start, then end · {cart.vehicle.minRentalDays}-day minimum{hasBlockedDays ? (captureOn ? ' · Crossed-out dates are taken — tap one for an alert' : ' · Crossed-out dates are unavailable') : ''}</div>
         {/* One sentence announces the card's arrival; the form below keeps its own status line (MP-14). */}
         <div aria-live="polite" className="sr-only">{alertWindow && captureOn ? `Alert offer for ${formatRangeLabel(alertWindow.start, alertWindow.end)} added below.` : ''}</div>
         <div>

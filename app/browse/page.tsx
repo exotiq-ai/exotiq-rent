@@ -71,7 +71,7 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
   return (
     <BrowseChrome>
       <section className={`${containerClassName} pb-6 pt-12 sm:pt-16`}>
-        <p className="text-[11px] uppercase tracking-[0.24em] text-[#848A9A]">Drive Exotiq</p>
+        <p className="text-[11px] uppercase tracking-[0.2em] text-[#848A9A]">Drive Exotiq</p>
         <h1 className="mt-3 text-[40px] leading-[1.02] text-[#F0F2F5] sm:text-[56px]" style={{ ...serifStyle, letterSpacing: '-0.02em' }}>
           The fleet.
         </h1>
@@ -96,7 +96,7 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
 
         <div className="min-w-0">
           <div className="mb-5 flex items-center justify-between gap-4">
-            <div className="text-[12px] uppercase tracking-[0.2em] text-[#848A9A]">
+            <div className="text-[11px] uppercase tracking-[0.2em] text-[#848A9A]">
               {page.totalCount} {page.totalCount === 1 ? 'car' : 'cars'}
               {activeFilters > 0 && <span className="ml-2 text-[#C8A664]">· {activeFilters} {activeFilters === 1 ? 'filter' : 'filters'}</span>}
             </div>

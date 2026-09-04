@@ -18,7 +18,7 @@ export default function UnsubscribePage({ searchParams }: { searchParams?: { r?:
   return (
     <BrowseChrome view={null} footerSignup={false}>
       <section className={`${containerClassName} max-w-2xl pb-24 pt-16 sm:pt-24`}>
-        <p className="text-[11px] uppercase tracking-[0.24em] text-[#848A9A]">Drive Exotiq</p>
+        <p className="text-[11px] uppercase tracking-[0.2em] text-[#848A9A]">Drive Exotiq</p>
         <h1 className="mt-3 text-[36px] leading-[1.05] text-[#F0F2F5] sm:text-[48px]" style={{ ...serifStyle, letterSpacing: '-0.02em' }}>{valid ? 'Unsubscribe?' : 'That link is not right.'}</h1>
         <p className="mt-5 max-w-xl text-[15px] leading-7 text-[#9BA1B0]">{valid ? 'This stops all e-mail from Drive Exotiq and turns off any availability alerts. Booking confirmations still arrive when you rent a car.' : 'Use the unsubscribe link from the most recent e-mail, or write to hello@exotiq.ai and we will do it by hand.'}</p>
         {valid && (

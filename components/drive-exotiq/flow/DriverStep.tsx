@@ -1,9 +1,37 @@
 'use client';
 
+import { useState } from 'react';
 import { IdCard } from 'lucide-react';
 import { PrimaryButton } from '../BookingChrome';
 import type { BookingCart, Driver } from '@/domain/booking/types';
 import { ScreenShell, StepHeader, Sticky } from './shared';
+
+/**
+ * Date of birth as a masked numeric field (MP-12): a native date picker opens
+ * on the current month and needs thirty years of back-navigation. Digits type
+ * as MM / DD / YYYY; the cart stores ISO once eight valid digits are in.
+ */
+export function maskDob(raw: string): { display: string; iso: string } {
+  const digits = raw.replace(/\D/g, '').slice(0, 8);
+  const mm = digits.slice(0, 2);
+  const dd = digits.slice(2, 4);
+  const yyyy = digits.slice(4, 8);
+  let display = mm;
+  if (digits.length > 2) display += ` / ${dd}`;
+  if (digits.length > 4) display += ` / ${yyyy}`;
+  let iso = '';
+  if (digits.length === 8) {
+    const candidate = `${yyyy}-${mm}-${dd}`;
+    const d = new Date(`${candidate}T00:00:00Z`);
+    if (!Number.isNaN(d.valueOf()) && d.toISOString().slice(0, 10) === candidate && Number(yyyy) >= 1900) iso = candidate;
+  }
+  return { display, iso };
+}
+
+function displayFromIso(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  return m ? `${m[2]} / ${m[3]} / ${m[1]}` : '';
+}
 
 function ageOn(dobIso: string, onIso: string): number {
   const dob = new Date(`${dobIso}T00:00:00Z`);
@@ -16,6 +44,8 @@ function ageOn(dobIso: string, onIso: string): number {
 
 export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart: (cart: BookingCart) => void; next: () => void }) {
   const setDriver = (patch: Partial<Driver>) => setCart({ ...cart, driver: { ...cart.driver, ...patch } });
+  const [dobText, setDobText] = useState(() => displayFromIso(cart.driver.dob));
+  const dobIncomplete = dobText.replace(/\D/g, '').length > 0 && !cart.driver.dob;
 
   // Only enforce an age floor the operator actually set. Live (supabase-mode)
   // operators carry no policies today, and the old `?? 25` fallback fabricated
@@ -42,21 +72,36 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
         <StepHeader eyebrow="Step 03" title="Who's driving?" sub="Takes about a minute." />
         <div className="rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
           <label className="block">
-            <span className="text-[10px] uppercase tracking-[0.18em] text-[#848A9A]">Full name</span>
+            <span className="text-[10px] uppercase tracking-[0.16em] text-[#848A9A]">Full name</span>
             <input type="text" value={cart.driver.name} onChange={(event) => setDriver({ name: event.target.value })} placeholder="Name as it appears on your license" autoComplete="name" className={fieldClass} />
           </label>
           <div className="mt-3 grid grid-cols-2 gap-3">
             <label className="block">
-              <span className="text-[10px] uppercase tracking-[0.18em] text-[#848A9A]">Date of birth</span>
-              <input type="date" value={cart.driver.dob} onChange={(event) => setDriver({ dob: event.target.value })} autoComplete="bday" className={fieldClass} />
+              <span className="text-[10px] uppercase tracking-[0.16em] text-[#848A9A]">Date of birth</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="bday"
+                placeholder="MM / DD / YYYY"
+                value={dobText}
+                onChange={(event) => {
+                  const { display, iso } = maskDob(event.target.value);
+                  setDobText(display);
+                  setDriver({ dob: iso });
+                }}
+                aria-invalid={dobIncomplete && dobText.replace(/\D/g, '').length === 8 ? true : undefined}
+                aria-describedby="dob-hint"
+                className={fieldClass}
+              />
             </label>
             <label className="block">
-              <span className="text-[10px] uppercase tracking-[0.18em] text-[#848A9A]">Phone</span>
+              <span className="text-[10px] uppercase tracking-[0.16em] text-[#848A9A]">Phone</span>
               <input type="tel" value={cart.driver.phone} onChange={(event) => setDriver({ phone: event.target.value })} placeholder="+1 (555) 555-0100" autoComplete="tel" className={fieldClass} />
             </label>
           </div>
+          <p id="dob-hint" className="sr-only">Type the digits of your date of birth: month, day, year.</p>
           <label className="mt-3 block">
-            <span className="text-[10px] uppercase tracking-[0.18em] text-[#848A9A]">Email</span>
+            <span className="text-[10px] uppercase tracking-[0.16em] text-[#848A9A]">Email</span>
             <input type="email" value={cart.driver.email ?? ''} onChange={(event) => setDriver({ email: event.target.value })} placeholder="Where we send your confirmation" autoComplete="email" className={fieldClass} />
           </label>
         </div>
@@ -70,9 +115,9 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
             Age and license requirements are set by {cart.operator.name} and confirmed before pickup.
           </p>
         )}
-        <div className="mt-4 px-1 text-[10px] uppercase tracking-[0.24em] text-[#848A9A]">Verification</div>
+        <div className="mt-4 px-1 text-[10px] uppercase tracking-[0.16em] text-[#848A9A]">Verification</div>
         <div className="mt-3 flex items-start gap-3 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#C8A664]/10 text-[#C8A664]"><IdCard size={18} /></div>
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#C8A664]/10 text-[#C8A664]"><IdCard size={16} /></div>
           <div>
             <div className="text-sm font-medium text-[#F0F2F5]">ID check comes after booking</div>
             <p className="mt-1 text-xs leading-5 text-[#9BA1B0]">You&apos;ll verify your identity right after payment — takes two minutes, have your license ready.</p>

@@ -123,7 +123,7 @@ export function PayStep({
 
         <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
           <div className="flex items-start gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#C8A664]/10 text-[#C8A664]"><LockKeyhole size={18} /></div>
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#C8A664]/10 text-[#C8A664]"><LockKeyhole size={16} /></div>
             <div>
               <div className="text-sm font-medium">What you&apos;ll see on your statement</div>
               <p className="mt-1 text-xs leading-5 text-[#9BA1B0]">Two charges: {cart.operator.name}, and <span className="text-[#F0F2F5]">EXOTIQ.RENT</span> for Trip Fees and protection.</p>

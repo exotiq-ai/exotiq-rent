@@ -21,7 +21,7 @@ export default async function ConfirmPage({ searchParams }: { searchParams?: { t
   return (
     <BrowseChrome view={null} footerSignup={false}>
       <section className={`${containerClassName} max-w-2xl pb-24 pt-16 sm:pt-24`}>
-        <p className="text-[11px] uppercase tracking-[0.24em] text-[#848A9A]">Drive Exotiq</p>
+        <p className="text-[11px] uppercase tracking-[0.2em] text-[#848A9A]">Drive Exotiq</p>
         <h1 className="mt-3 text-[36px] leading-[1.05] text-[#F0F2F5] sm:text-[48px]" style={{ ...serifStyle, letterSpacing: '-0.02em' }}>{valid ? 'One tap to confirm.' : 'That link is not right.'}</h1>
         <p className="mt-5 max-w-xl text-[15px] leading-7 text-[#9BA1B0]">{valid ? 'Confirm this e-mail address and we will send what you asked for.' : 'Open the link from the e-mail again, or ask from any car and we will send a fresh one.'}</p>
         {grants && (

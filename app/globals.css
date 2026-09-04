@@ -242,6 +242,10 @@
    from the global ring above; forced-colors restores the native control so
    the tick never vanishes in Windows High Contrast. */
 @layer components {
+  /* Icons: one stroke everywhere (MP-12). At 14–16px on dark grounds the default 2 read heavier than the Inter beside them. */
+  .lucide {
+    stroke-width: 1.75;
+  }
   .control-check,
   .control-radio {
     /* Resting border at #848A9A/80 (~4:1 on both grounds): a 1px #3A3F4D

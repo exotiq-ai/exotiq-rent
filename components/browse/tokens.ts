@@ -13,6 +13,10 @@ export const tone = {
   surface: '#161922',
   surface2: '#1E2230',
   line: '#2A2E3A',
+  /** Unselected chip / drawn control border. */
+  chipLine: '#3A3F4D',
+  /** Field ground. */
+  well: '#10131A',
   ink: '#F0F2F5',
   muted: '#9BA1B0',
   faint: '#848A9A',
@@ -21,6 +25,15 @@ export const tone = {
 } as const;
 
 export const serifFamily = 'var(--font-drive-newsreader), Georgia, serif';
+
+/**
+ * Tracked caps, two recipes (MP-12): thirteen size/tracking pairs had grown
+ * across the gold pages. `eyebrow` for section and page eyebrows and nav
+ * (11px), `microLabel` for field labels, pills, captions and counts (10px).
+ * Colour is applied at the call site.
+ */
+export const eyebrowClassName = 'text-[11px] uppercase tracking-[0.2em]';
+export const microLabelClassName = 'text-[10px] uppercase tracking-[0.16em]';
 
 /** The display-type recipe every headline on the booking surfaces uses. */
 export const serifStyle = { fontFamily: serifFamily, fontWeight: 500, letterSpacing: '-0.014em' } as const;

@@ -35,7 +35,7 @@ export default function PreviewPage() {
   return (
     <main className="min-h-screen bg-[#06070a] px-5 py-8 text-[#F0F2F5]" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
       <section className="mx-auto max-w-[460px] rounded-[28px] border border-[#2A2E3A] bg-[#0D0F14] p-5 shadow-2xl shadow-black/40">
-        <div className="text-[10px] uppercase tracking-[0.28em] text-[#C8A664]">Branch Preview</div>
+        <div className="text-[10px] uppercase tracking-[0.16em] text-[#C8A664]">Branch Preview</div>
         <h1 className="mt-3 text-2xl font-medium leading-tight" style={{ fontFamily: 'Newsreader, Georgia, serif', letterSpacing: '-0.018em' }}>
           Drive Exotiq renter flow
         </h1>

@@ -5,9 +5,8 @@ import { CalendarX2, CarFront, FileCheck2, Fuel, Gauge, Phone, ShieldCheck, Truc
 import { driveFontClassName } from '@/components/drive-exotiq/fonts';
 import { HTitle, Money, PhoneViewport } from '@/components/drive-exotiq/BookingChrome';
 import { FilterBar } from '@/components/browse/FilterBar';
-import { cardShellClassName, photoClassName, photoFrameClassName, priceClassName, priceUnitClassName } from '@/components/browse/tokens';
-import { EmailCaptureForm } from '@/components/renters/EmailCaptureForm';
-import { SaveButton } from '@/components/renters/SaveButton';
+import { EmptyState } from '@/components/browse/EmptyState';
+import { ListingCard } from '@/components/browse/ListingCard';
 import { browseEnabled, getSiteMode } from '@/domain/booking/config';
 import { formatRangeLabel, formatShortDate } from '@/domain/booking/dates';
 import { applyMarketplaceQuery, computeFacets, excludeBusy, filterListings } from '@/domain/booking/marketplaceCore';
@@ -65,9 +64,9 @@ function PolicyCard({ rows, className = '' }: { rows: PolicyRow[]; className?: s
       <div className="mb-3 flex items-center gap-2 text-sm font-medium"><FileCheck2 size={16} className="text-[#C8A664]" />Rental policies</div>
       {rows.map((row) => (
         <div key={row.label} className="flex items-start gap-3 border-t border-[#2A2E3A] py-3">
-          <row.icon size={15} className="mt-0.5 shrink-0 text-[#848A9A]" />
+          <row.icon size={16} className="mt-0.5 shrink-0 text-[#848A9A]" />
           <div className="min-w-0">
-            <div className="text-[11px] uppercase tracking-[0.16em] text-[#848A9A]">{row.label}</div>
+            <div className="text-[11px] uppercase tracking-[0.2em] text-[#848A9A]">{row.label}</div>
             <div className="mt-0.5 text-[13px] leading-5 text-[#D7DAE0]">{row.value}</div>
           </div>
         </div>
@@ -112,7 +111,7 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
             <HTitle className="mt-5 text-[24px]">{team.name}</HTitle>
             <p className="mt-3 text-sm leading-6 text-[#9BA1B0]">No vehicles are listed right now. The fleet is being refreshed — check back soon{hasPhone ? ' or call to ask about upcoming availability' : ''}.</p>
             {hasPhone && (
-              <a href={`tel:${team.phone}`} className="mt-6 flex items-center gap-2 rounded-xl border border-[#C8A664]/35 bg-[#161922] px-5 py-3 text-sm font-semibold text-[#F0F2F5]"><Phone size={15} />Call {team.name}</a>
+              <a href={`tel:${team.phone}`} className="mt-6 flex items-center gap-2 rounded-xl border border-[#C8A664]/35 bg-[#161922] px-5 py-3 text-sm font-semibold text-[#F0F2F5]"><Phone size={16} />Call {team.name}</a>
             )}
           </section>
         </PhoneViewport>
@@ -206,7 +205,7 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
               <div className="mt-4 flex items-center justify-between px-1">
                 {/* 'Available now' claimed a check that was never made; the aside
                     says availability is confirmed at booking (MP-11). */}
-                <h2 className="text-[10px] uppercase tracking-[0.24em] text-[#848A9A]">{availability ? (availability.checked ? 'Available for your dates' : 'All cars') : 'The fleet'}</h2>
+                <h2 className="text-[10px] uppercase tracking-[0.16em] text-[#848A9A]">{availability ? (availability.checked ? 'Available for your dates' : 'All cars') : 'The fleet'}</h2>
                 <div className="text-[11px] text-[#9BA1B0]">
                   {shown.length === vehicles.length ? `${vehicles.length} cars` : `${shown.length} of ${vehicles.length} cars`}
                 </div>
@@ -219,79 +218,16 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
                   a multi-tenant fleet means designing for the worst photo we will ever
                   be sent, not the best one we happen to have. */}
               {shown.length === 0 ? (
-                <div className="mt-3 flex flex-col items-center rounded-2xl border border-dashed border-[#2A2E3A] px-6 py-12 text-center">
-                  <div className="grid h-12 w-12 place-items-center rounded-full border border-[#2A2E3A] bg-[#161922] text-[#C8A664]"><CarFront size={22} /></div>
-                  <h3 className="mt-4 text-[20px] text-[#F0F2F5]" style={{ fontFamily: 'var(--font-drive-newsreader), Georgia, serif', fontWeight: 500 }}>
-                    {emptyByDates && availability ? `Nothing is available ${formatRangeLabel(availability.start, availability.end)}.` : 'No cars match those filters.'}
-                  </h3>
-                  <p className="mt-2 text-sm leading-6 text-[#9BA1B0]">
-                    {emptyByDates ? `Try different dates, or see all ${vehicles.length} cars ${team.name} lists.` : `${team.name} lists ${vehicles.length} cars right now. Loosen a filter, or see them all.`}
-                  </p>
-                  <Link href={`/${team.slug}`} className="mt-5 rounded-xl border border-[#C8A664]/40 px-5 py-3 text-sm font-semibold text-[#C8A664]">{emptyByDates ? `See all ${vehicles.length} (clears dates)` : `Show all ${vehicles.length}`}</Link>
-                  {/* MP-14: one e-mail if any of this operator's cars frees up for the dates. */}
-                  {emptyByDates && availability && (
-                    <div className="mt-8 w-full max-w-sm border-t border-[#2A2E3A] pt-6 text-left">
-                      <p className="text-[13px] text-[#9BA1B0]">Get one e-mail if a car from {team.name} opens up {formatRangeLabel(availability.start, availability.end)}.</p>
-                      <EmailCaptureForm source="alert" cta="Alert me" compact teamSlug={team.slug} alert={{ team_slug: team.slug, vehicle_slug: null, start: availability.start, end: availability.end }} className="mt-3" />
-                    </div>
-                  )}
+                <div className="mt-3">
+                  <EmptyState totalInCatalog={vehicles.length} clearHref={`/${team.slug}`} ownerName={team.name} alertTeamSlug={team.slug} dates={emptyByDates && availability ? { start: availability.start, end: availability.end } : undefined} />
                 </div>
               ) : (
-              <div className="mt-3 space-y-4 lg:grid lg:grid-cols-2 lg:gap-5 lg:space-y-0">
-                {shown.map(({ vehicle }) => (
-                  <div key={vehicle.id} className={`group ${cardShellClassName}`}>
-                  <Link
-                    href={carHref(vehicle.slug)}
-                    className="block focus-visible:outline-none"
-                  >
-                    {/* 4:3 and unobstructed — the car is the product, and the old
-                        scrim was eating the stance and wheels. */}
-                    <div className={photoFrameClassName}>
-                      {vehicle.heroImage && (
-                        <Image
-                          src={vehicle.heroImage}
-                          alt={vehicle.name}
-                          fill
-                          sizes="(min-width: 1024px) 400px, 448px"
-                          className={photoClassName}
-                        />
-                      )}
-                      {/* The one thing that may sit on the photo: a pill carries its own
-                          backdrop, so its contrast holds regardless of what is behind it. */}
-                      <div className="absolute left-3 top-3 rounded-full border border-[#C8A664]/25 bg-[#0D0F14]/70 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-[#C8A664] backdrop-blur">
-                        {vehicle.minRentalDays}-day min
-                      </div>
-                    </div>
-                    <div className="border-t border-[#2A2E3A] px-4 pb-4 pt-3.5">
-                      <div className="flex items-baseline justify-between gap-4">
-                        {/* h3 under the team h1 and the section h2 — real document
-                            structure for screen readers and search engines. Serif to
-                            match the display face; the vehicle name is the headline. */}
-                        <h3
-                          className="min-w-0 truncate text-[17px] leading-[1.2] text-[#F0F2F5]"
-                          style={{ fontFamily: 'var(--font-drive-newsreader), Georgia, serif', fontWeight: 500, letterSpacing: '-0.014em' }}
-                        >
-                          {vehicle.name}
-                        </h3>
-                        <div className={priceClassName}>
-                          <Money cents={vehicle.dailyRateCents} />
-                        </div>
-                      </div>
-                      <div className="mt-1.5 flex items-baseline justify-between gap-4">
-                        <div className="min-w-0 truncate text-[12px] text-[#9BA1B0]">
-                          {vehicle.specs ? `${vehicle.specs.power} · ${vehicle.specs.zeroToSixty} 0–60` : `${vehicle.year} ${vehicle.make}`.trim()}
-                        </div>
-                        {/* Unit split off the number so the figure reads as the figure. */}
-                        <div className={priceUnitClassName.replace('ml-1.5 ', 'shrink-0 ')}>per day</div>
-                      </div>
-                    </div>
-                  </Link>
-                  <div className="pointer-events-none absolute inset-x-0 top-0 aspect-[4/3]">
-                    <SaveButton car={{ team_slug: team.slug, vehicle_slug: vehicle.slug, name: vehicle.name, href: `/${team.slug}/${vehicle.slug}`, priceCents: vehicle.dailyRateCents, team_name: team.name }} className="pointer-events-auto absolute bottom-3 right-3" />
-                  </div>
-                  </div>
-                ))}
-              </div>
+                /* One card for both grids (MP-12): the storefront context shows year and make instead of the operator. */
+                <div className="mt-3 space-y-4 lg:grid lg:grid-cols-2 lg:gap-5 lg:space-y-0">
+                  {shown.map((listing) => (
+                    <ListingCard key={listing.vehicle.id} listing={listing} context="storefront" dates={window} sizes="(min-width: 1024px) 400px, 448px" />
+                  ))}
+                </div>
               )}
 
               {policyRows.length > 0 && <PolicyCard rows={policyRows} className="mt-4 lg:hidden" />}

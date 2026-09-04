@@ -28,7 +28,7 @@ export function BrowseChrome({ children, view = 'browse_view', footerSignup = tr
             <Image src="/images/logos/drive-exotiq-lockup-transparent.png" alt="Drive Exotiq" width={100} height={20} priority style={{ height: 20, width: 'auto' }} className="opacity-95" />
           </Link>
           <div className="flex items-center gap-4">
-            <p className="hidden text-[11px] uppercase tracking-[0.22em] text-[#848A9A] sm:block">Curated exotic &amp; luxury rentals</p>
+            <p className="hidden text-[11px] uppercase tracking-[0.2em] text-[#848A9A] sm:block">Curated exotic &amp; luxury rentals</p>
             <SavedLink enabled={browseEnabled()} />
           </div>
         </div>
@@ -40,7 +40,7 @@ export function BrowseChrome({ children, view = 'browse_view', footerSignup = tr
         {renterCaptureUiEnabled() && footerSignup && (
           <div className={`${containerClassName} border-b border-[#2A2E3A] py-10`}>
             <div className="max-w-md">
-              <p className="text-[11px] uppercase tracking-[0.22em] text-[#848A9A]">First look</p>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-[#848A9A]">First look</p>
               <h2 className="mt-2 text-[22px] text-[#F0F2F5]" style={serifStyle}>New cars, before they reach the grid.</h2>
               <EmailCaptureForm source="footer" cta="Keep me posted" consentImplied className="mt-4" />
             </div>

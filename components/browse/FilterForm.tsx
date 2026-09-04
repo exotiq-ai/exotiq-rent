@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, type FormEvent } from 'react';
+import { useRef, useState, useTransition, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { CalendarDays, ChevronDown } from 'lucide-react';
@@ -33,6 +33,10 @@ const SORT_LABELS: Record<MarketplaceQuery['sort'], string> = {
 export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: MarketplaceFacets; query: MarketplaceQuery; idPrefix?: string }) {
   const router = useRouter();
   const form = useRef<HTMLFormElement>(null);
+  // MP-12: a chip flipped and then nothing happened for the RPC round-trip.
+  // The push runs in a transition so the form knows it is pending: a gold
+  // hairline at the top and dimmed controls until the new grid commits.
+  const [isPending, startTransition] = useTransition();
   const today = localTodayIso();
   const [hint, setHint] = useState(() => datesHint(query.start ?? '', query.end ?? ''));
 
@@ -72,7 +76,7 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
     });
     // A filter change always restarts paging — page 3 of a different result set is meaningless.
     const qs = params.toString();
-    router.push(qs ? `/browse?${qs}` : '/browse');
+    startTransition(() => router.push(qs ? `/browse?${qs}` : '/browse'));
   };
 
   const onSubmit = (event: FormEvent) => {
@@ -89,14 +93,16 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
     navigate();
   };
 
-  const section = 'block text-[10px] uppercase tracking-[0.22em] text-[#848A9A]';
+  const section = 'block text-[10px] uppercase tracking-[0.16em] text-[#848A9A]';
   // MP-11: 44px rows in the phone sheet (every mis-tap navigates), the rail
   // keeps its density; a checked row lights up like the mockup's.
-  const option = 'flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-2.5 text-[13px] text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5] has-[:checked]:text-[#F0F2F5] lg:min-h-0 lg:py-1.5';
+  const option = 'group-data-[pending]:opacity-60 group-data-[pending]:cursor-progress flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-2.5 text-[13px] text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5] has-[:checked]:text-[#F0F2F5] lg:min-h-0 lg:py-1.5';
   const count = 'text-[11px] tabular-nums text-[#848A9A]';
 
   return (
-    <form ref={form} method="get" action="/browse" onSubmit={onSubmit} onChange={navigate} className="space-y-7">
+    <form ref={form} method="get" action="/browse" onSubmit={onSubmit} onChange={navigate} className="group relative space-y-7" aria-busy={isPending} data-pending={isPending ? '' : undefined}>
+      {/* Always mounted, opacity-toggled, so the rail never jumps. */}
+      <span aria-hidden className={`pointer-events-none absolute -top-2 left-0 h-px w-full bg-[#C8A664] transition-opacity motion-reduce:animate-none ${isPending ? 'animate-pulse opacity-100' : 'opacity-0'}`} />
       <fieldset>
         <legend className={section}>Dates</legend>
         {/* Two columns in the phone sheet (22rem); stacked in the 16rem rail,
@@ -105,14 +111,14 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
           <label className="block">
             <span className="block text-[10px] text-[#848A9A]">Pickup</span>
             <span className="relative mt-1 flex items-center">
-              <CalendarDays size={13} className="pointer-events-none absolute left-2.5 text-[#C8A664]" aria-hidden />
+              <CalendarDays size={14} className="pointer-events-none absolute left-2.5 text-[#C8A664]" aria-hidden />
               <input type="date" name="start" min={today} max={addDays(today, 180)} defaultValue={query.start ?? ''} aria-describedby={`${idPrefix}-dates-hint`} className={`${datePillClassName} w-full min-w-0`} />
             </span>
           </label>
           <label className="block">
             <span className="block text-[10px] text-[#848A9A]">Drop-off</span>
             <span className="relative mt-1 flex items-center">
-              <CalendarDays size={13} className="pointer-events-none absolute left-2.5 text-[#C8A664]" aria-hidden />
+              <CalendarDays size={14} className="pointer-events-none absolute left-2.5 text-[#C8A664]" aria-hidden />
               <input type="date" name="end" min={query.start ? addDays(query.start, 1) : addDays(today, 1)} max={addDays(today, 181)} defaultValue={query.end ?? ''} aria-describedby={`${idPrefix}-dates-hint`} className={`${datePillClassName} w-full min-w-0`} />
             </span>
           </label>
@@ -128,7 +134,7 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
               <option key={s} value={s}>{SORT_LABELS[s]}</option>
             ))}
           </select>
-          <ChevronDown size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#C8A664]" aria-hidden />
+          <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#C8A664]" aria-hidden />
         </span>
       </div>
 
