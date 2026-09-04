@@ -21,6 +21,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${vehicle.name} | ${team.name} | Drive Exotiq`,
     description: `From ${formatMoney(vehicle.dailyRateCents)}/day. ${team.city}, ${team.state}. Book with Drive Exotiq.`,
+    // Dated variants (?start&end from a grid) are the same page.
+    alternates: { canonical: `/${team.slug}/${vehicle.slug}` },
     openGraph: {
       title: `${vehicle.name} | Drive Exotiq`,
       description: `From ${formatMoney(vehicle.dailyRateCents)}/day. ${team.city}, ${team.state}.`,

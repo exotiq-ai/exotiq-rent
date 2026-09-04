@@ -10,6 +10,7 @@ import { track } from '@/components/analytics/posthog';
 import { loadQuote, quoteKey, quotingEnabled, QuoteUnavailableError, type QuoteState } from '@/domain/booking/quote';
 import { addDays } from '@/domain/booking/dates';
 import { daysBetween } from '@/domain/booking/marketplaceQuery';
+import { localTodayIso, rangeIsBookable } from '@/domain/booking/availability';
 import { recomputeBookingCart } from './flow/state';
 import type { BookingCart, Operator, Vehicle } from '@/domain/booking/types';
 import { DatesStep } from './flow/DatesStep';
@@ -28,14 +29,18 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
     // ProtectStep to set it. rent-create-booking validates the tier and 400s on
     // anything outside premium/standard/decline, so this must always be set.
     // Dates carried from a grid filter (MP-10 / T-13) seed the dates step; a
-    // window shorter than the car's minimum stay is stretched to it so the
-    // renter lands on a valid selection and adjusts from there.
-    const seeded = initialDates
+    // window shorter than the car's minimum stay is stretched to it. The
+    // seed then passes the SAME bookability rule the calendar applies (not
+    // past, no blocked day, drop-off day included) or it is dropped — a
+    // stale link, or a grid that could not check availability, must never
+    // land the renter on a selection the calendar shows crossed out.
+    const stretched = initialDates
       ? {
           start: initialDates.start,
           end: daysBetween(initialDates.start, initialDates.end) >= vehicle.minRentalDays ? initialDates.end : addDays(initialDates.start, vehicle.minRentalDays),
         }
-      : base.dates;
+      : undefined;
+    const seeded = stretched && rangeIsBookable(vehicle, stretched.start, stretched.end, localTodayIso()) ? stretched : base.dates;
     const base5 = recomputeBookingCart({ ...base, dates: seeded, protection: 'premium', extras: [] });
     if (getDataMode() !== 'supabase') return base5;
     // Live mode additionally starts the driver form empty — the base cart

@@ -1,3 +1,4 @@
+import { addDays } from './dates';
 import type { MarketplaceQuery, MarketplaceSort } from './publicContracts';
 
 /**
@@ -71,34 +72,37 @@ export function todayIso(): string {
 
 /**
  * Availability window from ?start&end (MP-10). Valid = both present, real
- * dates, end on or after start, at most MAX_WINDOW_DAYS long, and not
- * entirely in the past. Anything else is dropped — a half or nonsense window
- * must never turn into "every car is available".
+ * dates, a real rental (drop-off after pickup), at most MAX_WINDOW_DAYS long,
+ * starting no earlier than yesterday (one day of grace because the server
+ * judges "today" in UTC while renters pick dates in Phoenix or Tampa) and no
+ * further out than the booking horizon. Anything else is dropped — a half or
+ * nonsense window must never turn into "every car is available".
  */
 export function parseDateWindow(start: string | undefined, end: string | undefined, today = todayIso()): { start: string; end: string } | undefined {
   if (!start || !end || !isValidIsoDate(start) || !isValidIsoDate(end)) return undefined;
-  if (end < start) return undefined;
+  if (end <= start) return undefined;
   if (daysBetween(start, end) > MAX_WINDOW_DAYS) return undefined;
-  if (end < today) return undefined;
+  if (start < addDays(today, -1)) return undefined;
+  if (daysBetween(today, start) > MAX_WINDOW_DAYS) return undefined;
   return { start, end };
 }
 
-/** Rental length the window implies: pickup day to drop-off day, at least 1. */
+/** Rental length the window implies: pickup day to drop-off day. */
 export function windowDays(query: { start?: string; end?: string }): number | undefined {
   if (!query.start || !query.end) return undefined;
   return Math.max(1, daysBetween(query.start, query.end));
 }
 
 /**
- * The days the car is actually out for a window, in the busy read's terms:
- * the drop-off day is rentable again (day-granular rule shared with
- * public_vehicle_availability), so [pickup, drop-off − 1], never empty.
+ * The range the busy read is asked about: the whole window, drop-off day
+ * included. Conservative on purpose — the booking calendar treats every day
+ * of a selection as one the car must be free on, so the grid asks the same
+ * question and can never advertise a car the calendar would then refuse.
+ * (Asking for [pickup, drop-off − 1] listed cars whose next booking picks up
+ * on the renter's drop-off day; review of #99.)
  */
 export function busyRangeFor(window: { start: string; end: string }): { start: string; end: string } {
-  if (window.end <= window.start) return { start: window.start, end: window.start };
-  const e = new Date(`${window.end}T00:00:00Z`);
-  e.setUTCDate(e.getUTCDate() - 1);
-  return { start: window.start, end: e.toISOString().slice(0, 10) };
+  return { start: window.start, end: window.end };
 }
 
 export type SearchParamsLike = Record<string, string | string[] | undefined>;

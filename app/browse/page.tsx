@@ -8,7 +8,7 @@ import { FilterForm } from '@/components/browse/FilterForm';
 import { ListingGrid } from '@/components/browse/ListingGrid';
 import { containerClassName, serifStyle } from '@/components/browse/tokens';
 import { browseEnabled } from '@/domain/booking/config';
-import { formatRangeLabel } from '@/domain/booking/dates';
+import { formatRangeLabel, formatShortDate } from '@/domain/booking/dates';
 import { parseMarketplaceQuery, toMarketplaceSearchParams, type SearchParamsLike } from '@/domain/booking/marketplaceQuery';
 import { getMarketplaceFacets, getMarketplaceListings } from '@/domain/booking/service';
 
@@ -106,13 +106,13 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
           </div>
 
           {availability && (
-            <p className={`mb-4 rounded-lg border px-3.5 py-2.5 text-[12px] ${availability.checked ? 'border-[#2A2E3A] text-[#9BA1B0]' : 'border-[#FFB84D]/45 bg-[#FFB84D]/10 text-[#F0F2F5]'}`} role={availability.checked ? undefined : 'status'}>
+            <p className={`mb-4 rounded-lg border px-3.5 py-2.5 text-[12px] ${availability.checked ? 'border-[#2A2E3A] text-[#9BA1B0]' : 'border-[#FFB84D]/45 bg-[#FFB84D]/10 text-[#F0F2F5]'}`}>
             {availability.checked
-              ? <>Showing cars available <span className="text-[#F0F2F5]">{formatRangeLabel(availability.start, availability.end)}</span>. Final availability is confirmed when you book.</>
-              : <>We couldn&apos;t check availability for {formatRangeLabel(availability.start, availability.end)} just now, so every car is shown. Dates are confirmed when you book.</>}
+              ? <>Showing cars available <span className="text-[#F0F2F5]" aria-label={`${formatShortDate(availability.start)} to ${formatShortDate(availability.end)}`}>{formatRangeLabel(availability.start, availability.end)}</span>. We&apos;ll confirm your exact dates when you book.</>
+              : <>We couldn&apos;t check availability for {formatRangeLabel(availability.start, availability.end)} just now, so every car is shown. We&apos;ll confirm your exact dates when you book.</>}
             </p>
           )}
-          {page.listings.length > 0 ? <ListingGrid listings={page.listings} dates={availability ? { start: availability.start, end: availability.end } : undefined} /> : <EmptyState totalInCatalog={catalogTotal} />}
+          {page.listings.length > 0 ? <ListingGrid listings={page.listings} dates={availability ? { start: availability.start, end: availability.end } : undefined} /> : <EmptyState totalInCatalog={catalogTotal} dates={availability?.checked ? { start: availability.start, end: availability.end } : undefined} />}
 
           {(hasPrev || hasNext) && (
             <nav className="mt-10 flex items-center justify-between text-[13px]" aria-label="Pagination">

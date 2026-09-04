@@ -1,7 +1,7 @@
 import { cache } from 'react';
 import { adaptFleetVehicle, adaptTeam, publicImageUrl } from './adapters';
 import { applyMarketplaceQuery, computeFacets, excludeBusy, listingKey } from './marketplaceCore';
-import { busyRangeFor } from './marketplaceQuery';
+import { busyRangeFor, todayIso } from './marketplaceQuery';
 import { fetchFleetBusy, fetchMarketplaceFleet, fetchMarketplaceTeams, type RpcMarketplaceFleetRow, type RpcMarketplaceTeamRow } from './rpcClient';
 import type { BusyResult, MarketplaceFacets, MarketplaceListing, MarketplacePage, MarketplaceQuery } from './publicContracts';
 
@@ -76,6 +76,9 @@ const loadCatalog = perRequest(async (): Promise<MarketplaceListing[]> => {
  */
 export async function getSupabaseFleetBusy(window: { start: string; end: string }, teamSlug?: string): Promise<BusyResult> {
   const range = busyRangeFor(window);
+  // The function answers [] for a window it considers past; that is not "all
+  // free". Treat it as unchecked so the page says so.
+  if (range.end < todayIso()) return { busy: new Set(), checked: false };
   try {
     const rows = await fetchFleetBusy(range.start, range.end, teamSlug);
     return { busy: new Set(rows.map((r) => listingKey(r.team_slug, r.vehicle_slug))), checked: true };

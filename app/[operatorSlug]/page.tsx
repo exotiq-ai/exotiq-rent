@@ -6,7 +6,7 @@ import { driveFontClassName } from '@/components/drive-exotiq/fonts';
 import { HTitle, Money, PhoneViewport } from '@/components/drive-exotiq/BookingChrome';
 import { FilterBar } from '@/components/browse/FilterBar';
 import { browseEnabled, getSiteMode } from '@/domain/booking/config';
-import { formatRangeLabel } from '@/domain/booking/dates';
+import { formatRangeLabel, formatShortDate } from '@/domain/booking/dates';
 import { applyMarketplaceQuery, computeFacets, excludeBusy, filterListings } from '@/domain/booking/marketplaceCore';
 import { parseMarketplaceQuery, toMarketplaceSearchParams, type SearchParamsLike } from '@/domain/booking/marketplaceQuery';
 import { getFleetBusy, getPublicTeamStorefront } from '@/domain/booking/service';
@@ -181,14 +181,14 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
                 <FilterBar key={filterKey} facets={facets} query={query} action={`/${team.slug}`} />
               </div>
               {availability && (
-                <p className={`mt-4 rounded-lg border px-3.5 py-2.5 text-[12px] ${availability.checked ? 'border-[#2A2E3A] text-[#9BA1B0]' : 'border-[#FFB84D]/45 bg-[#FFB84D]/10 text-[#F0F2F5]'}`} role={availability.checked ? undefined : 'status'}>
+                <p className={`mt-4 rounded-lg border px-3.5 py-2.5 text-[12px] ${availability.checked ? 'border-[#2A2E3A] text-[#9BA1B0]' : 'border-[#FFB84D]/45 bg-[#FFB84D]/10 text-[#F0F2F5]'}`}>
                   {availability.checked
-                    ? <>Showing cars available <span className="text-[#F0F2F5]">{formatRangeLabel(availability.start, availability.end)}</span>. Final availability is confirmed when you book.</>
-                    : <>We couldn&apos;t check availability for {formatRangeLabel(availability.start, availability.end)} just now, so every car is shown. Dates are confirmed when you book.</>}
+                    ? <>Showing cars available <span className="text-[#F0F2F5]" aria-label={`${formatShortDate(availability.start)} to ${formatShortDate(availability.end)}`}>{formatRangeLabel(availability.start, availability.end)}</span>. We&apos;ll confirm your exact dates when you book.</>
+                    : <>We couldn&apos;t check availability for {formatRangeLabel(availability.start, availability.end)} just now, so every car is shown. We&apos;ll confirm your exact dates when you book.</>}
                 </p>
               )}
               <div className="mt-4 flex items-center justify-between px-1">
-                <h2 className="text-[10px] uppercase tracking-[0.24em] text-[#848A9A]">{availability?.checked ? 'Available for your dates' : 'Available now'}</h2>
+                <h2 className="text-[10px] uppercase tracking-[0.24em] text-[#848A9A]">{availability ? (availability.checked ? 'Available for your dates' : 'All vehicles') : 'Available now'}</h2>
                 <div className="text-[11px] text-[#9BA1B0]">
                   {shown.length === vehicles.length ? `${vehicles.length} vehicles` : `${shown.length} of ${vehicles.length} vehicles`}
                 </div>
@@ -203,9 +203,13 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
               {shown.length === 0 ? (
                 <div className="mt-3 flex flex-col items-center rounded-2xl border border-dashed border-[#2A2E3A] px-6 py-12 text-center">
                   <div className="grid h-12 w-12 place-items-center rounded-full border border-[#2A2E3A] bg-[#161922] text-[#C8A664]"><CarFront size={22} /></div>
-                  <h3 className="mt-4 text-[20px] text-[#F0F2F5]" style={{ fontFamily: 'var(--font-drive-newsreader), Georgia, serif', fontWeight: 500 }}>No cars match those filters.</h3>
-                  <p className="mt-2 text-sm leading-6 text-[#9BA1B0]">{team.name} lists {vehicles.length} cars right now. Loosen a filter, or see them all.</p>
-                  <Link href={`/${team.slug}`} className="mt-5 rounded-xl border border-[#C8A664]/40 px-5 py-3 text-sm font-semibold text-[#C8A664]">Show all {vehicles.length}</Link>
+                  <h3 className="mt-4 text-[20px] text-[#F0F2F5]" style={{ fontFamily: 'var(--font-drive-newsreader), Georgia, serif', fontWeight: 500 }}>
+                    {availability?.checked ? `Nothing is free ${formatRangeLabel(availability.start, availability.end)}.` : 'No cars match those filters.'}
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-[#9BA1B0]">
+                    {availability?.checked ? `Try different dates, or see all ${vehicles.length} cars ${team.name} lists.` : `${team.name} lists ${vehicles.length} cars right now. Loosen a filter, or see them all.`}
+                  </p>
+                  <Link href={`/${team.slug}`} className="mt-5 rounded-xl border border-[#C8A664]/40 px-5 py-3 text-sm font-semibold text-[#C8A664]">{availability?.checked ? `See all ${vehicles.length} (clears dates)` : `Show all ${vehicles.length}`}</Link>
                 </div>
               ) : (
               <div className="mt-3 space-y-4 lg:grid lg:grid-cols-2 lg:gap-5 lg:space-y-0">

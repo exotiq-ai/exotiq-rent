@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CalendarDays, CircleDot, Gauge, MapPin, Settings2, ShieldCheck, Zap } from 'lucide-react';
 import { browseEnabled } from '@/domain/booking/config';
+import { formatRangeLabel } from '@/domain/booking/dates';
 import { getPublicVehicleContext } from '@/domain/booking/service';
 import { Money, PhoneViewport } from './BookingChrome';
 import { VehicleGallery } from './VehicleGallery';
@@ -34,6 +35,12 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
     .filter(Boolean);
   // Dates chosen on a grid ride into the booking flow (MP-10 / T-13).
   const bookHref = dates ? `/${operator.slug}/${vehicle.slug}/book?start=${dates.start}&end=${dates.end}` : `/${operator.slug}/${vehicle.slug}/book`;
+  const yourDates = dates ? (
+    <p className="mb-2 flex items-center justify-between text-[12px] text-[#9BA1B0]">
+      <span>Your dates: <span className="text-[#F0F2F5]">{formatRangeLabel(dates.start, dates.end)}</span></span>
+      <Link href={`/${operator.slug}?start=${dates.start}&end=${dates.end}`} className="underline decoration-[#2A2E3A] underline-offset-4 hover:text-[#F0F2F5]">Change</Link>
+    </p>
+  ) : null;
   const desktopNav = (
     <>
       <Link href={`/${operator.slug}`} className="transition hover:text-[#F0F2F5]">{operator.name}</Link>
@@ -115,14 +122,16 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
                 <div className="flex justify-between gap-4"><dt className="text-[#9BA1B0]">Drivers</dt><dd className="text-[#F0F2F5]">Verified before pickup</dd></div>
                 {pickupParts.length > 0 && <div className="flex justify-between gap-4"><dt className="text-[#9BA1B0]">Pickup</dt><dd className="text-right text-[#F0F2F5]">{pickupParts.join(', ')}</dd></div>}
               </dl>
-              <Link href={bookHref} className="mt-6 block rounded-xl bg-[#C8A664] px-5 py-4 text-center text-[15px] font-medium text-[#1A1308] shadow-[0_14px_34px_rgba(200,166,100,.20)] transition hover:brightness-105">Select dates</Link>
+              <div className="mt-6">{yourDates}</div>
+              <Link href={bookHref} className="block rounded-xl bg-[#C8A664] px-5 py-4 text-center text-[15px] font-medium text-[#1A1308] shadow-[0_14px_34px_rgba(200,166,100,.20)] transition hover:brightness-105">{dates ? 'Book these dates' : 'Select dates'}</Link>
               <p className="mt-4 text-[12px] leading-5 text-[#848A9A]">{vehicle.footnote}. Final availability is confirmed at the booking step.</p>
             </div>
           </aside>
         </div>
       </div>
       <div className="absolute bottom-5 left-0 right-0 z-10 border-t border-[#2A2E3A] bg-[#0D0F14] px-4 pb-4 pt-3 shadow-[0_-24px_42px_rgba(13,15,20,.96)] lg:hidden">
-        <Link href={bookHref} className="block rounded-xl bg-[#C8A664] px-5 py-4 text-center text-[15px] font-medium text-[#1A1308] shadow-[0_14px_34px_rgba(200,166,100,.20)]">Select dates</Link>
+        {yourDates}
+        <Link href={bookHref} className="block rounded-xl bg-[#C8A664] px-5 py-4 text-center text-[15px] font-medium text-[#1A1308] shadow-[0_14px_34px_rgba(200,166,100,.20)]">{dates ? 'Book these dates' : 'Select dates'}</Link>
       </div>
     </PhoneViewport>
   );

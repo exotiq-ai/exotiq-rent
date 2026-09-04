@@ -94,12 +94,12 @@ describe('supabase marketplace service', () => {
     expect(page.listings.map((l) => l.vehicle.slug)).toEqual(['a']);
   });
 
-  it('subtracts the busy read for a window, calling it as [pickup, drop-off − 1] and never when there is no window', async () => {
+  it('subtracts the busy read for the whole inclusive window, and never calls it without one', async () => {
     vi.mocked(fetchMarketplaceTeams).mockResolvedValue(teams);
     vi.mocked(fetchMarketplaceFleet).mockResolvedValue([car({ vehicle_slug: 'a' }), car({ vehicle_slug: 'b' })]);
     vi.mocked(fetchFleetBusy).mockResolvedValue([{ team_slug: 'exotiq', vehicle_slug: 'a' }]);
     const page = await getSupabaseMarketplaceListings({ ...parseMarketplaceQuery(), start: '2099-01-10', end: '2099-01-12' });
-    expect(fetchFleetBusy).toHaveBeenCalledWith('2099-01-10', '2099-01-11', undefined);
+    expect(fetchFleetBusy).toHaveBeenCalledWith('2099-01-10', '2099-01-12', undefined);
     expect(page.listings.map((l) => l.vehicle.slug)).toEqual(['b']);
     expect(page.availability).toEqual({ start: '2099-01-10', end: '2099-01-12', checked: true });
     vi.mocked(fetchFleetBusy).mockClear();
