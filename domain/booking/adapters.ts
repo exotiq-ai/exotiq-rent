@@ -48,7 +48,7 @@ export function adaptTeam(row: RpcTeamRow): Operator {
 // relative filesystem paths ("/src/assets/…", "/lovable-uploads/…") that its
 // UI filters out client-side before display. Resolved against this app's
 // origin they 404, so only absolute https URLs cross the adapter boundary.
-function publicImageUrl(url: string | null | undefined): string | null {
+export function publicImageUrl(url: string | null | undefined): string | null {
   return url && url.startsWith('https://') ? url : null;
 }
 

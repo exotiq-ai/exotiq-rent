@@ -1,69 +1,71 @@
 import { cache } from 'react';
-import { adaptFleetVehicle, adaptTeam } from './adapters';
+import { adaptFleetVehicle, adaptTeam, publicImageUrl } from './adapters';
 import { applyMarketplaceQuery, computeFacets } from './marketplaceCore';
-import { fetchPublicTeam, fetchPublicTeamFleet } from './rpcClient';
+import { fetchMarketplaceFleet, fetchMarketplaceTeams, type RpcMarketplaceFleetRow, type RpcMarketplaceTeamRow } from './rpcClient';
 import type { MarketplaceFacets, MarketplaceListing, MarketplacePage, MarketplaceQuery } from './publicContracts';
 
 /**
- * Supabase-mode marketplace via fan-out (MP-4 / M7c).
+ * Supabase-mode marketplace catalog (MP-7 / M7f).
  *
- * No cross-tenant read RPC exists yet (verified 2026-08-21: both
- * public_marketplace_fleet and public_marketplace_teams are PGRST202), so the
- * grid is assembled from the per-tenant reads that already power the
- * storefronts. The tenant list is a server-only env var — the same visibility
- * gating the RPCs enforce still applies per tenant, this just names which
- * storefronts the grid unions. Each tenant fetch runs in parallel under the
- * existing `revalidate: 300` cache, so the cost is N calls per revalidation
- * window from the server, never per pageview from renters. A failing tenant
- * degrades (skipped, logged) rather than failing the page.
+ * Two zero-argument public RPCs (Lovable, 2026-09-03): public_marketplace_teams()
+ * lists the tenants that opted in through the Command Center toggle
+ * (teams.marketplace_listed) AND pass the storefront visibility rule;
+ * public_marketplace_fleet() lists their cars through the same predicates the
+ * storefront grid applies, minus unlisted vehicles. Both ride the rpc()
+ * revalidate window (300s), so the grid costs two calls per window from the
+ * server, never per pageview.
  *
- * When Lovable ships `public_marketplace_fleet` (M7f / MP-7), `loadCatalog`
- * is the one function body that changes.
+ * The two reads are one unit: if either fails, the grid shows its empty state
+ * for that window (logged) rather than half a catalog. A tenant no longer
+ * needs an env var or a redeploy to appear — the M7c fan-out and
+ * MARKETPLACE_TEAM_SLUGS are gone.
  */
 
 const perRequest: typeof cache = typeof cache === 'function' ? cache : (fn) => fn;
 
-export function configuredMarketplaceTeamSlugs(): string[] {
-  // Deduped: a slug listed twice would double every listing and facet count.
-  return Array.from(
-    new Set(
-      (process.env.MARKETPLACE_TEAM_SLUGS ?? '')
-        .split(',')
-        .map((s) => s.trim().toLowerCase())
-        .filter(Boolean),
-    ),
-  );
-}
-
-async function loadTenant(slug: string): Promise<MarketplaceListing[]> {
-  try {
-    const teamRow = await fetchPublicTeam(slug);
-    if (!teamRow) return [];
-    const team = adaptTeam(teamRow);
-    const fleet = await fetchPublicTeamFleet(slug);
-    // Same quality gate as the storefront grid: a car without a hero image
-    // would render as a blank card, so it stays off the marketplace too.
-    return fleet
-      .filter((row) => Boolean(row.hero_image_url))
-      .map((row) => ({
-        team,
-        vehicle: adaptFleetVehicle(row, team),
-        // The fleet RPC exposes one hero image, not a count; the real
-        // photo_count arrives with the M7f RPC. Until then 'featured' falls
-        // through to its price tiebreak, which is the documented ordering.
-        photoCount: 1,
-      }));
-  } catch (error) {
-    console.error(`[marketplace] tenant "${slug}" skipped:`, error instanceof Error ? error.message : error);
-    return [];
+/** Pure join of the two RPC results into listings. Exported for tests. */
+export function buildCatalog(teamRows: RpcMarketplaceTeamRow[], fleetRows: RpcMarketplaceFleetRow[]): MarketplaceListing[] {
+  const teams = new Map(teamRows.map((row) => [row.slug, { operator: adaptTeam(row), verified: row.verified === true }]));
+  const listings: MarketplaceListing[] = [];
+  for (const row of fleetRows) {
+    const team = teams.get(row.team_slug);
+    if (!team) {
+      // The two calls are separate statements, not one snapshot: a tenant
+      // toggled between them can yield fleet rows with no team. Drop, don't throw.
+      console.warn(`[marketplace] fleet row "${row.vehicle_slug}" has no listed team "${row.team_slug}" — skipped`);
+      continue;
+    }
+    // The adapter's rule: only an absolute https hero renders (relative
+    // Command-Center paths become ''), and a hero-less card is a blank card,
+    // so such cars stay off the marketplace. Stricter than the storefront's
+    // Boolean(hero_image_url) gate on purpose.
+    if (!publicImageUrl(row.hero_image_url)) continue;
+    listings.push({
+      team: team.operator,
+      vehicle: adaptFleetVehicle(row, team.operator),
+      // A listing here always has a hero, so its photo count is at least 1
+      // whatever the RPC counted (0 when the hero is the legacy image_url).
+      photoCount: Math.max(1, Number(row.photo_count ?? 1) || 1),
+      // Verified is an operator-level program: the team row is the source;
+      // the fleet copy is a denormalisation that may only add.
+      verified: team.verified || row.verified === true,
+    });
   }
+  // Deterministic order before the core sorts: facet labels keep the first
+  // spelling seen, and the RPCs carry no ORDER BY by design.
+  return listings.sort((a, b) => a.team.slug.localeCompare(b.team.slug) || a.vehicle.slug.localeCompare(b.vehicle.slug));
 }
 
-// One fan-out per request even though listings and facets both need the
+// One pair of reads per request even though listings and facets both need the
 // catalog — React.cache dedupes within the render.
 const loadCatalog = perRequest(async (): Promise<MarketplaceListing[]> => {
-  const perTenant = await Promise.all(configuredMarketplaceTeamSlugs().map(loadTenant));
-  return perTenant.flat();
+  try {
+    const [teamRows, fleetRows] = await Promise.all([fetchMarketplaceTeams(), fetchMarketplaceFleet()]);
+    return buildCatalog(teamRows, fleetRows);
+  } catch (error) {
+    console.error('[marketplace] catalog unavailable this window:', error instanceof Error ? error.message : error);
+    return [];
+  }
 });
 
 export async function getSupabaseMarketplaceListings(query: MarketplaceQuery): Promise<MarketplacePage> {
