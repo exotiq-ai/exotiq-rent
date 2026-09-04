@@ -32,9 +32,13 @@ export function SavedList() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready]);
   if (!ready) return <div className="h-40" aria-busy />;
+  const status = <p role="status" aria-live="polite" className="sr-only">{announcement}</p>;
+  const heading = <h2 ref={headingRef} tabIndex={-1} className="sr-only outline-none">Your saved cars</h2>;
   if (saved.length === 0) {
     return (
       <div className="flex flex-col items-center rounded-2xl border border-dashed border-[#2A2E3A] px-6 py-16 text-center">
+        {status}
+        {heading}
         <div className="grid h-14 w-14 place-items-center rounded-full border border-[#2A2E3A] bg-[#161922] text-[#C8A664]"><Heart size={24} /></div>
         <h2 className="mt-5 text-[24px] text-[#F0F2F5]" style={serifStyle}>Nothing saved yet.</h2>
         <p className="mt-3 max-w-md text-sm leading-6 text-[#9BA1B0]">Tap the heart on any car and it lands here. Saved cars live only in this browser; e-mail yourself the list to keep it anywhere else.</p>
@@ -44,8 +48,8 @@ export function SavedList() {
   }
   return (
     <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-10">
-      <p role="status" aria-live="polite" className="sr-only">{announcement}</p>
-      <h2 ref={headingRef} tabIndex={-1} className="sr-only">Your saved cars</h2>
+      {status}
+      {heading}
       <ul className="divide-y divide-[#2A2E3A] rounded-2xl border border-[#2A2E3A] bg-[#0D0F14]">
         {saved.map((car) => (
           <li key={`${car.team_slug}/${car.vehicle_slug}`} className="flex items-center gap-4 p-4">

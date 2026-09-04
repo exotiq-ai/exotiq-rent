@@ -5,9 +5,10 @@
 import { rentersFromEmail, rentersPostalAddress, rentersReplyTo, resendApiKey } from './config';
 import { logEmail } from './store';
 
-export type Mail = { to: string; subject: string; html: string; text: string; kind: string; renterId?: string | null; /** Every message carries it: RFC 8058 one-click unsubscribe headers. */ unsubscribeHref: string };
+export type Mail = { to: string; subject: string; html: string; text: string; kind: string; renterId?: string | null; /** Every message carries it: RFC 8058 one-click unsubscribe headers. */ unsubscribeHref: string; /** A marketing message (CAN-SPAM): refused unless the postal address is configured. Today every send is transactional. */ commercial?: boolean };
 
 export async function sendMail(mail: Mail): Promise<{ id: string | null }> {
+  if (mail.commercial && !rentersPostalAddress()) throw new Error('commercial mail needs RENTERS_POSTAL_ADDRESS');
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${resendApiKey()}`, 'Content-Type': 'application/json' },

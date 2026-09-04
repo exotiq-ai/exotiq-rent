@@ -10,7 +10,6 @@ export type RenterRow = {
   id: string;
   email: string;
   name: string | null;
-  phone: string | null;
   marketing_consent: boolean;
   consented_at: string | null;
   consent_source: string | null;
@@ -19,6 +18,9 @@ export type RenterRow = {
   confirmed_at: string | null;
   confirm_token_hash: string | null;
   confirm_sent_at: string | null;
+  /** Comma list of what the pending link confirms: address, list, alert, consent. */
+  confirm_scope: string | null;
+  confirm_issued_at: string | null;
   unsubscribed_at: string | null;
   alerts_paused_at: string | null;
   first_source: string | null;
@@ -50,7 +52,7 @@ export class StoreError extends Error {
   }
 }
 
-const RENTER_COLUMNS = 'id,email,name,phone,marketing_consent,consented_at,consent_source,consent_text_version,consent_requested_at,confirmed_at,confirm_token_hash,confirm_sent_at,unsubscribed_at,alerts_paused_at,first_source,first_booking_ref,last_booking_ref,bookings_count,created_at';
+const RENTER_COLUMNS = 'id,email,name,marketing_consent,consented_at,consent_source,consent_text_version,consent_requested_at,confirmed_at,confirm_token_hash,confirm_sent_at,confirm_scope,confirm_issued_at,unsubscribed_at,alerts_paused_at,first_source,first_booking_ref,last_booking_ref,bookings_count,created_at';
 const ALERT_COLUMNS = 'id,renter_id,team_slug,vehicle_slug,start_on,end_on,status,created_at';
 
 async function rest<T>(path: string, init: { method?: string; body?: unknown; prefer?: string } = {}): Promise<T> {
@@ -151,18 +153,41 @@ export async function listActiveAlerts(): Promise<AlertRow[]> {
   return all;
 }
 
-/** Alerts still unconfirmed after the grace period are retired so they cannot pile up. */
+/** Alerts whose pickup day has passed are expired regardless of the renter's state. */
+export async function expirePastAlerts(todayIso: string, nowIso: string): Promise<number> {
+  const rows = await rest<Array<{ id: string }>>(`availability_alerts?status=eq.active&start_on=lt.${todayIso}&select=id`, { method: 'PATCH', body: { status: 'expired', last_checked_at: nowIso }, prefer: 'return=representation' });
+  return rows.length;
+}
+
+/** Alerts a week old whose address never confirmed, or is paused by an unsubscribe, are retired so they cannot pile up. */
 export async function expireUnconfirmedAlerts(olderThanIso: string): Promise<number> {
-  const rows = await rest<Array<{ id: string }>>(`availability_alerts?status=eq.active&created_at=lt.${enc(olderThanIso)}&select=id,renters!inner(confirmed_at)&renters.confirmed_at=is.null&limit=500`);
+  const rows = await rest<Array<{ id: string }>>(`availability_alerts?status=eq.active&created_at=lt.${enc(olderThanIso)}&select=id,renters!inner(confirmed_at,alerts_paused_at)&renters.or=(confirmed_at.is.null,alerts_paused_at.not.is.null)&limit=500`);
   if (rows.length === 0) return 0;
   await rest<void>(`availability_alerts?id=in.(${rows.map((r) => r.id).join(',')})`, { method: 'PATCH', body: { status: 'expired' }, prefer: 'return=minimal' });
   return rows.length;
 }
 
+/** A row left in `notifying` by a run that died mid-send goes back to active after an hour. */
+export async function releaseStaleClaims(olderThanIso: string): Promise<number> {
+  const rows = await rest<Array<{ id: string }>>(`availability_alerts?status=eq.notifying&last_checked_at=lt.${enc(olderThanIso)}&select=id`, { method: 'PATCH', body: { status: 'active' }, prefer: 'return=representation' });
+  return rows.length;
+}
+
 /** Claim an alert before sending: only one worker can move it from active to notifying. */
-export async function claimAlert(id: string): Promise<boolean> {
-  const rows = await rest<Array<{ id: string }>>(`availability_alerts?id=eq.${enc(id)}&status=eq.active&select=id`, { method: 'PATCH', body: { status: 'notifying' }, prefer: 'return=representation' });
+export async function claimAlert(id: string, nowIso: string): Promise<boolean> {
+  const rows = await rest<Array<{ id: string }>>(`availability_alerts?id=eq.${enc(id)}&status=eq.active&select=id`, { method: 'PATCH', body: { status: 'notifying', last_checked_at: nowIso }, prefer: 'return=representation' });
   return rows.length === 1;
+}
+
+/** Retention: an address that never confirmed is forgotten after the window; an expired pending link is dropped. */
+export async function purgeUnconfirmedRenters(olderThanIso: string): Promise<number> {
+  const rows = await rest<Array<{ id: string }>>(`renters?confirmed_at=is.null&created_at=lt.${enc(olderThanIso)}&select=id`, { method: 'DELETE', prefer: 'return=representation' });
+  return rows.length;
+}
+
+export async function expireConfirmTokens(olderThanIso: string): Promise<number> {
+  const rows = await rest<Array<{ id: string }>>(`renters?confirm_token_hash=not.is.null&confirm_issued_at=lt.${enc(olderThanIso)}&select=id`, { method: 'PATCH', body: { confirm_token_hash: null, confirm_scope: null }, prefer: 'return=representation' });
+  return rows.length;
 }
 
 export async function updateAlert(id: string, fields: { status?: AlertStatus; last_checked_at?: string; notified_at?: string }): Promise<void> {
@@ -170,7 +195,7 @@ export async function updateAlert(id: string, fields: { status?: AlertStatus; la
 }
 
 export async function cancelAlertsForRenter(renterId: string): Promise<void> {
-  await rest<void>(`availability_alerts?renter_id=eq.${enc(renterId)}&status=eq.active`, { method: 'PATCH', body: { status: 'cancelled' }, prefer: 'return=minimal' });
+  await rest<void>(`availability_alerts?renter_id=eq.${enc(renterId)}&status=in.(active,notifying)`, { method: 'PATCH', body: { status: 'cancelled' }, prefer: 'return=minimal' });
 }
 
 export async function logEvent(event: { renter_id?: string | null; kind: string; source?: string | null; path?: string | null; ip_hash?: string | null; meta?: Record<string, unknown> }): Promise<void> {

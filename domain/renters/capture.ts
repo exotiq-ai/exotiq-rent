@@ -1,23 +1,25 @@
 /**
- * Capture orchestration (MP-14, review round). One entry point for every
+ * Capture orchestration (MP-14, review round 3). One entry point for every
  * surface: the consent line at booking, "e-mail me my list", an availability
  * alert, the footer. Rules:
  * - A person is recorded once per e-mail; later requests add to the record.
- * - Marketing consent is never written from a bare POST. A request records a
- *   PENDING consent; the confirmation click turns it on. The one exception
- *   is a booking verified by its confirmation token — the renter proved the
- *   address and ticked the box on the same screen.
- * - Nothing but the confirmation e-mail goes out until the address is
- *   confirmed, and again after an unsubscribe (alerts pause until the person
- *   clicks). Once confirmed, the thing they asked for is delivered at once,
- *   with per-address cooldowns so a stranger cannot make us mail someone.
- * - Per-IP and per-address rate limits, a cap on active alerts, no duplicate
- *   alerts, and honest outcomes: a failed send is reported, not swallowed.
+ * - Nothing a bare POST says is trusted about the address. Every request
+ *   records what was asked (its SCOPE) and the confirmation click applies
+ *   exactly the scope named in the mail that carried the link: address,
+ *   list, alert, consent. A stranger's consent request can only ever reach
+ *   the mailbox owner as a mail that says "first looks" on it.
+ * - A booking counts as proof of the address only when the tenant DB binds
+ *   the booking to it (customer_email_hash — pending a Lovable change); until
+ *   then a booking capture takes the same click path as everything else.
+ * - Once confirmed and not paused, requested e-mail is delivered at once with
+ *   per-address cooldowns; unsubscribe pauses alerts and retires pending
+ *   links; per-IP and per-address limits apply before anything else.
  */
+import { createHash } from 'node:crypto';
 import { getDataMode, siteUrl } from '../booking/config';
 import { formatRangeLabel } from '../booking/dates';
 import { parseMarketplaceQuery } from '../booking/marketplaceQuery';
-import { fetchBookingByRef } from '../booking/rpcClient';
+import { fetchBookingByRef, fetchPublicVehicle } from '../booking/rpcClient';
 import { getMarketplaceListings } from '../booking/service';
 import type { MarketplaceListing } from '../booking/publicContracts';
 import { rentersTokenSecret, rentersTokenSecretPrevious } from './config';
@@ -45,7 +47,7 @@ import { hashIp, hashToken, newToken, safeEqual, unsubscribeToken, unsubscribeTo
 import type { CaptureRequest } from './validate';
 
 export type CaptureMeta = { ip: string; userAgent: string };
-export type CaptureStatus = 'confirm_sent' | 'delivered' | 'recorded' | 'cooldown' | 'mail_failed';
+export type CaptureStatus = 'confirm_sent' | 'delivered' | 'alert_set' | 'recorded' | 'cooldown' | 'mail_failed';
 export type CaptureOutcome = { status: CaptureStatus; renterId: string | null };
 
 /** Thrown for a 429; the message is renter-facing. */
@@ -53,8 +55,13 @@ export class RateLimitedError extends Error {}
 /** Thrown for a 400 the validator could not know about (needs the store); renter-facing message. */
 export class CaptureRefusedError extends Error {}
 
+export type Scope = 'address' | 'list' | 'alert' | 'consent';
+
 const CONFIRM_RESEND_AFTER_MS = 10 * 60 * 1000;
+const CONFIRM_REUSE_MS = 24 * 60 * 60 * 1000;
+const CONFIRM_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const CONFIRM_DAILY_CAP = 5;
+const CONFIRM_DAILY_CAP_PAUSED = 1;
 const DELIVERY_COOLDOWN_MS = 60 * 60 * 1000;
 const MAX_ACTIVE_ALERTS = 5;
 const IP_EVENTS_PER_10_MIN = 30;
@@ -72,6 +79,10 @@ export function unsubscribeHref(renterId: string): string {
   return `${siteUrl()}/api/renters/unsubscribe?r=${renterId}&token=${unsubscribeToken(renterId, rentersTokenSecret())}`;
 }
 
+export function parseScope(raw: string | null | undefined): Set<Scope> {
+  return new Set((raw ?? '').split(',').filter((s): s is Scope => s === 'address' || s === 'list' || s === 'alert' || s === 'consent'));
+}
+
 async function catalogByKey(): Promise<Map<string, MarketplaceListing>> {
   try {
     const page = await getMarketplaceListings({ ...parseMarketplaceQuery({}), limit: 1000, offset: 0 });
@@ -81,35 +92,72 @@ async function catalogByKey(): Promise<Map<string, MarketplaceListing>> {
   }
 }
 
+/** A car's public name, from the marketplace catalog or the storefront read — never from the request. */
+async function resolveVehicleName(catalog: Map<string, MarketplaceListing>, teamSlug: string, vehicleSlug: string): Promise<string | null> {
+  const hit = catalog.get(`${teamSlug}/${vehicleSlug}`);
+  if (hit) return hit.vehicle.name;
+  if (getDataMode() !== 'supabase') return null;
+  try {
+    const row = await fetchPublicVehicle(teamSlug, vehicleSlug);
+    return row?.name ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function dollars(cents: number): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(cents / 100);
 }
 
-/** What this request asked for, in words for the confirmation e-mail. */
-function purposes(req: CaptureRequest, renter: RenterRow, pendingConsent: boolean): string[] {
+/** What a scope means, in words, for the mail and the confirm page. */
+export function describeScope(scope: Set<Scope>, alertRange?: string): string[] {
   const out: string[] = [];
-  if (req.source === 'save_list') out.push('your saved cars');
-  if (req.source === 'alert' && req.alert) out.push(`an alert for ${formatRangeLabel(req.alert.start, req.alert.end)}`);
-  if (pendingConsent || renter.consent_requested_at) out.push('first looks at new cars and early access (occasional e-mail, unsubscribe any time)');
-  if (out.length === 0) out.push('e-mail from Drive Exotiq');
+  if (scope.has('list')) out.push('your saved cars');
+  if (scope.has('alert')) out.push(alertRange ? `an availability alert for ${alertRange}` : 'your availability alert');
+  if (scope.has('consent')) out.push('first looks at new cars and early access (occasional e-mail, unsubscribe any time)');
+  if (out.length === 0) out.push('this e-mail address');
   return out;
 }
 
-async function sendConfirmation(renter: RenterRow, req: CaptureRequest, pendingConsent: boolean): Promise<CaptureStatus> {
-  const recent = renter.confirm_sent_at && Date.now() - Date.parse(renter.confirm_sent_at) < CONFIRM_RESEND_AFTER_MS && renter.confirm_token_hash;
-  if (recent) return 'confirm_sent';
-  if ((await countRecentEmails(renter.email, ['confirm'], agoIso(24 * 60 * 60 * 1000))) >= CONFIRM_DAILY_CAP) return 'cooldown';
-  const token = newToken();
-  // Hash first so the link works the moment the mail lands; the sent stamp
-  // only after Resend accepts it, so a failed send can be retried at once.
-  await patchRenter(renter.id, { confirm_token_hash: hashToken(token) });
+function joinWords(what: string[]): string {
+  return what.length === 1 ? what[0] : `${what.slice(0, -1).join(', ')} and ${what[what.length - 1]}`;
+}
+
+/**
+ * Send (or re-use) the confirmation link for a scope. A live pending link
+ * whose scope already covers the ask is re-used: nothing is sent inside ten
+ * minutes, the same link is re-sent after that (so an earlier mail keeps
+ * working). A wider ask mints a new link naming everything.
+ */
+async function sendConfirmation(renter: RenterRow, want: Set<Scope>, alertRange: string | undefined): Promise<{ status: CaptureStatus; renter: RenterRow }> {
+  const paused = Boolean(renter.alerts_paused_at);
+  const issued = renter.confirm_issued_at ? Date.parse(renter.confirm_issued_at) : 0;
+  const live = Boolean(renter.confirm_token_hash) && Date.now() - issued < CONFIRM_REUSE_MS;
+  const existing = parseScope(renter.confirm_scope);
+  const covered = live && Array.from(want).every((s) => existing.has(s));
+  if (covered && renter.confirm_sent_at && Date.now() - Date.parse(renter.confirm_sent_at) < CONFIRM_RESEND_AFTER_MS) return { status: 'confirm_sent', renter };
+  if ((await countRecentEmails(renter.email, ['confirm'], agoIso(24 * 60 * 60 * 1000))) >= (paused ? CONFIRM_DAILY_CAP_PAUSED : CONFIRM_DAILY_CAP)) return { status: 'cooldown', renter };
+
+  const scope = new Set<Scope>(['address'].concat(Array.from(want), covered ? Array.from(existing) : []) as Scope[]);
+  let token: string | null = null;
+  let current = renter;
+  if (!covered) {
+    // Hash first so the link works the moment the mail lands; the sent stamp only after Resend accepts.
+    token = newToken();
+    current = await patchRenter(renter.id, { confirm_token_hash: hashToken(token), confirm_scope: Array.from(scope).join(','), confirm_issued_at: nowIso() });
+  }
+  // Re-sending an existing link needs its plaintext, which is not stored: mint anew (the old link keeps working
+  // only inside the ten-minute window above, which is the case that matters — a double tap).
+  if (!token) {
+    token = newToken();
+    current = await patchRenter(renter.id, { confirm_token_hash: hashToken(token), confirm_scope: Array.from(scope).join(','), confirm_issued_at: nowIso() });
+  }
   const href = `${siteUrl()}/api/renters/confirm?token=${token}`;
-  const what = purposes(req, renter, pendingConsent);
-  const list = what.length === 1 ? what[0] : `${what.slice(0, -1).join(', ')} and ${what[what.length - 1]}`;
+  const what = joinWords(describeScope(scope, alertRange));
   const resuming = Boolean(renter.confirmed_at);
   const { html, text } = layout({
     title: resuming ? 'Confirm this request.' : 'Confirm your e-mail.',
-    intro: `One tap confirms ${list}. If this wasn't you, ignore this e-mail and nothing happens.`,
+    intro: `One tap confirms ${what}. If this wasn't you, ignore this e-mail and nothing happens.`,
     cta: { label: resuming ? 'Confirm' : 'Confirm my e-mail', href },
     unsubscribeHref: unsubscribeHref(renter.id),
     why: 'You asked for this on Drive Exotiq.',
@@ -118,10 +166,9 @@ async function sendConfirmation(renter: RenterRow, req: CaptureRequest, pendingC
     await sendMail({ to: renter.email, subject: resuming ? 'Confirm your request on Drive Exotiq' : 'Confirm your e-mail for Drive Exotiq', html, text, kind: 'confirm', renterId: renter.id, unsubscribeHref: unsubscribeHref(renter.id) });
   } catch (error) {
     console.error('[renters] confirmation mail failed', error instanceof Error ? error.message : 'error');
-    return 'mail_failed';
+    return { status: 'mail_failed', renter: current };
   }
-  await patchRenter(renter.id, { confirm_sent_at: nowIso() });
-  return 'confirm_sent';
+  return { status: 'confirm_sent', renter: await patchRenter(renter.id, { confirm_sent_at: nowIso() }) };
 }
 
 async function sendSavedList(renter: RenterRow): Promise<'delivered' | 'cooldown' | 'recorded'> {
@@ -133,7 +180,7 @@ async function sendSavedList(renter: RenterRow): Promise<'delivered' | 'cooldown
     const l = catalog.get(`${s.team_slug}/${s.vehicle_slug}`);
     const href = `${siteUrl()}/${s.team_slug}/${s.vehicle_slug}`;
     if (l) return { name: l.vehicle.name, meta: `${dollars(l.vehicle.dailyRateCents)} per day · ${l.team.name}, ${l.team.city}`, href };
-    return { name: s.vehicle_name ?? 'A saved car', meta: s.vehicle_name ? s.team_slug.replace(/-/g, ' ') : 'Listing details unavailable right now', href };
+    return { name: s.vehicle_name ?? 'A saved car', meta: s.team_slug.replace(/-/g, ' '), href };
   });
   const { html, text } = layout({
     title: `Your ${cars.length === 1 ? 'saved car' : `${cars.length} saved cars`}.`,
@@ -143,12 +190,12 @@ async function sendSavedList(renter: RenterRow): Promise<'delivered' | 'cooldown
     unsubscribeHref: unsubscribeHref(renter.id),
     why: 'You asked us to e-mail your saved cars from Drive Exotiq.',
   });
-  await sendMail({ to: renter.email, subject: cars.length === 1 ? `Your saved car: ${cars[0].name}` : `Your ${cars.length} saved cars`, html, text: `${text}\n\n${cars.map((c) => `${c.name} — ${c.meta}\n${c.href}`).join('\n\n')}`, kind: 'saved_list', renterId: renter.id, unsubscribeHref: unsubscribeHref(renter.id) });
+  await sendMail({ to: renter.email, subject: 'Your saved cars on Drive Exotiq', html, text: `${text}\n\n${cars.map((c) => `${c.name} — ${c.meta}\n${c.href}`).join('\n\n')}`, kind: 'saved_list', renterId: renter.id, unsubscribeHref: unsubscribeHref(renter.id) });
   return 'delivered';
 }
 
-async function sendAlertSet(renter: RenterRow, alert: NonNullable<CaptureRequest['alert']>): Promise<'delivered' | 'cooldown'> {
-  if ((await countRecentEmails(renter.email, ['alert_set'], agoIso(DELIVERY_COOLDOWN_MS))) > 0) return 'cooldown';
+async function sendAlertSet(renter: RenterRow, alert: NonNullable<CaptureRequest['alert']>): Promise<'delivered' | 'alert_set'> {
+  if ((await countRecentEmails(renter.email, ['alert_set'], agoIso(DELIVERY_COOLDOWN_MS))) > 0) return 'alert_set';
   const range = formatRangeLabel(alert.start, alert.end);
   const scope = alert.vehicle_slug ? 'this car' : alert.team_slug ? 'a car from this operator' : 'a car';
   const { html, text } = layout({
@@ -163,13 +210,19 @@ async function sendAlertSet(renter: RenterRow, alert: NonNullable<CaptureRequest
 
 type VerifiedBooking = { ref: string; team_slug: string | null; vehicle_slug: string | null };
 
-/** A booking counts only when the tenant DB confirms the ref + token pair the renter was handed. */
+/**
+ * A booking proves the address only when the tenant DB returns the e-mail
+ * hash for an authorized ref + token and it matches. Until the backend ships
+ * that column, this always returns null and the booking takes the click path.
+ */
 async function verifyBooking(req: CaptureRequest): Promise<VerifiedBooking | null> {
   if (!req.booking_ref || !req.booking_token) return null;
   if (getDataMode() !== 'supabase') return null;
   try {
     const row = await fetchBookingByRef(req.booking_ref, req.booking_token);
-    if (!row || !row.authorized) return null;
+    if (!row || !row.authorized || !row.customer_email_hash) return null;
+    const expected = createHash('sha256').update(req.email.trim().toLowerCase()).digest('hex');
+    if (!safeEqual(row.customer_email_hash, expected)) return null;
     if (req.team_slug && row.team_slug && row.team_slug !== req.team_slug) return null;
     if (req.vehicle_slug && row.vehicle_slug && row.vehicle_slug !== req.vehicle_slug) return null;
     return { ref: row.booking_ref, team_slug: row.team_slug, vehicle_slug: row.vehicle_slug };
@@ -178,82 +231,72 @@ async function verifyBooking(req: CaptureRequest): Promise<VerifiedBooking | nul
   }
 }
 
-async function enforceRateLimits(ipHash: string, renter: RenterRow | null): Promise<void> {
-  const since = agoIso(10 * 60 * 1000);
-  if (ipHash && (await countRecentEvents({ ip_hash: ipHash }, since)) >= IP_EVENTS_PER_10_MIN) throw new RateLimitedError('Too many requests from your connection. Try again in a few minutes.');
-  if (renter && (await countRecentEvents({ renter_id: renter.id }, since)) >= RENTER_EVENTS_PER_10_MIN) throw new RateLimitedError('Too many requests for that address. Try again in a few minutes.');
+async function enforceIpLimit(ipHash: string): Promise<void> {
+  if (ipHash && (await countRecentEvents({ ip_hash: ipHash }, agoIso(10 * 60 * 1000))) >= IP_EVENTS_PER_10_MIN) throw new RateLimitedError('Too many requests from your connection. Try again in a few minutes.');
+}
+
+async function enforceRenterLimit(renter: RenterRow): Promise<void> {
+  if ((await countRecentEvents({ renter_id: renter.id }, agoIso(10 * 60 * 1000))) >= RENTER_EVENTS_PER_10_MIN) throw new RateLimitedError('Too many requests for that address. Try again in a few minutes.');
 }
 
 export async function handleCapture(req: CaptureRequest, meta: CaptureMeta): Promise<CaptureOutcome> {
   const secret = rentersTokenSecret();
   const ipHash = meta.ip ? hashIp(meta.ip, secret) : '';
+  await enforceIpLimit(ipHash);
   const verified = req.source === 'booking' ? await verifyBooking(req) : null;
-  // An unverifiable booking claim is not evidence of anything: record the attempt, touch nothing.
-  if (req.source === 'booking' && !verified) {
-    await logEvent({ kind: 'capture:booking:unverified', source: req.source, path: req.path ?? null, ip_hash: ipHash }).catch(() => undefined);
-    return { status: 'recorded', renterId: null };
-  }
 
   let renter = await findRenterByEmail(req.email);
-  await enforceRateLimits(ipHash, renter);
-
-  const consentEvidence = { consent_source: req.source, consent_text_version: consentVersionFor(req.source), consent_ip_hash: ipHash || null, consent_user_agent: meta.userAgent.slice(0, 300) };
+  if (renter) await enforceRenterLimit(renter);
+  const evidence = { consent_source: req.source, consent_text_version: consentVersionFor(req.source), consent_ip_hash: ipHash || null, consent_user_agent: meta.userAgent.slice(0, 300) };
   const wantsConsent = req.consent;
-  let pendingConsent = false;
+
+  // Refuse before writing anything the renter would have to undo.
+  if (renter && req.alert) {
+    const scope = { team_slug: req.alert.team_slug, vehicle_slug: req.alert.vehicle_slug, start_on: req.alert.start, end_on: req.alert.end };
+    if (!(await findActiveAlert(renter.id, scope)) && (await countActiveAlerts(renter.id)) >= MAX_ACTIVE_ALERTS) {
+      await logEvent({ renter_id: renter.id, kind: 'capture:alert:refused', source: req.source, path: req.path ?? null, ip_hash: ipHash }).catch(() => undefined);
+      throw new CaptureRefusedError(`You already have ${MAX_ACTIVE_ALERTS} alerts running. One of them has to fire or expire before you can add another.`);
+    }
+  }
 
   if (!renter) {
-    const fields: Record<string, unknown> = {
-      email: req.email,
-      name: verified ? req.name ?? null : null,
-      phone: verified ? req.phone ?? null : null,
-      first_source: req.source,
-      first_path: req.path ?? null,
-      first_team_slug: req.team_slug ?? null,
-      first_vehicle_slug: req.vehicle_slug ?? null,
-      first_booking_ref: verified?.ref ?? null,
-      last_booking_ref: verified?.ref ?? null,
-      bookings_count: verified ? 1 : 0,
-      confirmed_at: verified ? nowIso() : null,
-    };
-    if (wantsConsent && verified) Object.assign(fields, { marketing_consent: true, consented_at: nowIso(), ...consentEvidence });
-    else if (wantsConsent) {
-      Object.assign(fields, { consent_requested_at: nowIso(), ...consentEvidence });
-      pendingConsent = true;
-    }
     try {
-      renter = await insertRenter(fields as { email: string } & Record<string, unknown>);
+      renter = await insertRenter({ email: req.email, first_source: req.source, first_path: req.path ?? null, first_team_slug: req.team_slug ?? null, first_vehicle_slug: req.vehicle_slug ?? null });
     } catch (error) {
-      // Two first captures for one address at once: the loser re-reads the winner's row.
-      if (error instanceof StoreError && error.status === 409) renter = await findRenterByEmail(req.email);
+      // Two first captures for one address at once: the loser continues on the winner's row below.
+      if (!(error instanceof StoreError && error.status === 409)) throw error;
+      renter = await findRenterByEmail(req.email);
       if (!renter) throw error;
     }
-  } else {
-    const patch: Record<string, unknown> = {};
-    if (verified) {
-      if (req.name && !renter.name) patch.name = req.name;
-      if (req.phone && !renter.phone) patch.phone = req.phone;
-      if (!renter.confirmed_at) patch.confirmed_at = nowIso();
-      if (renter.last_booking_ref !== verified.ref) {
-        patch.last_booking_ref = verified.ref;
-        patch.bookings_count = renter.bookings_count + 1;
-        if (!renter.first_booking_ref) patch.first_booking_ref = verified.ref;
-      }
-      if (wantsConsent && (!renter.marketing_consent || renter.unsubscribed_at)) Object.assign(patch, { marketing_consent: true, consented_at: nowIso(), unsubscribed_at: null, consent_requested_at: null, ...consentEvidence });
-    } else if (wantsConsent && (!renter.marketing_consent || renter.unsubscribed_at)) {
-      Object.assign(patch, { consent_requested_at: nowIso(), ...consentEvidence });
-      pendingConsent = true;
-    }
-    if (Object.keys(patch).length > 0) renter = await patchRenter(renter.id, patch);
   }
+
+  const patch: Record<string, unknown> = {};
+  let pendingConsent = false;
+  if (verified) {
+    if (req.name && !renter.name) patch.name = req.name;
+    if (!renter.confirmed_at) patch.confirmed_at = nowIso();
+    if (renter.last_booking_ref !== verified.ref) {
+      patch.last_booking_ref = verified.ref;
+      patch.bookings_count = renter.bookings_count + 1;
+      if (!renter.first_booking_ref) patch.first_booking_ref = verified.ref;
+    }
+    if (wantsConsent && (!renter.marketing_consent || renter.unsubscribed_at)) Object.assign(patch, { marketing_consent: true, consented_at: nowIso(), unsubscribed_at: null, alerts_paused_at: null, consent_requested_at: null, ...evidence });
+  } else if (wantsConsent && (!renter.marketing_consent || renter.unsubscribed_at)) {
+    // Recorded as a request only; the evidence of the eventual consent is the click.
+    Object.assign(patch, { consent_requested_at: nowIso(), ...evidence });
+    pendingConsent = true;
+  }
+  if (Object.keys(patch).length > 0) renter = await patchRenter(renter.id, patch);
 
   if (req.saved?.length) {
     const catalog = await catalogByKey();
-    await addSavedCars(renter.id, req.saved.map((s) => ({ ...s, vehicle_name: catalog.get(`${s.team_slug}/${s.vehicle_slug}`)?.vehicle.name ?? s.name ?? null })));
+    const named = await Promise.all(req.saved.map(async (s) => ({ ...s, vehicle_name: await resolveVehicleName(catalog, s.team_slug, s.vehicle_slug) })));
+    // A car nothing public knows about is not saved: no request-supplied text ever reaches a mail.
+    await addSavedCars(renter.id, named.filter((s) => s.vehicle_name !== null));
   }
   if (req.alert) {
     const scope = { team_slug: req.alert.team_slug, vehicle_slug: req.alert.vehicle_slug, start_on: req.alert.start, end_on: req.alert.end };
     if (!(await findActiveAlert(renter.id, scope))) {
-      if ((await countActiveAlerts(renter.id)) >= MAX_ACTIVE_ALERTS) throw new CaptureRefusedError(`You already have ${MAX_ACTIVE_ALERTS} alerts running. One of them has to fire or expire before you can add another.`);
       try {
         await addAlert(renter.id, scope);
       } catch (error) {
@@ -261,15 +304,19 @@ export async function handleCapture(req: CaptureRequest, meta: CaptureMeta): Pro
       }
     }
   }
-  await logEvent({ renter_id: renter.id, kind: `capture:${req.source}`, source: req.source, path: req.path ?? null, ip_hash: ipHash, meta: { consent_requested: pendingConsent, consent_verified: Boolean(verified && wantsConsent), saved: req.saved?.length ?? 0, alert: Boolean(req.alert), booking: Boolean(verified) } }).catch(() => undefined);
+  await logEvent({ renter_id: renter.id, kind: `capture:${req.source}`, source: req.source, path: req.path ?? null, ip_hash: ipHash, meta: { consent_requested: pendingConsent, consent_verified: Boolean(verified && wantsConsent), saved: req.saved?.length ?? 0, alert: Boolean(req.alert), booking: Boolean(verified), booking_claimed: req.source === 'booking' && !verified } }).catch(() => undefined);
 
-  // A click is needed when the address is unconfirmed, alerts are paused by an
-  // unsubscribe, or marketing consent is being asked for on a confirmed address.
-  const needsClick = !renter.confirmed_at || Boolean(renter.alerts_paused_at) || pendingConsent;
+  // What must be confirmed by a click, and what can go out now.
+  const want = new Set<Scope>();
+  if (req.source === 'save_list') want.add('list');
+  if (req.alert) want.add('alert');
+  if (pendingConsent) want.add('consent');
+  const alertRange = req.alert ? formatRangeLabel(req.alert.start, req.alert.end) : undefined;
+  const needsClick = want.size > 0 && (!renter.confirmed_at || Boolean(renter.alerts_paused_at) || pendingConsent);
   try {
-    if (needsClick) return { status: await sendConfirmation(renter, req, pendingConsent), renterId: renter.id };
+    if (needsClick) return { status: (await sendConfirmation(renter, want, alertRange)).status, renterId: renter.id };
     if (req.source === 'save_list') return { status: await sendSavedList(renter), renterId: renter.id };
-    if (req.source === 'alert' && req.alert) return { status: await sendAlertSet(renter, req.alert), renterId: renter.id };
+    if (req.alert) return { status: await sendAlertSet(renter, req.alert), renterId: renter.id };
   } catch (error) {
     console.error('[renters] mail failed after capture', error instanceof Error ? error.message : 'error');
     return { status: 'mail_failed', renterId: renter.id };
@@ -277,25 +324,45 @@ export async function handleCapture(req: CaptureRequest, meta: CaptureMeta): Pro
   return { status: 'recorded', renterId: renter.id };
 }
 
-export type ConfirmOutcome = { ok: true; delivered: 'saved_list' | 'none'; marketing: boolean; renterId: string } | { ok: false };
+export type ConfirmOutcome = { ok: true; delivered: 'saved_list' | 'none'; marketing: boolean; alerts: boolean; renterId: string } | { ok: false };
 
-/** The confirmation click (POST). Single use: the hash is cleared on success. */
-export async function confirmByToken(token: string): Promise<ConfirmOutcome> {
+/** The pending link's scope, for the confirm page (read-only; unknown tokens learn nothing). */
+export async function pendingScopeForToken(token: string): Promise<Set<Scope> | null> {
+  const renter = await findRenterByConfirmHash(hashToken(token));
+  if (!renter || !renter.confirm_issued_at || Date.now() - Date.parse(renter.confirm_issued_at) > CONFIRM_TTL_MS) return null;
+  return parseScope(renter.confirm_scope);
+}
+
+/** The confirmation click (POST). Applies exactly the link's scope; single use; seven-day life. */
+export async function confirmByToken(token: string, meta: CaptureMeta): Promise<ConfirmOutcome> {
   const hash = hashToken(token);
   const renter = await findRenterByConfirmHash(hash);
   if (!renter || !renter.confirm_token_hash || !safeEqual(renter.confirm_token_hash, hash)) return { ok: false };
-  const patch: Record<string, unknown> = { confirmed_at: renter.confirmed_at ?? nowIso(), confirm_token_hash: null, alerts_paused_at: null };
-  const marketing = Boolean(renter.consent_requested_at);
-  if (marketing) Object.assign(patch, { marketing_consent: true, consented_at: nowIso(), unsubscribed_at: null, consent_requested_at: null });
-  const confirmed = await patchRenter(renter.id, patch);
-  await logEvent({ renter_id: renter.id, kind: marketing ? 'confirmed:with-consent' : 'confirmed' }).catch(() => undefined);
-  let delivered: 'saved_list' | 'none' = 'none';
-  try {
-    if ((await sendSavedList(confirmed)) === 'delivered') delivered = 'saved_list';
-  } catch (error) {
-    console.error('[renters] saved-list mail failed after confirm', error instanceof Error ? error.message : 'error');
+  const issued = renter.confirm_issued_at ? Date.parse(renter.confirm_issued_at) : 0;
+  if (Date.now() - issued > CONFIRM_TTL_MS) {
+    await patchRenter(renter.id, { confirm_token_hash: null, confirm_scope: null });
+    return { ok: false };
   }
-  return { ok: true, delivered, marketing: confirmed.marketing_consent, renterId: renter.id };
+  const scope = parseScope(renter.confirm_scope);
+  const patch: Record<string, unknown> = { confirmed_at: renter.confirmed_at ?? nowIso(), confirm_token_hash: null, confirm_scope: null };
+  if (scope.has('alert')) patch.alerts_paused_at = null;
+  const marketing = scope.has('consent') && Boolean(renter.consent_requested_at);
+  if (marketing) {
+    const ipHash = meta.ip ? hashIp(meta.ip, rentersTokenSecret()) : null;
+    // The click is the consent event: its evidence replaces the request's.
+    Object.assign(patch, { marketing_consent: true, consented_at: nowIso(), unsubscribed_at: null, alerts_paused_at: null, consent_requested_at: null, consent_ip_hash: ipHash, consent_user_agent: meta.userAgent.slice(0, 300) });
+  }
+  const confirmed = await patchRenter(renter.id, patch);
+  await logEvent({ renter_id: renter.id, kind: marketing ? 'confirmed:with-consent' : 'confirmed', ip_hash: meta.ip ? hashIp(meta.ip, rentersTokenSecret()) : null, meta: { scope: Array.from(scope) } }).catch(() => undefined);
+  let delivered: 'saved_list' | 'none' = 'none';
+  if (scope.has('list')) {
+    try {
+      if ((await sendSavedList(confirmed)) === 'delivered') delivered = 'saved_list';
+    } catch (error) {
+      console.error('[renters] saved-list mail failed after confirm', error instanceof Error ? error.message : 'error');
+    }
+  }
+  return { ok: true, delivered, marketing: confirmed.marketing_consent, alerts: scope.has('alert'), renterId: renter.id };
 }
 
 /**
@@ -306,7 +373,7 @@ export async function unsubscribeByToken(renterId: string, token: string): Promi
   if (!unsubscribeTokenValid(renterId, token, rentersTokenSecret(), rentersTokenSecretPrevious())) return false;
   const renter = await findRenterById(renterId);
   if (!renter) return false;
-  await patchRenter(renter.id, { marketing_consent: false, unsubscribed_at: nowIso(), alerts_paused_at: nowIso(), consent_requested_at: null, confirm_token_hash: null });
+  await patchRenter(renter.id, { marketing_consent: false, unsubscribed_at: nowIso(), alerts_paused_at: nowIso(), consent_requested_at: null, confirm_token_hash: null, confirm_scope: null });
   await cancelAlertsForRenter(renter.id);
   await logEvent({ renter_id: renter.id, kind: 'unsubscribed' }).catch(() => undefined);
   return true;

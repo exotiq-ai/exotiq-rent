@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { InterimNotice, LegalPage } from '@/components/browse/LegalPage';
 import { browseEnabled } from '@/domain/booking/config';
 import { posthogKey } from '@/components/analytics/posthog';
-import { renterCaptureUiEnabled } from '@/domain/renters/config';
+import { renterCaptureUiEnabled } from '@/domain/renters/flags';
 
 // Guarded with the marketplace — see app/terms/page.tsx.
 export function generateMetadata(): Metadata {
@@ -68,15 +68,18 @@ export default function PrivacyPage() {
             Tapping the heart keeps a list of cars in your browser only. If you ask us to e-mail that list, set an
             availability alert, tick the box for first looks at new cars, or press the &ldquo;Keep me posted&rdquo;
             button, we keep in Exotiq&apos;s own database (Supabase, separate from the operators&apos; systems): your
-            e-mail address; your name and phone number when they come from a booking; the booking references and how
+            e-mail address; your name when it comes from a booking; the booking references and how
             many bookings you have made; what you asked for, when, and on which page; the exact wording you agreed to
-            (by version); and, as evidence of that consent, a keyed hash of your IP address and your browser&apos;s
-            user-agent string. We keep this until you ask us to delete it.
+            (by version); a keyed hash of your IP address (used to limit abuse of the forms, and kept with a consent
+            as evidence of it) and your browser&apos;s user-agent string; and a log of the e-mails we sent you. An
+            address that never confirms is deleted after thirty days; otherwise we keep this until you ask us to
+            delete it.
           </p>
           <p>
             We send nothing but a confirmation link until you confirm the address by pressing the button on that
-            page; a completed booking counts as confirming the address. Marketing e-mail goes out only after you have
-            asked for it and confirmed it. The &ldquo;Keep me posted&rdquo; button is itself the opt-in. Every message
+            page, and the page says exactly what the click confirms; a booking you make may count as confirming the
+            address once the booking system can match it to you. Marketing e-mail goes out only after you have asked
+            for it and confirmed it. The &ldquo;Keep me posted&rdquo; button is itself the opt-in. Every message
             carries an unsubscribe link and one-click unsubscribe headers; unsubscribing stops all e-mail from us and
             turns off any alerts, and pressing the confirmation link again later resumes only what you ask for. E-mail
             is delivered by Resend; the daily availability check runs on Netlify. Unsubscribing does not delete your

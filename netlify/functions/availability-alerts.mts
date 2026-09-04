@@ -24,7 +24,7 @@ import { decideAlerts, type CatalogKey } from '../../domain/renters/alerts';
 import { renterCaptureEnabled } from '../../domain/renters/config';
 import { unsubscribeHref } from '../../domain/renters/capture';
 import { carListHtml, layout, sendMail } from '../../domain/renters/email';
-import { claimAlert, expireUnconfirmedAlerts, listActiveAlerts, updateAlert, type AlertRow } from '../../domain/renters/store';
+import { claimAlert, expireConfirmTokens, expirePastAlerts, expireUnconfirmedAlerts, listActiveAlerts, purgeUnconfirmedRenters, releaseStaleClaims, updateAlert, type AlertRow } from '../../domain/renters/store';
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
@@ -44,12 +44,22 @@ function toKey(teamSlug: string, row: RpcFleetVehicleRow): CatalogKey {
 export default async function run(): Promise<Response> {
   if (!renterCaptureEnabled()) return new Response('renter capture not configured', { status: 200 });
   const today = todayIso();
-  const expiredUnconfirmed = await expireUnconfirmedAlerts(new Date(Date.now() - 7 * 86400000).toISOString()).catch((error) => {
-    console.error('[alerts] expiring unconfirmed failed', error instanceof Error ? error.message : 'error');
+  const startIso = new Date().toISOString();
+  const quiet = (label: string) => (error: unknown) => {
+    console.error(`[alerts] ${label} failed`, error instanceof Error ? error.message : 'error');
     return 0;
-  });
+  };
+  // Housekeeping first: rows stranded mid-send by a dead run, past windows,
+  // week-old alerts nobody confirmed, seven-day-old links, and addresses that
+  // never confirmed within thirty days (the retention rule the privacy page states).
+  const released = await releaseStaleClaims(new Date(Date.now() - 3600000).toISOString()).catch(quiet('releasing stale claims'));
+  const expiredPast = await expirePastAlerts(today, startIso).catch(quiet('expiring past alerts'));
+  const expiredUnconfirmed = await expireUnconfirmedAlerts(new Date(Date.now() - 7 * 86400000).toISOString()).catch(quiet('expiring unconfirmed alerts'));
+  const expiredTokens = await expireConfirmTokens(new Date(Date.now() - 7 * 86400000).toISOString()).catch(quiet('expiring confirm links'));
+  const purged = await purgeUnconfirmedRenters(new Date(Date.now() - 30 * 86400000).toISOString()).catch(quiet('purging unconfirmed addresses'));
   const alerts = await listActiveAlerts();
-  if (alerts.length === 0) return new Response(`no active alerts (expired unconfirmed=${expiredUnconfirmed})`, { status: 200 });
+  const housekeeping = `released=${released} expiredPast=${expiredPast} expiredUnconfirmed=${expiredUnconfirmed} expiredTokens=${expiredTokens} purged=${purged}`;
+  if (alerts.length === 0) return new Response(`no active alerts (${housekeeping})`, { status: 200 });
 
   // Catalogs: one marketplace read, one storefront read per operator with an alert.
   const names = new Map<string, string>();
@@ -99,7 +109,7 @@ export default async function run(): Promise<Response> {
         await updateAlert(d.alert.id, { status: 'expired', last_checked_at: now });
         expired += 1;
       } else if (d.action === 'notify' && d.alert.renters) {
-        if (!(await claimAlert(d.alert.id))) continue; // another run got it first
+        if (!(await claimAlert(d.alert.id, now))) continue; // another run got it first
         const range = formatRangeLabel(d.alert.start_on, d.alert.end_on);
         const cars = d.freeKeys.slice(0, 12).map((key) => ({ name: names.get(key) ?? key, meta: key.split('/')[0].replace(/-/g, ' '), href: bookHref(d.alert, key) }));
         const single = d.alert.vehicle_slug ? cars[0] : undefined;
@@ -127,7 +137,7 @@ export default async function run(): Promise<Response> {
       console.error('[alerts] failed for', d.alert.id, error instanceof Error ? error.message : 'error');
     }
   }
-  const summary = `alerts=${alerts.length} notified=${notified} expired=${expired} expiredUnconfirmed=${expiredUnconfirmed}`;
+  const summary = `alerts=${alerts.length} notified=${notified} expired=${expired} ${housekeeping}`;
   console.log('[alerts]', summary);
   return new Response(summary, { status: 200 });
 }

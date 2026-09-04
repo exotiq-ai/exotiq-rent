@@ -18,11 +18,11 @@ describe('validateCapture', () => {
     expect(validateCapture({ email: 'a@b.co', source: 'newsletter' }, TODAY).ok).toBe(false);
     expect(validateCapture('nope', TODAY).ok).toBe(false);
   });
-  it('a saved list needs at least one valid car; a client name is kept as a fallback', () => {
+  it('a saved list needs at least one valid car; request-supplied names are dropped', () => {
     expect(validateCapture({ email: 'a@b.co', source: 'save_list', saved: [] }, TODAY).ok).toBe(false);
     expect(validateCapture({ email: 'a@b.co', source: 'save_list', saved: [{ team_slug: 'exotiq', vehicle_slug: 'Bad Slug' }] }, TODAY).ok).toBe(false);
     const r = validateCapture({ email: 'a@b.co', source: 'save_list', saved: [{ team_slug: 'exotiq', vehicle_slug: '2017-audi-s8', name: 'Audi S8 Plus' }] }, TODAY);
-    expect(r.ok && r.value.saved).toEqual([{ team_slug: 'exotiq', vehicle_slug: '2017-audi-s8', name: 'Audi S8 Plus' }]);
+    expect(r.ok && r.value.saved).toEqual([{ team_slug: 'exotiq', vehicle_slug: '2017-audi-s8' }]);
   });
   it('alerts need a future window (one day of grace) inside the horizon, and a car needs its operator', () => {
     const base = { email: 'a@b.co', source: 'alert' as const };
@@ -147,7 +147,14 @@ vi.mock('../booking/service', () => ({
   getMarketplaceListings: vi.fn(async () => ({ listings: [{ team: { slug: 'exotiq', name: 'Exotiq', city: 'Scottsdale' }, vehicle: { slug: '2017-audi-s8', name: 'Audi S8 Plus', dailyRateCents: 200 }, photoCount: 1 }], totalCount: 1 })),
 }));
 vi.mock('../booking/rpcClient', () => ({
-  fetchBookingByRef: vi.fn(async (ref: string, token?: string) => (ref === 'BK-1' && token === 'good-token' ? { booking_ref: 'BK-1', status: 'requested', team_slug: 'exotiq', vehicle_slug: '2017-audi-s8', authorized: true } : ref === 'BK-1' ? { booking_ref: 'BK-1', status: 'requested', team_slug: 'exotiq', vehicle_slug: '2017-audi-s8', authorized: false } : null)),
+  // BK-1 belongs to a@b.co (hash bound); BK-2 is authorized but the backend does not yet return the hash.
+  fetchBookingByRef: vi.fn(async (ref: string, token?: string) => {
+    if (ref === 'BK-1' && token === 'good-token') return { booking_ref: 'BK-1', status: 'requested', team_slug: 'exotiq', vehicle_slug: '2017-audi-s8', authorized: true, customer_email_hash: '4f56fd90e15f2b2ce4ab9d6f5b8d2a3b9a6a3a3d4f7c0f0f8a2a3f3b0c1d2e3f' };
+    if (ref === 'BK-1') return { booking_ref: 'BK-1', status: 'requested', team_slug: 'exotiq', vehicle_slug: '2017-audi-s8', authorized: false, customer_email_hash: null };
+    if (ref === 'BK-2' && token === 'good-token') return { booking_ref: 'BK-2', status: 'requested', team_slug: 'exotiq', vehicle_slug: '2017-audi-s8', authorized: true };
+    return null;
+  }),
+  fetchPublicVehicle: vi.fn(async (team: string, vehicle: string) => (team === 'exotiq' && vehicle === 'storefront-only' ? { name: 'Storefront Car' } : null)),
 }));
 vi.mock('../booking/config', async () => {
   const actual = await vi.importActual<typeof import('../booking/config')>('../booking/config');
@@ -156,9 +163,18 @@ vi.mock('../booking/config', async () => {
 
 import * as store from './store';
 import { sendMail } from './email';
+import { createHash } from 'node:crypto';
 import { RateLimitedError, CaptureRefusedError, confirmByToken, handleCapture, unsubscribeByToken } from './capture';
 
 const META = { ip: '1.2.3.4', userAgent: 'test' };
+const HASH_AB = createHash('sha256').update('a@b.co').digest('hex');
+import * as rpc from '../booking/rpcClient';
+vi.mocked(rpc.fetchBookingByRef).mockImplementation(async (ref: string, token?: string) => {
+  if (ref === 'BK-1' && token === 'good-token') return { booking_ref: 'BK-1', status: 'requested', team_slug: 'exotiq', vehicle_slug: '2017-audi-s8', authorized: true, customer_email_hash: HASH_AB } as never;
+  if (ref === 'BK-1') return { booking_ref: 'BK-1', status: 'requested', team_slug: 'exotiq', vehicle_slug: '2017-audi-s8', authorized: false, customer_email_hash: null } as never;
+  if (ref === 'BK-2' && token === 'good-token') return { booking_ref: 'BK-2', status: 'requested', team_slug: 'exotiq', vehicle_slug: '2017-audi-s8', authorized: true } as never;
+  return null;
+});
 type S = typeof store & { __renters: Map<string, Record<string, unknown>>; __alerts: Array<Record<string, unknown>>; __emails: Array<{ kind: string }>; __events: Array<unknown>; __reset: () => void };
 const S = store as unknown as S;
 const row = (email: string) => S.__renters.get(email)!;
@@ -180,51 +196,98 @@ describe('handleCapture', () => {
     await handleCapture({ email: 'a@b.co', source: 'footer', consent: true }, META);
     expect(vi.mocked(sendMail)).toHaveBeenCalledTimes(1);
     const token = confirmTokenFrom(); // before the click: the click itself sends the saved-list mail
-    const c = await confirmByToken(token);
+    const c = await confirmByToken(token, META);
     expect(c.ok && c.marketing).toBe(true);
     expect(row('a@b.co').marketing_consent).toBe(true);
     expect(row('a@b.co').consented_at).toBeTruthy();
     expect(row('a@b.co').consent_requested_at).toBeNull();
     expect(row('a@b.co').confirmed_at).toBeTruthy();
     expect(row('a@b.co').confirm_token_hash).toBeNull();
-    expect((await confirmByToken(token)).ok).toBe(false);
+    expect((await confirmByToken(token, META)).ok).toBe(false);
   });
 
   it('a stranger cannot re-subscribe an unsubscribed address: consent stays pending until that address clicks', async () => {
     await handleCapture({ email: 'a@b.co', source: 'footer', consent: true }, META);
-    await confirmByToken(confirmTokenFrom());
+    await confirmByToken(confirmTokenFrom(), META);
     const id = row('a@b.co').id as string;
     expect(await unsubscribeByToken(id, unsubscribeToken(id, 'test-secret'))).toBe(true);
     expect(row('a@b.co').marketing_consent).toBe(false);
     expect(row('a@b.co').alerts_paused_at).toBeTruthy();
+    // A paused address gets at most one confirmation a day: the earlier one counts, so today's ask is a cooldown…
+    expect((await handleCapture({ email: 'a@b.co', source: 'footer', consent: true }, META)).status).toBe('cooldown');
+    // …and tomorrow it goes out.
+    S.__emails.length = 0;
     const again = await handleCapture({ email: 'a@b.co', source: 'footer', consent: true }, META);
     expect(again.status).toBe('confirm_sent');
     expect(row('a@b.co').marketing_consent).toBe(false);
     expect(row('a@b.co').unsubscribed_at).toBeTruthy();
-    await confirmByToken(confirmTokenFrom());
+    await confirmByToken(confirmTokenFrom(), META);
     expect(row('a@b.co').marketing_consent).toBe(true);
     expect(row('a@b.co').unsubscribed_at).toBeNull();
     expect(row('a@b.co').alerts_paused_at).toBeNull();
   });
 
-  it('a booking counts only with its token: forged references touch nothing', async () => {
+  it('a booking counts only when the tenant DB binds it to the address; otherwise it takes the click path', async () => {
     const forged = await handleCapture({ email: 'victim@x.co', source: 'booking', consent: true, booking_ref: 'BK-9', booking_token: 'nope' }, META);
-    expect(forged.status).toBe('recorded');
-    expect(S.__renters.has('victim@x.co')).toBe(false);
-    const wrongToken = await handleCapture({ email: 'victim@x.co', source: 'booking', consent: true, booking_ref: 'BK-1', booking_token: 'bad' }, META);
-    expect(wrongToken.status).toBe('recorded');
-    expect(S.__renters.has('victim@x.co')).toBe(false);
-    const ok = await handleCapture({ email: 'a@b.co', source: 'booking', consent: true, booking_ref: 'BK-1', booking_token: 'good-token', name: 'G', phone: '555', team_slug: 'exotiq', vehicle_slug: '2017-audi-s8' }, META);
+    expect(forged.status).toBe('confirm_sent'); // a pending consent request, one confirmation mail, nothing granted
+    expect(row('victim@x.co').confirmed_at).toBeNull();
+    expect(row('victim@x.co').marketing_consent).toBe(false);
+    expect(row('victim@x.co').bookings_count).toBe(0);
+    // Authorized but unbound (backend without the hash): same click path.
+    const unbound = await handleCapture({ email: 'c@d.co', source: 'booking', consent: false, booking_ref: 'BK-2', booking_token: 'good-token', name: 'C' }, META);
+    expect(unbound.status).toBe('recorded');
+    expect(row('c@d.co').confirmed_at).toBeNull();
+    expect(row('c@d.co').name).toBeNull();
+    // Bound to another address: refused as proof.
+    const other = await handleCapture({ email: 'e@f.co', source: 'booking', consent: true, booking_ref: 'BK-1', booking_token: 'good-token' }, META);
+    expect(other.status).toBe('confirm_sent');
+    expect(row('e@f.co').confirmed_at).toBeNull();
+    // Bound to this address: confirmed and, with the box ticked, consented at once.
+    const ok = await handleCapture({ email: 'a@b.co', source: 'booking', consent: true, booking_ref: 'BK-1', booking_token: 'good-token', name: 'G', team_slug: 'exotiq', vehicle_slug: '2017-audi-s8' }, META);
     expect(ok.status).toBe('recorded');
     expect(row('a@b.co').confirmed_at).toBeTruthy();
     expect(row('a@b.co').marketing_consent).toBe(true);
     expect(row('a@b.co').consent_text_version).toBe('review-2026-09-04');
     expect(row('a@b.co').name).toBe('G');
     expect(row('a@b.co').bookings_count).toBe(1);
-    expect(vi.mocked(sendMail)).not.toHaveBeenCalled();
-    // The same booking again is not a second booking.
     await handleCapture({ email: 'a@b.co', source: 'booking', consent: false, booking_ref: 'BK-1', booking_token: 'good-token' }, META);
     expect(row('a@b.co').bookings_count).toBe(1);
+  });
+
+  it("a click applies only the scope its own mail named: a stranger's consent request never rides a list confirmation", async () => {
+    // The owner asks for their list (no consent), then a stranger asks for first looks on the same address.
+    await handleCapture({ email: 'a@b.co', source: 'save_list', consent: false, saved: [{ team_slug: 'exotiq', vehicle_slug: '2017-audi-s8' }] }, META);
+    const ownerLink = confirmTokenFrom();
+    S.__events.length = 0;
+    await handleCapture({ email: 'a@b.co', source: 'footer', consent: true }, { ip: '6.6.6.6', userAgent: 'stranger' });
+    expect(row('a@b.co').consent_requested_at).toBeTruthy();
+    // The stranger's wider ask minted a NEW link naming first looks; the owner's older link is no longer live.
+    const strangerLink = confirmTokenFrom();
+    expect(strangerLink).not.toBe(ownerLink);
+    expect((vi.mocked(sendMail).mock.calls.at(-1)![0] as { text: string }).text).toContain('first looks');
+    expect((await confirmByToken(ownerLink, META)).ok).toBe(false);
+    expect(row('a@b.co').marketing_consent).toBe(false);
+    // Only the mail that says "first looks" can turn it on — and then the click's evidence is recorded.
+    const c = await confirmByToken(strangerLink, { ip: '7.7.7.7', userAgent: 'owner' });
+    expect(c.ok && c.marketing).toBe(true);
+    expect(row('a@b.co').consent_user_agent).toBe('owner');
+  });
+
+  it('confirmation links expire after seven days', async () => {
+    await handleCapture({ email: 'a@b.co', source: 'footer', consent: true }, META);
+    const link = confirmTokenFrom();
+    row('a@b.co').confirm_issued_at = new Date(Date.now() - 8 * 86400000).toISOString();
+    expect((await confirmByToken(link, META)).ok).toBe(false);
+    expect(row('a@b.co').confirm_token_hash).toBeNull();
+  });
+
+  it('saved-car names come from the catalog or the storefront read, never from the request', async () => {
+    await handleCapture({ email: 'a@b.co', source: 'booking', consent: false, booking_ref: 'BK-1', booking_token: 'good-token' }, META);
+    vi.mocked(store.addSavedCars).mockClear();
+    await handleCapture({ email: 'a@b.co', source: 'save_list', consent: false, saved: [{ team_slug: 'exotiq', vehicle_slug: '2017-audi-s8' }, { team_slug: 'exotiq', vehicle_slug: 'storefront-only' }, { team_slug: 'nobody', vehicle_slug: 'invented' }] }, META);
+    const cars = vi.mocked(store.addSavedCars).mock.calls[0][1] as Array<{ vehicle_slug: string; vehicle_name: string | null }>;
+    expect(cars.map((c) => [c.vehicle_slug, c.vehicle_name])).toEqual([['2017-audi-s8', 'Audi S8 Plus'], ['storefront-only', 'Storefront Car']]);
+    expect((vi.mocked(sendMail).mock.calls.at(-1)![0] as { subject: string }).subject).toBe('Your saved cars on Drive Exotiq');
   });
 
   it('a confirmed renter asking for the list gets it once, then a cooldown', async () => {
@@ -244,7 +307,7 @@ describe('handleCapture', () => {
     await handleCapture({ email: 'a@b.co', source: 'booking', consent: false, booking_ref: 'BK-1', booking_token: 'good-token' }, META);
     const mk = (d: number) => ({ email: 'a@b.co', source: 'alert' as const, consent: false, alert: { team_slug: 'exotiq', vehicle_slug: '2017-audi-s8', start: `2026-10-${10 + d}`, end: `2026-10-${12 + d}` } });
     expect((await handleCapture(mk(0), META)).status).toBe('delivered');
-    expect((await handleCapture(mk(0), META)).status).toBe('cooldown');
+    expect((await handleCapture(mk(0), META)).status).toBe('alert_set');
     expect(S.__alerts.length).toBe(1);
     for (let d = 1; d < 5; d += 1) { S.__events.length = 0; await handleCapture(mk(d), META); }
     S.__events.length = 0;
@@ -258,7 +321,7 @@ describe('handleCapture', () => {
     const after = await handleCapture(mk(8), META);
     expect(after.status).toBe('confirm_sent');
     expect(S.__alerts.at(-1)!.status).toBe('active');
-    await confirmByToken(confirmTokenFrom());
+    await confirmByToken(confirmTokenFrom(), META);
     expect(row('a@b.co').alerts_paused_at).toBeNull();
     expect(row('a@b.co').marketing_consent).toBe(false);
   });
@@ -275,10 +338,10 @@ describe('handleCapture', () => {
 
   it('a failed send is reported, and the next try sends again', async () => {
     vi.mocked(sendMail).mockRejectedValueOnce(new Error('resend 500'));
-    const out = await handleCapture({ email: 'a@b.co', source: 'footer', consent: false }, META);
+    const out = await handleCapture({ email: 'a@b.co', source: 'footer', consent: true }, META);
     expect(out.status).toBe('mail_failed');
     expect(row('a@b.co').confirm_sent_at).toBeNull();
-    const retry = await handleCapture({ email: 'a@b.co', source: 'footer', consent: false }, META);
+    const retry = await handleCapture({ email: 'a@b.co', source: 'footer', consent: true }, META);
     expect(retry.status).toBe('confirm_sent');
     expect(row('a@b.co').confirm_sent_at).toBeTruthy();
   });

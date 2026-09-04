@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { BrowseChrome } from '@/components/browse/BrowseChrome';
 import { containerClassName, serifStyle } from '@/components/browse/tokens';
-import { renterCaptureUiEnabled } from '@/domain/renters/config';
+import { renterCaptureUiEnabled } from '@/domain/renters/flags';
 
 export const metadata: Metadata = { title: 'Unsubscribed | Drive Exotiq', robots: { index: false, follow: false } };
 
@@ -19,7 +19,7 @@ export default function UnsubscribedPage({ searchParams }: { searchParams?: { st
   const state = searchParams?.state ?? 'invalid';
   const copy = Object.prototype.hasOwnProperty.call(COPY, state) ? COPY[state] : COPY.invalid;
   return (
-    <BrowseChrome view={null}>
+    <BrowseChrome view={null} footerSignup={false}>
       <section className={`${containerClassName} max-w-2xl pb-24 pt-16 sm:pt-24`}>
         <p className="text-[11px] uppercase tracking-[0.24em] text-[#848A9A]">Drive Exotiq</p>
         <h1 className="mt-3 text-[36px] leading-[1.05] text-[#F0F2F5] sm:text-[48px]" style={{ ...serifStyle, letterSpacing: '-0.02em' }}>{copy.title}</h1>

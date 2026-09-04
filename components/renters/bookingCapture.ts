@@ -23,7 +23,6 @@ export function captureBooking(cart: BookingCart, bookingRef: string, confirmati
       body: JSON.stringify({
         email,
         name: cart.driver.name,
-        phone: cart.driver.phone,
         source: 'booking',
         consent: Boolean(cart.driver.marketingConsent),
         booking_ref: bookingRef,

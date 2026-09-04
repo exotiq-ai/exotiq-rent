@@ -4,7 +4,7 @@ import { BrowseChrome } from '@/components/browse/BrowseChrome';
 import { containerClassName, serifStyle } from '@/components/browse/tokens';
 import { SavedList } from '@/components/renters/SavedList';
 import { browseEnabled } from '@/domain/booking/config';
-import { renterCaptureUiEnabled } from '@/domain/renters/config';
+import { renterCaptureUiEnabled } from '@/domain/renters/flags';
 
 export const metadata: Metadata = { title: 'Saved cars | Drive Exotiq', robots: { index: false, follow: false } };
 

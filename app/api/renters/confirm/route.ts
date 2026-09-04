@@ -26,10 +26,12 @@ export async function POST(request: Request) {
   const form = await request.formData().catch(() => null);
   const token = form?.get('token');
   if (!looksLikeToken(token)) return NextResponse.redirect(`${base}/renters/confirmed?state=invalid`, 303);
+  const ip = request.headers.get('x-nf-client-connection-ip') ?? request.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? '';
+  const userAgent = request.headers.get('user-agent') ?? '';
   try {
-    const outcome = await confirmByToken(token);
+    const outcome = await confirmByToken(token, { ip, userAgent });
     if (!outcome.ok) return NextResponse.redirect(`${base}/renters/confirmed?state=invalid`, 303);
-    return NextResponse.redirect(`${base}/renters/confirmed?state=ok&sent=${outcome.delivered}&marketing=${outcome.marketing ? '1' : '0'}`, 303);
+    return NextResponse.redirect(`${base}/renters/confirmed?state=ok&sent=${outcome.delivered}&marketing=${outcome.marketing ? '1' : '0'}&alerts=${outcome.alerts ? '1' : '0'}`, 303);
   } catch (error) {
     console.error('[renters] confirm failed', error instanceof Error ? error.message : 'error');
     return NextResponse.redirect(`${base}/renters/confirmed?state=error`, 303);

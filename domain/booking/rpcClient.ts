@@ -237,6 +237,8 @@ export type RpcBookingByRefRow = {
   total_cents: number | null;
   currency: string | null;
   authorized: boolean;
+  /** MP-14 (handoff LOVABLE_HANDOFF_BOOKING_EMAIL_HASH_2026-09-04): sha256 hex of the booking's lowercased e-mail, only when authorized; absent until the backend ships it. */
+  customer_email_hash?: string | null;
   /** M6b additions — undefined against a pre-M6b backend. */
   payment_due_at?: string | null;
   paid_at?: string | null;

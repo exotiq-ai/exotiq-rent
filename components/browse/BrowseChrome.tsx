@@ -19,7 +19,7 @@ import { containerClassName, groundClassName, serifStyle } from './tokens';
  * M7e (MP-6), guarded by the same flag as /browse, so the link can never be
  * live while its target 404s.
  */
-export function BrowseChrome({ children, view = 'browse_view' }: { children: ReactNode; /** Funnel event fired on mount; null for pages that are not a funnel step (legal). */ view?: FunnelEvent | null }) {
+export function BrowseChrome({ children, view = 'browse_view', footerSignup = true }: { children: ReactNode; /** Funnel event fired on mount; null for pages that are not a funnel step (legal). */ view?: FunnelEvent | null; /** Off on the confirm/unsubscribe pages: no opt-in prompt inside an opt-out flow. */ footerSignup?: boolean }) {
   return (
     <div className={`${driveFontClassName} min-h-screen ${groundClassName} text-[#F0F2F5] font-[var(--font-drive-inter)]`}>
       <header className="sticky top-0 z-40 border-b border-[#2A2E3A]/70 bg-[#06070a]/85 backdrop-blur-md">
@@ -37,7 +37,7 @@ export function BrowseChrome({ children, view = 'browse_view' }: { children: Rea
       {view && <TrackView event={view} withQuery />}
       <footer className="mt-20 border-t border-[#2A2E3A]">
         {/* MP-14: the lowest-effort signup there is — one field, and the button is the consent. */}
-        {renterCaptureUiEnabled() && (
+        {renterCaptureUiEnabled() && footerSignup && (
           <div className={`${containerClassName} border-b border-[#2A2E3A] py-10`}>
             <div className="max-w-md">
               <p className="text-[11px] uppercase tracking-[0.22em] text-[#848A9A]">First look</p>

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { siteUrl } from '@/domain/booking/config';
 import { renterCaptureEnabled } from '@/domain/renters/config';
 import { CaptureRefusedError, RateLimitedError, handleCapture } from '@/domain/renters/capture';
 import { validateCapture } from '@/domain/renters/validate';
@@ -9,6 +10,21 @@ export const dynamic = 'force-dynamic';
 const MAX_BODY = 16 * 1024;
 const NO_STORE = { 'Cache-Control': 'no-store' };
 
+function sameOrigin(request: Request): boolean {
+  // Only our own pages post here: a JSON body (a cross-site form cannot set
+  // that type) from our origin. Fetch metadata is honoured when present.
+  const type = (request.headers.get('content-type') ?? '').toLowerCase();
+  if (!type.startsWith('application/json')) return false;
+  const site = request.headers.get('sec-fetch-site');
+  if (site && site !== 'same-origin' && site !== 'none') return false;
+  const origin = request.headers.get('origin');
+  if (origin) {
+    const allowed = new Set([siteUrl(), new URL(request.url).origin]);
+    if (!allowed.has(origin)) return false;
+  }
+  return true;
+}
+
 /**
  * POST /api/renters/capture (MP-14). Records a renter and what they asked
  * for; sends the confirmation or the requested e-mail. Never returns store
@@ -17,6 +33,7 @@ const NO_STORE = { 'Cache-Control': 'no-store' };
  */
 export async function POST(request: Request) {
   if (!renterCaptureEnabled()) return NextResponse.json({ error: 'E-mail signup is not available right now. Try again later or write to hello@exotiq.ai.' }, { status: 503, headers: NO_STORE });
+  if (!sameOrigin(request)) return NextResponse.json({ error: 'Rejected.' }, { status: 403, headers: NO_STORE });
   const raw = await request.text();
   if (raw.length > MAX_BODY) return NextResponse.json({ error: 'Too large.' }, { status: 413, headers: NO_STORE });
   let body: unknown;

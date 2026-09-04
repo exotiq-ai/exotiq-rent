@@ -16,7 +16,7 @@ export default function UnsubscribePage({ searchParams }: { searchParams?: { r?:
   const token = searchParams?.token ?? '';
   const valid = UUID.test(r) && TOKEN.test(token);
   return (
-    <BrowseChrome view={null}>
+    <BrowseChrome view={null} footerSignup={false}>
       <section className={`${containerClassName} max-w-2xl pb-24 pt-16 sm:pt-24`}>
         <p className="text-[11px] uppercase tracking-[0.24em] text-[#848A9A]">Drive Exotiq</p>
         <h1 className="mt-3 text-[36px] leading-[1.05] text-[#F0F2F5] sm:text-[48px]" style={{ ...serifStyle, letterSpacing: '-0.02em' }}>{valid ? 'Unsubscribe?' : 'That link is not right.'}</h1>

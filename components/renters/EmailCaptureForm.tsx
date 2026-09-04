@@ -14,6 +14,7 @@ const DONE_COPY: Record<string, string> = {
   delivered: 'Sent. It should be in your inbox in a moment.',
   recorded: 'Done.',
   cooldown: 'We e-mailed you about this recently. Check your inbox, including spam.',
+  alert_set: 'Alert set. We check every morning and e-mail you once when those dates open up.',
 };
 
 /**

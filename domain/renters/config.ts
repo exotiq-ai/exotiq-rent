@@ -12,8 +12,6 @@
 // scheduled function bundles this outside Next.)
 if (typeof window !== 'undefined') throw new Error('domain/renters/config is server-only');
 
-export { renterCaptureUiEnabled } from './flags';
-
 export function rentersSupabaseUrl(): string {
   return (process.env.RENTERS_SUPABASE_URL ?? '').replace(/\/+$/, '');
 }
