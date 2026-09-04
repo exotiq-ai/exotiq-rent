@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { InterimNotice, LegalPage } from '@/components/browse/LegalPage';
 import { browseEnabled } from '@/domain/booking/config';
 import { posthogKey } from '@/components/analytics/posthog';
+import { renterCaptureUiEnabled } from '@/domain/renters/config';
 
 // Guarded with the marketplace — see app/terms/page.tsx.
 export function generateMetadata(): Metadata {
@@ -18,8 +19,10 @@ export default function PrivacyPage() {
   // Stated only when it is true for this deploy: a host without a PostHog key
   // runs no analytics, and the policy must not claim otherwise.
   const analytics = Boolean(posthogKey());
+  // Same rule for renter e-mail (MP-14): described only on a host that runs it.
+  const capture = renterCaptureUiEnabled();
   return (
-    <LegalPage eyebrow="Drive Exotiq" title="Privacy" updated="3 September 2026">
+    <LegalPage eyebrow="Drive Exotiq" title="Privacy" updated="4 September 2026">
       <InterimNotice what="This page lists what the service actually collects today and who receives it." />
 
       <section>
@@ -57,6 +60,21 @@ export default function PrivacyPage() {
           Photos and listing data are served from Exotiq&apos;s infrastructure (Supabase, Netlify).
         </p>
       </section>
+
+      {capture && (
+        <section>
+          <h2>Saved cars, alerts and e-mail you ask for</h2>
+          <p>
+            Tapping the heart keeps a list of cars in your browser only. If you ask us to e-mail that list, set an
+            availability alert, or tick the box to hear about new cars, we keep your e-mail address, what you asked
+            for, when, and where on the site you asked, in Exotiq&apos;s own database (Supabase) — separate from the
+            operators&apos; systems. We send nothing but a confirmation link until you confirm the address. Marketing
+            e-mail goes out only if you ticked the box, and every message carries an unsubscribe link that also turns
+            off any alerts. E-mail is delivered by Resend. To be removed entirely, use that link or write to{' '}
+            <a href="mailto:hello@exotiq.ai">hello@exotiq.ai</a>.
+          </p>
+        </section>
+      )}
 
       <section>
         <h2>Confirmation links</h2>
