@@ -37,7 +37,7 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
   // Dates chosen on a grid ride into the booking flow (MP-10 / T-13).
   const bookHref = dates ? `/${operator.slug}/${vehicle.slug}/book?start=${dates.start}&end=${dates.end}` : `/${operator.slug}/${vehicle.slug}/book`;
   // MP-14: the heart beside the book button, desktop and phone.
-  const saveCar = { team_slug: operator.slug, vehicle_slug: vehicle.slug, name: vehicle.name, href: `/${operator.slug}/${vehicle.slug}`, priceCents: vehicle.dailyRateCents };
+  const saveCar = { team_slug: operator.slug, vehicle_slug: vehicle.slug, name: vehicle.name, href: `/${operator.slug}/${vehicle.slug}`, priceCents: vehicle.dailyRateCents, team_name: operator.name };
   const yourDates = dates ? (
     <p className="mb-2 flex items-center justify-between text-[12px] text-[#9BA1B0]">
       <span>Your dates: <span className="text-[#F0F2F5]">{formatRangeLabel(dates.start, dates.end)}</span></span>

@@ -5,13 +5,24 @@
 import { rentersFromEmail, rentersPostalAddress, rentersReplyTo, resendApiKey } from './config';
 import { logEmail } from './store';
 
-export type Mail = { to: string; subject: string; html: string; text: string; kind: string; renterId?: string | null };
+export type Mail = { to: string; subject: string; html: string; text: string; kind: string; renterId?: string | null; /** Every message carries it: RFC 8058 one-click unsubscribe headers. */ unsubscribeHref: string };
 
 export async function sendMail(mail: Mail): Promise<{ id: string | null }> {
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${resendApiKey()}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: rentersFromEmail(), to: [mail.to], reply_to: rentersReplyTo(), subject: mail.subject, html: mail.html, text: mail.text }),
+    body: JSON.stringify({
+      from: rentersFromEmail(),
+      to: [mail.to],
+      reply_to: rentersReplyTo(),
+      subject: mail.subject,
+      html: mail.html,
+      text: mail.text,
+      headers: {
+        'List-Unsubscribe': `<${mail.unsubscribeHref}>, <mailto:${rentersReplyTo()}?subject=unsubscribe>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
+    }),
     cache: 'no-store',
   });
   if (!res.ok) {

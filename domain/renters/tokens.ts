@@ -17,9 +17,14 @@ export function looksLikeToken(value: unknown): value is string {
   return typeof value === 'string' && /^[A-Za-z0-9_-]{40,48}$/.test(value);
 }
 
-/** Consent evidence: the IP is kept only as a salted hash. */
-export function hashIp(ip: string, salt: string): string {
-  return createHash('sha256').update(`${salt}|${ip}`).digest('hex').slice(0, 32);
+/**
+ * Consent evidence: the IP is kept only as an HMAC under a purpose-derived
+ * key, so the unsubscribe secret and the IP evidence do not share a rotation
+ * and a leaked secret does not make the IPv4 space brute-forceable in one go.
+ */
+export function hashIp(ip: string, secret: string): string {
+  const key = createHmac('sha256', secret).update('ip-evidence').digest();
+  return createHmac('sha256', key).update(ip).digest('hex').slice(0, 32);
 }
 
 export function safeEqual(a: string, b: string): boolean {
@@ -35,4 +40,10 @@ export function safeEqual(a: string, b: string): boolean {
  */
 export function unsubscribeToken(renterId: string, secret: string): string {
   return createHmac('sha256', secret).update(`unsubscribe|${renterId}`).digest('base64url');
+}
+
+/** Verify an unsubscribe token against the current secret, then the previous one (rotation overlap). */
+export function unsubscribeTokenValid(renterId: string, token: string, secret: string, previous = ''): boolean {
+  if (secret && safeEqual(unsubscribeToken(renterId, secret), token)) return true;
+  return Boolean(previous) && safeEqual(unsubscribeToken(renterId, previous), token);
 }

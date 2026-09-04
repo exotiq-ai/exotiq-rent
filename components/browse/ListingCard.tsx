@@ -71,7 +71,7 @@ export function ListingCard({ listing, priority = false, dates }: { listing: Mar
           overlay the exact height of the 4:3 frame, clicks pass through
           everywhere except the button (MP-14). Hidden when capture is off. */}
       <div className="pointer-events-none absolute inset-x-0 top-0 aspect-[4/3]">
-        <SaveButton car={{ team_slug: team.slug, vehicle_slug: vehicle.slug, name: vehicle.name, href: `/${team.slug}/${vehicle.slug}`, priceCents: vehicle.dailyRateCents }} className="pointer-events-auto absolute bottom-3 right-3" />
+        <SaveButton car={{ team_slug: team.slug, vehicle_slug: vehicle.slug, name: vehicle.name, href: `/${team.slug}/${vehicle.slug}`, priceCents: vehicle.dailyRateCents, team_name: team.name }} className="pointer-events-auto absolute bottom-3 right-3" />
       </div>
     </div>
   );

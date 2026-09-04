@@ -66,12 +66,22 @@ export default function PrivacyPage() {
           <h2>Saved cars, alerts and e-mail you ask for</h2>
           <p>
             Tapping the heart keeps a list of cars in your browser only. If you ask us to e-mail that list, set an
-            availability alert, or tick the box to hear about new cars, we keep your e-mail address, what you asked
-            for, when, and where on the site you asked, in Exotiq&apos;s own database (Supabase) — separate from the
-            operators&apos; systems. We send nothing but a confirmation link until you confirm the address. Marketing
-            e-mail goes out only if you ticked the box, and every message carries an unsubscribe link that also turns
-            off any alerts. E-mail is delivered by Resend. To be removed entirely, use that link or write to{' '}
-            <a href="mailto:hello@exotiq.ai">hello@exotiq.ai</a>.
+            availability alert, tick the box for first looks at new cars, or press the &ldquo;Keep me posted&rdquo;
+            button, we keep in Exotiq&apos;s own database (Supabase, separate from the operators&apos; systems): your
+            e-mail address; your name and phone number when they come from a booking; the booking references and how
+            many bookings you have made; what you asked for, when, and on which page; the exact wording you agreed to
+            (by version); and, as evidence of that consent, a keyed hash of your IP address and your browser&apos;s
+            user-agent string. We keep this until you ask us to delete it.
+          </p>
+          <p>
+            We send nothing but a confirmation link until you confirm the address by pressing the button on that
+            page; a completed booking counts as confirming the address. Marketing e-mail goes out only after you have
+            asked for it and confirmed it. The &ldquo;Keep me posted&rdquo; button is itself the opt-in. Every message
+            carries an unsubscribe link and one-click unsubscribe headers; unsubscribing stops all e-mail from us and
+            turns off any alerts, and pressing the confirmation link again later resumes only what you ask for. E-mail
+            is delivered by Resend; the daily availability check runs on Netlify. Unsubscribing does not delete your
+            record: to have it deleted, write to <a href="mailto:hello@exotiq.ai">hello@exotiq.ai</a> from that
+            address.
           </p>
         </section>
       )}

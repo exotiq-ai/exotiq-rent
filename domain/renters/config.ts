@@ -7,10 +7,12 @@
  * all, so a host without the store shows no heart, no forms, no consent line.
  */
 
-/** Client-visible switch: render save/alert/consent controls. */
-export function renterCaptureUiEnabled(): boolean {
-  return process.env.NEXT_PUBLIC_RENTER_CAPTURE === 'on';
-}
+// Server only. The public flag lives in flags.ts; this module must never be
+// imported by a 'use client' file. (No `server-only` package: the Netlify
+// scheduled function bundles this outside Next.)
+if (typeof window !== 'undefined') throw new Error('domain/renters/config is server-only');
+
+export { renterCaptureUiEnabled } from './flags';
 
 export function rentersSupabaseUrl(): string {
   return (process.env.RENTERS_SUPABASE_URL ?? '').replace(/\/+$/, '');
@@ -38,9 +40,13 @@ export function rentersPostalAddress(): string {
   return process.env.RENTERS_POSTAL_ADDRESS ?? '';
 }
 
-/** Secret behind the unsubscribe links and the consent IP hash. Rotating it invalidates old unsubscribe links. */
+/** Secret behind the unsubscribe links. Rotate by moving the old value to RENTERS_TOKEN_SECRET_PREVIOUS for at least 30 days (CAN-SPAM: opt-out links must keep working). */
 export function rentersTokenSecret(): string {
   return process.env.RENTERS_TOKEN_SECRET ?? '';
+}
+
+export function rentersTokenSecretPrevious(): string {
+  return process.env.RENTERS_TOKEN_SECRET_PREVIOUS ?? '';
 }
 
 /** Server-side readiness: store + mail + secret. Route handlers 503 without it. */

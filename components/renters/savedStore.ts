@@ -13,6 +13,7 @@ export type SavedCar = {
   name: string;
   href: string;
   priceCents?: number;
+  team_name?: string;
   savedAt: string;
 };
 

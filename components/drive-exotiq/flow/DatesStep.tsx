@@ -19,7 +19,8 @@ import {
 } from '@/domain/booking/dates';
 import { RunningTotalCard, ScreenShell, StepHeader, Sticky } from './shared';
 import { EmailCaptureForm } from '@/components/renters/EmailCaptureForm';
-import { renterCaptureUiEnabled } from '@/domain/renters/config';
+import { renterCaptureUiEnabled } from '@/domain/renters/flags';
+import { MAX_WINDOW_DAYS, daysBetween } from '@/domain/booking/marketplaceQuery';
 import { recomputeBookingCart } from './state';
 
 // value is what the booking stores and what the backend casts into a
@@ -92,21 +93,31 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
     setAwaitingEnd(true);
   };
 
-  // MP-14: a taken day (not a past one) answers a tap with an alert offer
-  // for a minimum-stay window starting that day.
-  const [blockedTap, setBlockedTap] = useState<string | null>(null);
+  // MP-14: a taken day (not a past one) answers a tap with an alert offer.
+  // The window is the range the renter was building when they hit it —
+  // start already chosen and this day after it — else a minimum-stay
+  // window from the tapped day.
+  const captureOn = renterCaptureUiEnabled();
+  const [alertWindow, setAlertWindow] = useState<{ start: string; end: string } | null>(null);
+  const offerAlert = (start: string, end: string) => {
+    if (!captureOn) return;
+    if (daysBetween(todayIso, end) > MAX_WINDOW_DAYS) return;
+    setAlertWindow({ start, end });
+  };
   const selectDay = (iso: string) => {
     if (isBlocked(iso)) {
-      if (iso >= todayIso) setBlockedTap(iso);
+      if (iso >= todayIso) offerAlert(awaitingEnd && iso > startIso ? startIso : iso, awaitingEnd && iso > startIso ? iso : addDays(iso, minDays));
       return;
     }
-    setBlockedTap(null);
+    setAlertWindow(null);
     if (!awaitingEnd || iso <= startIso) {
       startNewRange(iso);
       return;
     }
-    // Second tap, iso > startIso: extend if valid, else start over at iso.
+    // Second tap, iso > startIso: extend if valid, else start over at iso —
+    // but first offer an alert for the range that a taken day just broke.
     if (rangeCrossesBlocked(startIso, iso)) {
+      offerAlert(startIso, iso);
       startNewRange(iso);
       return;
     }
@@ -152,16 +163,17 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
                 key={day}
                 type="button"
                 onClick={() => selectDay(iso)}
-                // Past days are disabled; a taken future day stays tappable so
-                // it can offer an alert (MP-14), and reads as disabled to AT.
-                disabled={iso < todayIso}
-                aria-disabled={blocked || undefined}
+                // Past days are disabled. With capture on, a taken future day is
+                // a real control that offers an alert, and says so in its name;
+                // with capture off it is disabled like before (MP-14).
+                disabled={iso < todayIso || (blocked && !captureOn)}
+                data-taken={blocked && iso >= todayIso ? '' : undefined}
                 // MP-11: hover fill and keyboard ring are drawn on the same 34px
                 // disc the selected/today states use (a `before:` layer under
                 // the number), so the grid never mixes two circle sizes.
-                className="relative aspect-square text-[#9BA1B0] outline-none transition-colors before:pointer-events-none before:absolute before:left-1/2 before:top-1/2 before:h-[34px] before:w-[34px] before:-translate-x-1/2 before:-translate-y-1/2 before:rounded-full enabled:hover:text-[#F0F2F5] enabled:hover:before:bg-[#161922] focus-visible:before:ring-2 focus-visible:before:ring-[#C8A664]/60 disabled:cursor-not-allowed disabled:text-[#3D4250] aria-disabled:cursor-not-allowed aria-disabled:text-[#3D4250] aria-disabled:hover:text-[#3D4250] aria-disabled:hover:before:bg-transparent"
+                className="relative aspect-square text-[#9BA1B0] outline-none transition-colors before:pointer-events-none before:absolute before:left-1/2 before:top-1/2 before:h-[34px] before:w-[34px] before:-translate-x-1/2 before:-translate-y-1/2 before:rounded-full enabled:hover:text-[#F0F2F5] enabled:hover:before:bg-[#161922] focus-visible:before:ring-2 focus-visible:before:ring-[#C8A664]/60 disabled:cursor-not-allowed disabled:text-[#3D4250] data-[taken]:text-[#3D4250] data-[taken]:hover:text-[#5C6272]"
                 aria-pressed={inRange}
-                aria-label={`${longDate(iso)}${blocked ? ', unavailable' : ''}`}
+                aria-label={`${longDate(iso)}${blocked ? (iso >= todayIso && captureOn ? ', taken — get an alert' : ', unavailable') : ''}`}
                 aria-current={iso === todayIso ? 'date' : undefined}
               >
                 {iso === todayIso && !inRange && !blocked && <span className="absolute left-1/2 top-1/2 h-[34px] w-[34px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#3A3F4D]" aria-hidden />}
@@ -175,14 +187,17 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
             );
           })}
         </div>
-        <div className="mt-3 text-center text-[10px] uppercase tracking-[0.18em] text-[#848A9A]">Tap start, then end · {cart.vehicle.minRentalDays}-day minimum{hasBlockedDays ? ' · Crossed-out dates are unavailable' : ''}</div>
-        {blockedTap && renterCaptureUiEnabled() && (
-          <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
-            <div className="text-sm font-medium text-[#F0F2F5]">{formatRangeLabel(blockedTap, addDays(blockedTap, minDays))} is taken.</div>
-            <p className="mt-1 text-xs leading-5 text-[#9BA1B0]">Get one e-mail if this car opens up for those dates. We check every morning.</p>
-            <EmailCaptureForm source="alert" cta="Alert me" compact teamSlug={cart.operator.slug} vehicleSlug={cart.vehicle.slug} alert={{ team_slug: cart.operator.slug, vehicle_slug: cart.vehicle.slug, start: blockedTap, end: addDays(blockedTap, minDays) }} className="mt-3" />
-          </div>
-        )}
+        <div className="mt-3 text-center text-[10px] uppercase tracking-[0.18em] text-[#848A9A]">Tap start, then end · {cart.vehicle.minRentalDays}-day minimum{hasBlockedDays ? (captureOn ? ' · Crossed-out dates are taken — tap one for an alert' : ' · Crossed-out dates are unavailable') : ''}</div>
+        {/* Always mounted so the card's arrival is announced (MP-14). */}
+        <div aria-live="polite">
+          {alertWindow && captureOn && (
+            <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
+              <div className="text-sm font-medium text-[#F0F2F5]">{formatRangeLabel(alertWindow.start, alertWindow.end)} is taken.</div>
+              <p className="mt-1 text-xs leading-5 text-[#9BA1B0]">Get one e-mail if this car opens up for those dates. We check every morning.</p>
+              <EmailCaptureForm key={`${alertWindow.start}-${alertWindow.end}`} source="alert" cta="Alert me" compact teamSlug={cart.operator.slug} vehicleSlug={cart.vehicle.slug} alert={{ team_slug: cart.operator.slug, vehicle_slug: cart.vehicle.slug, start: alertWindow.start, end: alertWindow.end }} className="mt-3" />
+            </div>
+          )}
+        </div>
         <label className="mt-5 block text-xs uppercase tracking-[0.22em] text-[#848A9A]">Pickup time</label>
         {/* Still a native select (iOS wheel, screen-reader semantics), wearing
             the Driver step's field recipe with a gold chevron (MP-11). */}

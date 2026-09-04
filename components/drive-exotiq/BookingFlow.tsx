@@ -115,7 +115,7 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
       // The ref only — the confirmation token is the renter's credential.
       track('booking_created', { booking: result.bookingRef, team: operator.slug, vehicle: vehicle.slug, protection: cart.protection });
       // MP-14: the renter store learns the address + consent now; keepalive, never awaited.
-      captureBooking(cart, result.bookingRef);
+      captureBooking(cart, result.bookingRef, result.confirmationToken);
       router.push(`/booking/${result.bookingRef}${query}`);
     } catch (error) {
       setReserveError(error instanceof Error ? error.message : 'Something went wrong — please try again.');

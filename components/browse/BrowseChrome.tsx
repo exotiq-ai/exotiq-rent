@@ -6,7 +6,8 @@ import { TrackView } from '@/components/analytics/TrackView';
 import { driveFontClassName } from '@/components/drive-exotiq/fonts';
 import { EmailCaptureForm } from '@/components/renters/EmailCaptureForm';
 import { SavedLink } from '@/components/renters/SavedLink';
-import { renterCaptureUiEnabled } from '@/domain/renters/config';
+import { browseEnabled } from '@/domain/booking/config';
+import { renterCaptureUiEnabled } from '@/domain/renters/flags';
 import { containerClassName, groundClassName, serifStyle } from './tokens';
 
 /**
@@ -28,7 +29,7 @@ export function BrowseChrome({ children, view = 'browse_view' }: { children: Rea
           </Link>
           <div className="flex items-center gap-4">
             <p className="hidden text-[11px] uppercase tracking-[0.22em] text-[#848A9A] sm:block">Curated exotic &amp; luxury rentals</p>
-            <SavedLink />
+            <SavedLink enabled={browseEnabled()} />
           </div>
         </div>
       </header>

@@ -3,7 +3,7 @@
 import { useState, type MouseEvent } from 'react';
 import { Heart } from 'lucide-react';
 import { track } from '@/components/analytics/posthog';
-import { renterCaptureUiEnabled } from '@/domain/renters/config';
+import { renterCaptureUiEnabled } from '@/domain/renters/flags';
 import { useSaved, type SavedCar } from './savedStore';
 
 /**
@@ -32,7 +32,7 @@ export function SaveButton({ car, className = '', size = 16, variant = 'icon' }:
         type="button"
         onClick={onClick}
         aria-pressed={saved}
-        aria-label={saved ? `Remove ${car.name} from your saved cars` : `Save ${car.name}`}
+        aria-label={`Save ${car.name}`}
         className={`inline-flex items-center justify-center gap-2 rounded-xl border border-[#2A2E3A] bg-[#161922] px-4 py-3 text-[13px] font-medium text-[#F0F2F5] transition hover:border-[#C8A664]/45 active:scale-[0.98] ${className}`}
       >
         {heart}
@@ -45,7 +45,7 @@ export function SaveButton({ car, className = '', size = 16, variant = 'icon' }:
       type="button"
       onClick={onClick}
       aria-pressed={saved}
-      aria-label={saved ? `Remove ${car.name} from your saved cars` : `Save ${car.name}`}
+      aria-label={`Save ${car.name}`}
       title={saved ? 'Saved' : 'Save this car'}
       className={`grid h-9 w-9 place-items-center rounded-full border border-[#C8A664]/25 bg-[#0D0F14]/70 text-[#F0F2F5] backdrop-blur transition hover:border-[#C8A664]/60 hover:text-[#C8A664] active:scale-95 ${className}`}
     >

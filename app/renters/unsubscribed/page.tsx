@@ -16,7 +16,8 @@ const COPY: Record<string, { title: string; body: string }> = {
 /** Landing page for the unsubscribe link (MP-14). */
 export default function UnsubscribedPage({ searchParams }: { searchParams?: { state?: string } }) {
   if (!renterCaptureUiEnabled()) notFound();
-  const copy = COPY[searchParams?.state ?? 'ok'] ?? COPY.ok;
+  const state = searchParams?.state ?? 'invalid';
+  const copy = Object.prototype.hasOwnProperty.call(COPY, state) ? COPY[state] : COPY.invalid;
   return (
     <BrowseChrome view={null}>
       <section className={`${containerClassName} max-w-2xl pb-24 pt-16 sm:pt-24`}>

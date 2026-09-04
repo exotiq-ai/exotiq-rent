@@ -7,7 +7,8 @@ import { formatMoney } from '@/domain/booking/totals';
 import type { BookingCart, ProtectionTier } from '@/domain/booking/types';
 import type { PublicQuote } from '@/domain/booking/publicContracts';
 import { Breakdown, DepositDisclosure, QuoteNotice, ScreenShell, StepHeader, Sticky } from './shared';
-import { renterCaptureUiEnabled } from '@/domain/renters/config';
+import { renterCaptureUiEnabled } from '@/domain/renters/flags';
+import { CONSENT_TEXT } from '@/domain/renters/consentText';
 
 export function ReviewStep({
   cart,
@@ -161,7 +162,7 @@ export function ReviewStep({
         {onMarketingConsentChange && renterCaptureUiEnabled() && (
           <label className="mt-3 flex gap-3 px-1 text-xs leading-5 text-[#9BA1B0]">
             <input type="checkbox" checked={Boolean(cart.driver.marketingConsent)} onChange={(event) => onMarketingConsentChange(event.target.checked)} className="control-check mt-0.5" />
-            <span>Keep me posted on new cars and early access from Drive Exotiq. Occasional e-mail, unsubscribe any time.</span>
+            <span>{CONSENT_TEXT.booking.text}</span>
           </label>
         )}
       </ScreenShell>
