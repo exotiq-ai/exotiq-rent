@@ -170,7 +170,7 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
         </span>
       </ScreenShell>
       <Sticky>
-        <RunningTotalCard label={`${dateLabel} · ${cart.totals.days} days`} detail={`${formatMoney(cart.vehicle.dailyRateCents)}/day × ${cart.totals.days}`} amountCents={cart.totals.rentalSubtotalCents} />
+        <RunningTotalCard label={`${dateLabel} · ${cart.totals.days} ${cart.totals.days === 1 ? 'day' : 'days'}`} detail={`${formatMoney(cart.vehicle.dailyRateCents)}/day × ${cart.totals.days}`} amountCents={cart.totals.rentalSubtotalCents} />
         <PrimaryButton onClick={next} disabled={!canContinue}>Continue</PrimaryButton>
       </Sticky>
     </>

@@ -103,14 +103,14 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
           <label className="block">
             <span className="block text-[10px] text-[#848A9A]">Pickup</span>
             <span className="relative mt-1 flex items-center">
-              <CalendarDays size={13} className="pointer-events-none absolute left-3 text-[#C8A664]" aria-hidden />
+              <CalendarDays size={13} className="pointer-events-none absolute left-2.5 text-[#C8A664]" aria-hidden />
               <input type="date" name="start" min={today} max={addDays(today, 180)} defaultValue={query.start ?? ''} aria-describedby={`${idPrefix}-dates-hint`} className={`${datePillClassName} w-full min-w-0`} />
             </span>
           </label>
           <label className="block">
             <span className="block text-[10px] text-[#848A9A]">Drop-off</span>
             <span className="relative mt-1 flex items-center">
-              <CalendarDays size={13} className="pointer-events-none absolute left-3 text-[#C8A664]" aria-hidden />
+              <CalendarDays size={13} className="pointer-events-none absolute left-2.5 text-[#C8A664]" aria-hidden />
               <input type="date" name="end" min={query.start ? addDays(query.start, 1) : addDays(today, 1)} max={addDays(today, 181)} defaultValue={query.end ?? ''} aria-describedby={`${idPrefix}-dates-hint`} className={`${datePillClassName} w-full min-w-0`} />
             </span>
           </label>

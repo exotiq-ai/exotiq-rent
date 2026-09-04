@@ -49,7 +49,7 @@ function AboutCard({ team, count, minRate, minDays, className = '' }: { team: Te
       <div className="mt-4 grid grid-cols-3 gap-2 text-center text-[11px]">
         <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[17px] font-medium leading-none tabular-nums text-[#C8A664]">{count}</div><div className="mt-1.5 text-[#848A9A]">Cars</div></div>
         <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[17px] font-medium leading-none tabular-nums text-[#C8A664]"><span className="text-[11px] font-normal text-[#848A9A]">From </span><Money cents={minRate} /></div><div className="mt-1.5 text-[#848A9A]">Per day</div></div>
-        <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[17px] font-medium leading-none tabular-nums text-[#C8A664]">{minDays}+</div><div className="mt-1.5 text-[#848A9A]">Day minimum</div></div>
+        <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[17px] font-medium leading-none tabular-nums text-[#C8A664]">{minDays}+<span className="text-[11px] font-normal text-[#848A9A]"> day</span></div><div className="mt-1.5 text-[#848A9A]">Minimum</div></div>
       </div>
     </div>
   );

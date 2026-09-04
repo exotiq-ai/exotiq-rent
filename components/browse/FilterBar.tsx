@@ -117,14 +117,14 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
         <span className="flex flex-nowrap items-center gap-2">
           <label className="sr-only" htmlFor={`${idPrefix}-start`}>Pickup date</label>
           <span className="relative inline-flex items-center">
-            <CalendarDays size={13} className="pointer-events-none absolute left-3 text-[#C8A664]" aria-hidden />
-            <input id={`${idPrefix}-start`} type="date" name="start" min={today} max={addDays(today, 180)} defaultValue={query.start ?? ''} aria-describedby={`${idPrefix}-dates-hint`} className={datePillClassName} />
+            <CalendarDays size={13} className="pointer-events-none absolute left-2.5 text-[#C8A664]" aria-hidden />
+            <input id={`${idPrefix}-start`} type="date" name="start" min={today} max={addDays(today, 180)} defaultValue={query.start ?? ''} aria-describedby={`${idPrefix}-dates-hint`} className={`${datePillClassName} min-w-[8.5rem]`} />
           </span>
           <span className="text-[11px] text-[#848A9A]">to</span>
           <label className="sr-only" htmlFor={`${idPrefix}-end`}>Drop-off date</label>
           <span className="relative inline-flex items-center">
-            <CalendarDays size={13} className="pointer-events-none absolute left-3 text-[#C8A664]" aria-hidden />
-            <input id={`${idPrefix}-end`} type="date" name="end" min={query.start ? addDays(query.start, 1) : addDays(today, 1)} max={addDays(today, 181)} defaultValue={query.end ?? ''} aria-describedby={`${idPrefix}-dates-hint`} className={datePillClassName} />
+            <CalendarDays size={13} className="pointer-events-none absolute left-2.5 text-[#C8A664]" aria-hidden />
+            <input id={`${idPrefix}-end`} type="date" name="end" min={query.start ? addDays(query.start, 1) : addDays(today, 1)} max={addDays(today, 181)} defaultValue={query.end ?? ''} aria-describedby={`${idPrefix}-dates-hint`} className={`${datePillClassName} min-w-[8.5rem]`} />
           </span>
         </span>
         <p id={`${idPrefix}-dates-hint`} className="basis-full text-[11px] text-[#848A9A]" aria-live="polite">{hint}</p>

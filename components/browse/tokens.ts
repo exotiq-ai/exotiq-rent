@@ -62,5 +62,5 @@ export const selectClassName = `${fieldClassName} appearance-none pr-9`;
 
 /** Native date input restyled as a pill (interim until MP-13's calendar popover): the browser glyph is stretched over the whole pill and hidden, so tapping anywhere opens the picker; a CalendarDays icon leads. */
 export const datePillClassName =
-  'h-8 min-w-[8.5rem] rounded-full border border-[#3A3F4D] bg-[#10131A] pl-8 pr-3 text-[12px] leading-none text-[#F0F2F5] outline-none transition hover:border-[#C8A664]/40 focus-visible:ring-2 focus-visible:ring-[#C8A664]/60 [color-scheme:dark] ' +
+  'h-8 rounded-full border border-[#3A3F4D] bg-[#10131A] pl-7 pr-2.5 text-[12px] leading-none text-[#F0F2F5] outline-none transition hover:border-[#C8A664]/40 focus-visible:ring-2 focus-visible:ring-[#C8A664]/60 [color-scheme:dark] ' +
   '[&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0';
