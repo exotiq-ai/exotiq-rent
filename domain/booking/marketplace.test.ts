@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MARKETPLACE_DEFAULT_LIMIT, MARKETPLACE_MAX_LIMIT, parseMarketplaceQuery, toMarketplaceSearchParams } from './marketplaceQuery';
+import { MARKETPLACE_DEFAULT_LIMIT, MARKETPLACE_MAX_LIMIT, bodyTypeLabel, parseMarketplaceQuery, toMarketplaceSearchParams } from './marketplaceQuery';
 import { applyMarketplaceQuery, computeFacets, filterListings, sortListings } from './marketplaceCore';
 import { mockMarketplaceListings } from './mockMarketplaceService';
 import { getMarketplaceFacets, getMarketplaceListings } from './service';
@@ -110,6 +110,12 @@ describe('vehicle type (MP-9)', () => {
     const q = parseMarketplaceQuery({ type: ['Supercar', 'luxury-suv,sports-car'] });
     expect(q.types).toEqual(['supercar', 'luxury-suv', 'sports-car']);
     expect(toMarketplaceSearchParams(q).getAll('type')).toEqual(['supercar', 'luxury-suv', 'sports-car']);
+    expect(parseMarketplaceQuery({ type: ['supercar', 'SUPERCAR'] }).types).toEqual(['supercar']);
+  });
+
+  it('labels unknown vocabulary readably', () => {
+    expect(bodyTypeLabel('electric-suv')).toBe('Electric SUV');
+    expect(bodyTypeLabel('luxury-suv')).toBe('Luxury SUV');
   });
 
   it('filters by type and never matches an unclassified car', () => {

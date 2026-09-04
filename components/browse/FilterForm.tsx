@@ -81,18 +81,6 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
         </div>
       </fieldset>
 
-      <fieldset>
-        <legend className={section}>Make</legend>
-        <div className="mt-2 space-y-0.5">
-          {facets.makes.map((m) => (
-            <label key={m.value} className={option}>
-              <span className="flex items-center gap-2.5"><input type="checkbox" name="make" value={m.value} defaultChecked={query.makes.some((x) => x.toLowerCase() === m.value.toLowerCase())} className="accent-[#C8A664]" />{m.label}</span>
-              <span className={count}>{m.count}</span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
       {facets.types.length > 0 && (
         <fieldset>
           <legend className={section}>Type</legend>
@@ -106,6 +94,19 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
           </div>
         </fieldset>
       )}
+
+      <fieldset>
+        <legend className={section}>Make</legend>
+        <div className="mt-2 space-y-0.5">
+          {facets.makes.map((m) => (
+            <label key={m.value} className={option}>
+              <span className="flex items-center gap-2.5"><input type="checkbox" name="make" value={m.value} defaultChecked={query.makes.some((x) => x.toLowerCase() === m.value.toLowerCase())} className="accent-[#C8A664]" />{m.label}</span>
+              <span className={count}>{m.count}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
 
       <fieldset>
         <legend className={section}>Daily rate</legend>

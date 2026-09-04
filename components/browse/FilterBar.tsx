@@ -31,6 +31,12 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
     (b) => b.minCents === (query.minDailyRateCents ?? 0) && b.maxCents === query.maxDailyRateCents,
   )?.value ?? '';
   const active = query.makes.length + query.types.length + (currentBand ? 1 : 0);
+  // Price bands are contiguous and inclusive, so their counts sum to the fleet.
+  const fleetSize = facets.priceBands.reduce((n, b) => n + b.count, 0);
+  // A lone type chip only earns its place when it can narrow the result —
+  // i.e. some cars are still unclassified. One type across the whole fleet
+  // would toggle between N of N and N of N.
+  const typesNarrow = facets.types.length > 1 || (facets.types.length === 1 && facets.types[0].count < fleetSize);
 
   const navigate = () => {
     if (!form.current) return;
@@ -52,14 +58,14 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
   const label = 'mr-1 text-[10px] uppercase tracking-[0.22em] text-[#848A9A]';
   const chip = 'relative cursor-pointer';
   const face =
-    'inline-flex items-center gap-1.5 rounded-full border border-[#2A2E3A] bg-[#10131A] px-3 py-1.5 text-[12px] text-[#9BA1B0] transition ' +
-    'peer-checked:border-[#C8A664]/70 peer-checked:bg-[#C8A664]/10 peer-checked:text-[#F0F2F5] peer-focus-visible:ring-2 peer-focus-visible:ring-[#C8A664]/60 hover:border-[#C8A664]/40 hover:text-[#F0F2F5]';
+    'inline-flex items-center gap-1.5 rounded-full border border-[#3A3F4D] bg-[#10131A] px-3 py-1.5 text-[12px] text-[#9BA1B0] transition ' +
+    'peer-checked:border-[#C8A664]/70 peer-checked:bg-[#C8A664]/10 peer-checked:font-semibold peer-checked:text-[#F0F2F5] peer-focus-visible:ring-2 peer-focus-visible:ring-[#C8A664]/60 hover:border-[#C8A664]/40 hover:text-[#F0F2F5]';
   const count = 'text-[10px] tabular-nums text-[#848A9A]';
 
   return (
     <form ref={form} method="get" action={action} onSubmit={onSubmit} onChange={navigate} className="space-y-2.5" aria-label="Filter the fleet">
-      <div className={row}>
-        <span className={label}>Sort</span>
+      <div className={row} role="group" aria-labelledby={`${idPrefix}-sort-label`}>
+        <span id={`${idPrefix}-sort-label`} className={label}>Sort</span>
         {MARKETPLACE_SORTS.map((s) => (
           <label key={s} className={chip}>
             <input type="radio" name="sort" value={s} defaultChecked={query.sort === s} className="peer sr-only" id={`${idPrefix}-sort-${s}`} />
@@ -68,32 +74,32 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
         ))}
       </div>
 
-      {facets.makes.length > 1 && (
-        <div className={row}>
-          <span className={label}>Make</span>
-          {facets.makes.map((m) => (
-            <label key={m.value} className={chip}>
-              <input type="checkbox" name="make" value={m.value} defaultChecked={query.makes.some((x) => x.toLowerCase() === m.value.toLowerCase())} className="peer sr-only" />
-              <span className={face}>{m.label}<span className={count}>{m.count}</span></span>
-            </label>
-          ))}
-        </div>
-      )}
-
-      {facets.types.length > 0 && (
-        <div className={row}>
-          <span className={label}>Type</span>
+      {typesNarrow && (
+        <div className={row} role="group" aria-labelledby={`${idPrefix}-type-label`}>
+          <span id={`${idPrefix}-type-label`} className={label}>Type</span>
           {facets.types.map((t) => (
             <label key={t.value} className={chip}>
               <input type="checkbox" name="type" value={t.value} defaultChecked={query.types.includes(t.value)} className="peer sr-only" />
-              <span className={face}>{t.label}<span className={count}>{t.count}</span></span>
+              <span className={face}>{t.label}<span className={count}> {t.count}</span></span>
             </label>
           ))}
         </div>
       )}
 
-      <div className={row}>
-        <span className={label}>Daily rate</span>
+      {facets.makes.length > 1 && (
+        <div className={row} role="group" aria-labelledby={`${idPrefix}-make-label`}>
+          <span id={`${idPrefix}-make-label`} className={label}>Make</span>
+          {facets.makes.map((m) => (
+            <label key={m.value} className={chip}>
+              <input type="checkbox" name="make" value={m.value} defaultChecked={query.makes.some((x) => x.toLowerCase() === m.value.toLowerCase())} className="peer sr-only" />
+              <span className={face}>{m.label}<span className={count}> {m.count}</span></span>
+            </label>
+          ))}
+        </div>
+      )}
+
+      <div className={row} role="group" aria-labelledby={`${idPrefix}-band-label`}>
+        <span id={`${idPrefix}-band-label`} className={label}>Daily rate</span>
         <label className={chip}>
           <input type="radio" name="band" value="" defaultChecked={currentBand === ''} className="peer sr-only" />
           <span className={face}>Any</span>
@@ -101,7 +107,7 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
         {facets.priceBands.filter((b) => b.count > 0).map((b) => (
           <label key={b.value} className={chip}>
             <input type="radio" name="band" value={b.value} defaultChecked={currentBand === b.value} className="peer sr-only" />
-            <span className={face}>{b.label}<span className={count}>{b.count}</span></span>
+            <span className={face}>{b.label}<span className={count}> {b.count}</span></span>
           </label>
         ))}
         {active > 0 && (

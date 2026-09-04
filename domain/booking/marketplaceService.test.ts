@@ -80,6 +80,19 @@ describe('supabase marketplace service', () => {
     expect(facets.cities.map((c) => c.label).sort()).toEqual(['Scottsdale, AZ', 'Tampa, FL']);
   });
 
+  it('carries body_type from the RPC row into the Type facet (live path)', async () => {
+    vi.mocked(fetchMarketplaceTeams).mockResolvedValue(teams);
+    vi.mocked(fetchMarketplaceFleet).mockResolvedValue([
+      car({ vehicle_slug: 'a', body_type: 'luxury-suv' }),
+      car({ vehicle_slug: 'b', body_type: null }),
+      car({ vehicle_slug: 'c' }), // older response shape without the column
+    ]);
+    const facets = await getSupabaseMarketplaceFacets();
+    expect(facets.types).toEqual([{ value: 'luxury-suv', label: 'Luxury SUV', count: 1 }]);
+    const page = await getSupabaseMarketplaceListings(parseMarketplaceQuery({ type: 'luxury-suv' }));
+    expect(page.listings.map((l) => l.vehicle.slug)).toEqual(['a']);
+  });
+
   it('degrades to an empty catalog, not an error, when either RPC fails', async () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.mocked(fetchMarketplaceTeams).mockRejectedValue(new Error('public_marketplace_teams failed (500)'));
