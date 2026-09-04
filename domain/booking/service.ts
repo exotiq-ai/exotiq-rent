@@ -43,9 +43,10 @@ const perRequest: typeof cache = typeof cache === 'function' ? cache : (fn) => f
  * components or booking-flow UI internals.
  */
 /**
- * Marketplace reads (MP-2). Supabase mode is the M7c fan-out over
- * MARKETPLACE_TEAM_SLUGS (MP-4); the /browse route (MP-3) stays env-guarded
- * so no production host serves the grid until launch flips the flag.
+ * Marketplace reads (MP-2). Supabase mode reads the two cross-tenant RPCs
+ * (MP-7 / M7f) — a tenant appears by opting in via the Command Center, no
+ * env var; the /browse route (MP-3) stays env-guarded so no production host
+ * serves the grid until launch flips the flag.
  */
 export async function getMarketplaceListings(query: MarketplaceQuery): Promise<MarketplacePage> {
   if (getDataMode() === 'supabase') return getSupabaseMarketplaceListings(query);

@@ -11,11 +11,13 @@ export type RpcTeamRow = {
   slug: string;
   name: string;
   logo_url: string | null;
-  public_description: string | null;
   city: string | null;
   state: string | null;
   timezone: string | null;
-  currency: string | null;
+  /** Storefront-only fields. Optional because the marketplace teams RPC
+   * (RpcMarketplaceTeamRow) omits them by contract and shares adaptTeam. */
+  public_description?: string | null;
+  currency?: string | null;
   /** Tenant carryover fields (2026-08-18) — CC Business Profile → "Renter
    * contact & pickup". Older responses omit them. */
   support_email?: string | null;
@@ -34,6 +36,25 @@ export type RpcFleetVehicleRow = {
   daily_rate: number | string | null; // numeric dollars from Postgres
   hero_image_url: string | null;
   min_rental_days: number | null;
+};
+
+/**
+ * M7f cross-tenant reads (exotiq-spark-mvp-flow migrations
+ * 20260903234727_*.sql + 234839/234925). Zero arguments; both filter on
+ * teams.marketplace_listed AND the storefront visibility predicates
+ * (is_marketplace_team / is_marketplace_vehicle), fleet minus unlisted cars.
+ * The teams row deliberately carries no contact, pickup, description or
+ * currency fields — the grid needs none and the contract forbids PII.
+ */
+export type RpcMarketplaceTeamRow = Pick<RpcTeamRow, 'slug' | 'name' | 'logo_url' | 'city' | 'state' | 'timezone'> & {
+  verified: boolean;
+};
+
+export type RpcMarketplaceFleetRow = RpcFleetVehicleRow & {
+  team_slug: string;
+  /** Visible, vehicle-confirmed gallery photos; 1 when the hero is the legacy image_url. */
+  photo_count: number | null;
+  verified: boolean;
 };
 
 export type RpcVehiclePhoto = {
@@ -130,6 +151,14 @@ export async function fetchPublicTeam(teamSlug: string): Promise<RpcTeamRow | nu
 
 export async function fetchPublicTeamFleet(teamSlug: string): Promise<RpcFleetVehicleRow[]> {
   return rpc<RpcFleetVehicleRow[]>('public_team_fleet', { _team_slug: teamSlug });
+}
+
+export async function fetchMarketplaceTeams(): Promise<RpcMarketplaceTeamRow[]> {
+  return rpc<RpcMarketplaceTeamRow[]>('public_marketplace_teams', {});
+}
+
+export async function fetchMarketplaceFleet(): Promise<RpcMarketplaceFleetRow[]> {
+  return rpc<RpcMarketplaceFleetRow[]>('public_marketplace_fleet', {});
 }
 
 export async function fetchPublicVehicle(teamSlug: string, vehicleSlug: string): Promise<RpcVehicleDetailRow | null> {

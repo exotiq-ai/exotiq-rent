@@ -438,3 +438,16 @@ the detail page, but detail→book may carry dates once T-13 ships.
 **Sequencing note:** availability-date filtering stays out of v1 (unchanged),
 and the availability-instants contract Lovable owes (T-16) is unrelated to the
 browse grid — do not couple them.
+
+### 2026-09-04 — M7f landed (MP-7)
+
+Lovable applied `teams.marketplace_listed` (opt-in, seeded for `exotiq` and
+`exotics-by-the-bay`) plus `public_marketplace_teams()` and
+`public_marketplace_fleet()` on 2026-09-03 (migrations `20260903234727` +
+two follow-ups); contract and their verified reply live in
+`LOVABLE_HANDOFF_MARKETPLACE_RPC_2026-09-03.md`. The renter side now reads
+those two zero-argument RPCs in `domain/booking/marketplaceService.ts`
+(`buildCatalog`); the M7c fan-out and the `MARKETPLACE_TEAM_SLUGS` env var
+referenced above are retired — a tenant appears by flipping the Command
+Center toggle. The sitemap needs no pagination loop: the fleet RPC returns
+the whole catalog. `photo_count` now drives the "featured" ordering.
