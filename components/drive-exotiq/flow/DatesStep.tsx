@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PrimaryButton } from '../BookingChrome';
 import { countRentalDays, formatMoney } from '@/domain/booking/totals';
 import type { BookingCart } from '@/domain/booking/types';
@@ -134,22 +134,40 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
             const inRange = !blocked && iso >= startIso && iso <= endIso;
             const isMinHint = iso === minEndIso && countRentalDays(startIso, iso) === cart.vehicle.minRentalDays;
             return (
-              <button key={day} type="button" onClick={() => selectDay(iso)} disabled={blocked} className={`relative aspect-square${blocked ? ' cursor-not-allowed' : ''}`} aria-pressed={inRange} aria-disabled={blocked}>
+              <button
+                key={day}
+                type="button"
+                onClick={() => selectDay(iso)}
+                disabled={blocked}
+                // MP-11: a tappable day brightens and fills on hover, today wears
+                // a quiet ring, and keyboard focus is a gold ring inside the
+                // circle rather than a square outline around it.
+                className="relative aspect-square rounded-full text-[#9BA1B0] outline-none transition-colors enabled:hover:bg-[#161922] enabled:hover:text-[#F0F2F5] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#C8A664]/60 disabled:cursor-not-allowed disabled:text-[#3D4250]"
+                aria-pressed={inRange}
+                aria-disabled={blocked}
+                aria-current={iso === todayIso ? 'date' : undefined}
+              >
+                {iso === todayIso && !inRange && !blocked && <span className="absolute left-1/2 top-1/2 h-[34px] w-[34px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#3A3F4D]" aria-hidden />}
                 {inRange && !isStart && !isEnd && <span className="absolute inset-y-[5px] left-0 right-0 bg-[#C8A664]/10" />}
                 {isStart && !isEnd && <span className="absolute inset-y-[5px] left-1/2 right-0 bg-[#C8A664]/10" />}
                 {isEnd && !isStart && <span className="absolute inset-y-[5px] left-0 right-1/2 bg-[#C8A664]/10" />}
                 {(isStart || isEnd) && <span className="absolute left-1/2 top-1/2 h-[34px] w-[34px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#C8A664] shadow-[0_0_0_1px_#C8A664,0_0_14px_rgba(200,166,100,.30)]" />}
                 {!inRange && !blocked && isMinHint && <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 translate-y-[15px] rounded-full bg-[#C8A664]/60" />}
-                <span className={`absolute inset-0 grid place-items-center tabular-nums${blocked ? ' line-through decoration-[#5C6272]' : ''}`} style={{ color: isStart || isEnd ? '#1A1308' : inRange ? '#F0F2F5' : blocked ? '#3D4250' : '#9BA1B0', fontWeight: isStart || isEnd ? 600 : 400 }}>{day}</span>
+                <span className={`absolute inset-0 grid place-items-center tabular-nums${isStart || isEnd ? ' font-semibold text-[#1A1308]' : inRange ? ' text-[#F0F2F5]' : ''}${blocked ? ' line-through decoration-[#5C6272]' : ''}`}>{day}</span>
               </button>
             );
           })}
         </div>
         <div className="mt-3 text-center text-[10px] uppercase tracking-[0.18em] text-[#848A9A]">Tap start, then end · {cart.vehicle.minRentalDays}-day minimum{hasBlockedDays ? ' · Crossed-out dates are unavailable' : ''}</div>
         <label className="mt-5 block text-xs uppercase tracking-[0.22em] text-[#848A9A]">Pickup time</label>
-        <select value={cart.pickupTime} onChange={(event) => setCart(recomputeBookingCart({ ...cart, pickupTime: event.target.value }))} className="mt-2 w-full rounded-xl border border-[#2A2E3A] bg-[#161922] px-4 py-3 text-sm text-[#F0F2F5]">
-          {PICKUP_TIMES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-        </select>
+        {/* Still a native select (iOS wheel, screen-reader semantics), wearing
+            the Driver step's field recipe with a gold chevron (MP-11). */}
+        <span className="relative mt-2 block">
+          <select value={cart.pickupTime} onChange={(event) => setCart(recomputeBookingCart({ ...cart, pickupTime: event.target.value }))} className="w-full appearance-none rounded-lg border border-[#2A2E3A] bg-[#10131A] py-3 pl-4 pr-10 text-sm text-[#F0F2F5] outline-none transition hover:border-[#3A3F4D] focus:border-[#C8A664]/70 focus-visible:ring-2 focus-visible:ring-[#C8A664]/60 [color-scheme:dark]" aria-label="Pickup time">
+            {PICKUP_TIMES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+          </select>
+          <ChevronDown size={16} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#C8A664]" aria-hidden />
+        </span>
       </ScreenShell>
       <Sticky>
         <RunningTotalCard label={`${dateLabel} · ${cart.totals.days} days`} detail={`${formatMoney(cart.vehicle.dailyRateCents)}/day × ${cart.totals.days}`} amountCents={cart.totals.rentalSubtotalCents} />

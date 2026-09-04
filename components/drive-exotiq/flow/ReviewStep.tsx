@@ -114,9 +114,9 @@ export function ReviewStep({
                 aria-checked={protectionOn}
                 aria-label="Exotiq Protect"
                 onClick={() => onProtectionChange(protectionOn ? 'decline' : 'premium')}
-                className={`relative h-7 w-12 shrink-0 rounded-full transition ${protectionOn ? 'bg-[#C8A664]' : 'bg-[#2A2E3A]'}`}
+                className={`relative h-7 w-12 shrink-0 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C8A664]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#161922] ${protectionOn ? 'bg-[#C8A664]' : 'bg-[#2A2E3A]'}`}
               >
-                <span className={`absolute top-1 h-5 w-5 rounded-full bg-[#F0F2F5] transition-all ${protectionOn ? 'left-6' : 'left-1'}`} />
+                <span className={`absolute top-1 h-5 w-5 rounded-full bg-[#F0F2F5] shadow-[0_1px_2px_rgba(0,0,0,.4)] transition-all ${protectionOn ? 'left-6' : 'left-1'}`} />
               </button>
             </div>
           </div>
@@ -149,7 +149,7 @@ export function ReviewStep({
             type="checkbox"
             checked={termsAccepted}
             onChange={(event) => setTermsAccepted(event.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 accent-[#C8A664]"
+            className="control-check mt-0.5"
           />
           <span>I agree to the <span className="text-[#C8A664] underline underline-offset-2">Rental Terms &amp; Conditions</span>.</span>
         </label>

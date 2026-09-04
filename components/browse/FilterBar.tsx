@@ -3,10 +3,12 @@
 import { useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { CalendarDays } from 'lucide-react';
 import type { MarketplaceFacets, MarketplaceQuery } from '@/domain/booking/publicContracts';
 import { MARKETPLACE_SORTS, PRICE_BANDS, daysBetween } from '@/domain/booking/marketplaceQuery';
 import { addDays } from '@/domain/booking/dates';
 import { localTodayIso } from '@/domain/booking/availability';
+import { datePillClassName } from './tokens';
 
 function datesHint(start: string, end: string): string {
   if (start && end) return 'Cars shown are free for these dates.';
@@ -103,10 +105,9 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
   const label = 'mr-1 text-[10px] uppercase tracking-[0.22em] text-[#848A9A]';
   const chip = 'relative cursor-pointer';
   const face =
-    'inline-flex items-center gap-1.5 rounded-full border border-[#3A3F4D] bg-[#10131A] px-3 py-1.5 text-[12px] text-[#9BA1B0] transition ' +
+    'inline-flex select-none items-center gap-1.5 rounded-full border border-[#3A3F4D] bg-[#10131A] px-3 py-1.5 text-[12px] text-[#9BA1B0] transition active:scale-[0.97] active:bg-[#C8A664]/15 ' +
     'peer-checked:border-[#C8A664]/70 peer-checked:bg-[#C8A664]/10 peer-checked:font-semibold peer-checked:text-[#F0F2F5] peer-focus-visible:ring-2 peer-focus-visible:ring-[#C8A664]/60 hover:border-[#C8A664]/40 hover:text-[#F0F2F5]';
   const count = 'text-[10px] tabular-nums text-[#848A9A]';
-  const date = 'min-w-[8.5rem] rounded-full border border-[#2A2E3A] bg-[#10131A] px-2.5 py-1.5 text-[11px] text-[#F0F2F5] outline-none focus-visible:ring-2 focus-visible:ring-[#C8A664]/60 [color-scheme:dark]';
 
   return (
     <form ref={form} method="get" action={action} onSubmit={onSubmit} onChange={navigate} className="space-y-2.5" aria-label="Filter the fleet">
@@ -115,10 +116,16 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
         {/* The trio wraps as one unit, so a phone never shows a dangling "to". */}
         <span className="flex flex-nowrap items-center gap-2">
           <label className="sr-only" htmlFor={`${idPrefix}-start`}>Pickup date</label>
-          <input id={`${idPrefix}-start`} type="date" name="start" min={today} max={addDays(today, 180)} defaultValue={query.start ?? ''} aria-describedby={`${idPrefix}-dates-hint`} className={date} />
+          <span className="relative inline-flex items-center">
+            <CalendarDays size={13} className="pointer-events-none absolute left-3 text-[#C8A664]" aria-hidden />
+            <input id={`${idPrefix}-start`} type="date" name="start" min={today} max={addDays(today, 180)} defaultValue={query.start ?? ''} aria-describedby={`${idPrefix}-dates-hint`} className={datePillClassName} />
+          </span>
           <span className="text-[11px] text-[#848A9A]">to</span>
           <label className="sr-only" htmlFor={`${idPrefix}-end`}>Drop-off date</label>
-          <input id={`${idPrefix}-end`} type="date" name="end" min={query.start ? addDays(query.start, 1) : addDays(today, 1)} max={addDays(today, 181)} defaultValue={query.end ?? ''} aria-describedby={`${idPrefix}-dates-hint`} className={date} />
+          <span className="relative inline-flex items-center">
+            <CalendarDays size={13} className="pointer-events-none absolute left-3 text-[#C8A664]" aria-hidden />
+            <input id={`${idPrefix}-end`} type="date" name="end" min={query.start ? addDays(query.start, 1) : addDays(today, 1)} max={addDays(today, 181)} defaultValue={query.end ?? ''} aria-describedby={`${idPrefix}-dates-hint`} className={datePillClassName} />
+          </span>
         </span>
         <p id={`${idPrefix}-dates-hint`} className="basis-full text-[11px] text-[#848A9A]" aria-live="polite">{hint}</p>
       </div>

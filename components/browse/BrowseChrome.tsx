@@ -4,7 +4,7 @@ import Link from 'next/link';
 import type { FunnelEvent } from '@/components/analytics/posthog';
 import { TrackView } from '@/components/analytics/TrackView';
 import { driveFontClassName } from '@/components/drive-exotiq/fonts';
-import { containerClassName } from './tokens';
+import { containerClassName, groundClassName } from './tokens';
 
 /**
  * Desktop-first marketplace chrome (MP-3): a quiet sticky header and a footer
@@ -17,7 +17,7 @@ import { containerClassName } from './tokens';
  */
 export function BrowseChrome({ children, view = 'browse_view' }: { children: ReactNode; /** Funnel event fired on mount; null for pages that are not a funnel step (legal). */ view?: FunnelEvent | null }) {
   return (
-    <div className={`${driveFontClassName} min-h-screen bg-[#06070a] text-[#F0F2F5] font-[var(--font-drive-inter)]`}>
+    <div className={`${driveFontClassName} min-h-screen ${groundClassName} text-[#F0F2F5] font-[var(--font-drive-inter)]`}>
       <header className="sticky top-0 z-40 border-b border-[#2A2E3A]/70 bg-[#06070a]/85 backdrop-blur-md">
         <div className={`${containerClassName} flex h-16 items-center justify-between gap-6`}>
           <Link href="/browse" className="flex items-center" aria-label="Drive Exotiq — browse the fleet">

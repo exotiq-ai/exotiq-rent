@@ -83,9 +83,9 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
             <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 lg:hidden">
               <h2 className="mb-3 flex items-center gap-2 text-sm font-medium"><CalendarDays size={16} className="text-[#C8A664]" />Booking preview</h2>
               <div className="grid grid-cols-3 gap-2 text-center text-[11px]">
-                <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[#C8A664]"><Money cents={vehicle.dailyRateCents} /></div><div className="mt-1 text-[#848A9A]">Per day</div></div>
-                <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[#C8A664]">{vehicle.minRentalDays} {vehicle.minRentalDays === 1 ? 'day' : 'days'}</div><div className="mt-1 text-[#848A9A]">Minimum</div></div>
-                <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[#C8A664]">Verified</div><div className="mt-1 text-[#848A9A]">Drivers</div></div>
+                <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[17px] font-medium leading-none tabular-nums text-[#C8A664]"><Money cents={vehicle.dailyRateCents} /></div><div className="mt-1.5 text-[#848A9A]">Per day</div></div>
+                <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[17px] font-medium leading-none tabular-nums text-[#C8A664]">{vehicle.minRentalDays}</div><div className="mt-1.5 text-[#848A9A]">{vehicle.minRentalDays === 1 ? 'Day minimum' : 'Days minimum'}</div></div>
+                <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[17px] font-medium leading-none text-[#C8A664]">Verified</div><div className="mt-1.5 text-[#848A9A]">Drivers</div></div>
               </div>
               <p className="mt-3 text-[12px] leading-5 text-[#9BA1B0]">{vehicle.footnote}. Final availability is confirmed at the booking step.</p>
             </div>
