@@ -99,7 +99,9 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
     <form ref={form} method="get" action="/browse" onSubmit={onSubmit} onChange={navigate} className="space-y-7">
       <fieldset>
         <legend className={section}>Dates</legend>
-        <div className="mt-2 grid grid-cols-2 gap-2">
+        {/* Two columns in the phone sheet (22rem); stacked in the 16rem rail,
+            where a half-width pill clips the year of a native date value. */}
+        <div className="mt-2 grid grid-cols-2 gap-2 lg:grid-cols-1">
           <label className="block">
             <span className="block text-[10px] text-[#848A9A]">Pickup</span>
             <span className="relative mt-1 flex items-center">
