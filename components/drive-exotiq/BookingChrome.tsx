@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, X } from 'lucide-react';
 import { ExotiqLockup } from './ExotiqLockup';
+import { groundClassName } from '@/components/browse/tokens';
 
 type StepStyle = 'bars' | 'numbered';
 
@@ -88,8 +89,12 @@ export function PhoneViewport({
 
   const stepBar = <StepIndicator step={step} variant={stepStyle} />;
 
+  // MP-11: the ground + vignette as two utilities (see groundClassName) — the
+  // old single background value compiled to an invalid background-color that
+  // browsers dropped, so this main was transparent and the desktop storefront
+  // sat on the body's #000.
   return (
-    <main className={`min-h-screen bg-[radial-gradient(900px_560px_at_18%_-10%,rgba(200,166,100,0.07),transparent_58%),radial-gradient(760px_520px_at_90%_110%,rgba(200,166,100,0.045),transparent_60%),#06070a] text-[#F0F2F5] ${className}`}>
+    <main className={`min-h-screen ${groundClassName} text-[#F0F2F5] ${className}`}>
       {page && (
         <div className="hidden border-b border-[#2A2E3A]/70 lg:block">
           <div className="mx-auto flex h-16 w-full max-w-[1200px] items-center justify-between px-8">

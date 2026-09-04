@@ -6,6 +6,14 @@
   body {
     @apply bg-deep-black text-pure-white antialiased;
   }
+  /* Firefox twin of the gold focus ring below: preflight's `:-moz-focusring
+     { outline: auto }` is (0,1,0) and would beat the zero-specificity rule.
+     Here in the base layer it outranks preflight by order while `.outline-none`
+     (utilities, later) still wins over it. */
+  :-moz-focusring {
+    outline: 2px solid rgba(200, 166, 100, 0.7);
+    outline-offset: 2px;
+  }
 }
 
 @layer utilities {
@@ -28,12 +36,19 @@
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-gulf-blue;
+    background: #3A3F4D;
   }
 
-  /* Focus States for Accessibility */
-  *:focus-visible {
-    @apply outline-2 outline-offset-2 outline-gulf-blue;
+  /* Keyboard focus: one gold ring for every control that does not draw its
+     own. :where() keeps the rule at zero specificity, so a control's own
+     `outline-none` + ring (text fields, chips, cards) wins instead of
+     stacking a second outline on top — the old cyan rule at (0,1,0) beat
+     `.outline-none` and painted on every gold control (design review
+     2026-09-04, MP-11). Style is explicit so the ring never depends on the
+     browser's `outline: auto` rendering. */
+  :where(*:focus-visible) {
+    outline: 2px solid rgba(200, 166, 100, 0.7);
+    outline-offset: 2px;
   }
 
   /* Mobile optimizations */
@@ -205,8 +220,69 @@
     animation: reservePop 0.5s cubic-bezier(0.34, 1.4, 0.64, 1) 0.25s both;
   }
 
+  /* Reduced motion, globally: every hover transition, the card lift, the
+     photo zoom and smooth scrolling collapse to instant — not only the two
+     confirmation classes (MP-11). */
   @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
     .animate-gold-sheen { animation: none; opacity: 0; }
     .animate-reserve-pop { animation: none; }
+  }
+}
+
+/* Drawn checkbox and radio for the gold surfaces (MP-11). The native box was
+   the OS control tinted by accent-color: a different size, radius and tick
+   per browser, and a white tick on gold at ~2.3:1. This is the chip's
+   border/fill with a dark #1A1308 tick (~8:1 on gold). Keyboard focus comes
+   from the global ring above; forced-colors restores the native control so
+   the tick never vanishes in Windows High Contrast. */
+@layer components {
+  .control-check,
+  .control-radio {
+    /* Resting border at #848A9A/80 (~4:1 on both grounds): a 1px #3A3F4D
+       line was 1.7:1, invisible to low vision until hover (WCAG 1.4.11).
+       `checked:hover` keeps a selected box solid gold — Tailwind sorts
+       `hover:` after `checked:`, so without it a selected box dimmed under
+       the pointer. */
+    @apply h-4 w-4 shrink-0 cursor-pointer appearance-none border border-[#848A9A]/80 bg-[#10131A] bg-center bg-no-repeat transition hover:border-[#C8A664]/60 checked:border-[#C8A664] checked:bg-[#C8A664] checked:hover:border-[#C8A664];
+  }
+  .control-check {
+    @apply rounded;
+  }
+  .control-check:checked {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%231A1308' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 6.5l2.5 2.5L9.5 3.5'/%3E%3C/svg%3E");
+    background-size: 11px 11px;
+  }
+  .control-radio {
+    @apply rounded-full checked:shadow-[inset_0_0_0_3px_#10131A];
+  }
+  @media (forced-colors: active) {
+    .control-check,
+    .control-radio {
+      appearance: auto;
+    }
+  }
+  /* Inner scroll containers on the gold surfaces (browse rail, storefront
+     aside). The site-wide ::-webkit-scrollbar rules above paint the old
+     site's 10px #1B1B1B/#3A3A3A bar inside a #0D0F14 panel; this scopes a
+     thin, palette-coloured one. */
+  .scroll-quiet {
+    scrollbar-width: thin;
+    scrollbar-color: #2A2E3A transparent;
+  }
+  .scroll-quiet::-webkit-scrollbar {
+    width: 6px;
+  }
+  .scroll-quiet::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scroll-quiet::-webkit-scrollbar-thumb {
+    background: #2A2E3A;
+    border-radius: 9999px;
   }
 }

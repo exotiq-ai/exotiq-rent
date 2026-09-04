@@ -5,6 +5,7 @@ import { CalendarX2, CarFront, FileCheck2, Fuel, Gauge, Phone, ShieldCheck, Truc
 import { driveFontClassName } from '@/components/drive-exotiq/fonts';
 import { HTitle, Money, PhoneViewport } from '@/components/drive-exotiq/BookingChrome';
 import { FilterBar } from '@/components/browse/FilterBar';
+import { cardClassName, photoClassName, photoFrameClassName, priceClassName, priceUnitClassName } from '@/components/browse/tokens';
 import { browseEnabled, getSiteMode } from '@/domain/booking/config';
 import { formatRangeLabel, formatShortDate } from '@/domain/booking/dates';
 import { applyMarketplaceQuery, computeFacets, excludeBusy, filterListings } from '@/domain/booking/marketplaceCore';
@@ -43,10 +44,14 @@ function AboutCard({ team, count, minRate, minDays, className = '' }: { team: Te
   return (
     <div className={`rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 ${className}`}>
       <p className="text-[13px] leading-5 text-[#9BA1B0]">{team.about ?? 'A concierge-approved fleet with mobile-first booking, verified drivers, transparent rental charges, and optional Exotiq Protect shown separately.'}</p>
+      {/* Big figure over a small label — set at the same 11px as its caption,
+          a tile read as two lines of caption (MP-11). Figures alone on the
+          17px line: a "From " prefix wrapped inside a 69px phone tile, so the
+          caption carries the qualifier. Five-figure rates step down to 15px. */}
       <div className="mt-4 grid grid-cols-3 gap-2 text-center text-[11px]">
-        <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[#C8A664]">{count}</div><div className="mt-1 text-[#848A9A]">Vehicles</div></div>
-        <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[#C8A664]">From <Money cents={minRate} /></div><div className="mt-1 text-[#848A9A]">Per day</div></div>
-        <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[#C8A664]">{minDays}+ day</div><div className="mt-1 text-[#848A9A]">Minimum</div></div>
+        <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[14px] font-medium leading-none tabular-nums text-[#C8A664] min-[360px]:text-[17px]">{count}</div><div className="mt-1.5 text-[#848A9A]">Cars</div></div>
+        <div className="rounded-lg bg-[#1E2230] p-3"><div className={`font-medium leading-none tabular-nums text-[#C8A664] ${minRate >= 1_000_000 ? 'text-[13px] min-[360px]:text-[15px]' : 'text-[14px] min-[360px]:text-[17px]'}`}><Money cents={minRate} /></div><div className="mt-1.5 text-[#848A9A]">Lowest rate</div></div>
+        <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[14px] font-medium leading-none tabular-nums text-[#C8A664] min-[360px]:text-[17px]">{minDays}+<span className="text-[11px] font-normal text-[#848A9A]"> {minDays === 1 ? 'day' : 'days'}</span></div><div className="mt-1.5 text-[#848A9A]">Minimum</div></div>
       </div>
     </div>
   );
@@ -183,17 +188,25 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
               <div className="mt-5 px-1 lg:mt-8">
                 <FilterBar key={filterKey} facets={facets} query={query} action={`/${team.slug}`} />
               </div>
+              {/* A successful check is a status line, not an alert (MP-11). */}
               {availability && (
-                <p className={`mt-4 rounded-lg border px-3.5 py-2.5 text-[12px] ${availability.checked ? 'border-[#2A2E3A] text-[#9BA1B0]' : 'border-[#FFB84D]/45 bg-[#FFB84D]/10 text-[#F0F2F5]'}`}>
-                  {availability.checked
-                    ? <>Showing cars available <span className="text-[#F0F2F5]" aria-label={`${formatShortDate(availability.start)} to ${formatShortDate(availability.end)}`}>{formatRangeLabel(availability.start, availability.end)}</span>. We&apos;ll confirm your exact dates when you book.</>
-                    : <>We couldn&apos;t check availability for {formatRangeLabel(availability.start, availability.end)} just now, so every car is shown. We&apos;ll confirm your exact dates when you book.</>}
-                </p>
+                availability.checked ? (
+                  <p className="mt-4 flex items-center gap-2.5 px-1 text-[12px] text-[#9BA1B0]">
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#C8A664]" aria-hidden />
+                    <span>Showing cars available <span className="text-[#F0F2F5]" aria-label={`${formatShortDate(availability.start)} to ${formatShortDate(availability.end)}`}>{formatRangeLabel(availability.start, availability.end)}</span>. We&apos;ll confirm your exact dates when you book.</span>
+                  </p>
+                ) : (
+                  <p className="mt-4 rounded-lg border border-[#FFB84D]/45 bg-[#FFB84D]/10 px-3.5 py-2.5 text-[12px] text-[#F0F2F5]">
+                    We couldn&apos;t check availability for {formatRangeLabel(availability.start, availability.end)} just now, so every car is shown. We&apos;ll confirm your exact dates when you book.
+                  </p>
+                )
               )}
               <div className="mt-4 flex items-center justify-between px-1">
-                <h2 className="text-[10px] uppercase tracking-[0.24em] text-[#848A9A]">{availability ? (availability.checked ? 'Available for your dates' : 'All vehicles') : 'Available now'}</h2>
+                {/* 'Available now' claimed a check that was never made; the aside
+                    says availability is confirmed at booking (MP-11). */}
+                <h2 className="text-[10px] uppercase tracking-[0.24em] text-[#848A9A]">{availability ? (availability.checked ? 'Available for your dates' : 'All cars') : 'The fleet'}</h2>
                 <div className="text-[11px] text-[#9BA1B0]">
-                  {shown.length === vehicles.length ? `${vehicles.length} vehicles` : `${shown.length} of ${vehicles.length} vehicles`}
+                  {shown.length === vehicles.length ? `${vehicles.length} cars` : `${shown.length} of ${vehicles.length} cars`}
                 </div>
               </div>
               {/* Vehicle cards put NO text over the photo. The previous overlay put the
@@ -207,7 +220,7 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
                 <div className="mt-3 flex flex-col items-center rounded-2xl border border-dashed border-[#2A2E3A] px-6 py-12 text-center">
                   <div className="grid h-12 w-12 place-items-center rounded-full border border-[#2A2E3A] bg-[#161922] text-[#C8A664]"><CarFront size={22} /></div>
                   <h3 className="mt-4 text-[20px] text-[#F0F2F5]" style={{ fontFamily: 'var(--font-drive-newsreader), Georgia, serif', fontWeight: 500 }}>
-                    {emptyByDates && availability ? `Nothing is free ${formatRangeLabel(availability.start, availability.end)}.` : 'No cars match those filters.'}
+                    {emptyByDates && availability ? `Nothing is available ${formatRangeLabel(availability.start, availability.end)}.` : 'No cars match those filters.'}
                   </h3>
                   <p className="mt-2 text-sm leading-6 text-[#9BA1B0]">
                     {emptyByDates ? `Try different dates, or see all ${vehicles.length} cars ${team.name} lists.` : `${team.name} lists ${vehicles.length} cars right now. Loosen a filter, or see them all.`}
@@ -220,18 +233,18 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
                   <Link
                     key={vehicle.id}
                     href={carHref(vehicle.slug)}
-                    className="group block overflow-hidden rounded-2xl border border-[#2A2E3A] bg-[#161922] transition-colors duration-300 hover:border-[#C8A664]/45"
+                    className={`group block ${cardClassName}`}
                   >
                     {/* 4:3 and unobstructed — the car is the product, and the old
                         scrim was eating the stance and wheels. */}
-                    <div className="relative aspect-[4/3] overflow-hidden bg-[#1E2230]">
+                    <div className={photoFrameClassName}>
                       {vehicle.heroImage && (
                         <Image
                           src={vehicle.heroImage}
                           alt={vehicle.name}
                           fill
                           sizes="(min-width: 1024px) 400px, 448px"
-                          className="object-cover transition-transform duration-[600ms] ease-out group-hover:scale-[1.03]"
+                          className={photoClassName}
                         />
                       )}
                       {/* The one thing that may sit on the photo: a pill carries its own
@@ -251,7 +264,7 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
                         >
                           {vehicle.name}
                         </h3>
-                        <div className="shrink-0 text-[17px] leading-[1.2] text-[#C8A664]">
+                        <div className={priceClassName}>
                           <Money cents={vehicle.dailyRateCents} />
                         </div>
                       </div>
@@ -260,7 +273,7 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
                           {vehicle.specs ? `${vehicle.specs.power} · ${vehicle.specs.zeroToSixty} 0–60` : `${vehicle.year} ${vehicle.make}`.trim()}
                         </div>
                         {/* Unit split off the number so the figure reads as the figure. */}
-                        <div className="shrink-0 text-[10px] uppercase tracking-[0.16em] text-[#5C6272]">per day</div>
+                        <div className={priceUnitClassName.replace('ml-1.5 ', 'shrink-0 ')}>per day</div>
                       </div>
                     </div>
                   </Link>
@@ -272,7 +285,10 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
               <WhyCard className="mt-4 lg:hidden" />
             </div>
 
-            <aside className="hidden lg:sticky lg:top-6 lg:block lg:space-y-4">
+            {/* Capped to the viewport with its own quiet scroll; the 1px negative
+                margin + padding keeps the 4px focus ring of a full-width child
+                (Call link) inside the scroll box instead of clipped. */}
+            <aside className="scroll-quiet hidden lg:sticky lg:top-6 lg:-mx-1 lg:-my-1 lg:block lg:max-h-[calc(100dvh-3rem)] lg:space-y-4 lg:overflow-y-auto lg:px-1 lg:py-1">
               <AboutCard team={team} count={vehicles.length} minRate={minRate} minDays={minDays} />
               {hasPhone && <CallLink team={team} />}
               {policyRows.length > 0 && <PolicyCard rows={policyRows} />}

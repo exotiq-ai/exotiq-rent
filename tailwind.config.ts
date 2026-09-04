@@ -1,6 +1,10 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  // MP-11 review: every hover: utility compiles under @media (hover: hover), so a
+  // tap on a phone never triggers the card lift, the photo zoom or chip hover
+  // and leaves it stuck until the next touch.
+  future: { hoverOnlyWhenSupported: true },
   content: [
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",

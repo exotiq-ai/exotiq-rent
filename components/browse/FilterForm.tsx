@@ -3,10 +3,12 @@
 import { useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { CalendarDays, ChevronDown } from 'lucide-react';
 import type { MarketplaceFacets, MarketplaceQuery } from '@/domain/booking/publicContracts';
 import { MARKETPLACE_SORTS, PRICE_BANDS, daysBetween } from '@/domain/booking/marketplaceQuery';
 import { addDays } from '@/domain/booking/dates';
 import { localTodayIso } from '@/domain/booking/availability';
+import { datePillClassName, selectClassName } from './tokens';
 
 function datesHint(start: string, end: string): string {
   if (start && end) return 'Cars shown are free for these dates.';
@@ -88,21 +90,31 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
   };
 
   const section = 'block text-[10px] uppercase tracking-[0.22em] text-[#848A9A]';
-  const option = 'flex cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-[13px] text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5]';
+  // MP-11: 44px rows in the phone sheet (every mis-tap navigates), the rail
+  // keeps its density; a checked row lights up like the mockup's.
+  const option = 'flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-2.5 text-[13px] text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5] has-[:checked]:text-[#F0F2F5] lg:min-h-0 lg:py-1.5';
   const count = 'text-[11px] tabular-nums text-[#848A9A]';
 
   return (
     <form ref={form} method="get" action="/browse" onSubmit={onSubmit} onChange={navigate} className="space-y-7">
       <fieldset>
         <legend className={section}>Dates</legend>
-        <div className="mt-2 grid grid-cols-2 gap-2">
+        {/* Two columns in the phone sheet (22rem); stacked in the 16rem rail,
+            where a half-width pill clips the year of a native date value. */}
+        <div className="mt-2 grid grid-cols-2 gap-2 lg:grid-cols-1">
           <label className="block">
             <span className="block text-[10px] text-[#848A9A]">Pickup</span>
-            <input type="date" name="start" min={today} max={addDays(today, 180)} defaultValue={query.start ?? ''} aria-describedby={`${idPrefix}-dates-hint`} className="mt-1 w-full rounded-lg border border-[#2A2E3A] bg-[#10131A] px-2.5 py-2 text-[12px] text-[#F0F2F5] outline-none focus-visible:ring-2 focus-visible:ring-[#C8A664]/60 [color-scheme:dark]" />
+            <span className="relative mt-1 flex items-center">
+              <CalendarDays size={13} className="pointer-events-none absolute left-2.5 text-[#C8A664]" aria-hidden />
+              <input type="date" name="start" min={today} max={addDays(today, 180)} defaultValue={query.start ?? ''} aria-describedby={`${idPrefix}-dates-hint`} className={`${datePillClassName} w-full min-w-0`} />
+            </span>
           </label>
           <label className="block">
             <span className="block text-[10px] text-[#848A9A]">Drop-off</span>
-            <input type="date" name="end" min={query.start ? addDays(query.start, 1) : addDays(today, 1)} max={addDays(today, 181)} defaultValue={query.end ?? ''} aria-describedby={`${idPrefix}-dates-hint`} className="mt-1 w-full rounded-lg border border-[#2A2E3A] bg-[#10131A] px-2.5 py-2 text-[12px] text-[#F0F2F5] outline-none focus-visible:ring-2 focus-visible:ring-[#C8A664]/60 [color-scheme:dark]" />
+            <span className="relative mt-1 flex items-center">
+              <CalendarDays size={13} className="pointer-events-none absolute left-2.5 text-[#C8A664]" aria-hidden />
+              <input type="date" name="end" min={query.start ? addDays(query.start, 1) : addDays(today, 1)} max={addDays(today, 181)} defaultValue={query.end ?? ''} aria-describedby={`${idPrefix}-dates-hint`} className={`${datePillClassName} w-full min-w-0`} />
+            </span>
           </label>
         </div>
         <p id={`${idPrefix}-dates-hint`} className="mt-2 text-[11px] text-[#848A9A]" aria-live="polite">{hint}</p>
@@ -110,27 +122,25 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
 
       <div>
         <label htmlFor={`${idPrefix}-sort`} className={section}>Sort</label>
-        <select
-          id={`${idPrefix}-sort`}
-          name="sort"
-          defaultValue={query.sort}
-          className="mt-2 w-full rounded-lg border border-[#2A2E3A] bg-[#10131A] px-3 py-2.5 text-[13px] text-[#F0F2F5] outline-none focus-visible:ring-2 focus-visible:ring-[#C8A664]/60 [color-scheme:dark]"
-        >
-          {MARKETPLACE_SORTS.map((s) => (
-            <option key={s} value={s}>{SORT_LABELS[s]}</option>
-          ))}
-        </select>
+        <span className="relative mt-2 block">
+          <select id={`${idPrefix}-sort`} name="sort" defaultValue={query.sort} className={selectClassName}>
+            {MARKETPLACE_SORTS.map((s) => (
+              <option key={s} value={s}>{SORT_LABELS[s]}</option>
+            ))}
+          </select>
+          <ChevronDown size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#C8A664]" aria-hidden />
+        </span>
       </div>
 
       <fieldset>
         <legend className={section}>City</legend>
         <div className="mt-2 space-y-0.5">
           <label className={option}>
-            <span className="flex items-center gap-2.5"><input type="radio" name="city" value="" defaultChecked={!query.city} className="accent-[#C8A664]" />All cities</span>
+            <span className="flex items-center gap-2.5"><input type="radio" name="city" value="" defaultChecked={!query.city} className="control-radio" />All cities</span>
           </label>
           {facets.cities.map((c) => (
             <label key={c.value} className={option}>
-              <span className="flex items-center gap-2.5"><input type="radio" name="city" value={c.value} defaultChecked={query.city?.toLowerCase() === c.value.toLowerCase()} className="accent-[#C8A664]" />{c.label}</span>
+              <span className="flex items-center gap-2.5"><input type="radio" name="city" value={c.value} defaultChecked={query.city?.toLowerCase() === c.value.toLowerCase()} className="control-radio" />{c.label}</span>
               <span className={count}>{c.count}</span>
             </label>
           ))}
@@ -143,7 +153,7 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
           <div className="mt-2 space-y-0.5">
             {facets.types.map((t) => (
               <label key={t.value} className={option}>
-                <span className="flex items-center gap-2.5"><input type="checkbox" name="type" value={t.value} defaultChecked={query.types.includes(t.value)} className="accent-[#C8A664]" />{t.label}</span>
+                <span className="flex items-center gap-2.5"><input type="checkbox" name="type" value={t.value} defaultChecked={query.types.includes(t.value)} className="control-check" />{t.label}</span>
                 <span className={count}>{t.count}</span>
               </label>
             ))}
@@ -156,7 +166,7 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
         <div className="mt-2 space-y-0.5">
           {facets.makes.map((m) => (
             <label key={m.value} className={option}>
-              <span className="flex items-center gap-2.5"><input type="checkbox" name="make" value={m.value} defaultChecked={query.makes.some((x) => x.toLowerCase() === m.value.toLowerCase())} className="accent-[#C8A664]" />{m.label}</span>
+              <span className="flex items-center gap-2.5"><input type="checkbox" name="make" value={m.value} defaultChecked={query.makes.some((x) => x.toLowerCase() === m.value.toLowerCase())} className="control-check" />{m.label}</span>
               <span className={count}>{m.count}</span>
             </label>
           ))}
@@ -168,11 +178,11 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
         <legend className={section}>Daily rate</legend>
         <div className="mt-2 space-y-0.5">
           <label className={option}>
-            <span className="flex items-center gap-2.5"><input type="radio" name="band" value="" defaultChecked={currentBand === ''} className="accent-[#C8A664]" />Any</span>
+            <span className="flex items-center gap-2.5"><input type="radio" name="band" value="" defaultChecked={currentBand === ''} className="control-radio" />Any</span>
           </label>
           {facets.priceBands.map((b) => (
             <label key={b.value} className={option}>
-              <span className="flex items-center gap-2.5"><input type="radio" name="band" value={b.value} defaultChecked={currentBand === b.value} className="accent-[#C8A664]" />{b.label}</span>
+              <span className="flex items-center gap-2.5"><input type="radio" name="band" value={b.value} defaultChecked={currentBand === b.value} className="control-radio" />{b.label}</span>
               <span className={count}>{b.count}</span>
             </label>
           ))}

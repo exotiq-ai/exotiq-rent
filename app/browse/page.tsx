@@ -85,7 +85,11 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
         {/* Desktop: a sticky rail. Mobile: the same form inside a native
             <details> sheet — no client state, no hydration risk, keyboard-safe. */}
         <aside className="hidden lg:block">
-          <div className="sticky top-24 rounded-2xl border border-[#2A2E3A] bg-[#0D0F14] p-5">
+          {/* Capped to the viewport with its own scroll: with dates + cities +
+              types + makes + bands the rail outgrows a 13-inch screen, and a
+              stuck sticky element's bottom (Clear all / Show results) is
+              unreachable until the grid ends (MP-11). */}
+          <div className="scroll-quiet sticky top-24 max-h-[calc(100dvh-7rem)] overflow-y-auto rounded-2xl border border-[#2A2E3A] bg-[#0D0F14] p-5">
             <FilterForm key={filterKey} facets={facets} query={query} idPrefix="rail" />
           </div>
         </aside>
@@ -106,12 +110,19 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
             </details>
           </div>
 
+          {/* A successful check is a status line, not an alert: gold dot, no box.
+              The failed check keeps the amber box (MP-11). */}
           {availability && (
-            <p className={`mb-4 rounded-lg border px-3.5 py-2.5 text-[12px] ${availability.checked ? 'border-[#2A2E3A] text-[#9BA1B0]' : 'border-[#FFB84D]/45 bg-[#FFB84D]/10 text-[#F0F2F5]'}`}>
-            {availability.checked
-              ? <>Showing cars available <span className="text-[#F0F2F5]" aria-label={`${formatShortDate(availability.start)} to ${formatShortDate(availability.end)}`}>{formatRangeLabel(availability.start, availability.end)}</span>. We&apos;ll confirm your exact dates when you book.</>
-              : <>We couldn&apos;t check availability for {formatRangeLabel(availability.start, availability.end)} just now, so every car is shown. We&apos;ll confirm your exact dates when you book.</>}
-            </p>
+            availability.checked ? (
+              <p className="mb-4 flex items-center gap-2.5 text-[12px] text-[#9BA1B0]">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#C8A664]" aria-hidden />
+                <span>Showing cars available <span className="text-[#F0F2F5]" aria-label={`${formatShortDate(availability.start)} to ${formatShortDate(availability.end)}`}>{formatRangeLabel(availability.start, availability.end)}</span>. We&apos;ll confirm your exact dates when you book.</span>
+              </p>
+            ) : (
+              <p className="mb-4 rounded-lg border border-[#FFB84D]/45 bg-[#FFB84D]/10 px-3.5 py-2.5 text-[12px] text-[#F0F2F5]">
+                We couldn&apos;t check availability for {formatRangeLabel(availability.start, availability.end)} just now, so every car is shown. We&apos;ll confirm your exact dates when you book.
+              </p>
+            )
           )}
           {page.listings.length > 0 ? <ListingGrid listings={page.listings} dates={availability ? { start: availability.start, end: availability.end } : undefined} /> : <EmptyState totalInCatalog={catalogTotal} dates={emptyByDates && availability ? { start: availability.start, end: availability.end } : undefined} />}
 
