@@ -17,6 +17,7 @@ import { DatesStep } from './flow/DatesStep';
 import { DriverStep } from './flow/DriverStep';
 import { PayStep } from './flow/PayStep';
 import { ReviewStep } from './flow/ReviewStep';
+import { captureBooking } from '@/components/renters/bookingCapture';
 
 export function BookingFlow({ operator, vehicle, initialDates }: { operator: Operator; vehicle: Vehicle; initialDates?: { start: string; end: string } }) {
   const router = useRouter();
@@ -113,6 +114,8 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
       const query = result.confirmationToken ? `?t=${encodeURIComponent(result.confirmationToken)}` : '';
       // The ref only — the confirmation token is the renter's credential.
       track('booking_created', { booking: result.bookingRef, team: operator.slug, vehicle: vehicle.slug, protection: cart.protection });
+      // MP-14: the renter store learns the address + consent now; keepalive, never awaited.
+      captureBooking(cart, result.bookingRef, result.confirmationToken);
       router.push(`/booking/${result.bookingRef}${query}`);
     } catch (error) {
       setReserveError(error instanceof Error ? error.message : 'Something went wrong — please try again.');
@@ -160,6 +163,7 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
           // and the blocked state holds the renter until fresh numbers arrive —
           // no path to committing against the old tier's total.
           onProtectionChange={(tier) => setCart(recomputeBookingCart({ ...cart, protection: tier }))}
+          onMarketingConsentChange={(checked) => setCart({ ...cart, driver: { ...cart.driver, marketingConsent: checked } })}
         />
       )}
       {step === 4 && (

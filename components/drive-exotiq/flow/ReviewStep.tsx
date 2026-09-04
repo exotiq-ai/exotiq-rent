@@ -7,6 +7,8 @@ import { formatMoney } from '@/domain/booking/totals';
 import type { BookingCart, ProtectionTier } from '@/domain/booking/types';
 import type { PublicQuote } from '@/domain/booking/publicContracts';
 import { Breakdown, DepositDisclosure, QuoteNotice, ScreenShell, StepHeader, Sticky } from './shared';
+import { renterCaptureUiEnabled } from '@/domain/renters/flags';
+import { CONSENT_TEXT } from '@/domain/renters/consentText';
 
 export function ReviewStep({
   cart,
@@ -18,6 +20,7 @@ export function ReviewStep({
   onRetryQuote,
   blocked,
   onProtectionChange,
+  onMarketingConsentChange,
 }: {
   cart: BookingCart;
   goTo: (step: number) => void;
@@ -27,6 +30,8 @@ export function ReviewStep({
   quotePending?: boolean;
   quoteError?: string;
   onRetryQuote?: () => void;
+  /** MP-14: present when the host runs renter capture; the line renders only then. */
+  onMarketingConsentChange?: (checked: boolean) => void;
   /** True when live pricing is unconfirmed — the renter must not advance. */
   blocked?: boolean;
   /** T-12: premium is the default; the renter may toggle to declined while
@@ -153,6 +158,13 @@ export function ReviewStep({
           />
           <span>I agree to the <span className="text-[#C8A664] underline underline-offset-2">Rental Terms &amp; Conditions</span>.</span>
         </label>
+        {/* MP-14: opt-in, unchecked, never required. Posted with the booking. */}
+        {onMarketingConsentChange && renterCaptureUiEnabled() && (
+          <label className="mt-3 flex gap-3 px-1 text-xs leading-5 text-[#9BA1B0]">
+            <input type="checkbox" checked={Boolean(cart.driver.marketingConsent)} onChange={(event) => onMarketingConsentChange(event.target.checked)} className="control-check mt-0.5" />
+            <span>{CONSENT_TEXT.booking.text}</span>
+          </label>
+        )}
       </ScreenShell>
       <Sticky><PrimaryButton onClick={next} disabled={!termsAccepted}>Proceed to payment</PrimaryButton></Sticky>
     </>

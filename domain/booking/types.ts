@@ -91,6 +91,8 @@ export type Driver = {
   dob: string;
   phone: string;
   email?: string;
+  /** MP-14: ticked at the Review step; posted with the booking to the renter store. Never sent to the operator. */
+  marketingConsent?: boolean;
 };
 
 export type BookingTotals = {

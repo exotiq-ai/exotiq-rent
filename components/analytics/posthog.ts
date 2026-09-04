@@ -17,7 +17,13 @@ export type FunnelEvent =
   | 'book_start'
   | 'book_step'
   | 'booking_created'
-  | 'confirmation_view';
+  | 'confirmation_view'
+  // MP-14 renter capture: never carries an e-mail address, only the surface and slugs.
+  | 'favourite_added'
+  | 'capture_start'
+  | 'capture_sent'
+  | 'alert_created'
+  | 'saved_view';
 
 type PostHogLike = { capture: (event: string, properties?: Record<string, unknown>) => void };
 
@@ -44,7 +50,7 @@ export function redactCredentialUrls<T extends Record<string, unknown>>(props: T
   for (const key in props) {
     const value = props[key];
     if (typeof value === 'string') {
-      (props as Record<string, unknown>)[key] = value.replace(/([?&](?:t|token)=)[^&#]*/gi, '$1redacted');
+      (props as Record<string, unknown>)[key] = value.replace(/([?&](?:t|token|r)=)[^&#]*/gi, '$1redacted');
     }
   }
   return props;

@@ -40,12 +40,19 @@ export const containerClassName = 'mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg
 export const groundClassName =
   'bg-[#06070a] bg-[image:radial-gradient(900px_560px_at_18%_-10%,rgba(200,166,100,0.07),transparent_58%),radial-gradient(760px_520px_at_90%_110%,rgba(200,166,100,0.045),transparent_60%)]';
 
-/** Card hover: a 4px lift with a deep shadow and a faint gold rim, keyboard ring to match (MP-11). */
-export const cardClassName =
-  'overflow-hidden rounded-2xl border border-[#2A2E3A] bg-[#161922] transition-[transform,border-color,box-shadow] duration-300 ease-out ' +
+/**
+ * The same card as a wrapper (MP-14): the card's link and its heart button
+ * are siblings inside it, so a real <button> never nests in an <a>. Hover
+ * lift on the wrapper; the keyboard ring follows the link inside via :has().
+ */
+export const cardShellClassName =
+  'relative overflow-hidden rounded-2xl border border-[#2A2E3A] bg-[#161922] transition-[transform,border-color,box-shadow] duration-300 ease-out ' +
   'hover:-translate-y-1 hover:border-[#C8A664]/45 hover:shadow-[0_18px_40px_-18px_rgba(0,0,0,.75),0_10px_30px_-16px_rgba(200,166,100,.22)] ' +
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C8A664]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#06070a] ' +
+  'has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-[#C8A664]/70 has-[a:focus-visible]:ring-offset-2 has-[a:focus-visible]:ring-offset-[#06070a] ' +
   'motion-reduce:transition-none motion-reduce:hover:translate-y-0';
+
+/** The card recipe (MP-11): both cards now wrap their link in the shell above, so this is the same string by construction. */
+export const cardClassName = cardShellClassName;
 
 /** Photo frame: a 1px inner hairline so a dark photo never dissolves into the card. Nothing over the car. */
 export const photoFrameClassName =

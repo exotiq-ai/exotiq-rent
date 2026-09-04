@@ -6,6 +6,7 @@ import { formatRangeLabel } from '@/domain/booking/dates';
 import { getPublicVehicleContext } from '@/domain/booking/service';
 import { Money, PhoneViewport } from './BookingChrome';
 import { VehicleGallery } from './VehicleGallery';
+import { SaveButton } from '@/components/renters/SaveButton';
 
 export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { operatorSlug: string; vehicleSlug: string; dates?: { start: string; end: string } }) {
   const teamSlug = operatorSlug;
@@ -35,6 +36,8 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
     .filter(Boolean);
   // Dates chosen on a grid ride into the booking flow (MP-10 / T-13).
   const bookHref = dates ? `/${operator.slug}/${vehicle.slug}/book?start=${dates.start}&end=${dates.end}` : `/${operator.slug}/${vehicle.slug}/book`;
+  // MP-14: the heart beside the book button, desktop and phone.
+  const saveCar = { team_slug: operator.slug, vehicle_slug: vehicle.slug, name: vehicle.name, href: `/${operator.slug}/${vehicle.slug}`, priceCents: vehicle.dailyRateCents, team_name: operator.name };
   const yourDates = dates ? (
     <p className="mb-2 flex items-center justify-between text-[12px] text-[#9BA1B0]">
       <span>Your dates: <span className="text-[#F0F2F5]">{formatRangeLabel(dates.start, dates.end)}</span></span>
@@ -123,7 +126,10 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
                 {pickupParts.length > 0 && <div className="flex justify-between gap-4"><dt className="text-[#9BA1B0]">Pickup</dt><dd className="text-right text-[#F0F2F5]">{pickupParts.join(', ')}</dd></div>}
               </dl>
               <div className="mt-6">{yourDates}</div>
-              <Link href={bookHref} className="block rounded-xl bg-[#C8A664] px-5 py-4 text-center text-[15px] font-medium text-[#1A1308] shadow-[0_14px_34px_rgba(200,166,100,.20)] transition hover:brightness-105">{dates ? 'Book these dates' : 'Select dates'}</Link>
+              <div className="flex items-stretch gap-2">
+                <SaveButton car={saveCar} variant="pill" className="shrink-0" />
+                <Link href={bookHref} className="block min-w-0 flex-1 rounded-xl bg-[#C8A664] px-5 py-4 text-center text-[15px] font-medium text-[#1A1308] shadow-[0_14px_34px_rgba(200,166,100,.20)] transition hover:brightness-105">{dates ? 'Book these dates' : 'Select dates'}</Link>
+              </div>
               <p className="mt-4 text-[12px] leading-5 text-[#848A9A]">{vehicle.footnote}. Final availability is confirmed at the booking step.</p>
             </div>
           </aside>
@@ -131,7 +137,10 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
       </div>
       <div className="absolute bottom-5 left-0 right-0 z-10 border-t border-[#2A2E3A] bg-[#0D0F14] px-4 pb-4 pt-3 shadow-[0_-24px_42px_rgba(13,15,20,.96)] lg:hidden">
         {yourDates}
-        <Link href={bookHref} className="block rounded-xl bg-[#C8A664] px-5 py-4 text-center text-[15px] font-medium text-[#1A1308] shadow-[0_14px_34px_rgba(200,166,100,.20)]">{dates ? 'Book these dates' : 'Select dates'}</Link>
+        <div className="flex items-stretch gap-2">
+          <SaveButton car={saveCar} variant="pill" className="shrink-0" />
+          <Link href={bookHref} className="block min-w-0 flex-1 rounded-xl bg-[#C8A664] px-5 py-4 text-center text-[15px] font-medium text-[#1A1308] shadow-[0_14px_34px_rgba(200,166,100,.20)]">{dates ? 'Book these dates' : 'Select dates'}</Link>
+        </div>
       </div>
     </PhoneViewport>
   );
