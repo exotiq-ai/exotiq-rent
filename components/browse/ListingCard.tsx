@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { BadgeCheck } from 'lucide-react';
 import { Money } from '@/components/drive-exotiq/BookingChrome';
 import type { MarketplaceListing } from '@/domain/booking/publicContracts';
-import { cardClassName, photoClassName, photoFrameClassName, serifStyle } from './tokens';
+import { cardClassName, photoClassName, photoFrameClassName, priceClassName, priceUnitClassName, serifStyle } from './tokens';
 
 /**
  * One listing = one car from one operator (MP-3).
@@ -58,9 +58,9 @@ export function ListingCard({ listing, priority = false, dates }: { listing: Mar
           <div className="min-w-0 truncate text-[12px] text-[#9BA1B0]">
             {team.name} <span className="text-[#848A9A]">· {team.city}, {team.state}</span>
           </div>
-          <div className="shrink-0 text-[18px] font-medium leading-none text-[#C8A664]">
+          <div className={priceClassName}>
             <Money cents={vehicle.dailyRateCents} />
-            <span className="ml-1.5 text-[10px] font-normal uppercase tracking-[0.16em] text-[#5C6272]">per day</span>
+            <span className={priceUnitClassName}>per day</span>
           </div>
         </div>
       </div>

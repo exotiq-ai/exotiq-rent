@@ -33,8 +33,8 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
   // insurance is handled with the operator before pickup, not collected here.
   const canContinue = fieldsComplete && !tooYoung;
 
-  // Placeholder was #3D4250 (~1.6:1 on the field): the four boxes read as empty. #5C6272 is the palette's next step (MP-11).
-  const fieldClass = 'mt-1 w-full rounded-lg border border-[#2A2E3A] bg-[#10131A] px-3 py-2.5 text-sm text-[#F0F2F5] outline-none transition placeholder:text-[#5C6272] hover:border-[#3A3F4D] focus:border-[#C8A664]/70 focus-visible:ring-2 focus-visible:ring-[#C8A664]/60 [color-scheme:dark]';
+  // Placeholder was #3D4250 (~1.6:1 on the field): the four boxes read as empty. #848A9A clears 4.5:1 (MP-11).
+  const fieldClass = 'mt-1 w-full rounded-lg border border-[#2A2E3A] bg-[#10131A] px-3 py-2.5 text-sm text-[#F0F2F5] outline-none transition placeholder:text-[#848A9A] hover:border-[#3A3F4D] focus:border-[#C8A664]/70 focus-visible:ring-2 focus-visible:ring-[#C8A664]/60 [color-scheme:dark]';
 
   return (
     <>

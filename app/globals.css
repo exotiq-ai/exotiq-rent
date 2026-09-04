@@ -6,6 +6,14 @@
   body {
     @apply bg-deep-black text-pure-white antialiased;
   }
+  /* Firefox twin of the gold focus ring below: preflight's `:-moz-focusring
+     { outline: auto }` is (0,1,0) and would beat the zero-specificity rule.
+     Here in the base layer it outranks preflight by order while `.outline-none`
+     (utilities, later) still wins over it. */
+  :-moz-focusring {
+    outline: 2px solid rgba(200, 166, 100, 0.7);
+    outline-offset: 2px;
+  }
 }
 
 @layer utilities {
@@ -236,7 +244,12 @@
 @layer components {
   .control-check,
   .control-radio {
-    @apply h-4 w-4 shrink-0 cursor-pointer appearance-none border border-[#3A3F4D] bg-[#10131A] bg-center bg-no-repeat transition hover:border-[#C8A664]/60 checked:border-[#C8A664] checked:bg-[#C8A664];
+    /* Resting border at #848A9A/80 (~4:1 on both grounds): a 1px #3A3F4D
+       line was 1.7:1, invisible to low vision until hover (WCAG 1.4.11).
+       `checked:hover` keeps a selected box solid gold — Tailwind sorts
+       `hover:` after `checked:`, so without it a selected box dimmed under
+       the pointer. */
+    @apply h-4 w-4 shrink-0 cursor-pointer appearance-none border border-[#848A9A]/80 bg-[#10131A] bg-center bg-no-repeat transition hover:border-[#C8A664]/60 checked:border-[#C8A664] checked:bg-[#C8A664] checked:hover:border-[#C8A664];
   }
   .control-check {
     @apply rounded;
@@ -253,5 +266,23 @@
     .control-radio {
       appearance: auto;
     }
+  }
+  /* Inner scroll containers on the gold surfaces (browse rail, storefront
+     aside). The site-wide ::-webkit-scrollbar rules above paint the old
+     site's 10px #1B1B1B/#3A3A3A bar inside a #0D0F14 panel; this scopes a
+     thin, palette-coloured one. */
+  .scroll-quiet {
+    scrollbar-width: thin;
+    scrollbar-color: #2A2E3A transparent;
+  }
+  .scroll-quiet::-webkit-scrollbar {
+    width: 6px;
+  }
+  .scroll-quiet::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scroll-quiet::-webkit-scrollbar-thumb {
+    background: #2A2E3A;
+    border-radius: 9999px;
   }
 }

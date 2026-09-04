@@ -92,7 +92,7 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
   const section = 'block text-[10px] uppercase tracking-[0.22em] text-[#848A9A]';
   // MP-11: 44px rows in the phone sheet (every mis-tap navigates), the rail
   // keeps its density; a checked row lights up like the mockup's.
-  const option = 'flex cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-2.5 text-[13px] text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5] has-[:checked]:text-[#F0F2F5] lg:py-1.5';
+  const option = 'flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-2.5 text-[13px] text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5] has-[:checked]:text-[#F0F2F5] lg:min-h-0 lg:py-1.5';
   const count = 'text-[11px] tabular-nums text-[#848A9A]';
 
   return (

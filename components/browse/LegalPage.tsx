@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { BrowseChrome } from './BrowseChrome';
-import { containerClassName, serifStyle } from './tokens';
+import { serifStyle } from './tokens';
 
 /**
  * Shell for /terms and /privacy (M7e / MP-6). The routes exist so the footer
@@ -11,7 +11,7 @@ import { containerClassName, serifStyle } from './tokens';
 export function LegalPage({ eyebrow, title, updated, children }: { eyebrow: string; title: string; updated: string; children: ReactNode }) {
   return (
     <BrowseChrome view={null}>
-      <article className={`${containerClassName} max-w-3xl pb-24 pt-12 sm:pt-16`}>
+      <article className="mx-auto w-full max-w-3xl px-4 pb-24 pt-12 sm:px-6 sm:pt-16 lg:px-8">
         <p className="text-[11px] uppercase tracking-[0.24em] text-[#848A9A]">{eyebrow}</p>
         <h1 className="mt-3 text-[36px] leading-[1.05] text-[#F0F2F5] sm:text-[48px]" style={{ ...serifStyle, letterSpacing: '-0.02em' }}>{title}</h1>
         <p className="mt-3 text-[12px] text-[#848A9A]">Last updated {updated}</p>

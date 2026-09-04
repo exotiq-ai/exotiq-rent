@@ -89,9 +89,10 @@ export function PhoneViewport({
 
   const stepBar = <StepIndicator step={step} variant={stepStyle} />;
 
-  // MP-11: the ground + vignette as two utilities — the single
-  // `bg-[radial-gradient(...),#06070a]` value never compiled, so this main
-  // was transparent and the desktop storefront sat on the body's #000.
+  // MP-11: the ground + vignette as two utilities (see groundClassName) — the
+  // old single background value compiled to an invalid background-color that
+  // browsers dropped, so this main was transparent and the desktop storefront
+  // sat on the body's #000.
   return (
     <main className={`min-h-screen ${groundClassName} text-[#F0F2F5] ${className}`}>
       {page && (

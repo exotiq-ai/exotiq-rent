@@ -89,7 +89,7 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
               types + makes + bands the rail outgrows a 13-inch screen, and a
               stuck sticky element's bottom (Clear all / Show results) is
               unreachable until the grid ends (MP-11). */}
-          <div className="sticky top-24 max-h-[calc(100dvh-7rem)] overflow-y-auto rounded-2xl border border-[#2A2E3A] bg-[#0D0F14] p-5 [scrollbar-width:thin]">
+          <div className="scroll-quiet sticky top-24 max-h-[calc(100dvh-7rem)] overflow-y-auto rounded-2xl border border-[#2A2E3A] bg-[#0D0F14] p-5">
             <FilterForm key={filterKey} facets={facets} query={query} idPrefix="rail" />
           </div>
         </aside>

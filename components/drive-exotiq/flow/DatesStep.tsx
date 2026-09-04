@@ -42,6 +42,11 @@ const PICKUP_TIMES: Array<{ value: string; label: string }> = [
   { value: '8:00 PM', label: 'After-hours pickup (8:00 PM+, operator confirms)' },
 ];
 
+/** Full date for a day cell's accessible name — the bare digit told a screen reader nothing. */
+function longDate(iso: string): string {
+  return new Date(`${iso}T00:00:00`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+}
+
 function todayIsoDate(): string {
   const now = new Date();
   return isoDate(now.getFullYear(), now.getMonth() + 1, now.getDate());
@@ -139,12 +144,12 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
                 type="button"
                 onClick={() => selectDay(iso)}
                 disabled={blocked}
-                // MP-11: a tappable day brightens and fills on hover, today wears
-                // a quiet ring, and keyboard focus is a gold ring inside the
-                // circle rather than a square outline around it.
-                className="relative aspect-square rounded-full text-[#9BA1B0] outline-none transition-colors enabled:hover:bg-[#161922] enabled:hover:text-[#F0F2F5] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#C8A664]/60 disabled:cursor-not-allowed disabled:text-[#3D4250]"
+                // MP-11: hover fill and keyboard ring are drawn on the same 34px
+                // disc the selected/today states use (a `before:` layer under
+                // the number), so the grid never mixes two circle sizes.
+                className="relative aspect-square text-[#9BA1B0] outline-none transition-colors before:pointer-events-none before:absolute before:left-1/2 before:top-1/2 before:h-[34px] before:w-[34px] before:-translate-x-1/2 before:-translate-y-1/2 before:rounded-full enabled:hover:text-[#F0F2F5] enabled:hover:before:bg-[#161922] focus-visible:before:ring-2 focus-visible:before:ring-[#C8A664]/60 disabled:cursor-not-allowed disabled:text-[#3D4250]"
                 aria-pressed={inRange}
-                aria-disabled={blocked}
+                aria-label={`${longDate(iso)}${blocked ? ', unavailable' : ''}`}
                 aria-current={iso === todayIso ? 'date' : undefined}
               >
                 {iso === todayIso && !inRange && !blocked && <span className="absolute left-1/2 top-1/2 h-[34px] w-[34px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#3A3F4D]" aria-hidden />}
