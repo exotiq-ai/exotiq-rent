@@ -4,15 +4,18 @@ import { notFound } from 'next/navigation';
 import { CalendarX2, CarFront, FileCheck2, Fuel, Gauge, Phone, ShieldCheck, Truck, type LucideIcon } from 'lucide-react';
 import { driveFontClassName } from '@/components/drive-exotiq/fonts';
 import { HTitle, Money, PhoneViewport } from '@/components/drive-exotiq/BookingChrome';
+import { FilterBar } from '@/components/browse/FilterBar';
 import { browseEnabled, getSiteMode } from '@/domain/booking/config';
+import { applyMarketplaceQuery, computeFacets } from '@/domain/booking/marketplaceCore';
+import { parseMarketplaceQuery, toMarketplaceSearchParams, type SearchParamsLike } from '@/domain/booking/marketplaceQuery';
 import { getPublicTeamStorefront } from '@/domain/booking/service';
-import type { PublicTeamStorefront } from '@/domain/booking/publicContracts';
+import type { MarketplaceListing, PublicTeamStorefront } from '@/domain/booking/publicContracts';
 
-type Props = { params: { operatorSlug: string } };
+type Props = { params: { operatorSlug: string }; searchParams?: SearchParamsLike };
 type Team = PublicTeamStorefront['team'];
 type PolicyRow = { icon: LucideIcon; label: string; value: string };
 
-export async function generateMetadata({ params }: Props) {
+export async function generateMetadata({ params, searchParams }: Props) {
   // Marketplace-mode deploys (exotiq.rent) do not route the booking flow.
   if (getSiteMode() === 'marketplace') notFound();
   const teamSlug = params.operatorSlug;
@@ -20,9 +23,14 @@ export async function generateMetadata({ params }: Props) {
   // notFound() here (before streaming starts) keeps the HTTP status 404;
   // thrown only from the page body it would stream a 200 shell first.
   if (!storefront) notFound();
+  // Filtered views (MP-8) are permutations of one page: canonical to the bare
+  // storefront and out of the index, follow on, so facets cannot multiply it.
+  const filtered = toMarketplaceSearchParams(parseMarketplaceQuery(searchParams ?? {})).toString() !== '';
   return {
     title: `${storefront.team.name} | Drive Exotiq`,
     description: `Book exotic rentals from ${storefront.team.name} in ${storefront.team.city}, ${storefront.team.state}.`,
+    alternates: { canonical: `/${storefront.team.slug}` },
+    ...(filtered ? { robots: { index: false, follow: true } } : {}),
   };
 }
 
@@ -75,7 +83,7 @@ function CallLink({ team }: { team: Team }) {
   );
 }
 
-export default async function TeamStorefrontRoute({ params }: Props) {
+export default async function TeamStorefrontRoute({ params, searchParams }: Props) {
   const teamSlug = params.operatorSlug;
   const storefront = await getPublicTeamStorefront(teamSlug);
   if (!storefront) notFound();
@@ -107,6 +115,16 @@ export default async function TeamStorefrontRoute({ params }: Props) {
   const heroVehicle = vehicles[0];
   const minRate = Math.min(...vehicles.map((vehicle) => vehicle.dailyRateCents));
   const minDays = Math.min(...vehicles.map((vehicle) => vehicle.minRentalDays));
+  // Storefront filters (MP-8): the same query language and core as /browse,
+  // over this tenant's fleet only. Facets come from the whole fleet so a chip
+  // always names something that exists here; paging is off — a storefront
+  // shows every matching car. 'featured' with equal photo counts falls
+  // through to price, which is the order the fleet RPC already returns.
+  const listings: MarketplaceListing[] = vehicles.map((vehicle) => ({ team, vehicle, photoCount: Math.max(1, vehicle.photos.length) }));
+  const query = parseMarketplaceQuery(searchParams ?? {});
+  const facets = computeFacets(listings);
+  const shown = applyMarketplaceQuery(listings, { ...query, limit: Number.MAX_SAFE_INTEGER, offset: 0 }).listings;
+  const filterKey = toMarketplaceSearchParams(query).toString();
   const policies = team.policies;
   const policyRows: PolicyRow[] = policies
     ? [
@@ -147,9 +165,14 @@ export default async function TeamStorefrontRoute({ params }: Props) {
 
               <AboutCard team={team} count={vehicles.length} minRate={minRate} minDays={minDays} className="mt-4 lg:hidden" />
 
-              <div className="mt-5 flex items-center justify-between px-1 lg:mt-8">
+              <div className="mt-5 px-1 lg:mt-8">
+                <FilterBar key={filterKey} facets={facets} query={query} action={`/${team.slug}`} />
+              </div>
+              <div className="mt-4 flex items-center justify-between px-1">
                 <h2 className="text-[10px] uppercase tracking-[0.24em] text-[#848A9A]">Available now</h2>
-                <div className="text-[11px] text-[#9BA1B0]">{vehicles.length} vehicles</div>
+                <div className="text-[11px] text-[#9BA1B0]">
+                  {shown.length === vehicles.length ? `${vehicles.length} vehicles` : `${shown.length} of ${vehicles.length} vehicles`}
+                </div>
               </div>
               {/* Vehicle cards put NO text over the photo. The previous overlay put the
                   price — the topmost line — above where its scrim actually became
@@ -158,8 +181,16 @@ export default async function TeamStorefrontRoute({ params }: Props) {
                   solid band below it measures ~7:1 on every photo, which is the point:
                   a multi-tenant fleet means designing for the worst photo we will ever
                   be sent, not the best one we happen to have. */}
+              {shown.length === 0 ? (
+                <div className="mt-3 flex flex-col items-center rounded-2xl border border-dashed border-[#2A2E3A] px-6 py-12 text-center">
+                  <div className="grid h-12 w-12 place-items-center rounded-full border border-[#2A2E3A] bg-[#161922] text-[#C8A664]"><CarFront size={22} /></div>
+                  <h3 className="mt-4 text-[20px] text-[#F0F2F5]" style={{ fontFamily: 'var(--font-drive-newsreader), Georgia, serif', fontWeight: 500 }}>No cars match those filters.</h3>
+                  <p className="mt-2 text-sm leading-6 text-[#9BA1B0]">{team.name} lists {vehicles.length} cars right now. Loosen a filter, or see them all.</p>
+                  <Link href={`/${team.slug}`} className="mt-5 rounded-xl border border-[#C8A664]/40 px-5 py-3 text-sm font-semibold text-[#C8A664]">Show all {vehicles.length}</Link>
+                </div>
+              ) : (
               <div className="mt-3 space-y-4 lg:grid lg:grid-cols-2 lg:gap-5 lg:space-y-0">
-                {vehicles.map((vehicle) => (
+                {shown.map(({ vehicle }) => (
                   <Link
                     key={vehicle.id}
                     href={`/${team.slug}/${vehicle.slug}`}
@@ -209,6 +240,7 @@ export default async function TeamStorefrontRoute({ params }: Props) {
                   </Link>
                 ))}
               </div>
+              )}
 
               {policyRows.length > 0 && <PolicyCard rows={policyRows} className="mt-4 lg:hidden" />}
               <WhyCard className="mt-4 lg:hidden" />
