@@ -13,11 +13,13 @@ import { serifStyle } from './tokens';
  * on the solid band where contrast is guaranteed (~7:1) on every image.
  * Card anatomy ported from the cyan mockup; every color from the gold tokens.
  */
-export function ListingCard({ listing, priority = false }: { listing: MarketplaceListing; priority?: boolean }) {
+export function ListingCard({ listing, priority = false, dates }: { listing: MarketplaceListing; priority?: boolean; dates?: { start: string; end: string } }) {
   const { team, vehicle, verified } = listing;
+  // A renter who filtered by dates carries them to the car and into booking.
+  const href = dates ? `/${team.slug}/${vehicle.slug}?start=${dates.start}&end=${dates.end}` : `/${team.slug}/${vehicle.slug}`;
   return (
     <Link
-      href={`/${team.slug}/${vehicle.slug}`}
+      href={href}
       className="group block overflow-hidden rounded-2xl border border-[#2A2E3A] bg-[#161922] transition-colors duration-300 hover:border-[#C8A664]/45 focus-visible:border-[#C8A664] focus-visible:outline-none"
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-[#1E2230]">

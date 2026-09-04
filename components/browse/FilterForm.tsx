@@ -4,7 +4,7 @@ import { useRef, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { MarketplaceFacets, MarketplaceQuery } from '@/domain/booking/publicContracts';
-import { MARKETPLACE_SORTS, PRICE_BANDS } from '@/domain/booking/marketplaceQuery';
+import { MARKETPLACE_SORTS, PRICE_BANDS, todayIso } from '@/domain/booking/marketplaceQuery';
 
 const SORT_LABELS: Record<MarketplaceQuery['sort'], string> = {
   featured: 'Featured',
@@ -30,6 +30,10 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
   const navigate = () => {
     if (!form.current) return;
     const data = new FormData(form.current);
+    // Dates apply as a pair — see FilterBar.
+    const start = String(data.get('start') ?? '');
+    const end = String(data.get('end') ?? '');
+    if ((start === '') !== (end === '')) return;
     const params = new URLSearchParams();
     data.forEach((value, key) => {
       if (typeof value !== 'string' || value === '') return;
@@ -52,6 +56,20 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
 
   return (
     <form ref={form} method="get" action="/browse" onSubmit={onSubmit} onChange={navigate} className="space-y-7">
+      <fieldset>
+        <legend className={section}>Dates</legend>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <label className="block">
+            <span className="block text-[10px] text-[#848A9A]">Pickup</span>
+            <input type="date" name="start" min={todayIso()} defaultValue={query.start ?? ''} className="mt-1 w-full rounded-lg border border-[#2A2E3A] bg-[#10131A] px-2.5 py-2 text-[12px] text-[#F0F2F5] outline-none focus:border-[#C8A664]/60 [color-scheme:dark]" />
+          </label>
+          <label className="block">
+            <span className="block text-[10px] text-[#848A9A]">Drop-off</span>
+            <input type="date" name="end" min={query.start ?? todayIso()} defaultValue={query.end ?? ''} className="mt-1 w-full rounded-lg border border-[#2A2E3A] bg-[#10131A] px-2.5 py-2 text-[12px] text-[#F0F2F5] outline-none focus:border-[#C8A664]/60 [color-scheme:dark]" />
+          </label>
+        </div>
+      </fieldset>
+
       <div>
         <label htmlFor={`${idPrefix}-sort`} className={section}>Sort</label>
         <select

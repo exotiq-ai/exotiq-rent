@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { MARKETPLACE_DEFAULT_LIMIT, MARKETPLACE_MAX_LIMIT, bodyTypeLabel, parseMarketplaceQuery, toMarketplaceSearchParams } from './marketplaceQuery';
-import { applyMarketplaceQuery, computeFacets, filterListings, sortListings } from './marketplaceCore';
+import { MARKETPLACE_DEFAULT_LIMIT, MARKETPLACE_MAX_LIMIT, bodyTypeLabel, busyRangeFor, parseDateWindow, parseMarketplaceQuery, toMarketplaceSearchParams, windowDays } from './marketplaceQuery';
+import { applyMarketplaceQuery, computeFacets, excludeBusy, filterListings, listingKey, sortListings } from './marketplaceCore';
+import { getMockFleetBusy, getMockMarketplaceListings } from './mockMarketplaceService';
 import { mockMarketplaceListings } from './mockMarketplaceService';
 import { getMarketplaceFacets, getMarketplaceListings } from './service';
 
@@ -102,6 +103,55 @@ describe('marketplace core over the mock catalog', () => {
     expect(facets.makes.reduce((n, m) => n + m.count, 0)).toBe(all.length);
     expect(facets.priceBands.reduce((n, b) => n + b.count, 0)).toBe(all.length);
     expect(facets.cities[0]!.label).toMatch(/, [A-Z]{2}$/);
+  });
+});
+
+describe('availability window (MP-10)', () => {
+  const today = '2026-09-04';
+  it('accepts only a complete, well-formed, forward, ≤180-day window', () => {
+    expect(parseDateWindow('2026-09-10', '2026-09-12', today)).toEqual({ start: '2026-09-10', end: '2026-09-12' });
+    expect(parseDateWindow('2026-09-10', undefined, today)).toBeUndefined();
+    expect(parseDateWindow('2026-09-12', '2026-09-10', today)).toBeUndefined();
+    expect(parseDateWindow('2026-02-30', '2026-03-02', today)).toBeUndefined();
+    expect(parseDateWindow('2026-09-10', '2027-04-01', today)).toBeUndefined();
+    expect(parseDateWindow('2026-08-01', '2026-08-03', today)).toBeUndefined();
+    expect(parseDateWindow('2026-09-01', '2026-09-04', today)).toEqual({ start: '2026-09-01', end: '2026-09-04' });
+  });
+
+  it('round-trips ?start&end through the query and drops a half window', () => {
+    const q = parseMarketplaceQuery({ start: '2099-01-10', end: '2099-01-12' });
+    expect(q.start).toBe('2099-01-10');
+    expect(toMarketplaceSearchParams(q).toString()).toBe('start=2099-01-10&end=2099-01-12');
+    expect(parseMarketplaceQuery({ start: '2099-01-10' }).start).toBeUndefined();
+  });
+
+  it('derives rental days and the busy range on the drop-off-day-is-rentable rule', () => {
+    expect(windowDays({ start: '2099-01-10', end: '2099-01-12' })).toBe(2);
+    expect(windowDays({ start: '2099-01-10', end: '2099-01-10' })).toBe(1);
+    expect(busyRangeFor({ start: '2099-01-10', end: '2099-01-12' })).toEqual({ start: '2099-01-10', end: '2099-01-11' });
+    expect(busyRangeFor({ start: '2099-01-10', end: '2099-01-10' })).toEqual({ start: '2099-01-10', end: '2099-01-10' });
+  });
+
+  it('excludes cars whose minimum stay is longer than the window, and busy cars', () => {
+    const q = parseMarketplaceQuery({ start: '2099-01-10', end: '2099-01-11' });
+    const oneDay = filterListings(all, q);
+    expect(oneDay.every((l) => l.vehicle.minRentalDays <= 1)).toBe(true);
+    expect(oneDay.length).toBeLessThan(all.length);
+    const [first] = all;
+    const busy = new Set([listingKey(first.team.slug, first.vehicle.slug)]);
+    expect(excludeBusy(all, busy)).toHaveLength(all.length - 1);
+    expect(excludeBusy(all, new Set())).toBe(all);
+  });
+
+  it('mock busy set comes from unavailableRanges and marks the page as checked', async () => {
+    const withRange = all.find((l) => (l.vehicle.unavailableRanges ?? []).length > 0)!;
+    const r = withRange.vehicle.unavailableRanges![0];
+    const { busy, checked } = await getMockFleetBusy({ start: r.start, end: r.end });
+    expect(checked).toBe(true);
+    expect(busy.has(listingKey(withRange.team.slug, withRange.vehicle.slug))).toBe(true);
+    const page = await getMockMarketplaceListings({ ...parseMarketplaceQuery(), start: r.start, end: r.end });
+    expect(page.availability).toEqual({ start: r.start, end: r.end, checked: true });
+    expect(page.listings.some((l) => l.vehicle.slug === withRange.vehicle.slug)).toBe(false);
   });
 });
 

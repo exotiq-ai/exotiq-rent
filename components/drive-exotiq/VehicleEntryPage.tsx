@@ -6,7 +6,7 @@ import { getPublicVehicleContext } from '@/domain/booking/service';
 import { Money, PhoneViewport } from './BookingChrome';
 import { VehicleGallery } from './VehicleGallery';
 
-export async function VehicleEntryPage({ operatorSlug, vehicleSlug }: { operatorSlug: string; vehicleSlug: string }) {
+export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { operatorSlug: string; vehicleSlug: string; dates?: { start: string; end: string } }) {
   const teamSlug = operatorSlug;
   const result = await getPublicVehicleContext(teamSlug, vehicleSlug);
   if (!result) notFound();
@@ -32,7 +32,8 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug }: { operator
   const pickupParts = [vehicle.pickupLocation.address, vehicle.pickupLocation.city, vehicle.pickupLocation.state]
     .map((part) => part?.trim())
     .filter(Boolean);
-  const bookHref = `/${operator.slug}/${vehicle.slug}/book`;
+  // Dates chosen on a grid ride into the booking flow (MP-10 / T-13).
+  const bookHref = dates ? `/${operator.slug}/${vehicle.slug}/book?start=${dates.start}&end=${dates.end}` : `/${operator.slug}/${vehicle.slug}/book`;
   const desktopNav = (
     <>
       <Link href={`/${operator.slug}`} className="transition hover:text-[#F0F2F5]">{operator.name}</Link>

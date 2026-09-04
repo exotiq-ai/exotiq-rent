@@ -1,8 +1,9 @@
 import { cache } from 'react';
 import { adaptFleetVehicle, adaptTeam, publicImageUrl } from './adapters';
-import { applyMarketplaceQuery, computeFacets } from './marketplaceCore';
-import { fetchMarketplaceFleet, fetchMarketplaceTeams, type RpcMarketplaceFleetRow, type RpcMarketplaceTeamRow } from './rpcClient';
-import type { MarketplaceFacets, MarketplaceListing, MarketplacePage, MarketplaceQuery } from './publicContracts';
+import { applyMarketplaceQuery, computeFacets, excludeBusy, listingKey } from './marketplaceCore';
+import { busyRangeFor } from './marketplaceQuery';
+import { fetchFleetBusy, fetchMarketplaceFleet, fetchMarketplaceTeams, type RpcMarketplaceFleetRow, type RpcMarketplaceTeamRow } from './rpcClient';
+import type { BusyResult, MarketplaceFacets, MarketplaceListing, MarketplacePage, MarketplaceQuery } from './publicContracts';
 
 /**
  * Supabase-mode marketplace catalog (MP-7 / M7f).
@@ -68,8 +69,28 @@ const loadCatalog = perRequest(async (): Promise<MarketplaceListing[]> => {
   }
 });
 
+/**
+ * Busy cars for a window (MP-10), fleet-wide or one storefront. One uncached
+ * call; on failure the caller shows every car and says availability was not
+ * checked — never a silent "all available".
+ */
+export async function getSupabaseFleetBusy(window: { start: string; end: string }, teamSlug?: string): Promise<BusyResult> {
+  const range = busyRangeFor(window);
+  try {
+    const rows = await fetchFleetBusy(range.start, range.end, teamSlug);
+    return { busy: new Set(rows.map((r) => listingKey(r.team_slug, r.vehicle_slug))), checked: true };
+  } catch (error) {
+    console.error('[marketplace] availability check failed:', error instanceof Error ? error.message : error);
+    return { busy: new Set(), checked: false };
+  }
+}
+
 export async function getSupabaseMarketplaceListings(query: MarketplaceQuery): Promise<MarketplacePage> {
-  return applyMarketplaceQuery(await loadCatalog(), query);
+  const catalog = await loadCatalog();
+  if (!query.start || !query.end) return applyMarketplaceQuery(catalog, query);
+  const window = { start: query.start, end: query.end };
+  const { busy, checked } = await getSupabaseFleetBusy(window);
+  return { ...applyMarketplaceQuery(excludeBusy(catalog, busy), query), availability: { ...window, checked } };
 }
 
 export async function getSupabaseMarketplaceFacets(): Promise<MarketplaceFacets> {

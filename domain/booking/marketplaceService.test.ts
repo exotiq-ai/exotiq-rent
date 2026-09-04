@@ -4,9 +4,10 @@ import type { RpcMarketplaceFleetRow, RpcMarketplaceTeamRow } from './rpcClient'
 vi.mock('./rpcClient', () => ({
   fetchMarketplaceTeams: vi.fn(),
   fetchMarketplaceFleet: vi.fn(),
+  fetchFleetBusy: vi.fn(),
 }));
 
-import { fetchMarketplaceFleet, fetchMarketplaceTeams } from './rpcClient';
+import { fetchFleetBusy, fetchMarketplaceFleet, fetchMarketplaceTeams } from './rpcClient';
 import { buildCatalog, getSupabaseMarketplaceFacets, getSupabaseMarketplaceListings } from './marketplaceService';
 import { parseMarketplaceQuery } from './marketplaceQuery';
 
@@ -91,6 +92,30 @@ describe('supabase marketplace service', () => {
     expect(facets.types).toEqual([{ value: 'luxury-suv', label: 'Luxury SUV', count: 1 }]);
     const page = await getSupabaseMarketplaceListings(parseMarketplaceQuery({ type: 'luxury-suv' }));
     expect(page.listings.map((l) => l.vehicle.slug)).toEqual(['a']);
+  });
+
+  it('subtracts the busy read for a window, calling it as [pickup, drop-off − 1] and never when there is no window', async () => {
+    vi.mocked(fetchMarketplaceTeams).mockResolvedValue(teams);
+    vi.mocked(fetchMarketplaceFleet).mockResolvedValue([car({ vehicle_slug: 'a' }), car({ vehicle_slug: 'b' })]);
+    vi.mocked(fetchFleetBusy).mockResolvedValue([{ team_slug: 'exotiq', vehicle_slug: 'a' }]);
+    const page = await getSupabaseMarketplaceListings({ ...parseMarketplaceQuery(), start: '2099-01-10', end: '2099-01-12' });
+    expect(fetchFleetBusy).toHaveBeenCalledWith('2099-01-10', '2099-01-11', undefined);
+    expect(page.listings.map((l) => l.vehicle.slug)).toEqual(['b']);
+    expect(page.availability).toEqual({ start: '2099-01-10', end: '2099-01-12', checked: true });
+    vi.mocked(fetchFleetBusy).mockClear();
+    await getSupabaseMarketplaceListings(parseMarketplaceQuery());
+    expect(fetchFleetBusy).not.toHaveBeenCalled();
+  });
+
+  it('shows every car and flags checked:false when the busy read fails', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(fetchMarketplaceTeams).mockResolvedValue(teams);
+    vi.mocked(fetchMarketplaceFleet).mockResolvedValue([car({ vehicle_slug: 'a' }), car({ vehicle_slug: 'b' })]);
+    vi.mocked(fetchFleetBusy).mockRejectedValue(new Error('public_fleet_busy failed (500)'));
+    const page = await getSupabaseMarketplaceListings({ ...parseMarketplaceQuery(), start: '2099-01-10', end: '2099-01-12' });
+    expect(page.listings).toHaveLength(2);
+    expect(page.availability?.checked).toBe(false);
+    error.mockRestore();
   });
 
   it('degrades to an empty catalog, not an error, when either RPC fails', async () => {

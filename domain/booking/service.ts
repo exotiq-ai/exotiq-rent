@@ -15,10 +15,11 @@ import {
   getMockPublicVehicleContext,
   startMockIdentityVerification,
 } from './mockService';
-import { getMockMarketplaceFacets, getMockMarketplaceListings } from './mockMarketplaceService';
-import { getSupabaseMarketplaceFacets, getSupabaseMarketplaceListings } from './marketplaceService';
+import { getMockFleetBusy, getMockMarketplaceFacets, getMockMarketplaceListings } from './mockMarketplaceService';
+import { getSupabaseFleetBusy, getSupabaseMarketplaceFacets, getSupabaseMarketplaceListings } from './marketplaceService';
 import type {
   BookingLookupResult,
+  BusyResult,
   CreateBookingResult,
   IdentityVerificationStart,
   IdentityVerificationState,
@@ -51,6 +52,12 @@ const perRequest: typeof cache = typeof cache === 'function' ? cache : (fn) => f
 export async function getMarketplaceListings(query: MarketplaceQuery): Promise<MarketplacePage> {
   if (getDataMode() === 'supabase') return getSupabaseMarketplaceListings(query);
   return getMockMarketplaceListings(query);
+}
+
+/** Cars out for a window (MP-10), fleet-wide or for one storefront. */
+export async function getFleetBusy(window: { start: string; end: string }, teamSlug?: string): Promise<BusyResult> {
+  if (getDataMode() === 'supabase') return getSupabaseFleetBusy(window, teamSlug);
+  return getMockFleetBusy(window, teamSlug);
 }
 
 export async function getMarketplaceFacets(): Promise<MarketplaceFacets> {

@@ -8,6 +8,7 @@ import { FilterForm } from '@/components/browse/FilterForm';
 import { ListingGrid } from '@/components/browse/ListingGrid';
 import { containerClassName, serifStyle } from '@/components/browse/tokens';
 import { browseEnabled } from '@/domain/booking/config';
+import { formatRangeLabel } from '@/domain/booking/dates';
 import { parseMarketplaceQuery, toMarketplaceSearchParams, type SearchParamsLike } from '@/domain/booking/marketplaceQuery';
 import { getMarketplaceFacets, getMarketplaceListings } from '@/domain/booking/service';
 
@@ -23,7 +24,7 @@ export function generateMetadata({ searchParams }: { searchParams: SearchParamsL
   // at /browse and stays out of the index (follow stays on so the crawler
   // still reaches the cars), so faceted crawl cannot multiply the page.
   const permutation =
-    Boolean(query.city) || query.makes.length > 0 || query.types.length > 0 || query.minDailyRateCents !== undefined || query.maxDailyRateCents !== undefined || query.offset > 0 || query.sort !== 'featured';
+    Boolean(query.city) || Boolean(query.start) || query.makes.length > 0 || query.types.length > 0 || query.minDailyRateCents !== undefined || query.maxDailyRateCents !== undefined || query.offset > 0 || query.sort !== 'featured';
   return {
     title: 'Browse the fleet | Drive Exotiq',
     description: 'Every exotic and luxury car on Drive Exotiq, across every operator — each one rented from a single accountable business.',
@@ -55,7 +56,8 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
     redirect(pageLink(Math.floor((page.totalCount - 1) / query.limit) * query.limit));
   }
   const catalogTotal = facets.cities.reduce((n, c) => n + c.count, 0);
-  const activeFilters = (query.city ? 1 : 0) + query.makes.length + query.types.length + (query.minDailyRateCents !== undefined || query.maxDailyRateCents !== undefined ? 1 : 0);
+  const activeFilters = (query.city ? 1 : 0) + (query.start ? 1 : 0) + query.makes.length + query.types.length + (query.minDailyRateCents !== undefined || query.maxDailyRateCents !== undefined ? 1 : 0);
+  const availability = page.availability;
   // The app router keeps this subtree mounted across search-param-only
   // navigations, and the form's inputs are uncontrolled — without a key tied
   // to the query, "Clear all" left the old boxes checked and the next change
@@ -103,7 +105,14 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
             </details>
           </div>
 
-          {page.listings.length > 0 ? <ListingGrid listings={page.listings} /> : <EmptyState totalInCatalog={catalogTotal} />}
+          {availability && (
+            <p className={`mb-4 rounded-lg border px-3.5 py-2.5 text-[12px] ${availability.checked ? 'border-[#2A2E3A] text-[#9BA1B0]' : 'border-[#FFB84D]/45 bg-[#FFB84D]/10 text-[#F0F2F5]'}`} role={availability.checked ? undefined : 'status'}>
+            {availability.checked
+              ? <>Showing cars available <span className="text-[#F0F2F5]">{formatRangeLabel(availability.start, availability.end)}</span>. Final availability is confirmed when you book.</>
+              : <>We couldn&apos;t check availability for {formatRangeLabel(availability.start, availability.end)} just now, so every car is shown. Dates are confirmed when you book.</>}
+            </p>
+          )}
+          {page.listings.length > 0 ? <ListingGrid listings={page.listings} dates={availability ? { start: availability.start, end: availability.end } : undefined} /> : <EmptyState totalInCatalog={catalogTotal} />}
 
           {(hasPrev || hasNext) && (
             <nav className="mt-10 flex items-center justify-between text-[13px]" aria-label="Pagination">
