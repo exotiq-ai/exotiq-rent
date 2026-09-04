@@ -18,7 +18,7 @@ Renters filter by what a car *is* before they filter by make: supercar, sports c
 
 Add a trailing column `body_type text` (null when unset) to the `RETURNS TABLE` of:
 
-- `public_team_fleet(_team_slug, _require_hero)` — used by the live storefront grid.
+- `public_team_fleet(_team_slug, _require_hero default false)` — used by the live storefront grid (the app passes only the slug).
 - `public_marketplace_fleet()` — used by the staged marketplace.
 - `public_vehicle_by_slug(_team_slug, _vehicle_slug)` — used by the vehicle page.
 

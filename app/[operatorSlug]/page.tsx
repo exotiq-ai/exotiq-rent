@@ -6,7 +6,7 @@ import { driveFontClassName } from '@/components/drive-exotiq/fonts';
 import { HTitle, Money, PhoneViewport } from '@/components/drive-exotiq/BookingChrome';
 import { FilterBar } from '@/components/browse/FilterBar';
 import { browseEnabled, getSiteMode } from '@/domain/booking/config';
-import { applyMarketplaceQuery, computeFacets } from '@/domain/booking/marketplaceCore';
+import { applyMarketplaceQuery, computeFacets, filterListings } from '@/domain/booking/marketplaceCore';
 import { parseMarketplaceQuery, toMarketplaceSearchParams, type SearchParamsLike } from '@/domain/booking/marketplaceQuery';
 import { getPublicTeamStorefront } from '@/domain/booking/service';
 import type { MarketplaceListing, PublicTeamStorefront } from '@/domain/booking/publicContracts';
@@ -118,12 +118,17 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
   // Storefront filters (MP-8): the same query language and core as /browse,
   // over this tenant's fleet only. Facets come from the whole fleet so a chip
   // always names something that exists here; paging is off — a storefront
-  // shows every matching car. 'featured' with equal photo counts falls
-  // through to price, which is the order the fleet RPC already returns.
+  // shows every matching car. City is a cross-tenant facet, meaningless on
+  // one storefront, so it is ignored rather than allowed to empty the grid.
+  // 'featured' keeps the fleet RPC's own order (price desc, its tie order):
+  // the default view must look exactly as it did before filters existed.
   const listings: MarketplaceListing[] = vehicles.map((vehicle) => ({ team, vehicle, photoCount: Math.max(1, vehicle.photos.length) }));
-  const query = parseMarketplaceQuery(searchParams ?? {});
+  const query = { ...parseMarketplaceQuery(searchParams ?? {}), city: undefined, state: undefined };
   const facets = computeFacets(listings);
-  const shown = applyMarketplaceQuery(listings, { ...query, limit: Number.MAX_SAFE_INTEGER, offset: 0 }).listings;
+  const shown =
+    query.sort === 'featured'
+      ? filterListings(listings, query)
+      : applyMarketplaceQuery(listings, { ...query, limit: Number.MAX_SAFE_INTEGER, offset: 0 }).listings;
   const filterKey = toMarketplaceSearchParams(query).toString();
   const policies = team.policies;
   const policyRows: PolicyRow[] = policies
