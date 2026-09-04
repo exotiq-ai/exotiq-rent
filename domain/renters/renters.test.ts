@@ -224,7 +224,8 @@ describe('handleCapture', () => {
     await confirmByToken(confirmTokenFrom(), META);
     expect(row('a@b.co').marketing_consent).toBe(true);
     expect(row('a@b.co').unsubscribed_at).toBeNull();
-    expect(row('a@b.co').alerts_paused_at).toBeNull();
+    // A consent-only click grants marketing only; alerts stay paused until a link that names them is clicked.
+    expect(row('a@b.co').alerts_paused_at).toBeTruthy();
   });
 
   it('a booking counts only when the tenant DB binds it to the address; otherwise it takes the click path', async () => {
@@ -271,6 +272,32 @@ describe('handleCapture', () => {
     const c = await confirmByToken(strangerLink, { ip: '7.7.7.7', userAgent: 'owner' });
     expect(c.ok && c.marketing).toBe(true);
     expect(row('a@b.co').consent_user_agent).toBe('owner');
+  });
+
+  it('an alert planted on an unconfirmed address is cancelled by a click whose mail did not name alerts', async () => {
+    await handleCapture({ email: 'v@x.co', source: 'alert', consent: false, alert: { team_slug: 'exotiq', vehicle_slug: '2017-audi-s8', start: '2026-10-10', end: '2026-10-12' } }, { ip: '6.6.6.6', userAgent: 'stranger' });
+    expect(S.__alerts[0].status).toBe('active');
+    S.__events.length = 0;
+    await handleCapture({ email: 'v@x.co', source: 'footer', consent: true }, META);
+    const link = confirmTokenFrom();
+    const c = await confirmByToken(link, META);
+    expect(c.ok && c.marketing).toBe(true);
+    expect(S.__alerts[0].status).toBe('cancelled');
+    // Whereas a click on a link that named the alert keeps it.
+    S.__reset(); vi.mocked(sendMail).mockClear();
+    await handleCapture({ email: 'a@b.co', source: 'alert', consent: false, alert: { team_slug: 'exotiq', vehicle_slug: '2017-audi-s8', start: '2026-10-10', end: '2026-10-12' } }, META);
+    const own = await confirmByToken(confirmTokenFrom(), META);
+    expect(own.ok && own.alerts).toBe(true);
+    expect(S.__alerts[0].status).toBe('active');
+  });
+
+  it('a failed mint after an earlier send does not hide behind the old ten-minute stamp', async () => {
+    await handleCapture({ email: 'a@b.co', source: 'save_list', consent: false, saved: [{ team_slug: 'exotiq', vehicle_slug: '2017-audi-s8' }] }, META);
+    S.__events.length = 0;
+    vi.mocked(sendMail).mockRejectedValueOnce(new Error('resend 500'));
+    expect((await handleCapture({ email: 'a@b.co', source: 'footer', consent: true }, META)).status).toBe('mail_failed');
+    S.__events.length = 0;
+    expect((await handleCapture({ email: 'a@b.co', source: 'footer', consent: true }, META)).status).toBe('confirm_sent');
   });
 
   it('confirmation links expire after seven days', async () => {

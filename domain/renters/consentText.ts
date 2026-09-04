@@ -20,6 +20,12 @@ export const CONSENT_TEXT = {
     version: 'review-2026-09-04',
     text: 'Keep me posted on new cars and early access from Drive Exotiq. Occasional e-mail, unsubscribe any time.',
   },
+  /** What the confirmation button grants when the link carries consent (shown in the mail and on the confirm page). */
+  confirm: {
+    version: 'confirm-2026-09-04',
+    text: 'first looks at new cars and early access (occasional e-mail, unsubscribe any time)',
+    button: 'Confirm and send me first looks',
+  },
 } as const;
 
 export type ConsentTextKey = keyof typeof CONSENT_TEXT;

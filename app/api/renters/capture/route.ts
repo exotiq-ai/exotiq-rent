@@ -19,7 +19,8 @@ function sameOrigin(request: Request): boolean {
   if (site && site !== 'same-origin' && site !== 'none') return false;
   const origin = request.headers.get('origin');
   if (origin) {
-    const allowed = new Set([siteUrl(), new URL(request.url).origin]);
+    // Netlify's per-deploy origins (previews, branch deploys, aliases) beside the site's own.
+    const allowed = new Set([siteUrl(), new URL(request.url).origin, process.env.DEPLOY_PRIME_URL ?? '', process.env.DEPLOY_URL ?? ''].filter(Boolean).map((u) => u.replace(/\/+$/, '')));
     if (!allowed.has(origin)) return false;
   }
   return true;
@@ -48,7 +49,10 @@ export async function POST(request: Request) {
   const userAgent = request.headers.get('user-agent') ?? '';
   try {
     const outcome = await handleCapture(parsed.value, { ip, userAgent });
-    return NextResponse.json({ ok: outcome.status !== 'mail_failed', status: outcome.status }, { status: outcome.status === 'mail_failed' ? 502 : 200, headers: NO_STORE });
+    if (outcome.status === 'mail_failed') return NextResponse.json({ ok: false, status: 'mail_failed' }, { status: 502, headers: NO_STORE });
+    // One neutral answer for every unverified request: the detailed outcome would tell a stranger
+    // whether an address already has a relationship with us. The e-mail itself says what it does.
+    return NextResponse.json({ ok: true, status: 'sent' }, { headers: NO_STORE });
   } catch (error) {
     if (error instanceof RateLimitedError) return NextResponse.json({ error: error.message }, { status: 429, headers: NO_STORE });
     if (error instanceof CaptureRefusedError) return NextResponse.json({ error: error.message }, { status: 400, headers: NO_STORE });

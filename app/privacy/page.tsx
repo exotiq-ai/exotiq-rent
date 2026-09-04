@@ -79,7 +79,8 @@ export default function PrivacyPage() {
             We send nothing but a confirmation link until you confirm the address by pressing the button on that
             page, and the page says exactly what the click confirms; a booking you make may count as confirming the
             address once the booking system can match it to you. Marketing e-mail goes out only after you have asked
-            for it and confirmed it. The &ldquo;Keep me posted&rdquo; button is itself the opt-in. Every message
+            for it and confirmed it. Pressing &ldquo;Keep me posted&rdquo; is the request; the confirmation click is the opt-in, and
+            the words you agreed to are the ones printed under that button and repeated in the e-mail. Every message
             carries an unsubscribe link and one-click unsubscribe headers; unsubscribing stops all e-mail from us and
             turns off any alerts, and pressing the confirmation link again later resumes only what you ask for. E-mail
             is delivered by Resend; the daily availability check runs on Netlify. Unsubscribing does not delete your

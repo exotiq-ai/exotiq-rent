@@ -23,7 +23,7 @@ import { fetchBookingByRef, fetchPublicVehicle } from '../booking/rpcClient';
 import { getMarketplaceListings } from '../booking/service';
 import type { MarketplaceListing } from '../booking/publicContracts';
 import { rentersTokenSecret, rentersTokenSecretPrevious } from './config';
-import { consentVersionFor } from './consentText';
+import { CONSENT_TEXT, consentVersionFor } from './consentText';
 import { carListHtml, layout, sendMail } from './email';
 import {
   StoreError,
@@ -114,7 +114,7 @@ export function describeScope(scope: Set<Scope>, alertRange?: string): string[] 
   const out: string[] = [];
   if (scope.has('list')) out.push('your saved cars');
   if (scope.has('alert')) out.push(alertRange ? `an availability alert for ${alertRange}` : 'your availability alert');
-  if (scope.has('consent')) out.push('first looks at new cars and early access (occasional e-mail, unsubscribe any time)');
+  if (scope.has('consent')) out.push(CONSENT_TEXT.confirm.text);
   if (out.length === 0) out.push('this e-mail address');
   return out;
 }
@@ -126,8 +126,9 @@ function joinWords(what: string[]): string {
 /**
  * Send (or re-use) the confirmation link for a scope. A live pending link
  * whose scope already covers the ask is re-used: nothing is sent inside ten
- * minutes, the same link is re-sent after that (so an earlier mail keeps
- * working). A wider ask mints a new link naming everything.
+ * minutes of its mail. Any other ask mints a fresh link naming exactly that
+ * ask (latest ask wins: a stranger's request can never be folded into the
+ * owner's mail, and an earlier link then stops working).
  */
 async function sendConfirmation(renter: RenterRow, want: Set<Scope>, alertRange: string | undefined): Promise<{ status: CaptureStatus; renter: RenterRow }> {
   const paused = Boolean(renter.alerts_paused_at);
@@ -135,10 +136,12 @@ async function sendConfirmation(renter: RenterRow, want: Set<Scope>, alertRange:
   const live = Boolean(renter.confirm_token_hash) && Date.now() - issued < CONFIRM_REUSE_MS;
   const existing = parseScope(renter.confirm_scope);
   const covered = live && Array.from(want).every((s) => existing.has(s));
-  if (covered && renter.confirm_sent_at && Date.now() - Date.parse(renter.confirm_sent_at) < CONFIRM_RESEND_AFTER_MS) return { status: 'confirm_sent', renter };
+  // The ten-minute gate counts only a mail that carried THIS link (a failed mint after an earlier send must not hide behind the old stamp).
+  const sentThisLink = Boolean(renter.confirm_sent_at && renter.confirm_issued_at && Date.parse(renter.confirm_sent_at) >= Date.parse(renter.confirm_issued_at));
+  if (covered && sentThisLink && Date.now() - Date.parse(renter.confirm_sent_at!) < CONFIRM_RESEND_AFTER_MS) return { status: 'confirm_sent', renter };
   if ((await countRecentEmails(renter.email, ['confirm'], agoIso(24 * 60 * 60 * 1000))) >= (paused ? CONFIRM_DAILY_CAP_PAUSED : CONFIRM_DAILY_CAP)) return { status: 'cooldown', renter };
 
-  const scope = new Set<Scope>(['address'].concat(Array.from(want), covered ? Array.from(existing) : []) as Scope[]);
+  const scope = new Set<Scope>(['address'].concat(Array.from(want)) as Scope[]);
   let token: string | null = null;
   let current = renter;
   if (!covered) {
@@ -158,7 +161,7 @@ async function sendConfirmation(renter: RenterRow, want: Set<Scope>, alertRange:
   const { html, text } = layout({
     title: resuming ? 'Confirm this request.' : 'Confirm your e-mail.',
     intro: `One tap confirms ${what}. If this wasn't you, ignore this e-mail and nothing happens.`,
-    cta: { label: resuming ? 'Confirm' : 'Confirm my e-mail', href },
+    cta: { label: scope.has('consent') ? CONSENT_TEXT.confirm.button : resuming ? 'Confirm' : 'Confirm my e-mail', href },
     unsubscribeHref: unsubscribeHref(renter.id),
     why: 'You asked for this on Drive Exotiq.',
   });
@@ -345,15 +348,17 @@ export async function confirmByToken(token: string, meta: CaptureMeta): Promise<
   }
   const scope = parseScope(renter.confirm_scope);
   const patch: Record<string, unknown> = { confirmed_at: renter.confirmed_at ?? nowIso(), confirm_token_hash: null, confirm_scope: null };
+  // Alerts nobody clicked for (an address still unconfirmed, or paused since) must not ride a click whose mail did not name them.
+  if (!scope.has('alert') && (!renter.confirmed_at || renter.alerts_paused_at)) await cancelAlertsForRenter(renter.id);
   if (scope.has('alert')) patch.alerts_paused_at = null;
   const marketing = scope.has('consent') && Boolean(renter.consent_requested_at);
   if (marketing) {
     const ipHash = meta.ip ? hashIp(meta.ip, rentersTokenSecret()) : null;
-    // The click is the consent event: its evidence replaces the request's.
-    Object.assign(patch, { marketing_consent: true, consented_at: nowIso(), unsubscribed_at: null, alerts_paused_at: null, consent_requested_at: null, consent_ip_hash: ipHash, consent_user_agent: meta.userAgent.slice(0, 300) });
+    // The click is the consent event: its evidence replaces the request's. It grants marketing only — alerts have their own scope.
+    Object.assign(patch, { marketing_consent: true, consented_at: nowIso(), unsubscribed_at: null, consent_requested_at: null, consent_ip_hash: ipHash, consent_user_agent: meta.userAgent.slice(0, 300) });
   }
   const confirmed = await patchRenter(renter.id, patch);
-  await logEvent({ renter_id: renter.id, kind: marketing ? 'confirmed:with-consent' : 'confirmed', ip_hash: meta.ip ? hashIp(meta.ip, rentersTokenSecret()) : null, meta: { scope: Array.from(scope) } }).catch(() => undefined);
+  await logEvent({ renter_id: renter.id, kind: marketing ? 'confirmed:with-consent' : 'confirmed', ip_hash: meta.ip ? hashIp(meta.ip, rentersTokenSecret()) : null, meta: { scope: Array.from(scope), confirm_text_version: CONSENT_TEXT.confirm.version } }).catch(() => undefined);
   let delivered: 'saved_list' | 'none' = 'none';
   if (scope.has('list')) {
     try {

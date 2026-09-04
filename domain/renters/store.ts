@@ -181,7 +181,8 @@ export async function claimAlert(id: string, nowIso: string): Promise<boolean> {
 
 /** Retention: an address that never confirmed is forgotten after the window; an expired pending link is dropped. */
 export async function purgeUnconfirmedRenters(olderThanIso: string): Promise<number> {
-  const rows = await rest<Array<{ id: string }>>(`renters?confirmed_at=is.null&created_at=lt.${enc(olderThanIso)}&select=id`, { method: 'DELETE', prefer: 'return=representation' });
+  // A row holding a live link is spared; seven-day links are nulled earlier in the same sweep, so a stale row goes next time.
+  const rows = await rest<Array<{ id: string }>>(`renters?confirmed_at=is.null&confirm_token_hash=is.null&created_at=lt.${enc(olderThanIso)}&select=id`, { method: 'DELETE', prefer: 'return=representation' });
   return rows.length;
 }
 

@@ -50,7 +50,7 @@ export function redactCredentialUrls<T extends Record<string, unknown>>(props: T
   for (const key in props) {
     const value = props[key];
     if (typeof value === 'string') {
-      (props as Record<string, unknown>)[key] = value.replace(/([?&](?:t|token)=)[^&#]*/gi, '$1redacted');
+      (props as Record<string, unknown>)[key] = value.replace(/([?&](?:t|token|r)=)[^&#]*/gi, '$1redacted');
     }
   }
   return props;

@@ -10,11 +10,8 @@ import type { SavedCar } from './savedStore';
 type Status = { kind: 'idle' } | { kind: 'sending' } | { kind: 'done'; status: string } | { kind: 'error'; message: string };
 
 const DONE_COPY: Record<string, string> = {
-  confirm_sent: 'Check your inbox and tap the confirmation link. That is the only e-mail until you do.',
-  delivered: 'Sent. It should be in your inbox in a moment.',
-  recorded: 'Done.',
-  cooldown: 'We e-mailed you about this recently. Check your inbox, including spam.',
-  alert_set: 'Alert set. We check every morning and e-mail you once when those dates open up.',
+  // One line for every outcome: the server does not say whether an address is already known to us.
+  sent: 'If that address is yours, check your inbox — the e-mail says what it does.',
 };
 
 /**
@@ -139,7 +136,7 @@ export function EmailCaptureForm({
         className={`mt-2 flex items-start gap-2.5 text-[12px] leading-5 outline-none ${status.kind === 'error' ? 'text-[#FFB84D]' : 'text-[#9BA1B0]'} ${status.kind === 'idle' || sending ? 'sr-only' : ''}`}
       >
         {done && <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#C8A664]" aria-hidden />}
-        {done ? DONE_COPY[status.status] ?? 'Done.' : status.kind === 'error' ? status.message : ''}
+        {done ? DONE_COPY[status.status] ?? DONE_COPY.sent : status.kind === 'error' ? status.message : ''}
       </p>
     </form>
   );

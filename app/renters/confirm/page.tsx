@@ -5,6 +5,7 @@ import { containerClassName, serifStyle } from '@/components/browse/tokens';
 import { renterCaptureUiEnabled } from '@/domain/renters/flags';
 import { renterCaptureEnabled } from '@/domain/renters/config';
 import { describeScope, pendingScopeForToken } from '@/domain/renters/capture';
+import { CONSENT_TEXT } from '@/domain/renters/consentText';
 import { looksLikeToken } from '@/domain/renters/tokens';
 
 export const metadata: Metadata = { title: 'Confirm your e-mail | Drive Exotiq', robots: { index: false, follow: false } };
@@ -29,7 +30,7 @@ export default async function ConfirmPage({ searchParams }: { searchParams?: { t
         {valid && (
           <form method="post" action="/api/renters/confirm" className="mt-8">
             <input type="hidden" name="token" value={token} />
-            <button type="submit" className="rounded-xl bg-[#C8A664] px-6 py-3.5 text-sm font-semibold text-[#1A1308] transition hover:brightness-105">Confirm my e-mail</button>
+            <button type="submit" className="rounded-xl bg-[#C8A664] px-6 py-3.5 text-sm font-semibold text-[#1A1308] transition hover:brightness-105">{scope?.has('consent') ? CONSENT_TEXT.confirm.button : 'Confirm my e-mail'}</button>
           </form>
         )}
       </section>
