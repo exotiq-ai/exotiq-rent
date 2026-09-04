@@ -58,6 +58,7 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
   const catalogTotal = facets.cities.reduce((n, c) => n + c.count, 0);
   const activeFilters = (query.city ? 1 : 0) + (query.start ? 1 : 0) + query.makes.length + query.types.length + (query.minDailyRateCents !== undefined || query.maxDailyRateCents !== undefined ? 1 : 0);
   const availability = page.availability;
+  const emptyByDates = Boolean(availability?.checked) && !query.city && query.makes.length === 0 && query.types.length === 0 && query.minDailyRateCents === undefined && query.maxDailyRateCents === undefined;
   // The app router keeps this subtree mounted across search-param-only
   // navigations, and the form's inputs are uncontrolled — without a key tied
   // to the query, "Clear all" left the old boxes checked and the next change
@@ -112,7 +113,7 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
               : <>We couldn&apos;t check availability for {formatRangeLabel(availability.start, availability.end)} just now, so every car is shown. We&apos;ll confirm your exact dates when you book.</>}
             </p>
           )}
-          {page.listings.length > 0 ? <ListingGrid listings={page.listings} dates={availability ? { start: availability.start, end: availability.end } : undefined} /> : <EmptyState totalInCatalog={catalogTotal} dates={availability?.checked ? { start: availability.start, end: availability.end } : undefined} />}
+          {page.listings.length > 0 ? <ListingGrid listings={page.listings} dates={availability ? { start: availability.start, end: availability.end } : undefined} /> : <EmptyState totalInCatalog={catalogTotal} dates={emptyByDates && availability ? { start: availability.start, end: availability.end } : undefined} />}
 
           {(hasPrev || hasNext) && (
             <nav className="mt-10 flex items-center justify-between text-[13px]" aria-label="Pagination">

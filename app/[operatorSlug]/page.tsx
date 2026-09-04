@@ -135,6 +135,9 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
       ? filterListings(listings, query)
       : applyMarketplaceQuery(listings, { ...query, limit: Number.MAX_SAFE_INTEGER, offset: 0 }).listings;
   const shown = availability ? excludeBusy(matched, availability.busy) : matched;
+  // The dates-aware zero state only when the dates are the reason — with a
+  // make or price chip set too, the plain "loosen a filter" copy is truer.
+  const emptyByDates = Boolean(availability?.checked) && query.makes.length === 0 && query.types.length === 0 && query.minDailyRateCents === undefined && query.maxDailyRateCents === undefined;
   const carHref = (slug: string) => (window ? `/${team.slug}/${slug}?start=${window.start}&end=${window.end}` : `/${team.slug}/${slug}`);
   const filterKey = toMarketplaceSearchParams(query).toString();
   const policies = team.policies;
@@ -204,12 +207,12 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
                 <div className="mt-3 flex flex-col items-center rounded-2xl border border-dashed border-[#2A2E3A] px-6 py-12 text-center">
                   <div className="grid h-12 w-12 place-items-center rounded-full border border-[#2A2E3A] bg-[#161922] text-[#C8A664]"><CarFront size={22} /></div>
                   <h3 className="mt-4 text-[20px] text-[#F0F2F5]" style={{ fontFamily: 'var(--font-drive-newsreader), Georgia, serif', fontWeight: 500 }}>
-                    {availability?.checked ? `Nothing is free ${formatRangeLabel(availability.start, availability.end)}.` : 'No cars match those filters.'}
+                    {emptyByDates && availability ? `Nothing is free ${formatRangeLabel(availability.start, availability.end)}.` : 'No cars match those filters.'}
                   </h3>
                   <p className="mt-2 text-sm leading-6 text-[#9BA1B0]">
-                    {availability?.checked ? `Try different dates, or see all ${vehicles.length} cars ${team.name} lists.` : `${team.name} lists ${vehicles.length} cars right now. Loosen a filter, or see them all.`}
+                    {emptyByDates ? `Try different dates, or see all ${vehicles.length} cars ${team.name} lists.` : `${team.name} lists ${vehicles.length} cars right now. Loosen a filter, or see them all.`}
                   </p>
-                  <Link href={`/${team.slug}`} className="mt-5 rounded-xl border border-[#C8A664]/40 px-5 py-3 text-sm font-semibold text-[#C8A664]">{availability?.checked ? `See all ${vehicles.length} (clears dates)` : `Show all ${vehicles.length}`}</Link>
+                  <Link href={`/${team.slug}`} className="mt-5 rounded-xl border border-[#C8A664]/40 px-5 py-3 text-sm font-semibold text-[#C8A664]">{emptyByDates ? `See all ${vehicles.length} (clears dates)` : `Show all ${vehicles.length}`}</Link>
                 </div>
               ) : (
               <div className="mt-3 space-y-4 lg:grid lg:grid-cols-2 lg:gap-5 lg:space-y-0">
