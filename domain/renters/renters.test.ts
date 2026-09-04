@@ -88,8 +88,8 @@ describe('decideAlerts', () => {
   });
   it('expires past windows, skips unconfirmed or unsubscribed renters, waits without a busy read', () => {
     expect(decideAlerts([alert({ start_on: '2026-09-01', end_on: '2026-09-03' })], TODAY, catalog, new Map())[0].action).toBe('expire');
-    expect(decideAlerts([alert({ renters: { email: 'a@b.co', name: null, confirmed_at: null, unsubscribed_at: null } })], TODAY, catalog, new Map([['a1', new Set()]]))[0].action).toBe('skip');
-    expect(decideAlerts([alert({ renters: { email: 'a@b.co', name: null, confirmed_at: '2026-09-01T00:00:00Z', unsubscribed_at: '2026-09-02T00:00:00Z' } })], TODAY, catalog, new Map([['a1', new Set()]]))[0].action).toBe('skip');
+    expect(decideAlerts([alert({ renters: { email: 'a@b.co', name: null, confirmed_at: null, unsubscribed_at: null } })], TODAY, catalog, new Map([['a1', new Set<string>()]]))[0].action).toBe('skip');
+    expect(decideAlerts([alert({ renters: { email: 'a@b.co', name: null, confirmed_at: '2026-09-01T00:00:00Z', unsubscribed_at: '2026-09-02T00:00:00Z' } })], TODAY, catalog, new Map([['a1', new Set<string>()]]))[0].action).toBe('skip');
     expect(decideAlerts([alert({})], TODAY, catalog, new Map())[0].action).toBe('wait');
   });
 });
@@ -102,15 +102,15 @@ vi.mock('./store', () => {
     __renters: renters,
     __reset: () => { renters.clear(); seq = 0; },
     findRenterByEmail: vi.fn(async (email: string) => (renters.get(email) as never) ?? null),
-    findRenterById: vi.fn(async (id: string) => ([...renters.values()].find((r) => r.id === id) as never) ?? null),
-    findRenterByConfirmHash: vi.fn(async (hash: string) => ([...renters.values()].find((r) => r.confirm_token_hash === hash) as never) ?? null),
+    findRenterById: vi.fn(async (id: string) => (Array.from(renters.values()).find((r) => r.id === id) as never) ?? null),
+    findRenterByConfirmHash: vi.fn(async (hash: string) => (Array.from(renters.values()).find((r) => r.confirm_token_hash === hash) as never) ?? null),
     insertRenter: vi.fn(async (fields: Record<string, unknown>) => {
       const row = { id: `00000000-0000-4000-8000-00000000000${++seq}`, name: null, phone: null, marketing_consent: false, consented_at: null, consent_source: null, confirmed_at: null, confirm_token_hash: null, confirm_sent_at: null, unsubscribed_at: null, first_source: null, first_booking_ref: null, last_booking_ref: null, bookings_count: 0, created_at: 'now', ...fields };
       renters.set(fields.email as string, row);
       return row as never;
     }),
     patchRenter: vi.fn(async (id: string, fields: Record<string, unknown>) => {
-      const row = [...renters.values()].find((r) => r.id === id)!;
+      const row = Array.from(renters.values()).find((r) => r.id === id)!;
       Object.assign(row, fields);
       return row as never;
     }),

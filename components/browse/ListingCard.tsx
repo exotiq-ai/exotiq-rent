@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { BadgeCheck } from 'lucide-react';
 import { Money } from '@/components/drive-exotiq/BookingChrome';
 import type { MarketplaceListing } from '@/domain/booking/publicContracts';
-import { cardClassName, photoClassName, photoFrameClassName, priceClassName, priceUnitClassName, serifStyle } from './tokens';
+import { SaveButton } from '@/components/renters/SaveButton';
+import { cardShellClassName, photoClassName, photoFrameClassName, priceClassName, priceUnitClassName, serifStyle } from './tokens';
 
 /**
  * One listing = one car from one operator (MP-3).
@@ -22,9 +23,10 @@ export function ListingCard({ listing, priority = false, dates }: { listing: Mar
   // A renter who filtered by dates carries them to the car and into booking.
   const href = dates ? `/${team.slug}/${vehicle.slug}?start=${dates.start}&end=${dates.end}` : `/${team.slug}/${vehicle.slug}`;
   return (
+    <div className={`group h-full ${cardShellClassName}`}>
     <Link
       href={href}
-      className={`group flex h-full flex-col ${cardClassName}`}
+      className="flex h-full flex-col focus-visible:outline-none"
     >
       <div className={photoFrameClassName}>
         {vehicle.heroImage ? (
@@ -65,5 +67,12 @@ export function ListingCard({ listing, priority = false, dates }: { listing: Mar
         </div>
       </div>
     </Link>
+      {/* The heart sits over the photo's corner but outside the link: an
+          overlay the exact height of the 4:3 frame, clicks pass through
+          everywhere except the button (MP-14). Hidden when capture is off. */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 aspect-[4/3]">
+        <SaveButton car={{ team_slug: team.slug, vehicle_slug: vehicle.slug, name: vehicle.name, href: `/${team.slug}/${vehicle.slug}`, priceCents: vehicle.dailyRateCents }} className="pointer-events-auto absolute bottom-3 right-3" />
+      </div>
+    </div>
   );
 }

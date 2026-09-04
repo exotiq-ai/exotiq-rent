@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { CarFront } from 'lucide-react';
 import { formatRangeLabel } from '@/domain/booking/dates';
+import { EmailCaptureForm } from '@/components/renters/EmailCaptureForm';
 import { serifStyle } from './tokens';
 
 /**
@@ -30,6 +31,13 @@ export function EmptyState({ totalInCatalog, dates }: { totalInCatalog: number; 
         {dates ? `Try different dates, or see all ${totalInCatalog} cars.` : `${totalInCatalog} cars are listed across the fleet right now. Loosen a filter, or start over.`}
       </p>
       <Link href="/browse" className="mt-6 rounded-xl bg-[#C8A664] px-6 py-3.5 text-sm font-semibold text-[#1A1308]">{dates ? 'See all cars (clears dates)' : 'Clear filters'}</Link>
+      {/* MP-14: one e-mail if any listed car frees up for the dates. */}
+      {dates && (
+        <div className="mt-8 w-full max-w-sm border-t border-[#2A2E3A] pt-6 text-left">
+          <p className="text-[13px] text-[#9BA1B0]">Get one e-mail if a car opens up {formatRangeLabel(dates.start, dates.end)}.</p>
+          <EmailCaptureForm source="alert" cta="Alert me" compact alert={{ team_slug: null, vehicle_slug: null, start: dates.start, end: dates.end }} className="mt-3" />
+        </div>
+      )}
     </div>
   );
 }

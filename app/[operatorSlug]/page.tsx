@@ -5,7 +5,9 @@ import { CalendarX2, CarFront, FileCheck2, Fuel, Gauge, Phone, ShieldCheck, Truc
 import { driveFontClassName } from '@/components/drive-exotiq/fonts';
 import { HTitle, Money, PhoneViewport } from '@/components/drive-exotiq/BookingChrome';
 import { FilterBar } from '@/components/browse/FilterBar';
-import { cardClassName, photoClassName, photoFrameClassName, priceClassName, priceUnitClassName } from '@/components/browse/tokens';
+import { cardShellClassName, photoClassName, photoFrameClassName, priceClassName, priceUnitClassName } from '@/components/browse/tokens';
+import { EmailCaptureForm } from '@/components/renters/EmailCaptureForm';
+import { SaveButton } from '@/components/renters/SaveButton';
 import { browseEnabled, getSiteMode } from '@/domain/booking/config';
 import { formatRangeLabel, formatShortDate } from '@/domain/booking/dates';
 import { applyMarketplaceQuery, computeFacets, excludeBusy, filterListings } from '@/domain/booking/marketplaceCore';
@@ -226,14 +228,21 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
                     {emptyByDates ? `Try different dates, or see all ${vehicles.length} cars ${team.name} lists.` : `${team.name} lists ${vehicles.length} cars right now. Loosen a filter, or see them all.`}
                   </p>
                   <Link href={`/${team.slug}`} className="mt-5 rounded-xl border border-[#C8A664]/40 px-5 py-3 text-sm font-semibold text-[#C8A664]">{emptyByDates ? `See all ${vehicles.length} (clears dates)` : `Show all ${vehicles.length}`}</Link>
+                  {/* MP-14: one e-mail if any of this operator's cars frees up for the dates. */}
+                  {emptyByDates && availability && (
+                    <div className="mt-8 w-full max-w-sm border-t border-[#2A2E3A] pt-6 text-left">
+                      <p className="text-[13px] text-[#9BA1B0]">Get one e-mail if a car from {team.name} opens up {formatRangeLabel(availability.start, availability.end)}.</p>
+                      <EmailCaptureForm source="alert" cta="Alert me" compact teamSlug={team.slug} alert={{ team_slug: team.slug, vehicle_slug: null, start: availability.start, end: availability.end }} className="mt-3" />
+                    </div>
+                  )}
                 </div>
               ) : (
               <div className="mt-3 space-y-4 lg:grid lg:grid-cols-2 lg:gap-5 lg:space-y-0">
                 {shown.map(({ vehicle }) => (
+                  <div key={vehicle.id} className={`group ${cardShellClassName}`}>
                   <Link
-                    key={vehicle.id}
                     href={carHref(vehicle.slug)}
-                    className={`group block ${cardClassName}`}
+                    className="block focus-visible:outline-none"
                   >
                     {/* 4:3 and unobstructed — the car is the product, and the old
                         scrim was eating the stance and wheels. */}
@@ -277,6 +286,10 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
                       </div>
                     </div>
                   </Link>
+                  <div className="pointer-events-none absolute inset-x-0 top-0 aspect-[4/3]">
+                    <SaveButton car={{ team_slug: team.slug, vehicle_slug: vehicle.slug, name: vehicle.name, href: `/${team.slug}/${vehicle.slug}`, priceCents: vehicle.dailyRateCents }} className="pointer-events-auto absolute bottom-3 right-3" />
+                  </div>
+                  </div>
                 ))}
               </div>
               )}
