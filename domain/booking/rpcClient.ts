@@ -157,6 +157,24 @@ export async function fetchPublicTeamFleet(teamSlug: string): Promise<RpcFleetVe
   return rpc<RpcFleetVehicleRow[]>('public_team_fleet', { _team_slug: teamSlug });
 }
 
+export type RpcBusyVehicleRow = { team_slug: string; vehicle_slug: string };
+
+/**
+ * MP-10 (2026-09-04): cars out for any day of [_range_start, _range_end]
+ * (both inclusive) on the same rule public_vehicle_availability applies —
+ * blocking booking statuses with the team's pickup buffer, plus manual
+ * blocks. Team-scoped calls are not gated on marketplace_listed, so a
+ * storefront that opted out of the marketplace still filters correctly.
+ * Uncached: availability is booking-sensitive.
+ */
+export async function fetchFleetBusy(rangeStart: string, rangeEnd: string, teamSlug?: string): Promise<RpcBusyVehicleRow[]> {
+  return rpc<RpcBusyVehicleRow[]>(
+    'public_fleet_busy',
+    { _range_start: rangeStart, _range_end: rangeEnd, ...(teamSlug ? { _team_slug: teamSlug } : {}) },
+    { noStore: true },
+  );
+}
+
 export async function fetchMarketplaceTeams(): Promise<RpcMarketplaceTeamRow[]> {
   return rpc<RpcMarketplaceTeamRow[]>('public_marketplace_teams', {});
 }

@@ -1,3 +1,4 @@
+import { addDays } from './dates';
 import type { MarketplaceQuery, MarketplaceSort } from './publicContracts';
 
 /**
@@ -49,6 +50,61 @@ export function bodyTypeLabel(slug: string): string {
     .join(' ');
 }
 
+/** Longest availability window the busy read accepts (matches public_fleet_busy). */
+export const MAX_WINDOW_DAYS = 180;
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function isValidIsoDate(s: string): boolean {
+  if (!ISO_DATE.test(s)) return false;
+  const d = new Date(`${s}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
+}
+
+/** Whole days between two ISO dates (end − start). */
+export function daysBetween(startIso: string, endIso: string): number {
+  return Math.round((Date.UTC(+endIso.slice(0, 4), +endIso.slice(5, 7) - 1, +endIso.slice(8, 10)) - Date.UTC(+startIso.slice(0, 4), +startIso.slice(5, 7) - 1, +startIso.slice(8, 10))) / 86_400_000);
+}
+
+export function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/**
+ * Availability window from ?start&end (MP-10). Valid = both present, real
+ * dates, a real rental (drop-off after pickup), at most MAX_WINDOW_DAYS long,
+ * starting no earlier than yesterday (one day of grace because the server
+ * judges "today" in UTC while renters pick dates in Phoenix or Tampa) and no
+ * further out than the booking horizon. Anything else is dropped — a half or
+ * nonsense window must never turn into "every car is available".
+ */
+export function parseDateWindow(start: string | undefined, end: string | undefined, today = todayIso()): { start: string; end: string } | undefined {
+  if (!start || !end || !isValidIsoDate(start) || !isValidIsoDate(end)) return undefined;
+  if (end <= start) return undefined;
+  if (daysBetween(start, end) > MAX_WINDOW_DAYS) return undefined;
+  if (start < addDays(today, -1)) return undefined;
+  if (daysBetween(today, start) > MAX_WINDOW_DAYS) return undefined;
+  return { start, end };
+}
+
+/** Rental length the window implies: pickup day to drop-off day. */
+export function windowDays(query: { start?: string; end?: string }): number | undefined {
+  if (!query.start || !query.end) return undefined;
+  return Math.max(1, daysBetween(query.start, query.end));
+}
+
+/**
+ * The range the busy read is asked about: the whole window, drop-off day
+ * included. Conservative on purpose — the booking calendar treats every day
+ * of a selection as one the car must be free on, so the grid asks the same
+ * question and can never advertise a car the calendar would then refuse.
+ * (Asking for [pickup, drop-off − 1] listed cars whose next booking picks up
+ * on the renter's drop-off day; review of #99.)
+ */
+export function busyRangeFor(window: { start: string; end: string }): { start: string; end: string } {
+  return { start: window.start, end: window.end };
+}
+
 export type SearchParamsLike = Record<string, string | string[] | undefined>;
 
 function first(value: string | string[] | undefined): string | undefined {
@@ -87,9 +143,12 @@ export function parseMarketplaceQuery(params: SearchParamsLike = {}): Marketplac
   const maxDailyRateCents = dollarsToCents(first(params.max)) ?? band?.maxCents;
   const city = first(params.city)?.trim() || undefined;
   const state = first(params.state)?.trim().toUpperCase() || undefined;
+  const window = parseDateWindow(first(params.start)?.trim(), first(params.end)?.trim());
   return {
     city,
     state,
+    start: window?.start,
+    end: window?.end,
     makes: all(params.make),
     types: Array.from(new Set(all(params.type).map((t) => t.toLowerCase()))),
     minDailyRateCents,
@@ -109,6 +168,10 @@ export function toMarketplaceSearchParams(query: Partial<MarketplaceQuery> & { b
   if (query.state) p.set('state', query.state);
   for (const make of query.makes ?? []) p.append('make', make);
   for (const type of query.types ?? []) p.append('type', type);
+  if (query.start && query.end) {
+    p.set('start', query.start);
+    p.set('end', query.end);
+  }
   if (query.band) p.set('band', query.band);
   else {
     if (query.minDailyRateCents !== undefined) p.set('min', String(query.minDailyRateCents / 100));

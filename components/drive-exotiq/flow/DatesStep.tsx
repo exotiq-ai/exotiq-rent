@@ -56,7 +56,6 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
   const maxMonth = addMonths(minMonth, 6);
   const startIso = cart.dates.start;
   const endIso = cart.dates.end;
-  const canContinue = cart.totals.days >= cart.vehicle.minRentalDays;
 
   const isBlocked = (iso: string) =>
     iso < todayIso || (cart.vehicle.unavailableRanges ?? []).some((range) => range.start <= iso && iso <= range.end);
@@ -66,6 +65,9 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
     for (let iso = fromIso; iso <= toIso; iso = addDays(iso, 1)) if (isBlocked(iso)) return true;
     return false;
   };
+  // Belt and braces for a seeded selection (MP-10): whatever wrote cart.dates,
+  // Continue is only offered for a range the calendar itself would allow.
+  const canContinue = cart.totals.days >= cart.vehicle.minRentalDays && !rangeCrossesBlocked(startIso, endIso);
 
   // Explicit two-tap selection. `awaitingEnd` tracks the phase directly rather
   // than inferring it from totals — the old inference (days >= min) meant the

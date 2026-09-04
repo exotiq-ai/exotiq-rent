@@ -146,6 +146,10 @@ export type MarketplaceQuery = {
   makes: string[];
   /** Body-type slugs from the fixed vocabulary (MP-9); empty = any. */
   types: string[];
+  /** Availability window (MP-10), ISO dates, pickup day and drop-off day. Both
+   * or neither — the parser drops a half-window or an invalid one. */
+  start?: string;
+  end?: string;
   minDailyRateCents?: number;
   maxDailyRateCents?: number;
   sort: MarketplaceSort;
@@ -177,4 +181,9 @@ export type MarketplacePage = {
   totalCount: number;
   limit: number;
   offset: number;
+  /** Present when the query carried a window. `checked: false` means the busy
+   * read failed and every car is shown — the page must say so. */
+  availability?: { start: string; end: string; checked: boolean };
 };
+
+export type BusyResult = { busy: Set<string>; checked: boolean };

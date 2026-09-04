@@ -1,5 +1,5 @@
 import type { MarketplaceFacets, MarketplaceListing, MarketplacePage, MarketplaceQuery } from './publicContracts';
-import { BODY_TYPES, PRICE_BANDS, bodyTypeLabel } from './marketplaceQuery';
+import { BODY_TYPES, PRICE_BANDS, bodyTypeLabel, windowDays } from './marketplaceQuery';
 
 /**
  * Pure filter / sort / paginate / facet logic over listings (MP-2).
@@ -15,7 +15,11 @@ const norm = (s: string) => s.trim().toLowerCase();
 export function filterListings(listings: MarketplaceListing[], query: MarketplaceQuery): MarketplaceListing[] {
   const makes = new Set(query.makes.map(norm));
   const types = new Set(query.types.map(norm));
+  // A window implies a rental length; a car whose minimum stay is longer than
+  // that could not be booked for it, so it is not "available for these dates".
+  const days = windowDays(query);
   return listings.filter(({ team, vehicle }) => {
+    if (days !== undefined && vehicle.minRentalDays > days) return false;
     if (query.city && norm(team.city) !== norm(query.city)) return false;
     if (query.state && norm(team.state) !== norm(query.state)) return false;
     if (makes.size > 0 && !makes.has(norm(vehicle.make))) return false;
@@ -25,6 +29,17 @@ export function filterListings(listings: MarketplaceListing[], query: Marketplac
     if (query.maxDailyRateCents !== undefined && vehicle.dailyRateCents > query.maxDailyRateCents) return false;
     return true;
   });
+}
+
+/** Key the busy read is joined on. */
+export function listingKey(teamSlug: string, vehicleSlug: string): string {
+  return `${teamSlug}/${vehicleSlug}`;
+}
+
+/** Drop the cars the busy read says are out for the window (MP-10). Pure; the I/O lives in the services. */
+export function excludeBusy(listings: MarketplaceListing[], busy: Set<string>): MarketplaceListing[] {
+  if (busy.size === 0) return listings;
+  return listings.filter(({ team, vehicle }) => !busy.has(listingKey(team.slug, vehicle.slug)));
 }
 
 export function sortListings(listings: MarketplaceListing[], sort: MarketplaceQuery['sort']): MarketplaceListing[] {

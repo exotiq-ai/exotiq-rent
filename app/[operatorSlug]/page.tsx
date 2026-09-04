@@ -6,9 +6,10 @@ import { driveFontClassName } from '@/components/drive-exotiq/fonts';
 import { HTitle, Money, PhoneViewport } from '@/components/drive-exotiq/BookingChrome';
 import { FilterBar } from '@/components/browse/FilterBar';
 import { browseEnabled, getSiteMode } from '@/domain/booking/config';
-import { applyMarketplaceQuery, computeFacets, filterListings } from '@/domain/booking/marketplaceCore';
+import { formatRangeLabel, formatShortDate } from '@/domain/booking/dates';
+import { applyMarketplaceQuery, computeFacets, excludeBusy, filterListings } from '@/domain/booking/marketplaceCore';
 import { parseMarketplaceQuery, toMarketplaceSearchParams, type SearchParamsLike } from '@/domain/booking/marketplaceQuery';
-import { getPublicTeamStorefront } from '@/domain/booking/service';
+import { getFleetBusy, getPublicTeamStorefront } from '@/domain/booking/service';
 import type { MarketplaceListing, PublicTeamStorefront } from '@/domain/booking/publicContracts';
 
 type Props = { params: { operatorSlug: string }; searchParams?: SearchParamsLike };
@@ -125,10 +126,19 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
   const listings: MarketplaceListing[] = vehicles.map((vehicle) => ({ team, vehicle, photoCount: Math.max(1, vehicle.photos.length) }));
   const query = { ...parseMarketplaceQuery(searchParams ?? {}), city: undefined, state: undefined };
   const facets = computeFacets(listings);
-  const shown =
+  // Availability (MP-10): one uncached busy read for this storefront; on
+  // failure show every car and say so rather than pretend they are all free.
+  const window = query.start && query.end ? { start: query.start, end: query.end } : undefined;
+  const availability = window ? { ...window, ...(await getFleetBusy(window, team.slug)) } : undefined;
+  const matched =
     query.sort === 'featured'
       ? filterListings(listings, query)
       : applyMarketplaceQuery(listings, { ...query, limit: Number.MAX_SAFE_INTEGER, offset: 0 }).listings;
+  const shown = availability ? excludeBusy(matched, availability.busy) : matched;
+  // The dates-aware zero state only when the dates are the reason — with a
+  // make or price chip set too, the plain "loosen a filter" copy is truer.
+  const emptyByDates = Boolean(availability?.checked) && query.makes.length === 0 && query.types.length === 0 && query.minDailyRateCents === undefined && query.maxDailyRateCents === undefined;
+  const carHref = (slug: string) => (window ? `/${team.slug}/${slug}?start=${window.start}&end=${window.end}` : `/${team.slug}/${slug}`);
   const filterKey = toMarketplaceSearchParams(query).toString();
   const policies = team.policies;
   const policyRows: PolicyRow[] = policies
@@ -173,8 +183,15 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
               <div className="mt-5 px-1 lg:mt-8">
                 <FilterBar key={filterKey} facets={facets} query={query} action={`/${team.slug}`} />
               </div>
+              {availability && (
+                <p className={`mt-4 rounded-lg border px-3.5 py-2.5 text-[12px] ${availability.checked ? 'border-[#2A2E3A] text-[#9BA1B0]' : 'border-[#FFB84D]/45 bg-[#FFB84D]/10 text-[#F0F2F5]'}`}>
+                  {availability.checked
+                    ? <>Showing cars available <span className="text-[#F0F2F5]" aria-label={`${formatShortDate(availability.start)} to ${formatShortDate(availability.end)}`}>{formatRangeLabel(availability.start, availability.end)}</span>. We&apos;ll confirm your exact dates when you book.</>
+                    : <>We couldn&apos;t check availability for {formatRangeLabel(availability.start, availability.end)} just now, so every car is shown. We&apos;ll confirm your exact dates when you book.</>}
+                </p>
+              )}
               <div className="mt-4 flex items-center justify-between px-1">
-                <h2 className="text-[10px] uppercase tracking-[0.24em] text-[#848A9A]">Available now</h2>
+                <h2 className="text-[10px] uppercase tracking-[0.24em] text-[#848A9A]">{availability ? (availability.checked ? 'Available for your dates' : 'All vehicles') : 'Available now'}</h2>
                 <div className="text-[11px] text-[#9BA1B0]">
                   {shown.length === vehicles.length ? `${vehicles.length} vehicles` : `${shown.length} of ${vehicles.length} vehicles`}
                 </div>
@@ -189,16 +206,20 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
               {shown.length === 0 ? (
                 <div className="mt-3 flex flex-col items-center rounded-2xl border border-dashed border-[#2A2E3A] px-6 py-12 text-center">
                   <div className="grid h-12 w-12 place-items-center rounded-full border border-[#2A2E3A] bg-[#161922] text-[#C8A664]"><CarFront size={22} /></div>
-                  <h3 className="mt-4 text-[20px] text-[#F0F2F5]" style={{ fontFamily: 'var(--font-drive-newsreader), Georgia, serif', fontWeight: 500 }}>No cars match those filters.</h3>
-                  <p className="mt-2 text-sm leading-6 text-[#9BA1B0]">{team.name} lists {vehicles.length} cars right now. Loosen a filter, or see them all.</p>
-                  <Link href={`/${team.slug}`} className="mt-5 rounded-xl border border-[#C8A664]/40 px-5 py-3 text-sm font-semibold text-[#C8A664]">Show all {vehicles.length}</Link>
+                  <h3 className="mt-4 text-[20px] text-[#F0F2F5]" style={{ fontFamily: 'var(--font-drive-newsreader), Georgia, serif', fontWeight: 500 }}>
+                    {emptyByDates && availability ? `Nothing is free ${formatRangeLabel(availability.start, availability.end)}.` : 'No cars match those filters.'}
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-[#9BA1B0]">
+                    {emptyByDates ? `Try different dates, or see all ${vehicles.length} cars ${team.name} lists.` : `${team.name} lists ${vehicles.length} cars right now. Loosen a filter, or see them all.`}
+                  </p>
+                  <Link href={`/${team.slug}`} className="mt-5 rounded-xl border border-[#C8A664]/40 px-5 py-3 text-sm font-semibold text-[#C8A664]">{emptyByDates ? `See all ${vehicles.length} (clears dates)` : `Show all ${vehicles.length}`}</Link>
                 </div>
               ) : (
               <div className="mt-3 space-y-4 lg:grid lg:grid-cols-2 lg:gap-5 lg:space-y-0">
                 {shown.map(({ vehicle }) => (
                   <Link
                     key={vehicle.id}
-                    href={`/${team.slug}/${vehicle.slug}`}
+                    href={carHref(vehicle.slug)}
                     className="group block overflow-hidden rounded-2xl border border-[#2A2E3A] bg-[#161922] transition-colors duration-300 hover:border-[#C8A664]/45"
                   >
                     {/* 4:3 and unobstructed — the car is the product, and the old

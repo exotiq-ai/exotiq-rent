@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { MARKETPLACE_DEFAULT_LIMIT, MARKETPLACE_MAX_LIMIT, bodyTypeLabel, parseMarketplaceQuery, toMarketplaceSearchParams } from './marketplaceQuery';
-import { applyMarketplaceQuery, computeFacets, filterListings, sortListings } from './marketplaceCore';
+import { MARKETPLACE_DEFAULT_LIMIT, MARKETPLACE_MAX_LIMIT, bodyTypeLabel, busyRangeFor, parseDateWindow, parseMarketplaceQuery, toMarketplaceSearchParams, todayIso, windowDays } from './marketplaceQuery';
+import { applyMarketplaceQuery, computeFacets, excludeBusy, filterListings, listingKey, sortListings } from './marketplaceCore';
+import { getMockFleetBusy, getMockMarketplaceListings } from './mockMarketplaceService';
+import { rangeIsBookable } from './availability';
+import { addDays } from './dates';
 import { mockMarketplaceListings } from './mockMarketplaceService';
 import { getMarketplaceFacets, getMarketplaceListings } from './service';
 
@@ -102,6 +105,71 @@ describe('marketplace core over the mock catalog', () => {
     expect(facets.makes.reduce((n, m) => n + m.count, 0)).toBe(all.length);
     expect(facets.priceBands.reduce((n, b) => n + b.count, 0)).toBe(all.length);
     expect(facets.cities[0]!.label).toMatch(/, [A-Z]{2}$/);
+  });
+});
+
+describe('availability window (MP-10)', () => {
+  const today = '2026-09-04';
+  it('accepts only a complete, well-formed, forward, ≤180-day window', () => {
+    expect(parseDateWindow('2026-09-10', '2026-09-12', today)).toEqual({ start: '2026-09-10', end: '2026-09-12' });
+    expect(parseDateWindow('2026-09-10', undefined, today)).toBeUndefined();
+    expect(parseDateWindow('2026-09-12', '2026-09-10', today)).toBeUndefined();
+    expect(parseDateWindow('2026-09-10', '2026-09-10', today)).toBeUndefined(); // a rental is at least one day
+    expect(parseDateWindow('2026-02-30', '2026-03-02', today)).toBeUndefined();
+    expect(parseDateWindow('2026-09-10', '2027-04-01', today)).toBeUndefined();
+    expect(parseDateWindow('2026-08-01', '2026-08-03', today)).toBeUndefined();
+    expect(parseDateWindow('2026-09-02', '2026-09-05', today)).toBeUndefined(); // pickup two days ago
+    expect(parseDateWindow('2026-09-03', '2026-09-05', today)).toEqual({ start: '2026-09-03', end: '2026-09-05' }); // one day of timezone grace
+    expect(parseDateWindow('2027-06-01', '2027-06-03', today)).toBeUndefined(); // beyond the booking horizon
+  });
+
+  it('round-trips ?start&end through the query and drops a half window', () => {
+    const [s, e] = [addDays(todayIso(), 10), addDays(todayIso(), 12)];
+    const q = parseMarketplaceQuery({ start: s, end: e });
+    expect(q.start).toBe(s);
+    expect(toMarketplaceSearchParams(q).toString()).toBe(`start=${s}&end=${e}`);
+    expect(parseMarketplaceQuery({ start: s }).start).toBeUndefined();
+  });
+
+  it('derives rental days and asks the busy read about the whole inclusive window', () => {
+    expect(windowDays({ start: '2099-01-10', end: '2099-01-12' })).toBe(2);
+    expect(windowDays({ start: '2099-01-10', end: '2099-01-10' })).toBe(1);
+    // Inclusive of the drop-off day: the calendar counts it, so the grid asks about it.
+    expect(busyRangeFor({ start: '2099-01-10', end: '2099-01-12' })).toEqual({ start: '2099-01-10', end: '2099-01-12' });
+  });
+
+  it('excludes cars whose minimum stay is longer than the window, and busy cars', () => {
+    const q = parseMarketplaceQuery({ start: addDays(todayIso(), 10), end: addDays(todayIso(), 11) });
+    const oneDay = filterListings(all, q);
+    expect(oneDay.every((l) => l.vehicle.minRentalDays <= 1)).toBe(true);
+    expect(oneDay.length).toBeLessThan(all.length);
+    const [first] = all;
+    const busy = new Set([listingKey(first.team.slug, first.vehicle.slug)]);
+    expect(excludeBusy(all, busy)).toHaveLength(all.length - 1);
+    expect(excludeBusy(all, new Set())).toBe(all);
+  });
+
+  it('mock busy set comes from unavailableRanges and marks the page as checked', async () => {
+    const withRange = all.find((l) => (l.vehicle.unavailableRanges ?? []).length > 0)!;
+    const r = withRange.vehicle.unavailableRanges![0];
+    const { busy, checked } = await getMockFleetBusy({ start: r.start, end: r.end });
+    expect(checked).toBe(true);
+    expect(busy.has(listingKey(withRange.team.slug, withRange.vehicle.slug))).toBe(true);
+    const page = await getMockMarketplaceListings({ ...parseMarketplaceQuery(), start: r.start, end: r.end });
+    expect(page.availability).toEqual({ start: r.start, end: r.end, checked: true });
+    expect(page.listings.some((l) => l.vehicle.slug === withRange.vehicle.slug)).toBe(false);
+  });
+});
+
+describe('rangeIsBookable — the one rule the calendar and the seed share', () => {
+  const vehicle = { minRentalDays: 2, unavailableRanges: [{ start: '2099-01-15', end: '2099-01-16' }] };
+  it('accepts a forward range of at least the minimum stay with no blocked day, drop-off day included', () => {
+    expect(rangeIsBookable(vehicle, '2099-01-10', '2099-01-12', '2099-01-01')).toBe(true);
+    expect(rangeIsBookable(vehicle, '2099-01-10', '2099-01-11', '2099-01-01')).toBe(false); // shorter than minimum
+    expect(rangeIsBookable(vehicle, '2099-01-13', '2099-01-15', '2099-01-01')).toBe(false); // drop-off on a blocked day
+    expect(rangeIsBookable(vehicle, '2099-01-17', '2099-01-19', '2099-01-01')).toBe(true); // the day after the block
+    expect(rangeIsBookable(vehicle, '2098-12-30', '2099-01-02', '2099-01-01')).toBe(false); // starts in the past
+    expect(rangeIsBookable(vehicle, '2099-01-10', '2099-01-10', '2099-01-01')).toBe(false); // zero days
   });
 });
 
