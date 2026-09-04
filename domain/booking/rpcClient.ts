@@ -36,6 +36,10 @@ export type RpcFleetVehicleRow = {
   daily_rate: number | string | null; // numeric dollars from Postgres
   hero_image_url: string | null;
   min_rental_days: number | null;
+  /** MP-9 (2026-09-04): trailing column on all three fleet-shaped RPCs. Fixed
+   * vocabulary (BODY_TYPES in marketplaceQuery.ts); null until a tenant sets
+   * it in the Command Center. Optional so older responses still parse. */
+  body_type?: string | null;
 };
 
 /**

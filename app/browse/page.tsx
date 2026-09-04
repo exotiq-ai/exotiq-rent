@@ -23,7 +23,7 @@ export function generateMetadata({ searchParams }: { searchParams: SearchParamsL
   // at /browse and stays out of the index (follow stays on so the crawler
   // still reaches the cars), so faceted crawl cannot multiply the page.
   const permutation =
-    Boolean(query.city) || query.makes.length > 0 || query.minDailyRateCents !== undefined || query.maxDailyRateCents !== undefined || query.offset > 0 || query.sort !== 'featured';
+    Boolean(query.city) || query.makes.length > 0 || query.types.length > 0 || query.minDailyRateCents !== undefined || query.maxDailyRateCents !== undefined || query.offset > 0 || query.sort !== 'featured';
   return {
     title: 'Browse the fleet | Drive Exotiq',
     description: 'Every exotic and luxury car on Drive Exotiq, across every operator — each one rented from a single accountable business.',
@@ -55,7 +55,7 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
     redirect(pageLink(Math.floor((page.totalCount - 1) / query.limit) * query.limit));
   }
   const catalogTotal = facets.cities.reduce((n, c) => n + c.count, 0);
-  const activeFilters = (query.city ? 1 : 0) + query.makes.length + (query.minDailyRateCents !== undefined || query.maxDailyRateCents !== undefined ? 1 : 0);
+  const activeFilters = (query.city ? 1 : 0) + query.makes.length + query.types.length + (query.minDailyRateCents !== undefined || query.maxDailyRateCents !== undefined ? 1 : 0);
   // The app router keeps this subtree mounted across search-param-only
   // navigations, and the form's inputs are uncontrolled — without a key tied
   // to the query, "Clear all" left the old boxes checked and the next change

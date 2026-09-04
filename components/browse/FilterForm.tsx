@@ -93,6 +93,20 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
         </div>
       </fieldset>
 
+      {facets.types.length > 0 && (
+        <fieldset>
+          <legend className={section}>Type</legend>
+          <div className="mt-2 space-y-0.5">
+            {facets.types.map((t) => (
+              <label key={t.value} className={option}>
+                <span className="flex items-center gap-2.5"><input type="checkbox" name="type" value={t.value} defaultChecked={query.types.includes(t.value)} className="accent-[#C8A664]" />{t.label}</span>
+                <span className={count}>{t.count}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )}
+
       <fieldset>
         <legend className={section}>Daily rate</legend>
         <div className="mt-2 space-y-0.5">

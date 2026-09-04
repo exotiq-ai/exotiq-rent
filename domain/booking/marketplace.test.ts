@@ -105,6 +105,33 @@ describe('marketplace core over the mock catalog', () => {
   });
 });
 
+describe('vehicle type (MP-9)', () => {
+  it('parses ?type (repeated or comma-joined, case-insensitive) and round-trips it', () => {
+    const q = parseMarketplaceQuery({ type: ['Supercar', 'luxury-suv,sports-car'] });
+    expect(q.types).toEqual(['supercar', 'luxury-suv', 'sports-car']);
+    expect(toMarketplaceSearchParams(q).getAll('type')).toEqual(['supercar', 'luxury-suv', 'sports-car']);
+  });
+
+  it('filters by type and never matches an unclassified car', () => {
+    const typed = all.filter((l) => l.vehicle.bodyType);
+    expect(typed.length).toBeGreaterThan(0);
+    const supercars = filterListings(all, parseMarketplaceQuery({ type: 'supercar' }));
+    expect(supercars.length).toBeGreaterThan(0);
+    expect(supercars.every((l) => l.vehicle.bodyType === 'supercar')).toBe(true);
+    expect(filterListings(all, parseMarketplaceQuery({ type: 'hypercar' }))).toEqual([]);
+  });
+
+  it('facets only the types cars carry, in vocabulary order, with labels', () => {
+    const f = computeFacets(all);
+    expect(f.types.every((t) => t.count > 0)).toBe(true);
+    expect(f.types.map((t) => t.value)).not.toContain('hypercar');
+    const order = f.types.map((t) => t.value);
+    expect(order.indexOf('supercar')).toBeLessThan(order.indexOf('luxury-suv'));
+    expect(f.types.find((t) => t.value === 'luxury-suv')?.label).toBe('Luxury SUV');
+    expect(computeFacets(all.filter((l) => !l.vehicle.bodyType)).types).toEqual([]);
+  });
+});
+
 describe('facet keys', () => {
   it('keeps same-named cities in different states apart', () => {
     const [a, ...rest] = all;

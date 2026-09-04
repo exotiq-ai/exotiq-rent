@@ -1,5 +1,5 @@
 import type { MarketplaceFacets, MarketplaceListing, MarketplacePage, MarketplaceQuery } from './publicContracts';
-import { PRICE_BANDS } from './marketplaceQuery';
+import { BODY_TYPES, PRICE_BANDS, bodyTypeLabel } from './marketplaceQuery';
 
 /**
  * Pure filter / sort / paginate / facet logic over listings (MP-2).
@@ -14,10 +14,13 @@ const norm = (s: string) => s.trim().toLowerCase();
 
 export function filterListings(listings: MarketplaceListing[], query: MarketplaceQuery): MarketplaceListing[] {
   const makes = new Set(query.makes.map(norm));
+  const types = new Set(query.types.map(norm));
   return listings.filter(({ team, vehicle }) => {
     if (query.city && norm(team.city) !== norm(query.city)) return false;
     if (query.state && norm(team.state) !== norm(query.state)) return false;
     if (makes.size > 0 && !makes.has(norm(vehicle.make))) return false;
+    // An unclassified car never matches a type filter: the renter asked for a type.
+    if (types.size > 0 && !(vehicle.bodyType && types.has(norm(vehicle.bodyType)))) return false;
     if (query.minDailyRateCents !== undefined && vehicle.dailyRateCents < query.minDailyRateCents) return false;
     if (query.maxDailyRateCents !== undefined && vehicle.dailyRateCents > query.maxDailyRateCents) return false;
     return true;
@@ -69,7 +72,13 @@ export function computeFacets(listings: MarketplaceListing[]): MarketplaceFacets
   // from two tenants count as one make instead of two rows.
   const cities = new Map<string, { value: string; label: string; count: number }>();
   const makes = new Map<string, { label: string; count: number }>();
+  const types = new Map<string, number>();
   for (const { team, vehicle } of listings) {
+    // Only types a listed car actually carries; null (unclassified) is not a facet.
+    if (vehicle.bodyType) {
+      const typeKey = norm(vehicle.bodyType);
+      types.set(typeKey, (types.get(typeKey) ?? 0) + 1);
+    }
     // A tenant with no city or a car with no make gets no facet row: the
     // filter drops an empty value, so the row would be a ", " that does nothing.
     if (team.city) {
@@ -92,6 +101,15 @@ export function computeFacets(listings: MarketplaceListing[]): MarketplaceFacets
     makes: Array.from(makes.values())
       .map(({ label, count }) => ({ value: label, label, count }))
       .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
+    // Vocabulary order (hypercar → luxury SUV), not by count: the list is short
+    // and a stable order is what makes chips scannable. Unknown slugs last.
+    types: Array.from(types.entries())
+      .map(([value, count]) => ({ value, label: bodyTypeLabel(value), count }))
+      .sort((a, b) => {
+        const ia = BODY_TYPES.findIndex((t) => t.value === a.value);
+        const ib = BODY_TYPES.findIndex((t) => t.value === b.value);
+        return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || a.label.localeCompare(b.label);
+      }),
     priceBands: PRICE_BANDS.map((band) => ({
       value: band.value,
       label: band.label,

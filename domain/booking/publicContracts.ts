@@ -144,6 +144,8 @@ export type MarketplaceQuery = {
   state?: string;
   /** Structured make filter (exact, case-insensitive) — never a name-substring match. */
   makes: string[];
+  /** Body-type slugs from the fixed vocabulary (MP-9); empty = any. */
+  types: string[];
   minDailyRateCents?: number;
   maxDailyRateCents?: number;
   sort: MarketplaceSort;
@@ -165,6 +167,8 @@ export type MarketplaceFacetValue = { value: string; label: string; count: numbe
 export type MarketplaceFacets = {
   cities: MarketplaceFacetValue[];
   makes: MarketplaceFacetValue[];
+  /** Only types at least one listed car carries; empty until tenants classify cars. */
+  types: MarketplaceFacetValue[];
   priceBands: MarketplaceFacetValue[];
 };
 

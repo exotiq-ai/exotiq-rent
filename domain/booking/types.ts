@@ -69,6 +69,8 @@ export type Vehicle = {
   };
   footnote: string;
   pickupLocation: PickupLocation;
+  /** Body/type classification slug from the fixed vocabulary (MP-9); unset until the tenant classifies the car. */
+  bodyType?: string;
   /** Busy ranges the renter cannot select. Mirrors the future get_vehicle_availability RPC shape. */
   unavailableRanges?: UnavailableDateRange[];
   /** Not marketplace-visible: excluded from storefronts and unresolvable by slug (mirrors server-side visibility). */

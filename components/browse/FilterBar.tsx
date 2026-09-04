@@ -30,7 +30,7 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
   const currentBand = PRICE_BANDS.find(
     (b) => b.minCents === (query.minDailyRateCents ?? 0) && b.maxCents === query.maxDailyRateCents,
   )?.value ?? '';
-  const active = query.makes.length + (currentBand ? 1 : 0);
+  const active = query.makes.length + query.types.length + (currentBand ? 1 : 0);
 
   const navigate = () => {
     if (!form.current) return;
@@ -75,6 +75,18 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
             <label key={m.value} className={chip}>
               <input type="checkbox" name="make" value={m.value} defaultChecked={query.makes.some((x) => x.toLowerCase() === m.value.toLowerCase())} className="peer sr-only" />
               <span className={face}>{m.label}<span className={count}>{m.count}</span></span>
+            </label>
+          ))}
+        </div>
+      )}
+
+      {facets.types.length > 0 && (
+        <div className={row}>
+          <span className={label}>Type</span>
+          {facets.types.map((t) => (
+            <label key={t.value} className={chip}>
+              <input type="checkbox" name="type" value={t.value} defaultChecked={query.types.includes(t.value)} className="peer sr-only" />
+              <span className={face}>{t.label}<span className={count}>{t.count}</span></span>
             </label>
           ))}
         </div>

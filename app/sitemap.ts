@@ -21,7 +21,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
   if (browseEnabled()) {
-    const page = await getMarketplaceListings({ makes: [], sort: 'featured', limit: Number.MAX_SAFE_INTEGER, offset: 0 });
+    const page = await getMarketplaceListings({ makes: [], types: [], sort: 'featured', limit: Number.MAX_SAFE_INTEGER, offset: 0 });
     const teams = new Map<string, string>();
     for (const { team } of page.listings) teams.set(team.slug, team.slug);
     return [
