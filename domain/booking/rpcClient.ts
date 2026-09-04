@@ -52,7 +52,7 @@ export type RpcMarketplaceTeamRow = Pick<RpcTeamRow, 'slug' | 'name' | 'logo_url
 
 export type RpcMarketplaceFleetRow = RpcFleetVehicleRow & {
   team_slug: string;
-  /** Visible, vehicle-confirmed gallery photos; 1 when the hero is the legacy image_url. */
+  /** Visible, vehicle-confirmed gallery photos. 0 when the hero is the legacy image_url — the consumer floors it at 1. */
   photo_count: number | null;
   verified: boolean;
 };

@@ -35,9 +35,10 @@ export function buildCatalog(teamRows: RpcMarketplaceTeamRow[], fleetRows: RpcMa
       console.warn(`[marketplace] fleet row "${row.vehicle_slug}" has no listed team "${row.team_slug}" — skipped`);
       continue;
     }
-    // Same quality gate as the storefront grid, and the same rule the adapter
-    // applies: only an absolute https hero renders; anything else would be a
-    // blank card, so it stays off the marketplace.
+    // The adapter's rule: only an absolute https hero renders (relative
+    // Command-Center paths become ''), and a hero-less card is a blank card,
+    // so such cars stay off the marketplace. Stricter than the storefront's
+    // Boolean(hero_image_url) gate on purpose.
     if (!publicImageUrl(row.hero_image_url)) continue;
     listings.push({
       team: team.operator,

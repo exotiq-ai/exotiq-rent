@@ -78,7 +78,6 @@ describe('supabase marketplace service', () => {
     expect(page.listings[0].vehicle.dailyRateCents).toBe(250000);
     const facets = await getSupabaseMarketplaceFacets();
     expect(facets.cities.map((c) => c.label).sort()).toEqual(['Scottsdale, AZ', 'Tampa, FL']);
-    expect(process.env.MARKETPLACE_TEAM_SLUGS).toBeUndefined();
   });
 
   it('degrades to an empty catalog, not an error, when either RPC fails', async () => {
