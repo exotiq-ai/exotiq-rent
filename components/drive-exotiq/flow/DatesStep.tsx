@@ -22,6 +22,7 @@ import { EmailCaptureForm } from '@/components/renters/EmailCaptureForm';
 import { renterCaptureUiEnabled } from '@/domain/renters/flags';
 import { MAX_WINDOW_DAYS, daysBetween } from '@/domain/booking/marketplaceQuery';
 import { recomputeBookingCart } from './state';
+import { eyebrowClassName } from '@/components/browse/tokens';
 
 // value is what the booking stores and what the backend casts into a
 // timestamp (`<date> <value>`), so every value MUST be a parseable time.
@@ -199,7 +200,7 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
             </div>
           )}
         </div>
-        <label className="mt-5 block text-xs uppercase tracking-[0.22em] text-[#848A9A]">Pickup time</label>
+        <label className={`mt-5 block ${eyebrowClassName} text-[#848A9A]`}>Pickup time</label>
         {/* Still a native select (iOS wheel, screen-reader semantics), wearing
             the Driver step's field recipe with a gold chevron (MP-11). */}
         <span className="relative mt-2 block">

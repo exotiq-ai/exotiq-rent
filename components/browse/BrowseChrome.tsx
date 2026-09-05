@@ -8,7 +8,8 @@ import { EmailCaptureForm } from '@/components/renters/EmailCaptureForm';
 import { SavedLink } from '@/components/renters/SavedLink';
 import { browseEnabled } from '@/domain/booking/config';
 import { renterCaptureUiEnabled } from '@/domain/renters/flags';
-import { containerClassName, groundClassName, serifStyle } from './tokens';
+import { SiteBar } from './SiteBar';
+import { containerClassName, eyebrowClassName, groundClassName, serifStyle } from './tokens';
 
 /**
  * Desktop-first marketplace chrome (MP-3): a quiet sticky header and a footer
@@ -22,17 +23,12 @@ import { containerClassName, groundClassName, serifStyle } from './tokens';
 export function BrowseChrome({ children, view = 'browse_view', footerSignup = true }: { children: ReactNode; /** Funnel event fired on mount; null for pages that are not a funnel step (legal). */ view?: FunnelEvent | null; /** Off on the confirm/unsubscribe pages: no opt-in prompt inside an opt-out flow. */ footerSignup?: boolean }) {
   return (
     <div className={`${driveFontClassName} min-h-screen ${groundClassName} text-[#F0F2F5] font-[var(--font-drive-inter)]`}>
-      <header className="sticky top-0 z-40 border-b border-[#2A2E3A]/70 bg-[#06070a]/85 backdrop-blur-md">
-        <div className={`${containerClassName} flex h-16 items-center justify-between gap-6`}>
-          <Link href="/browse" className="flex items-center" aria-label="Drive Exotiq — browse the fleet">
-            <Image src="/images/logos/drive-exotiq-lockup-transparent.png" alt="Drive Exotiq" width={100} height={20} priority style={{ height: 20, width: 'auto' }} className="opacity-95" />
-          </Link>
-          <div className="flex items-center gap-4">
-            <p className="hidden text-[11px] uppercase tracking-[0.2em] text-[#848A9A] sm:block">Curated exotic &amp; luxury rentals</p>
-            <SavedLink enabled={browseEnabled()} />
-          </div>
+      <SiteBar homeHref="/browse" homeLabel="Drive Exotiq — browse the fleet">
+        <div className="flex items-center gap-4">
+          <p className={`hidden ${eyebrowClassName} text-[#848A9A] sm:block`}>Curated exotic &amp; luxury rentals</p>
+          <SavedLink />
         </div>
-      </header>
+      </SiteBar>
       <main>{children}</main>
       {view && <TrackView event={view} withQuery />}
       <footer className="mt-20 border-t border-[#2A2E3A]">
@@ -40,7 +36,7 @@ export function BrowseChrome({ children, view = 'browse_view', footerSignup = tr
         {renterCaptureUiEnabled() && footerSignup && (
           <div className={`${containerClassName} border-b border-[#2A2E3A] py-10`}>
             <div className="max-w-md">
-              <p className="text-[11px] uppercase tracking-[0.2em] text-[#848A9A]">First look</p>
+              <p className={`${eyebrowClassName} text-[#848A9A]`}>First look</p>
               <h2 className="mt-2 text-[22px] text-[#F0F2F5]" style={serifStyle}>New cars, before they reach the grid.</h2>
               <EmailCaptureForm source="footer" cta="Keep me posted" consentImplied className="mt-4" />
             </div>

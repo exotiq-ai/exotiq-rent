@@ -42,7 +42,11 @@ export function ListingCard({
   const { team, vehicle, verified, photoCount } = listing;
   // A renter who filtered by dates carries them to the car and into booking.
   const href = dates ? `/${team.slug}/${vehicle.slug}?start=${dates.start}&end=${dates.end}` : `/${team.slug}/${vehicle.slug}`;
-  const provenance = context === 'storefront' ? `${vehicle.year ?? ''} ${vehicle.make ?? ''}`.trim() : `${team.name} · ${team.city}`;
+  // Storefront: the year, plus the make only when the headline does not already
+  // start with it ('Mercedes-AMG One' needs no 'Mercedes-AMG' under it). The
+  // adapter coerces a null year to 0, so `||` not `??`.
+  const nameStartsWithMake = Boolean(vehicle.make) && vehicle.name.toLowerCase().startsWith(vehicle.make.toLowerCase());
+  const provenance = context === 'storefront' ? [vehicle.year || null, nameStartsWithMake ? null : vehicle.make || null].filter(Boolean).join(' ') : null;
   return (
     <div className={`group h-full ${cardShellClassName}`}>
       <Link href={href} className="flex h-full flex-col focus-visible:outline-none">
@@ -69,7 +73,11 @@ export function ListingCard({
           </h3>
           <div className="mt-auto flex items-baseline justify-between gap-4 pt-2">
             <div className="flex min-w-0 items-center gap-1.5 truncate text-[12px] text-[#9BA1B0]">
-              <span className="truncate">{provenance}</span>
+              {provenance !== null ? (
+                <span className="truncate">{provenance}</span>
+              ) : (
+                <span className="truncate">{team.name} <span className="text-[#848A9A]">· {team.city}, {team.state}</span></span>
+              )}
               {photoCount > 1 && (
                 <span className="flex shrink-0 items-center gap-1 text-[#848A9A]">
                   <Images size={14} strokeWidth={1.75} aria-hidden />
@@ -95,12 +103,12 @@ export function ListingCard({
   );
 }
 
-/** A tenant with no public hero yet: says so, quietly, instead of an empty gradient (MP-12). */
+/** A tenant with no public hero: says so, quietly, instead of an empty gradient (MP-12). */
 export function ListingPhotoPlaceholder() {
   return (
     <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-[#1E2230] to-[#0D0F14]">
       <CarFront size={28} strokeWidth={1.5} className="text-[#2A2E3A]" aria-hidden />
-      <span className={`absolute bottom-3 ${microLabelClassName} text-[#5C6272]`}>Photos coming</span>
+      <span className={`absolute bottom-3 ${microLabelClassName} text-[#848A9A]`}>No photos yet</span>
     </div>
   );
 }

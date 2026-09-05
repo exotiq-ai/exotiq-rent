@@ -1,37 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { IdCard } from 'lucide-react';
+import { microLabelClassName } from '@/components/browse/tokens';
+import { caretAfterDigits, digitsBefore, displayFromIso, maskDob } from '@/domain/booking/dob';
 import { PrimaryButton } from '../BookingChrome';
 import type { BookingCart, Driver } from '@/domain/booking/types';
 import { ScreenShell, StepHeader, Sticky } from './shared';
-
-/**
- * Date of birth as a masked numeric field (MP-12): a native date picker opens
- * on the current month and needs thirty years of back-navigation. Digits type
- * as MM / DD / YYYY; the cart stores ISO once eight valid digits are in.
- */
-export function maskDob(raw: string): { display: string; iso: string } {
-  const digits = raw.replace(/\D/g, '').slice(0, 8);
-  const mm = digits.slice(0, 2);
-  const dd = digits.slice(2, 4);
-  const yyyy = digits.slice(4, 8);
-  let display = mm;
-  if (digits.length > 2) display += ` / ${dd}`;
-  if (digits.length > 4) display += ` / ${yyyy}`;
-  let iso = '';
-  if (digits.length === 8) {
-    const candidate = `${yyyy}-${mm}-${dd}`;
-    const d = new Date(`${candidate}T00:00:00Z`);
-    if (!Number.isNaN(d.valueOf()) && d.toISOString().slice(0, 10) === candidate && Number(yyyy) >= 1900) iso = candidate;
-  }
-  return { display, iso };
-}
-
-function displayFromIso(iso: string): string {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
-  return m ? `${m[2]} / ${m[3]} / ${m[1]}` : '';
-}
 
 function ageOn(dobIso: string, onIso: string): number {
   const dob = new Date(`${dobIso}T00:00:00Z`);
@@ -44,8 +19,21 @@ function ageOn(dobIso: string, onIso: string): number {
 
 export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart: (cart: BookingCart) => void; next: () => void }) {
   const setDriver = (patch: Partial<Driver>) => setCart({ ...cart, driver: { ...cart.driver, ...patch } });
+  // Date of birth as a masked field (MP-12): a native picker opens on the
+  // current month and needs thirty years of back-navigation. The mask keeps
+  // the caret beside the digit that was edited, and an impossible or future
+  // date says so under the field instead of silently disabling Continue.
   const [dobText, setDobText] = useState(() => displayFromIso(cart.driver.dob));
-  const dobIncomplete = dobText.replace(/\D/g, '').length > 0 && !cart.driver.dob;
+  const [dobError, setDobError] = useState('');
+  const dobInput = useRef<HTMLInputElement>(null);
+  const pendingCaret = useRef<number | null>(null);
+  useLayoutEffect(() => {
+    if (pendingCaret.current === null || !dobInput.current) return;
+    const at = caretAfterDigits(dobText, pendingCaret.current);
+    dobInput.current.setSelectionRange(at, at);
+    pendingCaret.current = null;
+  }, [dobText]);
+  const dobDigits = dobText.replace(/\D/g, '').length;
 
   // Only enforce an age floor the operator actually set. Live (supabase-mode)
   // operators carry no policies today, and the old `?? 25` fallback fabricated
@@ -64,7 +52,8 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
   const canContinue = fieldsComplete && !tooYoung;
 
   // Placeholder was #3D4250 (~1.6:1 on the field): the four boxes read as empty. #848A9A clears 4.5:1 (MP-11).
-  const fieldClass = 'mt-1 w-full rounded-lg border border-[#2A2E3A] bg-[#10131A] px-3 py-2.5 text-sm text-[#F0F2F5] outline-none transition placeholder:text-[#848A9A] hover:border-[#3A3F4D] focus:border-[#C8A664]/70 focus-visible:ring-2 focus-visible:ring-[#C8A664]/60 [color-scheme:dark]';
+  const fieldClass = 'mt-1 w-full rounded-lg border border-[#2A2E3A] bg-[#10131A] px-3 py-2.5 text-sm text-[#F0F2F5] outline-none transition placeholder:text-[#848A9A] hover:border-[#3A3F4D] focus:border-[#C8A664]/70 focus-visible:ring-2 focus-visible:ring-[#C8A664]/60 aria-[invalid=true]:border-[#FFB84D]/70 [color-scheme:dark]';
+  const label = `${microLabelClassName} text-[#848A9A]`;
 
   return (
     <>
@@ -72,36 +61,44 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
         <StepHeader eyebrow="Step 03" title="Who's driving?" sub="Takes about a minute." />
         <div className="rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
           <label className="block">
-            <span className="text-[10px] uppercase tracking-[0.16em] text-[#848A9A]">Full name</span>
+            <span className={label}>Full name</span>
             <input type="text" value={cart.driver.name} onChange={(event) => setDriver({ name: event.target.value })} placeholder="Name as it appears on your license" autoComplete="name" className={fieldClass} />
           </label>
           <div className="mt-3 grid grid-cols-2 gap-3">
             <label className="block">
-              <span className="text-[10px] uppercase tracking-[0.16em] text-[#848A9A]">Date of birth</span>
+              <span className={label}>Date of birth</span>
               <input
+                ref={dobInput}
                 type="text"
                 inputMode="numeric"
                 autoComplete="bday"
                 placeholder="MM / DD / YYYY"
                 value={dobText}
                 onChange={(event) => {
-                  const { display, iso } = maskDob(event.target.value);
+                  const raw = event.target.value;
+                  pendingCaret.current = digitsBefore(raw, event.target.selectionStart ?? raw.length);
+                  const { display, iso, error } = maskDob(raw);
                   setDobText(display);
+                  setDobError(error);
                   setDriver({ dob: iso });
                 }}
-                aria-invalid={dobIncomplete && dobText.replace(/\D/g, '').length === 8 ? true : undefined}
-                aria-describedby="dob-hint"
+                onBlur={() => {
+                  if (dobDigits > 0 && dobDigits < 8) setDobError('Finish the date as MM / DD / YYYY.');
+                }}
+                aria-invalid={dobError ? true : undefined}
+                aria-describedby={dobError ? 'dob-hint dob-error' : 'dob-hint'}
                 className={fieldClass}
               />
             </label>
             <label className="block">
-              <span className="text-[10px] uppercase tracking-[0.16em] text-[#848A9A]">Phone</span>
+              <span className={label}>Phone</span>
               <input type="tel" value={cart.driver.phone} onChange={(event) => setDriver({ phone: event.target.value })} placeholder="+1 (555) 555-0100" autoComplete="tel" className={fieldClass} />
             </label>
           </div>
           <p id="dob-hint" className="sr-only">Type the digits of your date of birth: month, day, year.</p>
+          {dobError && <p id="dob-error" role="alert" className="mt-2 text-[12px] leading-5 text-[#FFB84D]">{dobError}</p>}
           <label className="mt-3 block">
-            <span className="text-[10px] uppercase tracking-[0.16em] text-[#848A9A]">Email</span>
+            <span className={label}>Email</span>
             <input type="email" value={cart.driver.email ?? ''} onChange={(event) => setDriver({ email: event.target.value })} placeholder="Where we send your confirmation" autoComplete="email" className={fieldClass} />
           </label>
         </div>
@@ -115,7 +112,7 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
             Age and license requirements are set by {cart.operator.name} and confirmed before pickup.
           </p>
         )}
-        <div className="mt-4 px-1 text-[10px] uppercase tracking-[0.16em] text-[#848A9A]">Verification</div>
+        <div className={`mt-4 px-1 ${label}`}>Verification</div>
         <div className="mt-3 flex items-start gap-3 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
           <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#C8A664]/10 text-[#C8A664]"><IdCard size={16} /></div>
           <div>

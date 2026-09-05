@@ -6,6 +6,7 @@ import { formatMoney } from '@/domain/booking/totals';
 import type { BookingCart } from '@/domain/booking/types';
 import type { PublicQuote } from '@/domain/booking/publicContracts';
 import { DepositDisclosure, QuoteNotice, ScreenShell, StepHeader, Sticky } from './shared';
+import { eyebrowClassName } from '@/components/browse/tokens';
 
 export function PayStep({
   cart,
@@ -58,7 +59,7 @@ export function PayStep({
             charge that never happened. */}
         <StepHeader eyebrow="Step 05" title="Reserve your dates." sub="Nothing is charged yet." />
         <div className="rounded-xl border border-[#C8A664] bg-[#14130F] p-4 shadow-[0_0_0_1px_#C8A664,0_0_24px_rgba(200,166,100,.10)]">
-          <div className="text-xs uppercase tracking-[0.22em] text-[#848A9A]">Total once approved</div>
+          <div className={`${eyebrowClassName} text-[#848A9A]`}>Total once approved</div>
           <div className="mt-2"><Money cents={m.grandTotalCents} large /></div>
           <p className="mt-2 text-xs leading-5 text-[#9BA1B0]">{cart.operator.name} reviews your request, then we email you a secure payment link. Your card is only charged when you pay from that link.</p>
         </div>

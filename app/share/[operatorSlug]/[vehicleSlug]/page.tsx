@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { driveFontClassName } from '@/components/drive-exotiq/fonts';
 import { getSiteMode } from '@/domain/booking/config';
 import { getPublicVehicleContext } from '@/domain/booking/service';
+import { serifStyle } from '@/components/browse/tokens';
 
 /**
  * Public share card — hype only, by design. No booking ref, dates, or money
@@ -57,7 +58,7 @@ export default async function SharePage({ params }: Props) {
             </div>
           </div>
           <div className="bg-[#0B0D12] px-5 pb-6 pt-1 text-center">
-            <h1 className="text-[30px] leading-tight" style={{ fontFamily: 'var(--font-drive-newsreader), Georgia, serif', fontWeight: 500, letterSpacing: '-0.018em' }}>This one&apos;s spoken for.</h1>
+            <h1 className="text-[30px] leading-tight" style={serifStyle}>This one&apos;s spoken for.</h1>
             <p className="mt-2 text-sm leading-6 text-[#9BA1B0]">The {vehicle.name} — reserved for an upcoming drive out of {team.city}, {team.state}.</p>
           </div>
         </div>

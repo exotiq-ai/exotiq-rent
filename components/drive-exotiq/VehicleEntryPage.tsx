@@ -7,6 +7,7 @@ import { getPublicVehicleContext } from '@/domain/booking/service';
 import { Money, PhoneViewport } from './BookingChrome';
 import { VehicleGallery } from './VehicleGallery';
 import { SaveButton } from '@/components/renters/SaveButton';
+import { eyebrowClassName, stickyBelowBarClassName } from '@/components/browse/tokens';
 
 export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { operatorSlug: string; vehicleSlug: string; dates?: { start: string; end: string } }) {
   const teamSlug = operatorSlug;
@@ -71,7 +72,7 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
             <div className="mt-4 grid grid-cols-2 gap-2 lg:mt-6 lg:grid-cols-4">
               {specs.map((spec) => (
                 <div key={spec.label} className="rounded-xl border border-[#2A2E3A] bg-[#161922] p-[14px]">
-                  <div className="text-[11px] uppercase tracking-[0.2em] text-[#848A9A]">{spec.label}</div>
+                  <div className={`${eyebrowClassName} text-[#848A9A]`}>{spec.label}</div>
                   <div className="mt-2 flex items-baseline gap-1 text-[#F0F2F5]">
                     <spec.icon className="mr-1 text-[#C8A664]" size={16} />
                     <span className="text-[22px] font-medium leading-none tracking-[-0.02em] tabular-nums">{spec.value.split(' ')[0]}</span>
@@ -113,12 +114,12 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
 
           {/* Desktop booking card: the phone's bottom bar and "Booking preview"
               tiles, as one sticky column beside the gallery. */}
-          <aside className="hidden lg:sticky lg:top-6 lg:block">
+          <aside className={`hidden lg:block ${stickyBelowBarClassName}`}>
             <div className="rounded-2xl border border-[#2A2E3A] bg-[#161922] p-6">
-              <div className="text-[11px] uppercase tracking-[0.2em] text-[#848A9A]">{operator.name}</div>
+              <div className={`${eyebrowClassName} text-[#848A9A]`}>{operator.name}</div>
               <div className="mt-3 flex items-baseline gap-2 text-[#C8A664]">
                 <Money cents={vehicle.dailyRateCents} large />
-                <span className="text-[11px] uppercase tracking-[0.2em] text-[#848A9A]">per day</span>
+                <span className={`${eyebrowClassName} text-[#848A9A]`}>per day</span>
               </div>
               <dl className="mt-5 space-y-3 border-t border-[#2A2E3A] pt-5 text-[13px]">
                 <div className="flex justify-between gap-4"><dt className="text-[#9BA1B0]">Minimum rental</dt><dd className="text-[#F0F2F5]">{vehicle.minRentalDays} {vehicle.minRentalDays === 1 ? 'day' : 'days'}</dd></div>

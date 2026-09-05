@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useTransition, type FormEvent } from 'react';
+import { useEffect, useRef, useState, useTransition, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { CalendarDays, ChevronDown } from 'lucide-react';
@@ -8,7 +8,9 @@ import type { MarketplaceFacets, MarketplaceQuery } from '@/domain/booking/publi
 import { MARKETPLACE_SORTS, PRICE_BANDS, daysBetween } from '@/domain/booking/marketplaceQuery';
 import { addDays } from '@/domain/booking/dates';
 import { localTodayIso } from '@/domain/booking/availability';
-import { datePillClassName, selectClassName } from './tokens';
+import { datePillClassName, microLabelClassName, selectClassName } from './tokens';
+
+const FOCUS_KEY = 'dx.filter.focus';
 
 function datesHint(start: string, end: string): string {
   if (start && end) return 'Cars shown are free for these dates.';
@@ -37,6 +39,16 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
   // The push runs in a transition so the form knows it is pending: a gold
   // hairline at the top and dimmed controls until the new grid commits.
   const [isPending, startTransition] = useTransition();
+  // The form remounts (keyed on the query) when a change commits, which drops
+  // keyboard focus to <body>. Remember the control that navigated and put
+  // focus back on its successor (MP-12).
+  useEffect(() => {
+    const id = window.sessionStorage.getItem(FOCUS_KEY);
+    if (!id) return;
+    window.sessionStorage.removeItem(FOCUS_KEY);
+    if (document.activeElement && document.activeElement !== document.body) return;
+    document.getElementById(id)?.focus({ preventScroll: true });
+  }, []);
   const today = localTodayIso();
   const [hint, setHint] = useState(() => datesHint(query.start ?? '', query.end ?? ''));
 
@@ -67,6 +79,8 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
     // Dates apply as a pair — see FilterBar.
     const { start, end } = reconcileDates();
     if ((start === '') !== (end === '')) return;
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && active.id && form.current.contains(active)) window.sessionStorage.setItem(FOCUS_KEY, active.id);
     const data = new FormData(form.current);
     const params = new URLSearchParams();
     data.forEach((value, key) => {
@@ -93,16 +107,17 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
     navigate();
   };
 
-  const section = 'block text-[10px] uppercase tracking-[0.16em] text-[#848A9A]';
+  const section = `block ${microLabelClassName} text-[#848A9A]`;
   // MP-11: 44px rows in the phone sheet (every mis-tap navigates), the rail
   // keeps its density; a checked row lights up like the mockup's.
-  const option = 'group-data-[pending]:opacity-60 group-data-[pending]:cursor-progress flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-2.5 text-[13px] text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5] has-[:checked]:text-[#F0F2F5] lg:min-h-0 lg:py-1.5';
+  const option = 'group-data-[pending]:opacity-75 group-data-[pending]:cursor-progress flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-2.5 text-[13px] text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5] has-[:checked]:text-[#F0F2F5] lg:min-h-0 lg:py-1.5';
   const count = 'text-[11px] tabular-nums text-[#848A9A]';
 
   return (
     <form ref={form} method="get" action="/browse" onSubmit={onSubmit} onChange={navigate} className="group relative space-y-7" aria-busy={isPending} data-pending={isPending ? '' : undefined}>
       {/* Always mounted, opacity-toggled, so the rail never jumps. */}
       <span aria-hidden className={`pointer-events-none absolute -top-2 left-0 h-px w-full bg-[#C8A664] transition-opacity motion-reduce:animate-none ${isPending ? 'animate-pulse opacity-100' : 'opacity-0'}`} />
+      <p role="status" className="sr-only">{isPending ? 'Updating results…' : ''}</p>
       <fieldset>
         <legend className={section}>Dates</legend>
         {/* Two columns in the phone sheet (22rem); stacked in the 16rem rail,
@@ -142,11 +157,11 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
         <legend className={section}>City</legend>
         <div className="mt-2 space-y-0.5">
           <label className={option}>
-            <span className="flex items-center gap-2.5"><input type="radio" name="city" value="" defaultChecked={!query.city} className="control-radio" />All cities</span>
+            <span className="flex items-center gap-2.5"><input id={`${idPrefix}-city-any`} type="radio" name="city" value="" defaultChecked={!query.city} className="control-radio" />All cities</span>
           </label>
           {facets.cities.map((c) => (
             <label key={c.value} className={option}>
-              <span className="flex items-center gap-2.5"><input type="radio" name="city" value={c.value} defaultChecked={query.city?.toLowerCase() === c.value.toLowerCase()} className="control-radio" />{c.label}</span>
+              <span className="flex items-center gap-2.5"><input id={`${idPrefix}-city-${c.value.replace(/\W+/g, '-')}`} type="radio" name="city" value={c.value} defaultChecked={query.city?.toLowerCase() === c.value.toLowerCase()} className="control-radio" />{c.label}</span>
               <span className={count}>{c.count}</span>
             </label>
           ))}
@@ -159,7 +174,7 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
           <div className="mt-2 space-y-0.5">
             {facets.types.map((t) => (
               <label key={t.value} className={option}>
-                <span className="flex items-center gap-2.5"><input type="checkbox" name="type" value={t.value} defaultChecked={query.types.includes(t.value)} className="control-check" />{t.label}</span>
+                <span className="flex items-center gap-2.5"><input id={`${idPrefix}-type-${t.value}`} type="checkbox" name="type" value={t.value} defaultChecked={query.types.includes(t.value)} className="control-check" />{t.label}</span>
                 <span className={count}>{t.count}</span>
               </label>
             ))}
@@ -172,7 +187,7 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
         <div className="mt-2 space-y-0.5">
           {facets.makes.map((m) => (
             <label key={m.value} className={option}>
-              <span className="flex items-center gap-2.5"><input type="checkbox" name="make" value={m.value} defaultChecked={query.makes.some((x) => x.toLowerCase() === m.value.toLowerCase())} className="control-check" />{m.label}</span>
+              <span className="flex items-center gap-2.5"><input id={`${idPrefix}-make-${m.value.replace(/\s+/g, '-')}`} type="checkbox" name="make" value={m.value} defaultChecked={query.makes.some((x) => x.toLowerCase() === m.value.toLowerCase())} className="control-check" />{m.label}</span>
               <span className={count}>{m.count}</span>
             </label>
           ))}
@@ -184,11 +199,11 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
         <legend className={section}>Daily rate</legend>
         <div className="mt-2 space-y-0.5">
           <label className={option}>
-            <span className="flex items-center gap-2.5"><input type="radio" name="band" value="" defaultChecked={currentBand === ''} className="control-radio" />Any</span>
+            <span className="flex items-center gap-2.5"><input id={`${idPrefix}-band-any`} type="radio" name="band" value="" defaultChecked={currentBand === ''} className="control-radio" />Any</span>
           </label>
           {facets.priceBands.map((b) => (
             <label key={b.value} className={option}>
-              <span className="flex items-center gap-2.5"><input type="radio" name="band" value={b.value} defaultChecked={currentBand === b.value} className="control-radio" />{b.label}</span>
+              <span className="flex items-center gap-2.5"><input id={`${idPrefix}-band-${b.value}`} type="radio" name="band" value={b.value} defaultChecked={currentBand === b.value} className="control-radio" />{b.label}</span>
               <span className={count}>{b.count}</span>
             </label>
           ))}

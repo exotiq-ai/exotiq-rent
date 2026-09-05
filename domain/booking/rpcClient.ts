@@ -40,6 +40,8 @@ export type RpcFleetVehicleRow = {
    * vocabulary (BODY_TYPES in marketplaceQuery.ts); null until a tenant sets
    * it in the Command Center. Optional so older responses still parse. */
   body_type?: string | null;
+  /** Pending on public_team_fleet (Lovable handoff 2026-09-05); already on the marketplace fleet RPC. */
+  photo_count?: number | null;
 };
 
 /**

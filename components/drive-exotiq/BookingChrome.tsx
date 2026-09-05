@@ -4,7 +4,10 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, X } from 'lucide-react';
 import Image from 'next/image';
-import { groundClassName } from '@/components/browse/tokens';
+import { SiteBar } from '@/components/browse/SiteBar';
+import { SavedLink } from '@/components/renters/SavedLink';
+import { browseEnabled } from '@/domain/booking/config';
+import { eyebrowClassName, groundClassName } from '@/components/browse/tokens';
 
 type StepStyle = 'bars' | 'numbered';
 
@@ -38,7 +41,7 @@ function StepIndicator({ step, total = 6, variant = 'bars' }: { step: number; to
         <div className="relative h-px flex-1 overflow-hidden rounded bg-[#2A2E3A]">
           <span className="absolute inset-y-0 left-0 bg-[#C8A664]" style={{ width: pct }} />
         </div>
-        <div className="text-[10px] tracking-[0.22em]">{labels[step - 1]}</div>
+        <div className="text-[10px] tracking-[0.16em]">{labels[step - 1]}</div>
       </div>
     );
   }
@@ -96,17 +99,12 @@ export function PhoneViewport({
   return (
     <main className={`min-h-screen ${groundClassName} text-[#F0F2F5] ${className}`}>
       {page && (
-        <div className="sticky top-0 z-40 hidden border-b border-[#2A2E3A]/70 bg-[#06070a]/85 backdrop-blur-md lg:block">
-          {/* The same bar as the browse chrome (MP-12): sticky, blurred, Drive
-              Exotiq lockup — one header across the marketplace, storefronts and
-              car pages (brand decision 2026-08-21). */}
-          <div className="mx-auto flex h-16 w-full max-w-[1200px] items-center justify-between px-8">
-            <Link href={closeHref} className="flex items-center" aria-label="Drive Exotiq — home">
-              <Image src="/images/logos/drive-exotiq-lockup-transparent.png" alt="Drive Exotiq" width={100} height={20} priority style={{ height: 20, width: 'auto' }} className="opacity-95" />
-            </Link>
-            {desktopNav && <nav className="flex items-center gap-7 text-[11px] uppercase tracking-[0.2em] text-[#9BA1B0]">{desktopNav}</nav>}
+        <SiteBar homeHref={closeHref} className="hidden lg:block">
+          <div className="flex items-center gap-6">
+            {desktopNav && <nav className={`flex items-center gap-7 ${eyebrowClassName} text-[#9BA1B0]`}>{desktopNav}</nav>}
+            {browseEnabled() && <SavedLink />}
           </div>
-        </div>
+        </SiteBar>
       )}
       <div className={panel ? 'lg:mx-auto lg:flex lg:w-full lg:max-w-[1200px] lg:items-start lg:justify-center lg:gap-10 lg:px-8 lg:py-10' : ''}>
         {panel && rail && <aside className="hidden lg:sticky lg:top-10 lg:block lg:w-80 lg:shrink-0">{rail}</aside>}

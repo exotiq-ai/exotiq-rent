@@ -3,11 +3,12 @@
 import type { ReactNode } from 'react';
 import { CheckCircle2, FileText } from 'lucide-react';
 import { HTitle, Money } from '../BookingChrome';
+import { microLabelClassName } from '@/components/browse/tokens';
 
 export function StepHeader({ eyebrow, title, sub }: { eyebrow: string; title: string; sub?: string }) {
   return (
     <div className="mb-4">
-      <div className="text-[10px] uppercase tracking-[0.16em] text-[#848A9A]">{eyebrow}</div>
+      <div className={`${microLabelClassName} text-[#848A9A]`}>{eyebrow}</div>
       <HTitle className="mt-2">{title}</HTitle>
       {sub && <p className="mt-2 text-[13px] leading-5 text-[#9BA1B0]">{sub}</p>}
     </div>

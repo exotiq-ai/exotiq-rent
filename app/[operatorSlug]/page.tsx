@@ -6,7 +6,8 @@ import { driveFontClassName } from '@/components/drive-exotiq/fonts';
 import { HTitle, Money, PhoneViewport } from '@/components/drive-exotiq/BookingChrome';
 import { FilterBar } from '@/components/browse/FilterBar';
 import { EmptyState } from '@/components/browse/EmptyState';
-import { ListingCard } from '@/components/browse/ListingCard';
+import { ListingGrid } from '@/components/browse/ListingGrid';
+import { eyebrowClassName, microLabelClassName, stickyBelowBarClassName } from '@/components/browse/tokens';
 import { browseEnabled, getSiteMode } from '@/domain/booking/config';
 import { formatRangeLabel, formatShortDate } from '@/domain/booking/dates';
 import { applyMarketplaceQuery, computeFacets, excludeBusy, filterListings } from '@/domain/booking/marketplaceCore';
@@ -66,7 +67,7 @@ function PolicyCard({ rows, className = '' }: { rows: PolicyRow[]; className?: s
         <div key={row.label} className="flex items-start gap-3 border-t border-[#2A2E3A] py-3">
           <row.icon size={16} className="mt-0.5 shrink-0 text-[#848A9A]" />
           <div className="min-w-0">
-            <div className="text-[11px] uppercase tracking-[0.2em] text-[#848A9A]">{row.label}</div>
+            <div className={`${eyebrowClassName} text-[#848A9A]`}>{row.label}</div>
             <div className="mt-0.5 text-[13px] leading-5 text-[#D7DAE0]">{row.value}</div>
           </div>
         </div>
@@ -129,7 +130,9 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
   // one storefront, so it is ignored rather than allowed to empty the grid.
   // 'featured' keeps the fleet RPC's own order (price desc, its tie order):
   // the default view must look exactly as it did before filters existed.
-  const listings: MarketplaceListing[] = vehicles.map((vehicle) => ({ team, vehicle, photoCount: Math.max(1, vehicle.photos.length) }));
+  // photoCount lights up on a live storefront once the team-fleet RPC carries
+  // photo_count (Lovable handoff 2026-09-05); until then it is the hero alone.
+  const listings: MarketplaceListing[] = vehicles.map((vehicle) => ({ team, vehicle, photoCount: Math.max(1, vehicle.photoCount ?? vehicle.photos.length) }));
   const query = { ...parseMarketplaceQuery(searchParams ?? {}), city: undefined, state: undefined };
   const facets = computeFacets(listings);
   // Availability (MP-10): one uncached busy read for this storefront; on
@@ -144,7 +147,6 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
   // The dates-aware zero state only when the dates are the reason — with a
   // make or price chip set too, the plain "loosen a filter" copy is truer.
   const emptyByDates = Boolean(availability?.checked) && query.makes.length === 0 && query.types.length === 0 && query.minDailyRateCents === undefined && query.maxDailyRateCents === undefined;
-  const carHref = (slug: string) => (window ? `/${team.slug}/${slug}?start=${window.start}&end=${window.end}` : `/${team.slug}/${slug}`);
   const filterKey = toMarketplaceSearchParams(query).toString();
   const policies = team.policies;
   const policyRows: PolicyRow[] = policies
@@ -181,7 +183,7 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
               </div>
               <div className="mt-4 lg:mt-6">
                 <HTitle className="text-[22px] lg:text-[34px]">{team.name}</HTitle>
-                <p className="mt-1.5 text-[11px] uppercase tracking-[0.2em] text-[#848A9A]">{team.city}, {team.state}</p>
+                <p className={`mt-1.5 ${eyebrowClassName} text-[#848A9A]`}>{team.city}, {team.state}</p>
               </div>
 
               <AboutCard team={team} count={vehicles.length} minRate={minRate} minDays={minDays} className="mt-4 lg:hidden" />
@@ -205,8 +207,8 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
               <div className="mt-4 flex items-center justify-between px-1">
                 {/* 'Available now' claimed a check that was never made; the aside
                     says availability is confirmed at booking (MP-11). */}
-                <h2 className="text-[10px] uppercase tracking-[0.16em] text-[#848A9A]">{availability ? (availability.checked ? 'Available for your dates' : 'All cars') : 'The fleet'}</h2>
-                <div className="text-[11px] text-[#9BA1B0]">
+                <h2 className={`${microLabelClassName} text-[#848A9A]`}>{availability ? (availability.checked ? 'Available for your dates' : 'All cars') : 'The fleet'}</h2>
+                <div className="text-[11px] text-[#9BA1B0]" aria-live="polite">
                   {shown.length === vehicles.length ? `${vehicles.length} cars` : `${shown.length} of ${vehicles.length} cars`}
                 </div>
               </div>
@@ -219,14 +221,12 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
                   be sent, not the best one we happen to have. */}
               {shown.length === 0 ? (
                 <div className="mt-3">
-                  <EmptyState totalInCatalog={vehicles.length} clearHref={`/${team.slug}`} ownerName={team.name} alertTeamSlug={team.slug} dates={emptyByDates && availability ? { start: availability.start, end: availability.end } : undefined} />
+                  <EmptyState totalInCatalog={vehicles.length} clearHref={`/${team.slug}`} ownerName={team.name} alertTeamSlug={team.slug} headingLevel="h3" dates={emptyByDates && availability ? { start: availability.start, end: availability.end } : undefined} />
                 </div>
               ) : (
-                /* One card for both grids (MP-12): the storefront context shows year and make instead of the operator. */
-                <div className="mt-3 space-y-4 lg:grid lg:grid-cols-2 lg:gap-5 lg:space-y-0">
-                  {shown.map((listing) => (
-                    <ListingCard key={listing.vehicle.id} listing={listing} context="storefront" dates={window} sizes="(min-width: 1024px) 400px, 448px" />
-                  ))}
+                /* One card, one grid for both surfaces (MP-12): the storefront context shows the year instead of the operator. */
+                <div className="mt-3">
+                  <ListingGrid variant="storefront" listings={shown} dates={window} />
                 </div>
               )}
 
@@ -237,7 +237,7 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
             {/* Capped to the viewport with its own quiet scroll; the 1px negative
                 margin + padding keeps the 4px focus ring of a full-width child
                 (Call link) inside the scroll box instead of clipped. */}
-            <aside className="scroll-quiet hidden lg:sticky lg:top-6 lg:-mx-1 lg:-my-1 lg:block lg:max-h-[calc(100dvh-3rem)] lg:space-y-4 lg:overflow-y-auto lg:px-1 lg:py-1">
+            <aside className={`scroll-quiet hidden lg:-mx-1 lg:-my-1 lg:block lg:space-y-4 lg:px-1 lg:py-1 ${stickyBelowBarClassName}`}>
               <AboutCard team={team} count={vehicles.length} minRate={minRate} minDays={minDays} />
               {hasPhone && <CallLink team={team} />}
               {policyRows.length > 0 && <PolicyCard rows={policyRows} />}

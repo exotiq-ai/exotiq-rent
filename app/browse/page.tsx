@@ -6,7 +6,7 @@ import { BrowseChrome } from '@/components/browse/BrowseChrome';
 import { EmptyState } from '@/components/browse/EmptyState';
 import { FilterForm } from '@/components/browse/FilterForm';
 import { ListingGrid } from '@/components/browse/ListingGrid';
-import { containerClassName, serifStyle } from '@/components/browse/tokens';
+import { containerClassName, displaySerifStyle, eyebrowClassName, stickyBelowBarClassName } from '@/components/browse/tokens';
 import { browseEnabled } from '@/domain/booking/config';
 import { formatRangeLabel, formatShortDate } from '@/domain/booking/dates';
 import { parseMarketplaceQuery, toMarketplaceSearchParams, type SearchParamsLike } from '@/domain/booking/marketplaceQuery';
@@ -71,8 +71,8 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
   return (
     <BrowseChrome>
       <section className={`${containerClassName} pb-6 pt-12 sm:pt-16`}>
-        <p className="text-[11px] uppercase tracking-[0.2em] text-[#848A9A]">Drive Exotiq</p>
-        <h1 className="mt-3 text-[40px] leading-[1.02] text-[#F0F2F5] sm:text-[56px]" style={{ ...serifStyle, letterSpacing: '-0.02em' }}>
+        <p className={`${eyebrowClassName} text-[#848A9A]`}>Drive Exotiq</p>
+        <h1 className="mt-3 text-[40px] leading-[1.02] text-[#F0F2F5] sm:text-[56px]" style={displaySerifStyle}>
           The fleet.
         </h1>
         <p className="mt-4 max-w-xl text-[15px] leading-7 text-[#9BA1B0]">
@@ -89,14 +89,14 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
               types + makes + bands the rail outgrows a 13-inch screen, and a
               stuck sticky element's bottom (Clear all / Show results) is
               unreachable until the grid ends (MP-11). */}
-          <div className="scroll-quiet sticky top-24 max-h-[calc(100dvh-7rem)] overflow-y-auto rounded-2xl border border-[#2A2E3A] bg-[#0D0F14] p-5">
+          <div className={`scroll-quiet rounded-2xl border border-[#2A2E3A] bg-[#0D0F14] p-5 ${stickyBelowBarClassName}`}>
             <FilterForm key={filterKey} facets={facets} query={query} idPrefix="rail" />
           </div>
         </aside>
 
         <div className="min-w-0">
           <div className="mb-5 flex items-center justify-between gap-4">
-            <div className="text-[11px] uppercase tracking-[0.2em] text-[#848A9A]">
+            <div className={`${eyebrowClassName} text-[#848A9A]`} aria-live="polite">
               {page.totalCount} {page.totalCount === 1 ? 'car' : 'cars'}
               {activeFilters > 0 && <span className="ml-2 text-[#C8A664]">· {activeFilters} {activeFilters === 1 ? 'filter' : 'filters'}</span>}
             </div>

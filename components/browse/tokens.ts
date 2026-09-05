@@ -13,10 +13,6 @@ export const tone = {
   surface: '#161922',
   surface2: '#1E2230',
   line: '#2A2E3A',
-  /** Unselected chip / drawn control border. */
-  chipLine: '#3A3F4D',
-  /** Field ground. */
-  well: '#10131A',
   ink: '#F0F2F5',
   muted: '#9BA1B0',
   faint: '#848A9A',
@@ -37,6 +33,16 @@ export const microLabelClassName = 'text-[10px] uppercase tracking-[0.16em]';
 
 /** The display-type recipe every headline on the booking surfaces uses. */
 export const serifStyle = { fontFamily: serifFamily, fontWeight: 500, letterSpacing: '-0.014em' } as const;
+
+/** The display recipe for page titles at 36–56px: tighter than body headings (MP-12). */
+export const displaySerifStyle = { ...serifStyle, letterSpacing: '-0.02em' } as const;
+
+/**
+ * A sticky column under the 64px site bar (MP-12): the bar is sticky on
+ * every desktop page now, so anything that sticks must clear it and stay
+ * inside the viewport with its own scroll.
+ */
+export const stickyBelowBarClassName = 'lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto lg:[scrollbar-width:thin]';
 
 /** Page container shared by header, hero, grid and footer. */
 export const containerClassName = 'mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8';

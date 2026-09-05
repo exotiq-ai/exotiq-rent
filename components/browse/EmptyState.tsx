@@ -15,6 +15,7 @@ export function EmptyState({
   clearHref = '/browse',
   ownerName,
   alertTeamSlug = null,
+  headingLevel = 'h2',
 }: {
   totalInCatalog: number;
   dates?: { start: string; end: string };
@@ -23,7 +24,10 @@ export function EmptyState({
   /** Set on a storefront: copy names the operator and the alert is scoped to them. */
   ownerName?: string;
   alertTeamSlug?: string | null;
+  /** h3 on a storefront, where the section already carries an h2 (MP-12). */
+  headingLevel?: 'h2' | 'h3';
 }) {
+  const Heading = headingLevel;
   // Nothing listed at all is not a filter problem: the catalog read failed
   // for this window, or every tenant switched the marketplace off. Say so,
   // and do not offer "Clear filters" when there are none to clear.
@@ -40,7 +44,7 @@ export function EmptyState({
   return (
     <div className="flex flex-col items-center rounded-2xl border border-dashed border-[#2A2E3A] px-6 py-16 text-center">
       <div className="grid h-14 w-14 place-items-center rounded-full border border-[#2A2E3A] bg-[#161922] text-[#C8A664]"><CarFront size={24} /></div>
-      <h2 className="mt-5 text-[24px] text-[#F0F2F5]" style={serifStyle}>{dates ? `Nothing is available ${formatRangeLabel(dates.start, dates.end)}.` : ownerName ? 'No cars match those filters.' : 'Nothing matches those filters yet.'}</h2>
+      <Heading className="mt-5 text-[24px] text-[#F0F2F5]" style={serifStyle}>{dates ? `Nothing is available ${formatRangeLabel(dates.start, dates.end)}.` : ownerName ? 'No cars match those filters.' : 'Nothing matches those filters yet.'}</Heading>
       <p className="mt-3 max-w-md text-sm leading-6 text-[#9BA1B0]">
         {dates
           ? `Try different dates, or see all ${totalInCatalog} cars${ownerName ? ` ${ownerName} lists` : ''}.`
@@ -48,7 +52,7 @@ export function EmptyState({
             ? `${ownerName} lists ${totalInCatalog} cars right now. Loosen a filter, or see them all.`
             : `${totalInCatalog} cars are listed across the fleet right now. Loosen a filter, or start over.`}
       </p>
-      <Link href={clearHref} className="mt-6 rounded-xl bg-[#C8A664] px-6 py-3.5 text-sm font-semibold text-[#1A1308]">{dates ? `See all cars${ownerName ? '' : ''} (clears dates)` : ownerName ? `Show all ${totalInCatalog}` : 'Clear filters'}</Link>
+      <Link href={clearHref} className="mt-6 rounded-xl bg-[#C8A664] px-6 py-3.5 text-sm font-semibold text-[#1A1308]">{dates ? (ownerName ? `See all ${totalInCatalog} (clears dates)` : 'See all cars (clears dates)') : ownerName ? `Show all ${totalInCatalog}` : 'Clear filters'}</Link>
       {/* MP-14: one e-mail if a car frees up for the dates — any listed car, or this operator's. */}
       {dates && (
         <div className="mt-8 w-full max-w-sm border-t border-[#2A2E3A] pt-6 text-left">
