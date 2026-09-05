@@ -25,6 +25,8 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
   // date says so under the field instead of silently disabling Continue.
   const [dobText, setDobText] = useState(() => displayFromIso(cart.driver.dob));
   const [dobError, setDobError] = useState('');
+  // Bumped on every change, so the caret is re-placed even when the mask swallowed the keystroke and the display is unchanged.
+  const [dobEdit, setDobEdit] = useState(0);
   const dobInput = useRef<HTMLInputElement>(null);
   const pendingCaret = useRef<number | null>(null);
   useLayoutEffect(() => {
@@ -32,7 +34,8 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
     const at = caretAfterDigits(dobText, pendingCaret.current);
     dobInput.current.setSelectionRange(at, at);
     pendingCaret.current = null;
-  }, [dobText]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dobEdit]);
   const dobDigits = dobText.replace(/\D/g, '').length;
 
   // Only enforce an age floor the operator actually set. Live (supabase-mode)
@@ -80,13 +83,14 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
                   const { display, iso, error } = maskDob(raw);
                   setDobText(display);
                   setDobError(error);
+                  setDobEdit((n) => n + 1);
                   setDriver({ dob: iso });
                 }}
                 onBlur={() => {
                   if (dobDigits > 0 && dobDigits < 8) setDobError('Finish the date as MM / DD / YYYY.');
                 }}
                 aria-invalid={dobError ? true : undefined}
-                aria-describedby={dobError ? 'dob-hint dob-error' : 'dob-hint'}
+                aria-describedby="dob-hint dob-error"
                 className={fieldClass}
               />
             </label>
@@ -96,7 +100,8 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
             </label>
           </div>
           <p id="dob-hint" className="sr-only">Type the digits of your date of birth: month, day, year.</p>
-          {dobError && <p id="dob-error" role="alert" className="mt-2 text-[12px] leading-5 text-[#FFB84D]">{dobError}</p>}
+          {/* Always mounted and polite: a live region that appears already populated is skipped by VoiceOver, and an assertive alert mid-typing talks over the digit just pressed. */}
+          <p id="dob-error" role="status" aria-live="polite" className={dobError ? 'mt-2 text-[12px] leading-5 text-[#FFB84D]' : 'sr-only'}>{dobError}</p>
           <label className="mt-3 block">
             <span className={label}>Email</span>
             <input type="email" value={cart.driver.email ?? ''} onChange={(event) => setDriver({ email: event.target.value })} placeholder="Where we send your confirmation" autoComplete="email" className={fieldClass} />

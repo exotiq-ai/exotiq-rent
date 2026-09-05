@@ -18,6 +18,7 @@ import { DriverStep } from './flow/DriverStep';
 import { PayStep } from './flow/PayStep';
 import { ReviewStep } from './flow/ReviewStep';
 import { captureBooking } from '@/components/renters/bookingCapture';
+import { eyebrowClassName } from '@/components/browse/tokens';
 
 export function BookingFlow({ operator, vehicle, initialDates }: { operator: Operator; vehicle: Vehicle; initialDates?: { start: string; end: string } }) {
   const router = useRouter();
@@ -132,7 +133,7 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
         {vehicle.heroImage && <Image src={vehicle.heroImage} alt={vehicle.name} fill sizes="320px" className="object-cover" />}
       </div>
       <div className="p-5">
-        <div className="text-[11px] uppercase tracking-[0.2em] text-[#C8A664]">{operator.name}</div>
+        <div className={`${eyebrowClassName} text-[#C8A664]`}>{operator.name}</div>
         <h2 className="mt-2 text-[20px] leading-[1.15] text-[#F0F2F5]" style={{ fontFamily: 'var(--font-drive-newsreader), Georgia, serif', fontWeight: 500, letterSpacing: '-0.014em' }}>{vehicle.name}</h2>
         <p className="mt-1 text-[12px] text-[#9BA1B0]">{operator.city}, {operator.state}</p>
         <dl className="mt-4 space-y-2 border-t border-[#2A2E3A] pt-4 text-[13px]">

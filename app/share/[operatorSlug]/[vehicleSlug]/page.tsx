@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { driveFontClassName } from '@/components/drive-exotiq/fonts';
 import { getSiteMode } from '@/domain/booking/config';
 import { getPublicVehicleContext } from '@/domain/booking/service';
-import { serifStyle } from '@/components/browse/tokens';
+import { eyebrowClassName, microLabelClassName, serifStyle } from '@/components/browse/tokens';
 
 /**
  * Public share card — hype only, by design. No booking ref, dates, or money
@@ -44,7 +44,7 @@ export default async function SharePage({ params }: Props) {
   return (
     <main className={`${driveFontClassName} min-h-dvh bg-[#0B0D12] font-[var(--font-drive-inter)] text-[#F0F2F5]`}>
       <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col px-5 pb-10 pt-8">
-        <div className="text-center text-[11px] uppercase tracking-[0.2em] text-[#C8A664]">Drive Exotiq</div>
+        <div className={`text-center ${eyebrowClassName} text-[#C8A664]`}>Drive Exotiq</div>
         <div className="relative mt-6 overflow-hidden rounded-2xl border border-[#C8A664]/40 shadow-[0_0_0_1px_rgba(200,166,100,0.15),0_24px_60px_rgba(0,0,0,0.55)]">
           <div className="relative h-[300px]">
             {/* A photo-less vehicle must degrade, not throw — <Image src=""> crashes the route. */}
@@ -52,7 +52,7 @@ export default async function SharePage({ params }: Props) {
               ? <Image src={vehicle.heroImage} alt={vehicle.name} fill sizes="480px" priority className="object-cover" />
               : <div className="absolute inset-0 bg-gradient-to-br from-[#1E2230] to-[#0D0F14]" />}
             <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-[#0B0D12]" />
-            <div className="absolute left-4 top-4 rounded-full bg-[#0B0D12]/70 px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] text-[#C8A664] backdrop-blur">
+            <div className={`absolute left-4 top-4 rounded-full bg-[#0B0D12]/70 px-3 py-1.5 ${microLabelClassName} text-[#C8A664] backdrop-blur`}>
               <span className="mr-2 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#C8A664] align-middle" />
               Reserved
             </div>

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { BadgeCheck, CarFront, Images } from 'lucide-react';
 import { Money } from '@/components/drive-exotiq/BookingChrome';
 import type { MarketplaceListing } from '@/domain/booking/publicContracts';
+import { storefrontProvenance } from '@/domain/booking/provenance';
 import { SaveButton } from '@/components/renters/SaveButton';
 import { cardShellClassName, microLabelClassName, photoClassName, photoFrameClassName, priceClassName, priceUnitClassName, serifStyle } from './tokens';
 
@@ -42,11 +43,8 @@ export function ListingCard({
   const { team, vehicle, verified, photoCount } = listing;
   // A renter who filtered by dates carries them to the car and into booking.
   const href = dates ? `/${team.slug}/${vehicle.slug}?start=${dates.start}&end=${dates.end}` : `/${team.slug}/${vehicle.slug}`;
-  // Storefront: the year, plus the make only when the headline does not already
-  // start with it ('Mercedes-AMG One' needs no 'Mercedes-AMG' under it). The
-  // adapter coerces a null year to 0, so `||` not `??`.
-  const nameStartsWithMake = Boolean(vehicle.make) && vehicle.name.toLowerCase().startsWith(vehicle.make.toLowerCase());
-  const provenance = context === 'storefront' ? [vehicle.year || null, nameStartsWithMake ? null : vehicle.make || null].filter(Boolean).join(' ') : null;
+  // Storefront: only what the headline does not already say (see storefrontProvenance).
+  const provenance = context === 'storefront' ? storefrontProvenance(vehicle.name, vehicle.year, vehicle.make) : null;
   return (
     <div className={`group h-full ${cardShellClassName}`}>
       <Link href={href} className="flex h-full flex-col focus-visible:outline-none">
@@ -74,7 +72,7 @@ export function ListingCard({
           <div className="mt-auto flex items-baseline justify-between gap-4 pt-2">
             <div className="flex min-w-0 items-center gap-1.5 truncate text-[12px] text-[#9BA1B0]">
               {provenance !== null ? (
-                <span className="truncate">{provenance}</span>
+                provenance !== '' && <span className="truncate">{provenance}</span>
               ) : (
                 <span className="truncate">{team.name} <span className="text-[#848A9A]">· {team.city}, {team.state}</span></span>
               )}

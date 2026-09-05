@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Heart } from 'lucide-react';
 import { renterCaptureUiEnabled } from '@/domain/renters/flags';
 import { useSaved } from './savedStore';
+import { eyebrowClassName } from '@/components/browse/tokens';
 
 /** Header link to /saved with a live count (MP-14). Hidden on hosts without capture. */
 export function SavedLink({ className = '', enabled = true }: { className?: string; /** /saved exists only where browsing does; the server passes browseEnabled(). */ enabled?: boolean }) {
@@ -11,7 +12,7 @@ export function SavedLink({ className = '', enabled = true }: { className?: stri
   if (!renterCaptureUiEnabled() || !enabled) return null;
   const n = ready ? saved.length : 0;
   return (
-    <Link href="/saved" className={`inline-flex items-center gap-1.5 rounded-full border border-[#2A2E3A] px-3 py-1.5 text-[11px] uppercase tracking-[0.2em] text-[#9BA1B0] transition hover:border-[#C8A664]/45 hover:text-[#F0F2F5] ${className}`} aria-label={n > 0 ? `Saved cars, ${n}` : 'Saved cars'}>
+    <Link href="/saved" className={`inline-flex items-center gap-1.5 rounded-full border border-[#2A2E3A] px-3 py-1.5 ${eyebrowClassName} text-[#9BA1B0] transition hover:border-[#C8A664]/45 hover:text-[#F0F2F5] ${className}`} aria-label={n > 0 ? `Saved cars, ${n}` : 'Saved cars'}>
       <Heart size={14} className={n > 0 ? 'fill-[#C8A664] text-[#C8A664]' : 'text-[#C8A664]'} aria-hidden />
       Saved{n > 0 && <span className="tabular-nums text-[#F0F2F5]">{n}</span>}
     </Link>

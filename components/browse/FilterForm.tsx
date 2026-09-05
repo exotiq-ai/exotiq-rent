@@ -10,7 +10,8 @@ import { addDays } from '@/domain/booking/dates';
 import { localTodayIso } from '@/domain/booking/availability';
 import { datePillClassName, microLabelClassName, selectClassName } from './tokens';
 
-const FOCUS_KEY = 'dx.filter.focus';
+/** The control that navigated, so its successor can take focus after the keyed remount (same document, no storage). */
+let pendingFocusId: string | null = null;
 
 function datesHint(start: string, end: string): string {
   if (start && end) return 'Cars shown are free for these dates.';
@@ -43,9 +44,9 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
   // keyboard focus to <body>. Remember the control that navigated and put
   // focus back on its successor (MP-12).
   useEffect(() => {
-    const id = window.sessionStorage.getItem(FOCUS_KEY);
+    const id = pendingFocusId;
     if (!id) return;
-    window.sessionStorage.removeItem(FOCUS_KEY);
+    pendingFocusId = null;
     if (document.activeElement && document.activeElement !== document.body) return;
     document.getElementById(id)?.focus({ preventScroll: true });
   }, []);
@@ -80,7 +81,7 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
     const { start, end } = reconcileDates();
     if ((start === '') !== (end === '')) return;
     const active = document.activeElement;
-    if (active instanceof HTMLElement && active.id && form.current.contains(active)) window.sessionStorage.setItem(FOCUS_KEY, active.id);
+    if (active instanceof HTMLElement && active.id && form.current.contains(active)) pendingFocusId = active.id;
     const data = new FormData(form.current);
     const params = new URLSearchParams();
     data.forEach((value, key) => {

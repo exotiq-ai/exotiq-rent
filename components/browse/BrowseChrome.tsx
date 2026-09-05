@@ -26,7 +26,7 @@ export function BrowseChrome({ children, view = 'browse_view', footerSignup = tr
       <SiteBar homeHref="/browse" homeLabel="Drive Exotiq — browse the fleet">
         <div className="flex items-center gap-4">
           <p className={`hidden ${eyebrowClassName} text-[#848A9A] sm:block`}>Curated exotic &amp; luxury rentals</p>
-          <SavedLink />
+          <SavedLink enabled={browseEnabled()} />
         </div>
       </SiteBar>
       <main>{children}</main>
