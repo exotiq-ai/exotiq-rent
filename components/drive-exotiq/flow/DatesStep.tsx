@@ -22,6 +22,7 @@ import { EmailCaptureForm } from '@/components/renters/EmailCaptureForm';
 import { renterCaptureUiEnabled } from '@/domain/renters/flags';
 import { MAX_WINDOW_DAYS, daysBetween } from '@/domain/booking/marketplaceQuery';
 import { recomputeBookingCart } from './state';
+import { eyebrowClassName, microLabelClassName } from '@/components/browse/tokens';
 
 // value is what the booking stores and what the backend casts into a
 // timestamp (`<date> <value>`), so every value MUST be a parseable time.
@@ -146,7 +147,7 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
           <span className="text-[15px] font-medium tracking-[-0.005em]">{monthLabel(visibleMonth)}</span>
           <button type="button" onClick={() => canGoNext && setVisibleMonth(addMonths(visibleMonth, 1))} disabled={!canGoNext} className="grid h-8 w-8 place-items-center rounded-lg text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5] disabled:opacity-30" aria-label="Next month"><ChevronRight size={16} /></button>
         </div>
-        <div className="mt-3 grid grid-cols-7 px-0.5 text-center text-[10px] uppercase tracking-[0.16em] text-[#848A9A]">
+        <div className={`mt-3 grid grid-cols-7 px-0.5 text-center ${microLabelClassName} text-[#848A9A]`}>
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, index) => <span key={`${d}-${index}`} className="py-1.5">{d}</span>)}
         </div>
         <div className="grid grid-cols-7 px-0.5 text-center text-sm">
@@ -187,7 +188,7 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
             );
           })}
         </div>
-        <div className="mt-3 text-center text-[10px] uppercase tracking-[0.18em] text-[#848A9A]">Tap start, then end · {cart.vehicle.minRentalDays}-day minimum{hasBlockedDays ? (captureOn ? ' · Crossed-out dates are taken — tap one for an alert' : ' · Crossed-out dates are unavailable') : ''}</div>
+        <div className={`mt-3 text-center ${microLabelClassName} text-[#848A9A]`}>Tap start, then end · {cart.vehicle.minRentalDays}-day minimum{hasBlockedDays ? (captureOn ? ' · Crossed-out dates are taken — tap one for an alert' : ' · Crossed-out dates are unavailable') : ''}</div>
         {/* One sentence announces the card's arrival; the form below keeps its own status line (MP-14). */}
         <div aria-live="polite" className="sr-only">{alertWindow && captureOn ? `Alert offer for ${formatRangeLabel(alertWindow.start, alertWindow.end)} added below.` : ''}</div>
         <div>
@@ -199,7 +200,7 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
             </div>
           )}
         </div>
-        <label className="mt-5 block text-xs uppercase tracking-[0.22em] text-[#848A9A]">Pickup time</label>
+        <label className={`mt-5 block ${eyebrowClassName} text-[#848A9A]`}>Pickup time</label>
         {/* Still a native select (iOS wheel, screen-reader semantics), wearing
             the Driver step's field recipe with a gold chevron (MP-11). */}
         <span className="relative mt-2 block">

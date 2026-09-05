@@ -169,7 +169,7 @@ export function PaymentCard({
           <p className="mt-1 text-xs leading-5 text-[#9BA1B0]">{operatorName} approved your booking. Pay to lock it in.</p>
         </div>
         <span className={`flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] ${windowState === 'urgent' ? 'bg-[#FFB84D]/15 text-[#FFB84D]' : 'bg-[#C8A664]/10 text-[#C8A664]'}`}>
-          <Clock3 size={12} />
+          <Clock3 size={14} />
           {paymentCountdownLabel(dueAtIso, nowMs)}
         </span>
       </div>

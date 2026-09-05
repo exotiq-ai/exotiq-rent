@@ -22,8 +22,27 @@ export const tone = {
 
 export const serifFamily = 'var(--font-drive-newsreader), Georgia, serif';
 
+/**
+ * Tracked caps, two recipes (MP-12): thirteen size/tracking pairs had grown
+ * across the gold pages. `eyebrow` for section and page eyebrows and nav
+ * (11px), `microLabel` for field labels, pills, captions and counts (10px).
+ * Colour is applied at the call site.
+ */
+export const eyebrowClassName = 'text-[11px] uppercase tracking-[0.2em]';
+export const microLabelClassName = 'text-[10px] uppercase tracking-[0.16em]';
+
 /** The display-type recipe every headline on the booking surfaces uses. */
 export const serifStyle = { fontFamily: serifFamily, fontWeight: 500, letterSpacing: '-0.014em' } as const;
+
+/** The display recipe for page titles at 36–56px: tighter than body headings (MP-12). */
+export const displaySerifStyle = { ...serifStyle, letterSpacing: '-0.02em' } as const;
+
+/**
+ * A sticky column under the 64px site bar (MP-12): the bar is sticky on
+ * every desktop page now, so anything that sticks must clear it and stay
+ * inside the viewport with its own scroll.
+ */
+export const stickyBelowBarClassName = 'lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto lg:[scrollbar-width:thin]';
 
 /** Page container shared by header, hero, grid and footer. */
 export const containerClassName = 'mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8';

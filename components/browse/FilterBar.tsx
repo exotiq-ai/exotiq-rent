@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, useTransition, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { CalendarDays } from 'lucide-react';
@@ -8,7 +8,10 @@ import type { MarketplaceFacets, MarketplaceQuery } from '@/domain/booking/publi
 import { MARKETPLACE_SORTS, PRICE_BANDS, daysBetween } from '@/domain/booking/marketplaceQuery';
 import { addDays } from '@/domain/booking/dates';
 import { localTodayIso } from '@/domain/booking/availability';
-import { datePillClassName } from './tokens';
+import { datePillClassName, microLabelClassName } from './tokens';
+
+/** The control that navigated, so its successor can take focus after the keyed remount (same document, no storage). */
+let pendingFocusId: string | null = null;
 
 function datesHint(start: string, end: string): string {
   if (start && end) return 'Cars shown are free for these dates.';
@@ -37,6 +40,20 @@ const SORT_LABELS: Record<MarketplaceQuery['sort'], string> = {
 export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: MarketplaceFacets; query: MarketplaceQuery; action: string; idPrefix?: string }) {
   const router = useRouter();
   const form = useRef<HTMLFormElement>(null);
+  // MP-12: a chip flipped and then nothing happened for the RPC round-trip.
+  // The push runs in a transition so the form knows it is pending: a gold
+  // hairline at the top and dimmed controls until the new grid commits.
+  const [isPending, startTransition] = useTransition();
+  // The form remounts (keyed on the query) when a change commits, which drops
+  // keyboard focus to <body>. Remember the control that navigated and put
+  // focus back on its successor (MP-12).
+  useEffect(() => {
+    const id = pendingFocusId;
+    if (!id) return;
+    pendingFocusId = null;
+    if (document.activeElement && document.activeElement !== document.body) return;
+    document.getElementById(id)?.focus({ preventScroll: true });
+  }, []);
 
   const currentBand = PRICE_BANDS.find(
     (b) => b.minCents === (query.minDailyRateCents ?? 0) && b.maxCents === query.maxDailyRateCents,
@@ -77,6 +94,8 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
     // hint says so) instead of navigating to a URL the parser would drop.
     const { start, end } = reconcileDates();
     if ((start === '') !== (end === '')) return;
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && active.id && form.current.contains(active)) pendingFocusId = active.id;
     const data = new FormData(form.current);
     const params = new URLSearchParams();
     data.forEach((value, key) => {
@@ -85,7 +104,7 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
       params.append(key, value);
     });
     const qs = params.toString();
-    router.push(qs ? `${action}?${qs}` : action);
+    startTransition(() => router.push(qs ? `${action}?${qs}` : action));
   };
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -102,28 +121,31 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
   };
 
   const row = 'flex flex-wrap items-center gap-2';
-  const label = 'mr-1 text-[10px] uppercase tracking-[0.22em] text-[#848A9A]';
-  const chip = 'relative cursor-pointer';
+  const label = `mr-1 ${microLabelClassName} text-[#848A9A]`;
+  const chip = 'relative cursor-pointer group-data-[pending]:opacity-75 group-data-[pending]:cursor-progress transition-opacity';
   const face =
     'inline-flex select-none items-center gap-1.5 rounded-full border border-[#3A3F4D] bg-[#10131A] px-3 py-1.5 text-[12px] text-[#9BA1B0] transition active:scale-[0.97] active:bg-[#C8A664]/15 ' +
     'peer-checked:border-[#C8A664]/70 peer-checked:bg-[#C8A664]/10 peer-checked:font-semibold peer-checked:text-[#F0F2F5] peer-focus-visible:ring-2 peer-focus-visible:ring-[#C8A664]/60 hover:border-[#C8A664]/40 hover:text-[#F0F2F5]';
   const count = 'text-[10px] tabular-nums text-[#848A9A]';
 
   return (
-    <form ref={form} method="get" action={action} onSubmit={onSubmit} onChange={navigate} className="space-y-2.5" aria-label="Filter the fleet">
+    <form ref={form} method="get" action={action} onSubmit={onSubmit} onChange={navigate} className="group relative space-y-2.5" aria-busy={isPending} data-pending={isPending ? '' : undefined} aria-label="Filter the fleet">
+      {/* Always mounted, opacity-toggled, so the rail never jumps. */}
+      <span aria-hidden className={`pointer-events-none absolute -top-2 left-0 h-px w-full bg-[#C8A664] transition-opacity motion-reduce:animate-none ${isPending ? 'animate-pulse opacity-100' : 'opacity-0'}`} />
+      <p role="status" className="sr-only">{isPending ? 'Updating results…' : ''}</p>
       <div className={row} role="group" aria-labelledby={`${idPrefix}-dates-label`}>
         <span id={`${idPrefix}-dates-label`} className={`${label} basis-full sm:basis-auto`}>Dates</span>
         {/* The trio wraps as one unit, so a phone never shows a dangling "to". */}
         <span className="flex flex-nowrap items-center gap-2">
           <label className="sr-only" htmlFor={`${idPrefix}-start`}>Pickup date</label>
           <span className="relative inline-flex items-center">
-            <CalendarDays size={13} className="pointer-events-none absolute left-2.5 text-[#C8A664]" aria-hidden />
+            <CalendarDays size={14} className="pointer-events-none absolute left-2.5 text-[#C8A664]" aria-hidden />
             <input id={`${idPrefix}-start`} type="date" name="start" min={today} max={addDays(today, 180)} defaultValue={query.start ?? ''} aria-describedby={`${idPrefix}-dates-hint`} className={`${datePillClassName} min-w-[8.5rem]`} />
           </span>
           <span className="text-[11px] text-[#848A9A]">to</span>
           <label className="sr-only" htmlFor={`${idPrefix}-end`}>Drop-off date</label>
           <span className="relative inline-flex items-center">
-            <CalendarDays size={13} className="pointer-events-none absolute left-2.5 text-[#C8A664]" aria-hidden />
+            <CalendarDays size={14} className="pointer-events-none absolute left-2.5 text-[#C8A664]" aria-hidden />
             <input id={`${idPrefix}-end`} type="date" name="end" min={query.start ? addDays(query.start, 1) : addDays(today, 1)} max={addDays(today, 181)} defaultValue={query.end ?? ''} aria-describedby={`${idPrefix}-dates-hint`} className={`${datePillClassName} min-w-[8.5rem]`} />
           </span>
         </span>
@@ -144,7 +166,7 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
           <span id={`${idPrefix}-type-label`} className={label}>Type</span>
           {facets.types.map((t) => (
             <label key={t.value} className={chip}>
-              <input type="checkbox" name="type" value={t.value} defaultChecked={query.types.includes(t.value)} className="peer sr-only" />
+              <input id={`${idPrefix}-type-${t.value}`} type="checkbox" name="type" value={t.value} defaultChecked={query.types.includes(t.value)} className="peer sr-only" />
               <span className={face}>{t.label}<span className={count}> {t.count}</span></span>
             </label>
           ))}
@@ -156,7 +178,7 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
           <span id={`${idPrefix}-make-label`} className={label}>Make</span>
           {facets.makes.map((m) => (
             <label key={m.value} className={chip}>
-              <input type="checkbox" name="make" value={m.value} defaultChecked={query.makes.some((x) => x.toLowerCase() === m.value.toLowerCase())} className="peer sr-only" />
+              <input id={`${idPrefix}-make-${m.value.replace(/\s+/g, '-')}`} type="checkbox" name="make" value={m.value} defaultChecked={query.makes.some((x) => x.toLowerCase() === m.value.toLowerCase())} className="peer sr-only" />
               <span className={face}>{m.label}<span className={count}> {m.count}</span></span>
             </label>
           ))}
@@ -166,12 +188,12 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
       <div className={row} role="group" aria-labelledby={`${idPrefix}-band-label`}>
         <span id={`${idPrefix}-band-label`} className={label}>Daily rate</span>
         <label className={chip}>
-          <input type="radio" name="band" value="" defaultChecked={currentBand === ''} className="peer sr-only" />
+          <input id={`${idPrefix}-band-any`} type="radio" name="band" value="" defaultChecked={currentBand === ''} className="peer sr-only" />
           <span className={face}>Any</span>
         </label>
         {facets.priceBands.filter((b) => b.count > 0).map((b) => (
           <label key={b.value} className={chip}>
-            <input type="radio" name="band" value={b.value} defaultChecked={currentBand === b.value} className="peer sr-only" />
+            <input id={`${idPrefix}-band-${b.value}`} type="radio" name="band" value={b.value} defaultChecked={currentBand === b.value} className="peer sr-only" />
             <span className={face}>{b.label}<span className={count}> {b.count}</span></span>
           </label>
         ))}

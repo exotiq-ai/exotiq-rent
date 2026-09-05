@@ -3,8 +3,11 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, X } from 'lucide-react';
-import { ExotiqLockup } from './ExotiqLockup';
-import { groundClassName } from '@/components/browse/tokens';
+import Image from 'next/image';
+import { SiteBar } from '@/components/browse/SiteBar';
+import { SavedLink } from '@/components/renters/SavedLink';
+import { browseEnabled } from '@/domain/booking/config';
+import { eyebrowClassName, groundClassName, microLabelClassName } from '@/components/browse/tokens';
 
 type StepStyle = 'bars' | 'numbered';
 
@@ -33,12 +36,12 @@ function StepIndicator({ step, total = 6, variant = 'bars' }: { step: number; to
     const labels = ['Vehicle', 'Dates', 'Driver', 'Review', 'Pay', 'Done'];
 
     return (
-      <div className="flex items-center gap-3 px-6 pb-4 pt-1 text-[11px] uppercase tracking-[0.16em] text-[#848A9A]">
+      <div className={`flex items-center gap-3 px-6 pb-4 pt-1 ${eyebrowClassName} text-[#848A9A]`}>
         <div className="tabular-nums"><b className="font-semibold text-[#C8A664]">{String(step).padStart(2, '0')}</b><span> / {String(total).padStart(2, '0')}</span></div>
         <div className="relative h-px flex-1 overflow-hidden rounded bg-[#2A2E3A]">
           <span className="absolute inset-y-0 left-0 bg-[#C8A664]" style={{ width: pct }} />
         </div>
-        <div className="text-[10px] tracking-[0.22em]">{labels[step - 1]}</div>
+        <div className={`${microLabelClassName}`}>{labels[step - 1]}</div>
       </div>
     );
   }
@@ -96,14 +99,12 @@ export function PhoneViewport({
   return (
     <main className={`min-h-screen ${groundClassName} text-[#F0F2F5] ${className}`}>
       {page && (
-        <div className="hidden border-b border-[#2A2E3A]/70 lg:block">
-          <div className="mx-auto flex h-16 w-full max-w-[1200px] items-center justify-between px-8">
-            <Link href={closeHref} className="flex items-center" aria-label="Home">
-              <ExotiqLockup height={24} className="opacity-95" />
-            </Link>
-            {desktopNav && <nav className="flex items-center gap-7 text-[11px] uppercase tracking-[0.18em] text-[#9BA1B0]">{desktopNav}</nav>}
+        <SiteBar homeHref={closeHref} className="hidden lg:block">
+          <div className="flex items-center gap-6">
+            {desktopNav && <nav className={`flex items-center gap-7 ${eyebrowClassName} text-[#9BA1B0]`}>{desktopNav}</nav>}
+            {browseEnabled() && <SavedLink />}
           </div>
-        </div>
+        </SiteBar>
       )}
       <div className={panel ? 'lg:mx-auto lg:flex lg:w-full lg:max-w-[1200px] lg:items-start lg:justify-center lg:gap-10 lg:px-8 lg:py-10' : ''}>
         {panel && rail && <aside className="hidden lg:sticky lg:top-10 lg:block lg:w-80 lg:shrink-0">{rail}</aside>}
@@ -116,11 +117,9 @@ export function PhoneViewport({
               <ArrowLeft size={20} />
             </button>
             <div className="flex items-center justify-center">
-              {/* 26px, not the old wordmark's 18: the lockup carries a circular
-                  mark, so the word is ~2/3 of total height — at 18px it becomes
-                  illegible. 26px keeps the word at the old optical size inside
-                  the 40px header row. */}
-              <ExotiqLockup height={26} className="opacity-95" />
+              {/* The Drive Exotiq lockup at 22px sits at the same optical size the
+                  old 26px mark did inside the 40px header row (MP-12). */}
+              <Image src="/images/logos/drive-exotiq-lockup-transparent.png" alt="Drive Exotiq" width={110} height={22} priority style={{ height: 22, width: 'auto' }} className="opacity-95" />
             </div>
             <Link href={closeHref} className="grid h-10 w-10 place-items-center rounded-lg text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5]" aria-label="Close booking flow">
               <X size={20} />
@@ -142,7 +141,7 @@ export function HTitle({ children, className = '' }: { children: ReactNode; clas
   return (
     <h1
       className={`text-[22px] leading-[1.12] text-[#F0F2F5] ${className}`}
-      style={{ fontFamily: 'var(--font-drive-newsreader), Georgia, serif', fontWeight: 500, letterSpacing: '-0.018em', fontVariationSettings: "'opsz' 32" }}
+      style={{ fontFamily: 'var(--font-drive-newsreader), Georgia, serif', fontWeight: 500, letterSpacing: '-0.014em', fontVariationSettings: "'opsz' 32" }}
     >
       {children}
     </h1>

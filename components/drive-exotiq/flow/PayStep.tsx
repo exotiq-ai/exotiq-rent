@@ -6,6 +6,7 @@ import { formatMoney } from '@/domain/booking/totals';
 import type { BookingCart } from '@/domain/booking/types';
 import type { PublicQuote } from '@/domain/booking/publicContracts';
 import { DepositDisclosure, QuoteNotice, ScreenShell, StepHeader, Sticky } from './shared';
+import { eyebrowClassName } from '@/components/browse/tokens';
 
 export function PayStep({
   cart,
@@ -58,7 +59,7 @@ export function PayStep({
             charge that never happened. */}
         <StepHeader eyebrow="Step 05" title="Reserve your dates." sub="Nothing is charged yet." />
         <div className="rounded-xl border border-[#C8A664] bg-[#14130F] p-4 shadow-[0_0_0_1px_#C8A664,0_0_24px_rgba(200,166,100,.10)]">
-          <div className="text-xs uppercase tracking-[0.22em] text-[#848A9A]">Total once approved</div>
+          <div className={`${eyebrowClassName} text-[#848A9A]`}>Total once approved</div>
           <div className="mt-2"><Money cents={m.grandTotalCents} large /></div>
           <p className="mt-2 text-xs leading-5 text-[#9BA1B0]">{cart.operator.name} reviews your request, then we email you a secure payment link. Your card is only charged when you pay from that link.</p>
         </div>
@@ -123,7 +124,7 @@ export function PayStep({
 
         <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
           <div className="flex items-start gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#C8A664]/10 text-[#C8A664]"><LockKeyhole size={18} /></div>
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#C8A664]/10 text-[#C8A664]"><LockKeyhole size={16} /></div>
             <div>
               <div className="text-sm font-medium">What you&apos;ll see on your statement</div>
               <p className="mt-1 text-xs leading-5 text-[#9BA1B0]">Two charges: {cart.operator.name}, and <span className="text-[#F0F2F5]">EXOTIQ.RENT</span> for Trip Fees and protection.</p>

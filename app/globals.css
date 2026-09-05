@@ -286,3 +286,12 @@
     border-radius: 9999px;
   }
 }
+
+/* Icons: one stroke everywhere (MP-12). Outside every @layer on purpose —
+   Tailwind only emits layered rules whose class appears in scanned content,
+   and `lucide` is added at runtime by lucide-react, never in source. Scoped
+   to the library default (`stroke-width="2"`) so an explicit strokeWidth
+   prop (BadgeCheck 2.25, the placeholder CarFront 1.5) still wins. */
+svg.lucide[stroke-width="2"] {
+  stroke-width: 1.75;
+}

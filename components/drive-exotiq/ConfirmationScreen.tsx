@@ -9,6 +9,7 @@ import { CancelBookingCard } from './CancelBookingCard';
 import { ConfirmationActions } from './ConfirmationActions';
 import { IdentityVerificationCard } from './IdentityVerificationCard';
 import { PaymentCard } from './PaymentCard';
+import { microLabelClassName } from '@/components/browse/tokens';
 
 // Operator avatar initials — was a hardcoded "DE" (Drive Exotiq) for every
 // tenant (T-8). Two significant words max, so "Exotics By The Bay" → "EB".
@@ -121,7 +122,7 @@ export async function ConfirmationScreen({
         {/* Booking-time snapshots (T-15): instructions are operator free text —
             plain text only, never interpreted as HTML or links. */}
         {live?.pickupInstructions && (
-          <div className="mt-3 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="text-[10px] uppercase tracking-[0.18em] text-[#848A9A]">Pickup instructions</div><p className="mt-2 whitespace-pre-line text-sm leading-6 text-[#9BA1B0]">{live.pickupInstructions}</p></div>
+          <div className="mt-3 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className={`${microLabelClassName} text-[#848A9A]`}>Pickup instructions</div><p className="mt-2 whitespace-pre-line text-sm leading-6 text-[#9BA1B0]">{live.pickupInstructions}</p></div>
         )}
         {live?.mileageLimitPerDay != null && live.mileageLimitPerDay > 0 && (
           <p className="mt-3 px-1 text-xs leading-5 text-[#848A9A]">
@@ -265,5 +266,5 @@ function ReturnNotice({ tone, title, body }: ReturnNoticeProps) {
 }
 
 function Detail({ label, value }: { label: string; value: string }) {
-  return <div><div className="text-[10px] uppercase tracking-[0.2em] text-[#848A9A]">{label}</div><div className="mt-1 text-[#F0F2F5]">{value}</div></div>;
+  return <div><div className={`${microLabelClassName} text-[#848A9A]`}>{label}</div><div className="mt-1 text-[#F0F2F5]">{value}</div></div>;
 }

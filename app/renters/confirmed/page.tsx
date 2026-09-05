@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { BrowseChrome } from '@/components/browse/BrowseChrome';
-import { containerClassName, serifStyle } from '@/components/browse/tokens';
+import { containerClassName, displaySerifStyle, eyebrowClassName } from '@/components/browse/tokens';
 import { browseEnabled } from '@/domain/booking/config';
 import { renterCaptureUiEnabled } from '@/domain/renters/flags';
 
@@ -27,8 +27,8 @@ export default function ConfirmedPage({ searchParams }: { searchParams?: { state
   return (
     <BrowseChrome view={null} footerSignup={false}>
       <section className={`${containerClassName} max-w-2xl pb-24 pt-16 sm:pt-24`}>
-        <p className="text-[11px] uppercase tracking-[0.24em] text-[#848A9A]">Drive Exotiq</p>
-        <h1 className="mt-3 text-[36px] leading-[1.05] text-[#F0F2F5] sm:text-[48px]" style={{ ...serifStyle, letterSpacing: '-0.02em' }}>{copy.title}</h1>
+        <p className={`${eyebrowClassName} text-[#848A9A]`}>Drive Exotiq</p>
+        <h1 className="mt-3 text-[36px] leading-[1.05] text-[#F0F2F5] sm:text-[48px]" style={displaySerifStyle}>{copy.title}</h1>
         <p className="mt-5 max-w-xl text-[15px] leading-7 text-[#9BA1B0]">{copy.body}{sentList ? ' Your saved cars are on their way to your inbox.' : ''}{raw === 'ok' && searchParams?.alerts === '1' ? ' Your availability alert is on: we check every morning and e-mail you once when the dates open up.' : ''}</p>
         {browseEnabled() && <Link href="/browse" className="mt-8 inline-block rounded-xl bg-[#C8A664] px-6 py-3.5 text-sm font-semibold text-[#1A1308]">Browse the fleet</Link>}
       </section>
