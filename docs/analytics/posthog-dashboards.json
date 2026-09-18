@@ -1,0 +1,37 @@
+{
+  "project_id": 592681,
+  "dashboards": [
+    {
+      "name": "Exotiq Rent — Paid Ads & Booking Requests",
+      "description": "Consent-based public booking-site analytics only; scoped to book.exotiq.rent/exotiq. A successful request is a Lead, not a Purchase. Revenue, approved checkout, backend payment and Meta spend are not implemented in this browser release. Existing marketing-site dashboards are unchanged.",
+      "insights": [
+        { "name": "EXR · Daily visitors and booking requests", "description": "Distinct consented visitors versus successfully saved requests. No paid-booking claims.", "filters": { "insight": "TRENDS", "interval": "day", "display": "ActionsLineGraph", "events": [{ "id": "$pageview", "type": "events", "math": "dau", "name": "Public visitors" }, { "id": "booking_created", "type": "events", "math": "total", "name": "Booking requests" }] } },
+        { "name": "EXR · Storefront to vehicle", "description": "Storefront-entry journey only. Vehicle-targeted ads can legitimately skip the storefront.", "filters": { "insight": "FUNNELS", "funnel_viz_type": "steps", "funnel_window_interval": 7, "funnel_window_interval_unit": "day", "events": [{ "id": "storefront_view", "type": "events", "order": 0 }, { "id": "vehicle_view", "type": "events", "order": 1 }] } },
+        { "name": "EXR · Vehicle to submitted request", "description": "Vehicle → dates → driver → review → request accepted. Approval and payment happen later and are not measured here yet.", "filters": { "insight": "FUNNELS", "funnel_viz_type": "steps", "funnel_window_interval": 7, "funnel_window_interval_unit": "day", "events": [{ "id": "vehicle_view", "type": "events", "order": 0 }, { "id": "book_start", "type": "events", "order": 1 }, { "id": "book_step", "type": "events", "order": 2, "properties": [{ "key": "step", "value": 2, "operator": "exact", "type": "event" }] }, { "id": "book_step", "type": "events", "order": 3, "properties": [{ "key": "step", "value": 3, "operator": "exact", "type": "event" }] }, { "id": "booking_created", "type": "events", "order": 4 }] } },
+        { "name": "EXR · Visitors by campaign", "description": "Latest permitted campaign touch; direct return visits retain their campaign. Untagged/denied visitors cannot be attributed retroactively.", "filters": { "insight": "TRENDS", "display": "ActionsTable", "breakdown": "last_utm_campaign", "breakdown_type": "event", "events": [{ "id": "$pageview", "type": "events", "math": "dau" }] } },
+        { "name": "EXR · Requests by ad ID", "description": "Stable Meta ad ID when present in landing URL parameters. Not paid bookings or attributed Meta ROAS.", "filters": { "insight": "TRENDS", "display": "ActionsTable", "breakdown": "last_ad_id", "breakdown_type": "event", "events": [{ "id": "booking_created", "type": "events", "math": "total" }] } },
+        { "name": "EXR · Most viewed vehicles", "description": "Vehicle interest, not bookings.", "filters": { "insight": "TRENDS", "display": "ActionsTable", "breakdown": "vehicle", "breakdown_type": "event", "events": [{ "id": "vehicle_view", "type": "events", "math": "dau" }] } },
+        { "name": "EXR · Requests by vehicle", "description": "Successful booking requests by vehicle; exclude payments and speculative daily-rate revenue.", "filters": { "insight": "TRENDS", "display": "ActionsTable", "breakdown": "vehicle", "breakdown_type": "event", "events": [{ "id": "booking_created", "type": "events", "math": "total" }] } },
+        { "name": "EXR · Public visitors by device", "description": "Coarse device category only, no raw browser fingerprint or form information.", "filters": { "insight": "TRENDS", "display": "ActionsTable", "breakdown": "$device_type", "breakdown_type": "event", "events": [{ "id": "$pageview", "type": "events", "math": "dau" }] } }
+      ]
+    },
+    {
+      "name": "Exotiq Rent — Tracking Health",
+      "description": "Browser tracking coverage and consented campaign data. Internal QA uses an excluded campaign marker. No paid/revenue event is emitted by this release. Compare backend totals separately because denied/blocked visits will be absent.",
+      "insights": [
+        { "name": "EXR · Funnel event volumes", "description": "Checks that all active public funnel stages are arriving.", "filters": { "insight": "TRENDS", "interval": "day", "display": "ActionsLineGraph", "events": [{ "id": "storefront_view", "type": "events", "math": "total" }, { "id": "vehicle_view", "type": "events", "math": "total" }, { "id": "book_start", "type": "events", "math": "total" }, { "id": "book_step", "type": "events", "math": "total" }, { "id": "booking_created", "type": "events", "math": "total" }] } },
+        { "name": "EXR · Incoming sources", "description": "Latest source label: facebook/instagram/fb/ig as tagged in ads, other sources or unknown.", "filters": { "insight": "TRENDS", "display": "ActionsTable", "breakdown": "last_utm_source", "breakdown_type": "event", "events": [{ "id": "$pageview", "type": "events", "math": "dau" }] } },
+        { "name": "EXR · Public pages receiving events", "description": "Should contain public Exotiq storefront, vehicle and request pages only; never private booking or verification URLs.", "filters": { "insight": "TRENDS", "display": "ActionsTable", "breakdown": "$current_url", "breakdown_type": "event", "events": [{ "id": "$pageview", "type": "events", "math": "total" }] } }
+      ]
+    }
+  ],
+  "common_filters": {
+    "date_from": "-30d",
+    "date_to": null,
+    "filter_test_accounts": true,
+    "properties": [
+      { "key": "$current_url", "type": "event", "operator": "regex", "value": "^https://book\\.exotiq\\.rent/exotiq(?:/|$)" },
+      { "key": "last_utm_campaign", "type": "event", "operator": "not_regex", "value": "^avi_tracking_qa" }
+    ]
+  }
+}

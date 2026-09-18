@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { TrackView } from '@/components/analytics/TrackView';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CalendarX2, CarFront, FileCheck2, Fuel, Gauge, Phone, ShieldCheck, Truck, type LucideIcon } from 'lucide-react';
@@ -106,6 +107,7 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
   if (vehicles.length === 0) {
     return (
       <div className={driveFontClassName}>
+        <TrackView event="storefront_view" properties={{ team: team.slug }} />
         <PhoneViewport step={1} stepStyle="numbered" className="font-[var(--font-drive-inter)]" closeHref={`/${team.slug}`} layout="page" desktopNav={desktopNav}>
           <section className="flex flex-1 flex-col items-center justify-center px-6 text-center lg:py-32">
             <div className="grid h-14 w-14 place-items-center rounded-full border border-[#2A2E3A] bg-[#161922] text-[#C8A664]"><CarFront size={24} /></div>
@@ -161,6 +163,7 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
 
   return (
     <div className={driveFontClassName}>
+      <TrackView event="storefront_view" properties={{ team: team.slug }} />
       <PhoneViewport step={1} stepStyle="numbered" className="font-[var(--font-drive-inter)]" closeHref={`/${team.slug}`} layout="page" desktopNav={desktopNav}>
         {/* From lg the frame no longer scrolls internally (see PhoneViewport
             'page'), so this section becomes ordinary page flow and the aside

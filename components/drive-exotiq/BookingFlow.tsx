@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { BookingChrome, Money } from './BookingChrome';
 import { createBookingCart, createRenterBooking } from '@/domain/booking/service';
 import { getDataMode } from '@/domain/booking/config';
@@ -21,7 +20,6 @@ import { captureBooking } from '@/components/renters/bookingCapture';
 import { eyebrowClassName } from '@/components/browse/tokens';
 
 export function BookingFlow({ operator, vehicle, initialDates }: { operator: Operator; vehicle: Vehicle; initialDates?: { start: string; end: string } }) {
-  const router = useRouter();
   const [step, setStep] = useState(1);
   const [cart, setCart] = useState<BookingCart>(() => {
     const base = createBookingCart({ operator, vehicle });
@@ -114,10 +112,12 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
       const result = await createRenterBooking(cart);
       const query = result.confirmationToken ? `?t=${encodeURIComponent(result.confirmationToken)}` : '';
       // The ref only — the confirmation token is the renter's credential.
-      track('booking_created', { booking: result.bookingRef, team: operator.slug, vehicle: vehicle.slug, protection: cart.protection });
+      track('booking_created', { booking: result.bookingRef, team: operator.slug, vehicle: vehicle.slug });
       // MP-14: the renter store learns the address + consent now; keepalive, never awaited.
       captureBooking(cart, result.bookingRef, result.confirmationToken);
-      router.push(`/booking/${result.bookingRef}${query}`);
+      // A new document unloads public-page advertising scripts before the
+      // credential-bearing confirmation URL becomes the current location.
+      window.location.assign(`/booking/${encodeURIComponent(result.bookingRef)}${query}`);
     } catch (error) {
       setReserveError(error instanceof Error ? error.message : 'Something went wrong — please try again.');
       setReserving(false);

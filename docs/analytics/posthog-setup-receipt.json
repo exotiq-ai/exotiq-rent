@@ -1,0 +1,71 @@
+[
+  {
+    "id": 2108792,
+    "name": "Exotiq Rent \u2014 Paid Ads & Booking Requests",
+    "url": "https://us.posthog.com/project/592681/dashboard/2108792",
+    "insights": [
+      {
+        "id": 11990359,
+        "short_id": "5WTeYUzq",
+        "name": "EXR \u00b7 Daily visitors and booking requests"
+      },
+      {
+        "id": 11990361,
+        "short_id": "l1cstDUj",
+        "name": "EXR \u00b7 Storefront to vehicle"
+      },
+      {
+        "id": 11990362,
+        "short_id": "M3d4Dh3U",
+        "name": "EXR \u00b7 Vehicle to submitted request"
+      },
+      {
+        "id": 11990363,
+        "short_id": "BVEvMuAX",
+        "name": "EXR \u00b7 Visitors by campaign"
+      },
+      {
+        "id": 11990364,
+        "short_id": "hE9cPAM3",
+        "name": "EXR \u00b7 Requests by ad ID"
+      },
+      {
+        "id": 11990365,
+        "short_id": "bZ3Gyd8t",
+        "name": "EXR \u00b7 Most viewed vehicles"
+      },
+      {
+        "id": 11990366,
+        "short_id": "l9fnp76N",
+        "name": "EXR \u00b7 Requests by vehicle"
+      },
+      {
+        "id": 11990367,
+        "short_id": "WQEpg3ol",
+        "name": "EXR \u00b7 Public visitors by device"
+      }
+    ]
+  },
+  {
+    "id": 2108804,
+    "name": "Exotiq Rent \u2014 Tracking Health",
+    "url": "https://us.posthog.com/project/592681/dashboard/2108804",
+    "insights": [
+      {
+        "id": 11990368,
+        "short_id": "GlIzirXc",
+        "name": "EXR \u00b7 Funnel event volumes"
+      },
+      {
+        "id": 11990370,
+        "short_id": "pATKZmhn",
+        "name": "EXR \u00b7 Incoming sources"
+      },
+      {
+        "id": 11990372,
+        "short_id": "8zzb3t5X",
+        "name": "EXR \u00b7 Public pages receiving events"
+      }
+    ]
+  }
+]

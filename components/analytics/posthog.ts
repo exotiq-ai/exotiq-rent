@@ -1,82 +1,190 @@
-/**
- * Funnel analytics (M7e / MP-6, decision 2026-08-21: PostHog).
- *
- * Loaded from PostHog's own snippet, not an npm dependency: nothing ships in
- * the bundle and nothing runs unless NEXT_PUBLIC_POSTHOG_KEY is set on the
- * deploy. Every call below is a no-op without it, so the same build serves
- * hosts with and without analytics.
- *
- * Event names are the funnel the marketplace exists to measure:
- *   browse_view → vehicle_view → book_start → book_step → booking_created
- *   → confirmation_view
- * Keep them stable; dashboards key on them.
- */
-export type FunnelEvent =
-  | 'browse_view'
-  | 'vehicle_view'
-  | 'book_start'
-  | 'book_step'
-  | 'booking_created'
-  | 'confirmation_view'
-  // MP-14 renter capture: never carries an e-mail address, only the surface and slugs.
-  | 'favourite_added'
-  | 'capture_start'
-  | 'capture_sent'
-  | 'alert_created'
-  | 'saved_view';
+'use client';
 
-type PostHogLike = { capture: (event: string, properties?: Record<string, unknown>) => void };
+import type { CaptureResult, PostHogConfig } from 'posthog-js';
+import { createTracker, type AnalyticsClient } from './controller';
+import { DENIED, sanitizePostHogEvent, trackingConfig, type Consent, type FunnelEvent, type TrackingEnvironment } from './policy';
+import { CONSENT_KEY, captureAttribution, clearTrackingStorage, readChoice, saveChoice, type StorageLike } from './storage';
+export type { FunnelEvent } from './policy';
 
-export function posthogKey(): string {
-  return process.env.NEXT_PUBLIC_POSTHOG_KEY ?? '';
+export const posthogKey = () => process.env.NEXT_PUBLIC_POSTHOG_KEY ?? '';
+export const posthogHost = () => process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com';
+const environment = (): TrackingEnvironment => ({
+  enabled: process.env.NEXT_PUBLIC_TRACKING_ENABLED,
+  dataMode: process.env.NEXT_PUBLIC_EXOTIQ_RENT_DATA_MODE,
+  posthogKey: posthogKey(), posthogHost: posthogHost(),
+  metaPixelId: process.env.NEXT_PUBLIC_META_PIXEL_ID,
+});
+export function globalPrivacyControl(): boolean {
+  return typeof window !== 'undefined' && (window.navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl === true;
 }
-
-export function posthogHost(): string {
-  return process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com';
+function storage(kind: 'localStorage' | 'sessionStorage'): StorageLike | undefined {
+  try { return window[kind]; } catch { return undefined; }
 }
-
-/**
- * Redacts renter credentials from anything PostHog is about to send. Two
- * links in this product carry a secret in the query string: the confirmation
- * page (`/booking/BK-…?t=…`) and the identity link (`/verify?ref=…&token=…`).
- * Applied to EVERY string property rather than a fixed key list, because
- * posthog-js adds URL-bearing properties of its own ($current_url, $referrer,
- * $initial_*, $session_entry_url, …) and a list would drift.
- *
- * Deliberately self-contained (no closures, no helpers): its source is
- * embedded verbatim in the browser snippet via Function.prototype.toString.
- */
-export function redactCredentialUrls<T extends Record<string, unknown>>(props: T): T {
-  for (const key in props) {
-    const value = props[key];
-    if (typeof value === 'string') {
-      (props as Record<string, unknown>)[key] = value.replace(/([?&](?:t|token|r)=)[^&#]*/gi, '$1redacted');
+export function storedConsent(): Consent | null {
+  if (typeof window === 'undefined') return null;
+  // A necessary preference cookie also survives blocked localStorage writes on revocation.
+  try {
+    const raw = document.cookie.split('; ').find(c => c.startsWith(`${CONSENT_KEY}=`))?.slice(CONSENT_KEY.length + 1);
+    if (raw) {
+      const value = readChoice({ getItem: () => decodeURIComponent(raw) }, globalPrivacyControl());
+      if (value) return value;
     }
+  } catch { /* unavailable cookies */ }
+  return readChoice(storage('localStorage'), globalPrivacyControl());
+}
+function writeConsentCookie(value: Consent | null, at: number, now: number) {
+  const maxAge = value ? Math.max(0, Math.floor(15552000 - (now - at) / 1000)) : 0;
+  const raw = value ? encodeURIComponent(JSON.stringify({ version: 1, ...value, at })) : '';
+  try { document.cookie = `${CONSENT_KEY}=${raw}; Path=/; Max-Age=${maxAge}; SameSite=Lax; Secure`; } catch { /* in-memory choice still applies */ }
+}
+function persistConsent(value: Consent) {
+  const now = Date.now();
+  saveChoice(storage('localStorage'), value, now);
+  writeConsentCookie(value, now, now);
+}
+/** No localStorage writeback: preserve the originating decision and its expiry. */
+export function syncStoredConsent(event: Pick<StorageEvent, 'key' | 'newValue' | 'storageArea'>): Consent | null | undefined {
+  if (typeof window === 'undefined' || (event.key !== CONSENT_KEY && event.key !== null) || event.storageArea !== storage('localStorage')) return undefined;
+  const raw = event.key === null ? null : event.newValue;
+  const now = Date.now();
+  const next = readChoice({ getItem: () => raw }, globalPrivacyControl(), now);
+  // Update only the cookie fallback, never renew its lifetime. Removal/clear/invalid
+  // values must erase a stale grant before syncConsent can trigger a reload.
+  writeConsentCookie(next, next ? JSON.parse(raw!).at : 0, now);
+  getTracking()?.syncConsent(next || { ...DENIED });
+  return next;
+}
+function clearIdentifiers(key: string) {
+  clearTrackingStorage(storage('localStorage'), key);
+  clearTrackingStorage(storage('sessionStorage'), key);
+  const names = ['_fbp', '_fbc', ...(key ? [`ph_${key}_posthog`, `ph_${key}_posthog_session`, `__ph_opt_in_out_${key}`] : [])];
+  for (const name of names) for (const domain of ['', 'book.exotiq.rent', '.book.exotiq.rent', 'exotiq.rent', '.exotiq.rent']) {
+    try { document.cookie = `${name}=; Max-Age=0; Path=/; SameSite=Lax; Secure${domain ? `; Domain=${domain}` : ''}`; } catch { /* unavailable cookies do not prevent reload */ }
   }
-  return props;
 }
 
-/**
- * PostHog's official loader snippet plus init. Pure string so it can be
- * unit-tested without rendering; PostHogInit emits it as an inline script in
- * the server-rendered HTML — before the page — so the queueing stub exists
- * before any React effect calls track(). (A next/script afterInteractive tag
- * installs the stub from its own useEffect, which runs AFTER the children's
- * effects: every full-page-load event was dropped that way.)
- *
- * `person_profiles: 'identified_only'` keeps anonymous browsing anonymous —
- * renters are never identified by this app (no identify() call exists).
- * `before_send` runs redactCredentialUrls over properties, $set and $set_once
- * of every event; session recording stays off.
- */
-export function posthogSnippet(key: string, host: string): string {
-  return `!function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
-posthog.init(${JSON.stringify(key)},{api_host:${JSON.stringify(host)},person_profiles:'identified_only',capture_pageview:true,capture_pageleave:true,disable_session_recording:true,before_send:function(e){if(!e)return e;var r=${redactCredentialUrls.toString()};if(e.properties)r(e.properties);if(e.$set)r(e.$set);if(e.$set_once)r(e.$set_once);return e}});`;
+/** All settings are local to this site; never change the shared PostHog project defaults. */
+async function loadPostHog(env: TrackingEnvironment, allowed: () => boolean): Promise<AnalyticsClient | null> {
+  if (!allowed()) return null;
+  try {
+    const { default: posthog } = await import('posthog-js');
+    if (!allowed()) return null;
+    const config = trackingConfig(env, window.location.hostname, window.location.pathname);
+    const options: Partial<PostHogConfig> = {
+      api_host: config.posthogHost,
+      autocapture: false, capture_pageview: false, capture_pageleave: false,
+      person_profiles: 'never', disable_session_recording: true,
+      session_recording: { maskAllInputs: true, maskTextSelector: '*' },
+      enable_recording_console_log: false,
+      advanced_disable_flags: true, advanced_disable_feature_flags: true,
+      advanced_disable_feature_flags_on_first_load: true, advanced_disable_toolbar_metrics: true,
+      remote_config_refresh_interval_ms: 0,
+      disable_external_dependency_loading: true,
+      disable_surveys: true, disable_surveys_automatic_display: true,
+      disable_product_tours: true, disable_conversations: true, disable_web_experiments: true,
+      capture_performance: false, capture_exceptions: false, capture_heatmaps: false,
+      capture_dead_clicks: false, rageclick: false,
+      logs: { captureConsoleLogs: false }, metrics: { network: false },
+      save_campaign_params: false, save_referrer: false,
+      mask_all_element_attributes: true, mask_all_text: true,
+      persistence: 'localStorage', cross_subdomain_cookie: false, secure_cookie: true,
+      ip: false, request_batching: false,
+      before_send: event => allowed() ? sanitizePostHogEvent(event) as CaptureResult | null : null,
+    };
+    posthog.init(config.posthogKey, options);
+    // Route teardown persists SDK opt-out without withdrawing the application's
+    // grant. Reconcile only with the live grant, including after a late init.
+    if (allowed()) posthog.opt_in_capturing({ captureEventName: false });
+    return {
+      capture(event, properties) {
+        if (!allowed()) return;
+        // No hashing/promise/batch delay between booking success and document navigation.
+        posthog.capture(event, properties, event === 'booking_created' ? { send_instantly: true, transport: 'sendBeacon' } : { send_instantly: true });
+      },
+      stop() { posthog.opt_out_capturing(); posthog.stopSessionRecording(); },
+    };
+  } catch { return null; } // Content blockers and offline loads must never break a booking.
 }
 
+type MetaQueue = ((...args: unknown[]) => void) & { callMethod?: (...args: unknown[]) => void; queue: unknown[][]; push?: MetaQueue; loaded: boolean; version: string; disablePushState?: boolean };
+type MetaWindow = Window & { fbq?: MetaQueue; _fbq?: MetaQueue };
+function loadMeta(env: TrackingEnvironment, allowed: () => boolean): Promise<AnalyticsClient | null> {
+  if (!allowed()) return Promise.resolve(null);
+  return new Promise(resolve => {
+    const w = window as MetaWindow;
+    // Do not take ownership of a pixel installed by an unrelated integration.
+    if (w.fbq) { resolve(null); return; }
+    let stopped = false;
+    const fbq: MetaQueue = Object.assign(function (...args: unknown[]) {
+      if (stopped || (!allowed() && args[0] !== 'consent')) return;
+      if (fbq.callMethod) fbq.callMethod(...args); else fbq.queue.push(args);
+    }, { queue: [] as unknown[][], loaded: true, version: '2.0' });
+    fbq.push = fbq;
+    // Our route controller owns SPA PageView. The real SDK otherwise adds
+    // another automatic event whenever Next.js calls history.pushState.
+    fbq.disablePushState = true;
+    w.fbq = fbq; w._fbq = fbq;
+    const id = env.metaPixelId!;
+    fbq('consent', 'grant');
+    fbq('set', 'autoConfig', false, id);
+
+    // No user-data argument: never supply email, phone or any advanced matching data.
+    fbq('init', id);
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = 'https://connect.facebook.net/en_US/fbevents.js';
+    script.referrerPolicy = 'no-referrer';
+    let settled = false;
+    const stop = () => {
+      try { fbq('consent', 'revoke'); } finally { stopped = true; fbq.queue.length = 0; script.remove(); }
+    };
+    const finish = (ok: boolean) => {
+      if (settled) return; settled = true; clearTimeout(timer);
+      if (!ok || !allowed()) { stop(); resolve(null); return; }
+      resolve({
+        capture(event, properties, eventId) {
+          if (!allowed() || stopped) return;
+          if (eventId) fbq('trackSingle', id, event, properties, { eventID: eventId });
+          else fbq('trackSingle', id, event, properties);
+        }, stop,
+      });
+    };
+    const timer = setTimeout(() => finish(false), 10000);
+    script.onload = () => finish(true); script.onerror = () => finish(false);
+    try { document.head.appendChild(script); } catch { finish(false); }
+  });
+}
+
+let singleton: ReturnType<typeof createTracker> | undefined;
+/** Also called by child effects: never depend on parent-effect ordering. */
+export function getTracking() {
+  if (typeof window === 'undefined') return undefined;
+  if (singleton) return singleton;
+  const env = environment();
+  singleton = createTracker(env, {
+    location: () => ({ hostname: window.location.hostname, pathname: window.location.pathname, href: window.location.href, referrer: document.referrer }),
+    readConsent: () => storedConsent() || { ...DENIED }, saveConsent: persistConsent,
+    gpc: globalPrivacyControl,
+    loadPostHog: allowed => loadPostHog(env, allowed), loadMeta: allowed => loadMeta(env, allowed),
+    clearIdentifiers: () => clearIdentifiers(env.posthogKey || ''),
+    reload: () => window.location.reload(),
+    attribution: () => captureAttribution(storage('localStorage'), window.location.search),
+  });
+  return singleton;
+}
+const bookingIds = new Map<string, string>();
 export function track(event: FunnelEvent, properties: Record<string, unknown> = {}): void {
-  if (typeof window === 'undefined') return;
-  const ph = (window as unknown as { posthog?: PostHogLike }).posthog;
-  if (!ph || typeof ph.capture !== 'function') return;
-  ph.capture(event, properties);
+  try {
+    const tracker = getTracking();
+    if (!tracker) return;
+    if (event === 'booking_created') {
+      if (!tracker.canSend('analytics') && !tracker.canSend('marketing')) return;
+      const { booking, ...safe } = properties;
+      if (typeof booking === 'string' && booking) {
+        let id = bookingIds.get(booking);
+        if (!id) { id = `booking_created_${window.crypto.randomUUID()}`; bookingIds.set(booking, id); }
+        tracker.track(event, { ...safe, event_id: id });
+      } else tracker.track(event, safe);
+    } else tracker.track(event, properties);
+  } catch { /* Analytics is never a dependency of booking or navigation. */ }
 }

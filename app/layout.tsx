@@ -58,8 +58,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans">
-        {/* Before the page on purpose: an inline script here runs at parse
-            time, so the analytics stub exists before any page effect fires. */}
+        {/* Consent UI is global; the runtime loads SDKs only on permitted public routes. */}
         <PostHogInit />
         {children}
       </body>
