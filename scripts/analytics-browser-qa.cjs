@@ -6,7 +6,10 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const zlib = require('node:zlib');
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const path = require('node:path');
+const { chromium, webkit } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const OUT = process.env.QA_OUTPUT_DIR || '/Users/gbot/.hermes/previews/exotiq-cookie-release/local';
+fs.mkdirSync(OUT, { recursive: true });
 const ORIGIN = 'https://book.exotiq.rent';
 const LOCAL = process.env.QA_LOCAL_ORIGIN || 'http://127.0.0.1:3219';
 const CHROME = process.env.CHROME_PATH || '/Applications/Google Chrome Dev.app/Contents/MacOS/Google Chrome Dev';
@@ -31,14 +34,14 @@ function decode(request) {
 }
 
 (async () => {
-  const browser = await chromium.launch({ executablePath: CHROME, headless: true });
+  const browser = process.env.QA_BROWSER === 'webkit' ? await webkit.launch({ headless: true }) : await chromium.launch({ executablePath: CHROME, headless: true });
   try {
     async function session(choice, gpc = false) {
       // PostHog intentionally suppresses HeadlessChrome. Emulate a real mobile
       // visitor for QA instead of weakening the production bot filter.
       const context = await browser.newContext({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 1, userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1' });
       contexts.push(context);
-      const traffic = { ph: [], meta: [], scripts: [], forbiddenWrites: [], errors: [], console: [] };
+      const traffic = { ph: [], meta: [], scripts: [], blockedExternalWrites: [], forbiddenWrites: [], errors: [], console: [] };
       await context.addInitScript(({ choice, gpc, CONSENT }) => {
         // PostHog's real bot predicate also reads webdriver; emulate a visitor
         // only inside this intercepted QA context, never in production code.
@@ -90,6 +93,11 @@ function decode(request) {
           if (headers.location?.startsWith(LOCAL)) headers.location = ORIGIN + headers.location.slice(LOCAL.length);
           return route.fulfill({ response, headers });
         }
+        if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method()) && !/supabase\.co$/.test(url.hostname)) {
+          // The real Meta pixel can fetch account-configured gateway destinations
+          // outside facebook.com. Never deliver those fixture events either.
+          traffic.blockedExternalWrites.push(url.origin + url.pathname); return route.abort();
+        }
         return route.continue();
       });
       const page = await context.newPage();
@@ -109,8 +117,9 @@ function decode(request) {
     }
     async function pass(name, s) {
       assert.deepEqual(s.traffic.forbiddenWrites, [], 'No production writes permitted');
+      if (s.traffic.blockedExternalWrites.length) assert(process.env.QA_REAL_META === '1' && s.traffic.scripts.some(u => u.includes('connect.facebook.net')), 'Unexpected external mutation without a permitted Meta SDK');
       assert.deepEqual(s.traffic.errors, [], 'No client or payload errors');
-      results.push({ name, passed: true, posthog_events: s.traffic.ph.map(e => e.event), meta_events: s.traffic.meta.filter(c => c[0] === 'trackSingle').map(c => c[2]) });
+      results.push({ name, passed: true, posthog_events: s.traffic.ph.map(e => e.event), meta_events: s.traffic.meta.filter(c => c[0] === 'trackSingle').map(c => c[2]), blocked_external_transports: [...new Set(s.traffic.blockedExternalWrites)] });
       await s.context.unrouteAll({ behavior: 'ignoreErrors' });
       await s.context.close();
     }
@@ -120,7 +129,7 @@ function decode(request) {
     await events(denied);
     assert.equal(denied.traffic.scripts.length, 0, 'No SDK/network request before consent');
     assert.equal(denied.traffic.ph.length, 0);
-    await denied.page.screenshot({ path: '/Users/gbot/.hermes/plans/exotiq-tracking-consent-mobile.png', fullPage: false });
+    await denied.page.screenshot({ path: path.join(OUT, 'consent-mobile.png'), fullPage: false });
     await pass('No tracking before consent', denied);
 
     const unsafePublic = await session({ analytics: true, marketing: true });
@@ -134,7 +143,7 @@ function decode(request) {
 
     assert(analytics.traffic.ph.some(e => e.event === '$pageview'), 'PostHog pageview delivered to intercepted transport');
     assert(!analytics.traffic.scripts.some(u => u.includes('facebook')), 'Analytics permission does not allow Meta');
-    assert(analytics.traffic.ph.every(e => e.properties.token === 'phc_trackingqatest123'), 'Required public ingestion token preserved');
+    assert(analytics.traffic.ph.every(e => process.env.QA_LIVE === '1' ? /^phc_[a-zA-Z0-9]+$/.test(e.properties.token || '') : e.properties.token === 'phc_trackingqatest123'), 'Required public ingestion token preserved');
     assert(analytics.traffic.ph.some(e => e.properties.last_utm_campaign === 'qa_fixture'));
     const link = analytics.page.locator('a[href^="/exotiq/"]').first();
     const vehiclePath = await link.getAttribute('href');
@@ -171,18 +180,21 @@ function decode(request) {
     assert.equal(privatePage.traffic.scripts.length, 0, 'Private route loads no tracking SDKs');
     await pass('Direct private booking URL is untracked', privatePage);
 
+    async function openPreferences(page) {
+      await page.getByRole('button', { name: /^(Details|Privacy preferences)$/ }).filter({ visible: true }).first().click();
+      await page.getByRole('dialog').waitFor();
+    }
+
     const ui = await session();
     await ui.page.goto(ORIGIN + '/exotiq'); await settle(ui.page);
-    await ui.page.getByRole('button', { name: 'Privacy preferences', exact: true }).click();
-    await ui.page.getByRole('checkbox', { name: /Analytics/ }).check();
-    await ui.page.getByRole('button', { name: 'Save choice', exact: true }).click();
+    await openPreferences(ui.page);
+    await ui.page.getByRole('switch', { name: 'Analytics cookies', exact: true }).click();
     await events(ui);
     assert(ui.traffic.ph.some(e => e.event === '$pageview'), 'Actual UI grant starts analytics');
     assert(!ui.traffic.scripts.some(u => u.includes('facebook')));
     const oldDocument = await ui.page.evaluate(() => window.__qaDocumentId);
-    await ui.page.getByRole('button', { name: 'Privacy preferences', exact: true }).click();
-    await ui.page.getByRole('checkbox', { name: /Analytics/ }).uncheck();
-    await ui.page.getByRole('button', { name: 'Save choice', exact: true }).click();
+    // Immediate-apply controls keep Details open after a grant.
+    await ui.page.getByRole('switch', { name: 'Analytics cookies', exact: true }).click();
     await ui.page.waitForFunction(old => window.__qaDocumentId !== old, oldDocument);
     await events(ui);
     const phCount = ui.traffic.ph.length;
@@ -191,9 +203,8 @@ function decode(request) {
     assert(!afterRevoke.keys.some(k => k.startsWith('ph_phc_')), 'Tracking identity cleared on withdrawal');
     await ui.page.reload(); await events(ui);
     assert.equal(ui.traffic.ph.length, phCount, 'No new collection after withdrawal');
-    await ui.page.getByRole('button', { name: 'Privacy preferences', exact: true }).click();
-    await ui.page.getByRole('checkbox', { name: /Analytics/ }).check();
-    await ui.page.getByRole('button', { name: 'Save choice', exact: true }).click();
+    await openPreferences(ui.page);
+    await ui.page.getByRole('switch', { name: 'Analytics cookies', exact: true }).click();
     await events(ui);
     assert(ui.traffic.ph.length > phCount, 'A new explicit opt-in must work after withdrawal');
     await pass('Actual preference controls grant, revoke, and re-grant consent', ui);
@@ -225,9 +236,8 @@ function decode(request) {
     const second = await tabs.context.newPage();
     await Promise.all([tabs.page.goto(ORIGIN + '/exotiq'), second.goto(ORIGIN + '/exotiq')]);
     await settle(tabs.page); await settle(second);
-    await tabs.page.getByRole('button', { name: 'Privacy preferences', exact: true }).click();
-    await tabs.page.getByRole('checkbox', { name: /Analytics/ }).check();
-    await tabs.page.getByRole('button', { name: 'Save choice', exact: true }).click();
+    await openPreferences(tabs.page);
+    await tabs.page.getByRole('switch', { name: 'Analytics cookies', exact: true }).click();
     await events(tabs); await settle(second);
     const firstWrites = await tabs.page.evaluate(() => window.__preferenceWrites);
     const secondWrites = await second.evaluate(() => window.__preferenceWrites);
@@ -237,11 +247,24 @@ function decode(request) {
     const savedAt = await tabs.page.evaluate(() => JSON.parse(localStorage.getItem('exotiq_tracking_consent_v1')).at);
     await settle(second);
     assert.equal(await second.evaluate(() => JSON.parse(localStorage.getItem('exotiq_tracking_consent_v1')).at), savedAt, 'Cross-tab sync does not renew consent lifetime');
-    await pass('Two-tab consent synchronization does not echo writes or renew consent', tabs);
+    const docA = await tabs.page.evaluate(() => window.__qaDocumentId);
+    const docB = await second.evaluate(() => window.__qaDocumentId);
+    await tabs.page.getByRole('switch', { name: 'Analytics cookies', exact: true }).click();
+    await Promise.all([
+      tabs.page.waitForFunction(old => window.__qaDocumentId !== old, docA),
+      second.waitForFunction(old => window.__qaDocumentId !== old, docB),
+    ]);
+    await events(tabs); await settle(second);
+    const afterWithdrawal = tabs.traffic.ph.length;
+    await Promise.all([tabs.page.reload(), second.reload()]);
+    await events(tabs); await settle(second);
+    assert.equal(tabs.traffic.ph.length, afterWithdrawal, 'Cross-tab withdrawal survives reload without restoring a stale grant');
+    assert.equal(await second.evaluate(() => JSON.parse(localStorage.getItem('exotiq_tracking_consent_v1')).analytics), false);
+    await pass('Two-tab grant/withdrawal has no write echo, timestamp renewal, or stale-grant resurrection', tabs);
 
     console.log(JSON.stringify({ fixture_qa: true, actual_provider_delivery: false, results }, null, 2));
   } finally {
-    fs.writeFileSync('/Users/gbot/.hermes/plans/exotiq-tracking-browser-qa.json', JSON.stringify({ results }, null, 2));
+    fs.writeFileSync(path.join(OUT, 'browser-qa.json'), JSON.stringify({ fixture_qa: true, source: LOCAL, browser: process.env.QA_BROWSER || 'chromium', real_meta_sdk: process.env.QA_REAL_META === '1', actual_provider_delivery: false, results }, null, 2));
     for (const context of contexts) await context.unrouteAll({ behavior: 'ignoreErrors' }).catch(() => {});
     await browser.close();
   }

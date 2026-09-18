@@ -7,6 +7,7 @@ import { getPublicVehicleContext } from '@/domain/booking/service';
 import { Money, PhoneViewport } from './BookingChrome';
 import { VehicleGallery } from './VehicleGallery';
 import { SaveButton } from '@/components/renters/SaveButton';
+import { CookieControls } from '@/components/analytics/CookieControls';
 import { eyebrowClassName, stickyBelowBarClassName } from '@/components/browse/tokens';
 
 export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { operatorSlug: string; vehicleSlug: string; dates?: { start: string; end: string } }) {
@@ -54,7 +55,7 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
 
   return (
     <PhoneViewport step={1} stepStyle="numbered" className="font-[var(--font-drive-inter)]" closeHref={`/${operator.slug}`} layout="page" desktopNav={desktopNav}>
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-36 pt-1 [scrollbar-width:none] lg:overflow-visible lg:px-8 lg:pb-20 lg:pt-8">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-52 pt-1 [scrollbar-width:none] lg:overflow-visible lg:px-8 lg:pb-20 lg:pt-8">
         <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-x-12">
           <div className="min-w-0">
             <VehicleGallery
@@ -127,6 +128,7 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
                 {pickupParts.length > 0 && <div className="flex justify-between gap-4"><dt className="text-[#9BA1B0]">Pickup</dt><dd className="text-right text-[#F0F2F5]">{pickupParts.join(', ')}</dd></div>}
               </dl>
               <div className="mt-6">{yourDates}</div>
+              <CookieControls viewport="desktop" className="border-t border-[#2A2E3A]" />
               <div className="flex items-stretch gap-2">
                 <SaveButton car={saveCar} variant="pill" className="shrink-0" />
                 <Link href={bookHref} className="block min-w-0 flex-1 rounded-xl bg-[#C8A664] px-5 py-4 text-center text-[15px] font-medium text-[#1A1308] shadow-[0_14px_34px_rgba(200,166,100,.20)] transition hover:brightness-105">{dates ? 'Book these dates' : 'Select dates'}</Link>
@@ -138,6 +140,7 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
       </div>
       <div className="absolute bottom-5 left-0 right-0 z-10 border-t border-[#2A2E3A] bg-[#0D0F14] px-4 pb-4 pt-3 shadow-[0_-24px_42px_rgba(13,15,20,.96)] lg:hidden">
         {yourDates}
+        <CookieControls viewport="mobile" />
         <div className="flex items-stretch gap-2">
           <SaveButton car={saveCar} variant="pill" className="shrink-0" />
           <Link href={bookHref} className="block min-w-0 flex-1 rounded-xl bg-[#C8A664] px-5 py-4 text-center text-[15px] font-medium text-[#1A1308] shadow-[0_14px_34px_rgba(200,166,100,.20)]">{dates ? 'Book these dates' : 'Select dates'}</Link>

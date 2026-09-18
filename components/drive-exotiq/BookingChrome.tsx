@@ -108,11 +108,11 @@ export function PhoneViewport({
       )}
       <div className={panel ? 'lg:mx-auto lg:flex lg:w-full lg:max-w-[1200px] lg:items-start lg:justify-center lg:gap-10 lg:px-8 lg:py-10' : ''}>
         {panel && rail && <aside className="hidden lg:sticky lg:top-10 lg:block lg:w-80 lg:shrink-0">{rail}</aside>}
-        {/* A definite remaining viewport height lets flex-1 children
+        {/* A definite viewport height lets flex-1 children
             scroll internally — with min-h alone the frame grows to content and
-            the "sticky" footer lands below the fold. Reserve the in-flow
-            privacy controls so they cannot push the booking CTA off-screen. */}
-        <div className={`relative mx-auto flex h-[calc(100dvh-var(--privacy-controls-height,0px))] w-full max-w-[480px] flex-col overflow-hidden bg-[#0D0F14] shadow-[0_40px_90px_-20px_rgba(0,0,0,.72),0_18px_42px_-18px_rgba(200,166,100,.18)] ${frameDesktop}`}>
+            the "sticky" footer lands below the fold. Compact cookie controls
+            are inside that footer, not above the frame. */}
+        <div className={`relative mx-auto flex h-dvh w-full max-w-[480px] flex-col overflow-hidden bg-[#0D0F14] shadow-[0_40px_90px_-20px_rgba(0,0,0,.72),0_18px_42px_-18px_rgba(200,166,100,.18)] ${frameDesktop}`}>
           <div className={`grid flex-shrink-0 grid-cols-[40px_1fr_40px] items-center px-4 pb-1 pt-[calc(env(safe-area-inset-top)+10px)] ${page ? 'lg:hidden' : ''}`}>
             <button type="button" onClick={onBack} disabled={!onBack} className="grid h-10 w-10 place-items-center rounded-lg text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5] disabled:opacity-30" aria-label="Back">
               <ArrowLeft size={20} />

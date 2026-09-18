@@ -191,13 +191,23 @@ describe('global consent integration boundary', () => {
     expect(sync).toContain('syncStoredConsent(event)');
     expect(sync).not.toContain('.choose('); expect(sync).not.toContain('storedConsent()');
   });
-  it('replaces the unconditional inline loader with an accessible global preference surface', () => {
+  it('uses a headless global provider instead of a top strip or modal', () => {
     const source = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8');
     const init = source('./PostHogInit.tsx');
-    expect(init).not.toContain('dangerouslySetInnerHTML');
-    expect(init).toContain('Privacy preferences');
-    expect(init).toContain('Reject optional'); expect(init).toContain('Accept all'); expect(init).toContain('Save choice');
-    expect(init).toContain('<dialog'); expect(init).toContain('showModal'); expect(init).toContain('onCancel');
-    expect(source('../../app/layout.tsx')).not.toContain('inline script here');
+    expect(init).toContain('createContext');
+    expect(init).toContain('useCookieConsent');
+    expect(init).not.toMatch(/dangerouslySetInnerHTML|<aside|<dialog|showModal|privacy-controls-height/);
+    expect(source('../../app/layout.tsx')).toMatch(/<PostHogInit>\s*\{children\}\s*<\/PostHogInit>/);
+    expect(source('../drive-exotiq/BookingChrome.tsx')).toContain('h-dvh');
+    expect(source('../drive-exotiq/BookingChrome.tsx')).not.toContain('privacy-controls-height');
+  });
+  it('places compact controls at conversion surfaces and a manual entry on privacy', () => {
+    const source = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8');
+    const vehicle = source('../drive-exotiq/VehicleEntryPage.tsx');
+    expect(vehicle).toContain('<CookieControls viewport="desktop"');
+    expect(vehicle).toContain('<CookieControls viewport="mobile"');
+    expect(source('../drive-exotiq/flow/shared.tsx')).toContain('<CookieControls');
+    expect(source('../../app/[operatorSlug]/page.tsx')).toContain('<CookieControls');
+    expect(source('../../app/privacy/page.tsx')).toContain('<CookieControls manual');
   });
 });
