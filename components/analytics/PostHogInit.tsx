@@ -3,7 +3,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { getTracking, globalPrivacyControl, posthogHost, posthogKey, storedConsent, syncStoredConsent } from './posthog';
-import { DENIED, type Consent, type TrackingEnvironment } from './policy';
+import { DEFAULT_CONSENT, type Consent, type TrackingEnvironment } from './policy';
 import { cookieControlsVisibility, type CookieControlsVisibility } from './cookieControlsModel';
 
 type ConsentSnapshot = { ready: boolean; choice: Consent; gpc: boolean; visibility: CookieControlsVisibility };
@@ -30,14 +30,14 @@ export function PostHogInit({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const savedChoice = useRef(false);
   const currentHref = useRef('');
-  const [snapshot, setSnapshot] = useState<ConsentSnapshot>({ ready: false, choice: { ...DENIED }, gpc: false, visibility: 'hidden' });
+  const [snapshot, setSnapshot] = useState<ConsentSnapshot>({ ready: false, choice: { ...DEFAULT_CONSENT }, gpc: false, visibility: 'hidden' });
   const [activeDetails, setActiveDetails] = useState<string | null>(null);
 
   const refresh = useCallback(() => {
     const location = { hostname: window.location.hostname, pathname: window.location.pathname, href: window.location.href, referrer: document.referrer };
     setSnapshot({
       ready: true,
-      choice: getTracking()?.consent() || { ...DENIED },
+      choice: getTracking()?.consent() || { ...DEFAULT_CONSENT },
       gpc: globalPrivacyControl(),
       visibility: cookieControlsVisibility({ environment: environment(), location, ready: true, hasSavedChoice: savedChoice.current }),
     });

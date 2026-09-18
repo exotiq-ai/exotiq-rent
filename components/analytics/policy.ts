@@ -4,6 +4,12 @@ export type Consent = { analytics: boolean; marketing: boolean };
 export type AnalyticsEvent = { event: string; properties: Record<string, unknown>; uuid?: unknown; timestamp?: unknown; $set?: unknown; $set_once?: unknown };
 export const PRODUCTION_HOST = 'book.exotiq.rent';
 export const DENIED: Consent = { analytics: false, marketing: false };
+/** US opt-out model (2026-09-18): tracking defaults ON for a visitor with no
+ * saved choice. The compact cookie row stays visible as the disclosure and
+ * the off-switch, GPC still forces marketing off, and an explicit denial is
+ * honored indefinitely. Revisit before serving EU/UK traffic — those
+ * jurisdictions require opt-in. */
+export const DEFAULT_CONSENT: Consent = { analytics: true, marketing: true };
 export const EVENTS = ['browse_view', 'storefront_view', 'vehicle_view', 'book_start', 'book_step', 'booking_created', 'confirmation_view', 'favourite_added', 'capture_start', 'capture_sent', 'alert_created', 'saved_view', 'booking_request_failed', 'checkout_started'] as const;
 export type FunnelEvent = typeof EVENTS[number];
 // fbclid joins the whitelist so a PostHog session can be tied back to the Meta

@@ -2,7 +2,7 @@
 
 import type { CaptureResult, PostHogConfig } from 'posthog-js';
 import { createTracker, type AnalyticsClient } from './controller';
-import { DENIED, sanitizePostHogEvent, trackingConfig, type Consent, type FunnelEvent, type TrackingEnvironment } from './policy';
+import { DEFAULT_CONSENT, sanitizePostHogEvent, trackingConfig, type Consent, type FunnelEvent, type TrackingEnvironment } from './policy';
 import { CONSENT_KEY, captureAttribution, clearTrackingStorage, readChoice, saveChoice, type StorageLike } from './storage';
 export type { FunnelEvent } from './policy';
 
@@ -51,7 +51,8 @@ export function syncStoredConsent(event: Pick<StorageEvent, 'key' | 'newValue' |
   // Update only the cookie fallback, never renew its lifetime. Removal/clear/invalid
   // values must erase a stale grant before syncConsent can trigger a reload.
   writeConsentCookie(next, next ? JSON.parse(raw!).at : 0, now);
-  getTracking()?.syncConsent(next || { ...DENIED });
+  // Absence of a stored choice means the opt-out default, in every tab.
+  getTracking()?.syncConsent(next || { ...DEFAULT_CONSENT });
   return next;
 }
 function clearIdentifiers(key: string) {
@@ -163,7 +164,8 @@ export function getTracking() {
   const env = environment();
   singleton = createTracker(env, {
     location: () => ({ hostname: window.location.hostname, pathname: window.location.pathname, href: window.location.href, referrer: document.referrer }),
-    readConsent: () => storedConsent() || { ...DENIED }, saveConsent: persistConsent,
+    // No saved choice = the opt-out default, not denial (see DEFAULT_CONSENT).
+    readConsent: () => storedConsent() || { ...DEFAULT_CONSENT }, saveConsent: persistConsent,
     gpc: globalPrivacyControl,
     loadPostHog: allowed => loadPostHog(env, allowed), loadMeta: allowed => loadMeta(env, allowed),
     clearIdentifiers: () => clearIdentifiers(env.posthogKey || ''),
