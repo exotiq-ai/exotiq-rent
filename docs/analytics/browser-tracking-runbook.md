@@ -33,8 +33,13 @@ There is deliberately no browser Purchase or AddPaymentInfo event. Actual hosted
 
 ## Privacy behavior
 
-- Explicit independent analytics/advertising opt-ins. No pre-consent interaction replay.
-- Global Privacy Control blocks advertising.
+- US opt-out model (2026-09-18): analytics and advertising default ON for a
+  visitor with no saved choice; the compact cookie row is the disclosure and
+  the off-switch. The default is never persisted — only explicit choices are
+  stored, and an explicit denial never expires back into the default.
+  Revisit before serving EU/UK traffic (opt-in required there).
+- Independent analytics/advertising switches. No pre-default interaction replay.
+- Global Privacy Control blocks advertising regardless of the default.
 - No automatic DOM capture or replay. Only sanitized explicit properties.
 - Analytics keys/tokens are separate from renter confirmation/identity credentials.
 - Private confirmation, verification, saved-list and renter token routes must not run SDKs.

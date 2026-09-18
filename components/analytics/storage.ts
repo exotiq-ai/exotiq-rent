@@ -6,7 +6,12 @@ const DAY = 86400000;
 export function readChoice(s: Pick<StorageLike, 'getItem'> | undefined, gpc: boolean, now = Date.now()): Consent | null {
   try {
     const value = JSON.parse(s?.getItem(CONSENT_KEY) || 'null');
-    if (!value || value.version !== 1 || typeof value.analytics !== 'boolean' || typeof value.marketing !== 'boolean' || !Number.isFinite(value.at) || now < value.at || now - value.at > 180 * DAY) return null;
+    if (!value || value.version !== 1 || typeof value.analytics !== 'boolean' || typeof value.marketing !== 'boolean' || !Number.isFinite(value.at) || now < value.at) return null;
+    // Under the opt-out default, a choice that withholds anything is an
+    // opt-out and MUST persist (CPRA): it never ages back into the default.
+    // A full grant matches the default, so its 180-day expiry is harmless
+    // and keeps the stored timestamp honest.
+    if (value.analytics && value.marketing && now - value.at > 180 * DAY) return null;
     return consentValue(value, gpc);
   } catch { return null; }
 }

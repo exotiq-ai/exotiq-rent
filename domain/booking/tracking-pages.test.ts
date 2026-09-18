@@ -15,8 +15,15 @@ describe('tracking page integration boundaries', () => {
   it('discloses the advertising provider, choices, and disabled session recording', () => {
     const privacy = source('app/privacy/page.tsx');
     expect(privacy).toContain('Meta');
-    expect(privacy).toContain('Privacy preferences');
+    // Opt-out model (2026-09-18): the page must disclose the default, the
+    // off-switch, GPC, and the no-sale statement — not ask for permission.
+    expect(privacy).toContain('Your tracking choices');
+    expect(privacy).toContain('opt out');
+    expect(privacy).toContain('Global Privacy Control');
+    expect(privacy).toContain('We do not sell personal information');
     expect(privacy).toContain('Session recording is disabled');
+    expect(privacy).not.toContain('Interim version');
+    expect(privacy).not.toContain('InterimNotice');
     expect(privacy).not.toContain('This host runs no analytics or advertising trackers.');
   });
 

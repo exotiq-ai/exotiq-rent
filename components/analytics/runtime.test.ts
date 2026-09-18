@@ -26,13 +26,26 @@ beforeEach(() => {
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
 describe('browser runtime integration', () => {
-  it('creates its controller on the first child event, not a later parent effect; preconsent does nothing', async () => {
+  it('creates its controller on the first child event; a visitor with no saved choice tracks under the opt-out default', async () => {
     const b = browser(); const runtime = await import('./posthog');
     runtime.track('vehicle_view', { vehicle: 'huracan' }); await settle();
-    expect(sdk.init).not.toHaveBeenCalled(); expect(b.scripts).toHaveLength(0);
-    expect((runtime as any).getTracking).toBeTypeOf('function');
-    (runtime as any).getTracking().choose({ analytics: true, marketing: false }); await settle();
+    // US opt-out model (2026-09-18): both SDKs load without a stored choice.
+    expect(sdk.init).toHaveBeenCalledTimes(1);
+    expect(b.scripts).toHaveLength(1);
     expect(sdk.capture.mock.calls.map(c => c[0])).toEqual(['$pageview', 'storefront_view']);
+    // The default is never persisted — only an explicit choice writes storage,
+    // so a later denial isn't fighting a phantom saved grant.
+    expect(b.localStorage.getItem(CONSENT_KEY)).toBeNull();
+  });
+  it('an explicit denial still shuts everything down and is honored on the next document', async () => {
+    const b = browser(); const runtime = await import('./posthog');
+    runtime.track('storefront_view'); await settle();
+    expect(sdk.init).toHaveBeenCalledTimes(1);
+    runtime.getTracking()!.choose({ analytics: false, marketing: false });
+    expect(b.reload).toHaveBeenCalledTimes(1); expect(sdk.opt_out_capturing).toHaveBeenCalled();
+    vi.resetModules(); const reloaded = await import('./posthog');
+    reloaded.getTracking()!.navigate(); await settle();
+    expect(reloaded.getTracking()!.canSend('analytics')).toBe(false);
   });
   it('initializes only the consented SDK, with all automatic collection disabled and a live send guard', async () => {
     const b = browser({ analytics: true, marketing: false }); const { track } = await import('./posthog');
@@ -138,27 +151,26 @@ describe('consent lifecycle regressions', () => {
     b.localStorage.getItem = key => key === CONSENT_KEY ? raw : null;
     const event = { key: CONSENT_KEY, newValue: raw, storageArea: b.localStorage as Storage };
     expect(runtime.syncStoredConsent(event)).toEqual({ analytics: true, marketing: false });
+    // From the opt-out default (marketing on), the incoming marketing:false is
+    // a revocation: the tab purges and reloads rather than keep sending. (No
+    // SDK ever loaded in this tab, so there is no client to opt out.)
+    expect(b.reload).toHaveBeenCalledTimes(1);
     runtime.syncStoredConsent(event); await settle();
     expect(runtime.getTracking()!.consent()).toEqual({ analytics: true, marketing: false });
     expect(writes).not.toHaveBeenCalled(); expect(b.localStorage.getItem(CONSENT_KEY)).toBe(raw);
-    const cookie = JSON.parse(decodeURIComponent(document.cookie.split(';')[0].slice(CONSENT_KEY.length + 1)));
-    expect(cookie.at).toBe(at); expect(document.cookie).toContain('Max-Age=15551940');
     vi.mocked(Date.now).mockReturnValue(now + 60_000);
     runtime.syncStoredConsent(event);
-    expect(document.cookie).toContain('Max-Age=15551880');
-    expect(JSON.parse(decodeURIComponent(document.cookie.split(';')[0].slice(CONSENT_KEY.length + 1))).at).toBe(at);
-    expect(writes).not.toHaveBeenCalled(); expect(sdk.capture).toHaveBeenCalledTimes(2);
+    expect(writes).not.toHaveBeenCalled(); expect(b.reload).toHaveBeenCalledTimes(1);
   });
-  it.each(['withdrawal', 'removal', 'clear', 'invalid', 'expired'] as const)('fails closed on external %s before reload, despite a stale grant cookie', async kind => {
+  it('fails closed on external withdrawal before reload, despite a stale grant cookie', async () => {
     const b = browser({ analytics: true, marketing: false }); const runtime = await import('./posthog');
     document.cookie = `${CONSENT_KEY}=${encodeURIComponent(b.localStorage.getItem(CONSENT_KEY)!)}`;
     runtime.getTracking()!.navigate(); await settle(); sdk.capture.mockClear();
-    const raw = kind === 'withdrawal' ? JSON.stringify({ version: 1, analytics: false, marketing: false, at: Date.now() - 60_000 })
-      : kind === 'invalid' ? '{broken' : kind === 'expired' ? JSON.stringify({ version: 1, analytics: true, marketing: true, at: Date.now() - 181 * 86400000 }) : null;
+    const raw = JSON.stringify({ version: 1, analytics: false, marketing: false, at: Date.now() - 60_000 });
     b.localStorage.getItem = key => key === CONSENT_KEY ? raw : null;
     const writes = vi.spyOn(b.localStorage, 'setItem');
     b.reload.mockImplementation(() => { expect(runtime.storedConsent()?.analytics ?? false).toBe(false); });
-    const event = { key: kind === 'clear' ? null : CONSENT_KEY, newValue: raw, storageArea: b.localStorage as Storage };
+    const event = { key: CONSENT_KEY, newValue: raw, storageArea: b.localStorage as Storage };
     runtime.syncStoredConsent(event); runtime.syncStoredConsent(event);
     expect(runtime.getTracking()!.consent()).toEqual({ analytics: false, marketing: false });
     expect(writes).not.toHaveBeenCalled(); expect(b.reload).toHaveBeenCalledTimes(1);
@@ -166,6 +178,25 @@ describe('consent lifecycle regressions', () => {
     vi.resetModules(); const reloaded = await import('./posthog');
     reloaded.getTracking()!.navigate(); await settle();
     expect(reloaded.getTracking()!.canSend('analytics')).toBe(false); expect(sdk.capture).not.toHaveBeenCalled();
+  });
+  it.each(['removal', 'clear', 'invalid', 'expired-grant'] as const)('returns to the opt-out default on external %s — an absent choice is the default, not a denial', async kind => {
+    const b = browser({ analytics: true, marketing: true }); const runtime = await import('./posthog');
+    runtime.getTracking()!.navigate(); await settle(); const sent = sdk.capture.mock.calls.length;
+    const raw = kind === 'invalid' ? '{broken'
+      : kind === 'expired-grant' ? JSON.stringify({ version: 1, analytics: true, marketing: true, at: Date.now() - 181 * 86400000 }) : null;
+    b.localStorage.getItem = key => key === CONSENT_KEY ? raw : null;
+    const event = { key: kind === 'clear' ? null : CONSENT_KEY, newValue: raw, storageArea: b.localStorage as Storage };
+    runtime.syncStoredConsent(event); await settle();
+    expect(runtime.getTracking()!.consent()).toEqual({ analytics: true, marketing: true });
+    expect(b.reload).not.toHaveBeenCalled(); expect(sdk.opt_out_capturing).not.toHaveBeenCalled();
+    expect(sdk.capture.mock.calls.length).toBeGreaterThanOrEqual(sent);
+  });
+  it('an explicit denial never expires back into the default', async () => {
+    const b = browser(); const runtime = await import('./posthog');
+    b.localStorage.setItem(CONSENT_KEY, JSON.stringify({ version: 1, analytics: false, marketing: false, at: Date.now() - 400 * 86400000 }));
+    runtime.getTracking()!.navigate(); await settle();
+    expect(runtime.getTracking()!.canSend('analytics')).toBe(false);
+    expect(sdk.init).not.toHaveBeenCalled(); expect(sdk.capture).not.toHaveBeenCalled();
   });
   it('ignores unrelated storage keys and session storage events', async () => {
     const b = browser(); const runtime = await import('./posthog');
@@ -176,11 +207,16 @@ describe('consent lifecycle regressions', () => {
   });
   it('still persists a local choice to both storage and the preference cookie', async () => {
     const b = browser(); const runtime = await import('./posthog');
-    runtime.getTracking()!.choose({ analytics: true, marketing: false });
+    // A full grant: matches the default so nothing revokes, and the explicit
+    // choice must still be written to both stores.
+    runtime.getTracking()!.choose({ analytics: true, marketing: true });
     const stored = JSON.parse(b.localStorage.getItem(CONSENT_KEY)!);
     const cookie = JSON.parse(decodeURIComponent(document.cookie.split(';')[0].slice(CONSENT_KEY.length + 1)));
-    expect(stored).toMatchObject({ version: 1, analytics: true, marketing: false });
+    expect(stored).toMatchObject({ version: 1, analytics: true, marketing: true });
     expect(cookie).toEqual(stored); expect(document.cookie).toContain('Max-Age=15552000');
+    // A partial choice persists too, even though revoking marketing reloads.
+    runtime.getTracking()!.choose({ analytics: true, marketing: false });
+    expect(JSON.parse(b.localStorage.getItem(CONSENT_KEY)!)).toMatchObject({ analytics: true, marketing: false });
   });
 });
 

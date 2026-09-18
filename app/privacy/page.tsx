@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { InterimNotice, LegalPage } from '@/components/browse/LegalPage';
+import { LegalPage } from '@/components/browse/LegalPage';
 import { CookieControls } from '@/components/analytics/CookieControls';
 
 import { renterCaptureUiEnabled } from '@/domain/renters/flags';
@@ -8,7 +8,7 @@ import { renterCaptureUiEnabled } from '@/domain/renters/flags';
 export function generateMetadata(): Metadata {
   return {
     title: 'Privacy | Drive Exotiq',
-    description: 'What Drive Exotiq collects when you browse and book, who it is shared with, and why.',
+    description: 'What Drive Exotiq collects when you browse and book, who it is shared with, and the choices you have.',
     robots: { index: false, follow: true },
   };
 }
@@ -20,8 +20,14 @@ export default function PrivacyPage() {
   // Same rule for renter e-mail (MP-14): described only on a host that runs it.
   const capture = renterCaptureUiEnabled();
   return (
-    <LegalPage eyebrow="Drive Exotiq" title="Privacy" updated="17 September 2026">
-      <InterimNotice what="This page lists what the service actually collects today and who receives it." />
+    <LegalPage eyebrow="Drive Exotiq" title="Privacy" updated="18 September 2026">
+      <section>
+        <p>
+          Drive Exotiq is a booking platform operated by Exotiq. This notice explains what we collect when you browse
+          and book, who receives it, and the choices you have. Every car is rented from an independent operator, who
+          keeps their own records under their own policies. The service is offered in the United States.
+        </p>
+      </section>
 
       <section>
         <h2>What we collect when you book</h2>
@@ -50,30 +56,36 @@ export default function PrivacyPage() {
       </section>
 
       <section>
-        <h2>Browsing, analytics and advertising</h2>
+        <h2>Analytics and advertising</h2>
         <p>
           {analytics
-            ? 'If you allow analytics, PostHog measures public page views and the steps leading to a booking request. It uses browser identifiers and permitted campaign information to connect those visits; we do not identify you by name or send driver-form values to PostHog.'
+            ? 'Unless you turn analytics off, PostHog measures public page views and the steps leading to a booking request. It uses browser identifiers and permitted campaign information (including the click identifier a Facebook or Instagram ad adds to the address) to connect those visits; we do not identify you by name and never send driver-form values to PostHog.'
             : 'PostHog analytics is not enabled on this host.'}{' '}
           Photos and listing data are served from Exotiq&apos;s infrastructure (Supabase, Netlify).
         </p>
         <p className="mt-3">
           {advertising
-            ? 'If you separately allow advertising, the Meta Pixel reports public page views, vehicle views and successfully submitted booking requests to Meta to help measure and improve our Facebook and Instagram ads. Meta may receive browser and network information, page addresses and advertising identifiers, and may associate these with your Meta account under its own privacy policy.'
+            ? 'Unless you turn advertising off, the Meta Pixel reports public page views, vehicle views, started bookings and successfully submitted booking requests to Meta to measure and improve our Facebook and Instagram ads. Meta may receive browser and network information, page addresses and advertising identifiers, and may associate these with your Meta account under its own privacy policy. This is a "share" of personal information for cross-context behavioral advertising under California law, and you have the right to opt out of it below.'
             : 'Meta advertising measurement is not enabled on this host.'}
         </p>
         <p className="mt-3">
-          Session recording is disabled. We do not load these tracking tools on private confirmation, payment,
-          identity-verification, or token-protected saved-list pages. Booking-access tokens, dates of birth,
-          driver documents, card details and the values entered in driver forms are not included in our analytics events.
-          A submitted booking request is not reported as a paid purchase.
+          Session recording is disabled. These tools never load on private confirmation, payment,
+          identity-verification, or token-protected pages. Booking-access tokens, dates of birth, driver documents,
+          card details and the values entered in driver forms are not included in our analytics events. A submitted
+          booking request is not reported as a paid purchase. <strong>We do not sell personal information.</strong>
         </p>
-        <p className="mt-3">
-          Use <strong>Privacy preferences</strong> to allow or reject analytics and advertising independently, or to
-          change your choice later. Neither is required to browse or request a booking. A Global Privacy Control
-          signal disables advertising tracking. Your choice is separate from any opt-in to marketing e-mail.
-          Withdrawing permission stops future collection in this browser; to request deletion of earlier data,
-          contact us using the details below. Learn more in{' '}
+      </section>
+
+      <section>
+        <h2>Your tracking choices</h2>
+        <p>
+          Use the controls below (also shown beside booking actions on every tracked page) to turn analytics and
+          advertising off independently, at any time. Turning them off stops future collection in this browser
+          immediately and deletes the identifiers these tools set; your choice is remembered and an opt-out never
+          expires. If your browser sends a <strong>Global Privacy Control</strong> signal, advertising is turned off
+          automatically and cannot be enabled. Neither setting is required to browse or book, and your service is the
+          same either way. These settings are separate from any marketing e-mail you sign up for. To request deletion
+          of data collected earlier, contact us using the details below. Learn more in{' '}
           <a href="https://posthog.com/privacy" rel="noreferrer" target="_blank">PostHog&apos;s privacy policy</a> and{' '}
           <a href="https://www.facebook.com/privacy/policy/" rel="noreferrer" target="_blank">Meta&apos;s privacy policy</a>.
         </p>
@@ -98,13 +110,10 @@ export default function PrivacyPage() {
             We send nothing but a confirmation link until you confirm the address by pressing the button on that
             page, and the page says exactly what the click confirms; a booking you make may count as confirming the
             address once the booking system can match it to you. Marketing e-mail goes out only after you have asked
-            for it and confirmed it. Pressing &ldquo;Keep me posted&rdquo; is the request; the confirmation click is the opt-in, and
-            the words you agreed to are the ones printed under that button and repeated in the e-mail. Every message
-            carries an unsubscribe link and one-click unsubscribe headers; unsubscribing stops all e-mail from us and
-            turns off any alerts, and pressing the confirmation link again later resumes only what you ask for. E-mail
-            is delivered by Resend; the daily availability check runs on Netlify. Unsubscribing does not delete your
-            record: to have it deleted, write to <a href="mailto:hello@exotiq.ai">hello@exotiq.ai</a> from that
-            address.
+            for it and confirmed it. Every message carries an unsubscribe link and one-click unsubscribe headers;
+            unsubscribing stops all e-mail from us and turns off any alerts. E-mail is delivered by Resend; the daily
+            availability check runs on Netlify. Unsubscribing does not delete your record: to have it deleted, write
+            to <a href="mailto:hello@exotiq.ai">hello@exotiq.ai</a> from that address.
           </p>
         </section>
       )}
@@ -118,10 +127,22 @@ export default function PrivacyPage() {
       </section>
 
       <section>
-        <h2>Your choices</h2>
+        <h2>Your rights</h2>
         <p>
-          To correct or delete your details, or to ask what we hold, email <a href="mailto:hello@exotiq.ai">hello@exotiq.ai</a>{' '}
-          from the address on the booking. Operators keep their own records under their own policies.
+          You can ask what we hold about you, and ask us to correct or delete it, by emailing{' '}
+          <a href="mailto:hello@exotiq.ai">hello@exotiq.ai</a> from the address on the booking (that address is how we
+          verify the request is yours). California residents may exercise the rights to know, correct, delete, and
+          opt out of sharing this way or through the tracking controls above; we honor Global Privacy Control as an
+          opt-out preference signal and never treat you differently for exercising any right. Operators keep their
+          own records under their own policies — direct requests about a rental&apos;s records to your operator.
+        </p>
+      </section>
+
+      <section>
+        <h2>Changes</h2>
+        <p>
+          When this notice changes, the date at the top changes with it. A material change to what we collect or who
+          receives it will be flagged on this page before it takes effect.
         </p>
       </section>
     </LegalPage>
