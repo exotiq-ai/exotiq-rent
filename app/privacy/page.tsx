@@ -1,13 +1,10 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { InterimNotice, LegalPage } from '@/components/browse/LegalPage';
-import { browseEnabled } from '@/domain/booking/config';
-import { posthogKey } from '@/components/analytics/posthog';
+
 import { renterCaptureUiEnabled } from '@/domain/renters/flags';
 
-// Guarded with the marketplace — see app/terms/page.tsx.
+// Tracking choices must remain available even when cross-tenant browse is off.
 export function generateMetadata(): Metadata {
-  if (!browseEnabled()) notFound();
   return {
     title: 'Privacy | Drive Exotiq',
     description: 'What Drive Exotiq collects when you browse and book, who it is shared with, and why.',
@@ -16,13 +13,13 @@ export function generateMetadata(): Metadata {
 }
 
 export default function PrivacyPage() {
-  // Stated only when it is true for this deploy: a host without a PostHog key
-  // runs no analytics, and the policy must not claim otherwise.
-  const analytics = Boolean(posthogKey());
+  const tracking = process.env.NEXT_PUBLIC_TRACKING_ENABLED === 'true';
+  const analytics = tracking && /^phc_[a-zA-Z0-9]+$/.test(process.env.NEXT_PUBLIC_POSTHOG_KEY ?? '');
+  const advertising = tracking && Boolean(process.env.NEXT_PUBLIC_META_PIXEL_ID);
   // Same rule for renter e-mail (MP-14): described only on a host that runs it.
   const capture = renterCaptureUiEnabled();
   return (
-    <LegalPage eyebrow="Drive Exotiq" title="Privacy" updated="4 September 2026">
+    <LegalPage eyebrow="Drive Exotiq" title="Privacy" updated="17 September 2026">
       <InterimNotice what="This page lists what the service actually collects today and who receives it." />
 
       <section>
@@ -52,12 +49,32 @@ export default function PrivacyPage() {
       </section>
 
       <section>
-        <h2>Browsing</h2>
+        <h2>Browsing, analytics and advertising</h2>
         <p>
           {analytics
-            ? 'This site uses PostHog to measure how the marketplace is used — which pages are viewed and where bookings start and stop. It is not used to identify you by name; it does not run on the booking, payment or verification pages beyond recording that a step was reached.'
-            : 'This host runs no analytics or advertising trackers.'}{' '}
+            ? 'If you allow analytics, PostHog measures public page views and the steps leading to a booking request. It uses browser identifiers and permitted campaign information to connect those visits; we do not identify you by name or send driver-form values to PostHog.'
+            : 'PostHog analytics is not enabled on this host.'}{' '}
           Photos and listing data are served from Exotiq&apos;s infrastructure (Supabase, Netlify).
+        </p>
+        <p className="mt-3">
+          {advertising
+            ? 'If you separately allow advertising, the Meta Pixel reports public page views, vehicle views and successfully submitted booking requests to Meta to help measure and improve our Facebook and Instagram ads. Meta may receive browser and network information, page addresses and advertising identifiers, and may associate these with your Meta account under its own privacy policy.'
+            : 'Meta advertising measurement is not enabled on this host.'}
+        </p>
+        <p className="mt-3">
+          Session recording is disabled. We do not load these tracking tools on private confirmation, payment,
+          identity-verification, or token-protected saved-list pages. Booking-access tokens, dates of birth,
+          driver documents, card details and the values entered in driver forms are not included in our analytics events.
+          A submitted booking request is not reported as a paid purchase.
+        </p>
+        <p className="mt-3">
+          Use <strong>Privacy preferences</strong> to allow or reject analytics and advertising independently, or to
+          change your choice later. Neither is required to browse or request a booking. A Global Privacy Control
+          signal disables advertising tracking. Your choice is separate from any opt-in to marketing e-mail.
+          Withdrawing permission stops future collection in this browser; to request deletion of earlier data,
+          contact us using the details below. Learn more in{' '}
+          <a href="https://posthog.com/privacy" rel="noreferrer" target="_blank">PostHog&apos;s privacy policy</a> and{' '}
+          <a href="https://www.facebook.com/privacy/policy/" rel="noreferrer" target="_blank">Meta&apos;s privacy policy</a>.
         </p>
       </section>
 

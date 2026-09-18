@@ -16,14 +16,13 @@ import { containerClassName, eyebrowClassName, groundClassName, serifStyle } fro
  * that only links to things that exist. Layout ported from the cyan mockup's
  * nav/footer; rendered in the booking flow's gold editorial language.
  *
- * Footer links only to routes that exist: /terms and /privacy shipped with
- * M7e (MP-6), guarded by the same flag as /browse, so the link can never be
- * live while its target 404s.
+ * Privacy is public regardless of the browse launch flag. Terms remains
+ * browse-gated; the header must not send booking-only hosts to a missing grid.
  */
 export function BrowseChrome({ children, view = 'browse_view', footerSignup = true }: { children: ReactNode; /** Funnel event fired on mount; null for pages that are not a funnel step (legal). */ view?: FunnelEvent | null; /** Off on the confirm/unsubscribe pages: no opt-in prompt inside an opt-out flow. */ footerSignup?: boolean }) {
   return (
     <div className={`${driveFontClassName} min-h-screen ${groundClassName} text-[#F0F2F5] font-[var(--font-drive-inter)]`}>
-      <SiteBar homeHref="/browse" homeLabel="Drive Exotiq — browse the fleet">
+      <SiteBar homeHref={browseEnabled() ? '/browse' : '/'} homeLabel="Drive Exotiq — browse the fleet">
         <div className="flex items-center gap-4">
           <p className={`hidden ${eyebrowClassName} text-[#848A9A] sm:block`}>Curated exotic &amp; luxury rentals</p>
           <SavedLink enabled={browseEnabled()} />
@@ -49,7 +48,7 @@ export function BrowseChrome({ children, view = 'browse_view', footerSignup = tr
           </div>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
             <span>Every car is rented from one accountable operator.</span>
-            <Link href="/terms" className="transition hover:text-[#F0F2F5]">Terms</Link>
+            {browseEnabled() && <Link href="/terms" className="transition hover:text-[#F0F2F5]">Terms</Link>}
             <Link href="/privacy" className="transition hover:text-[#F0F2F5]">Privacy</Link>
             <a href="mailto:hello@exotiq.ai?subject=Listing%20my%20fleet%20on%20Drive%20Exotiq" className="text-[#C8A664] underline decoration-[#C8A664]/40 underline-offset-4 transition hover:decoration-[#C8A664]">Operators — list your fleet</a>
           </div>
