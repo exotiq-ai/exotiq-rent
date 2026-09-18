@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { CheckCircle2, FileText } from 'lucide-react';
 import { HTitle, Money } from '../BookingChrome';
 import { microLabelClassName } from '@/components/browse/tokens';
+import { CookieControls } from '@/components/analytics/CookieControls';
 
 export function StepHeader({ eyebrow, title, sub }: { eyebrow: string; title: string; sub?: string }) {
   return (
@@ -21,7 +22,7 @@ export function ScreenShell({ children, stickySafe = true }: { children: ReactNo
       // min-h-0 is load-bearing: without it this flex child grows to its
       // content instead of scrolling, pushing the "sticky" footer below the
       // fold on long steps (review/pay).
-      className={`min-h-0 flex-1 overflow-y-auto px-4 pt-2 [scrollbar-width:none] ${stickySafe ? 'pb-48' : 'pb-20'}`}
+      className={`min-h-0 flex-1 overflow-y-auto px-4 pt-2 [scrollbar-width:none] ${stickySafe ? 'pb-64' : 'pb-20'}`}
       style={{ fontFamily: 'var(--font-drive-inter), system-ui, sans-serif' }}
     >
       {children}
@@ -32,6 +33,7 @@ export function ScreenShell({ children, stickySafe = true }: { children: ReactNo
 export function Sticky({ children }: { children: ReactNode }) {
   return (
     <div className="absolute bottom-4 left-0 right-0 z-10 border-t border-[#2A2E3A] bg-[#0D0F14] px-4 pb-4 pt-3 shadow-[0_-24px_42px_rgba(13,15,20,.96)] md:bottom-5">
+      <CookieControls />
       <div className="space-y-3">{children}</div>
     </div>
   );

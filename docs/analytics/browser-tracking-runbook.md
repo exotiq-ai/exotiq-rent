@@ -42,6 +42,27 @@ There is deliberately no browser Purchase or AddPaymentInfo event. Actual hosted
 - Preferences can be changed after the first choice. Revocation unloads scripts and clears the site's tracking identifiers, without deleting booking/session credentials.
 - Email marketing consent is not tracking permission.
 
+## Compact cookie controls
+
+- No application-wide top privacy banner or automatic modal. Eligible vehicle and booking pages place a quiet 44px row above the primary action; storefronts expose it in page flow.
+- `Optional cookies` shows Off / On / Custom. The combined control is an accessible tri-state checkbox styled as a switch; Custom switches fully off rather than silently enabling the other category.
+- Details opens a small nonmodal card, without a backdrop. Analytics and Advertising apply immediately and independently. GPC disables Advertising. Escape, Close, outside click and focus leaving dismiss the card.
+- Automatic row visibility reuses the existing host, route, provider, credential-URL and referrer guards. `/ark/...`, demo and private pages do not become tracked because of the visual change.
+- Existing preferences may expose a discreet manual entry outside the tracked route. `/privacy` always provides a manual Privacy preferences control; opening or choosing there does not load either SDK.
+- The root component owns consent and navigation only; responsive controls share the same state. Consent storage, event contracts, SDK loading, withdrawal cleanup/reload and cross-tab synchronization remain unchanged.
+
+### Browser release checks
+
+With the local production build on port 3219 and a fixture PostHog key of `phc_trackingqatest123`:
+
+```sh
+PLAYWRIGHT_MODULE=/path/to/playwright-core QA_REAL_META=1 node scripts/analytics-browser-qa.cjs
+PLAYWRIGHT_MODULE=/path/to/playwright-core node scripts/compact-cookie-qa.cjs
+PLAYWRIGHT_MODULE=/path/to/playwright-core QA_BROWSER=webkit node scripts/compact-cookie-qa.cjs
+```
+
+Set `QA_OUTPUT_DIR` for separate receipts/screenshots. Set `QA_LOCAL_ORIGIN=https://book.exotiq.rent` and `QA_LIVE=1` to recheck deployed code, still intercepting provider traffic and blocking booking/customer/payment writes. These tests prove browser behavior and intercepted transport, **not provider ingestion**. Chromium/WebKit mobile viewport tests are not actual Instagram-app verification. Never upload a local fixture build to production; release through Git/main so Netlify uses its production environment.
+
 ## Dashboard recipes
 
 Create these in the correct PostHog project once management access is verified; do not claim creation from this file:

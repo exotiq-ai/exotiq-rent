@@ -58,9 +58,8 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans">
-        {/* Consent UI is global; the runtime loads SDKs only on permitted public routes. */}
-        <PostHogInit />
-        {children}
+        {/* Headless shared consent owner; compact controls live beside booking actions. */}
+        <PostHogInit>{children}</PostHogInit>
       </body>
     </html>
   );

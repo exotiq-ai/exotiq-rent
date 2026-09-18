@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { TrackView } from '@/components/analytics/TrackView';
+import { CookieControls } from '@/components/analytics/CookieControls';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CalendarX2, CarFront, FileCheck2, Fuel, Gauge, Phone, ShieldCheck, Truck, type LucideIcon } from 'lucide-react';
@@ -168,7 +169,7 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
         {/* From lg the frame no longer scrolls internally (see PhoneViewport
             'page'), so this section becomes ordinary page flow and the aside
             below can stick to the viewport. */}
-        <section className={`min-h-0 flex-1 overflow-y-auto px-4 pt-2 [scrollbar-width:none] ${hasPhone ? 'pb-32' : 'pb-8'} lg:overflow-visible lg:px-8 lg:pb-20 lg:pt-8`}>
+        <section className={`min-h-0 flex-1 overflow-y-auto px-4 pt-2 [scrollbar-width:none] ${hasPhone ? 'pb-48' : 'pb-8'} lg:overflow-visible lg:px-8 lg:pb-20 lg:pt-8`}>
           <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-x-12">
             <div className="min-w-0">
               {/* Aman route: the photograph is never degraded to accommodate type, and
@@ -235,6 +236,7 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
 
               {policyRows.length > 0 && <PolicyCard rows={policyRows} className="mt-4 lg:hidden" />}
               <WhyCard className="mt-4 lg:hidden" />
+              <CookieControls viewport={hasPhone ? 'desktop' : 'all'} className="mt-6 max-w-sm border-t border-[#2A2E3A]" />
             </div>
 
             {/* Capped to the viewport with its own quiet scroll; the 1px negative
@@ -250,6 +252,7 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
         </section>
         {hasPhone && (
           <div className="absolute bottom-5 left-0 right-0 z-10 border-t border-[#2A2E3A] bg-[#0D0F14] px-4 pb-4 pt-3 shadow-[0_-24px_42px_rgba(13,15,20,.96)] lg:hidden">
+            <CookieControls viewport="mobile" />
             <CallLink team={team} />
           </div>
         )}
