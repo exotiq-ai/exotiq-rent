@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { PostHogInit } from "@/components/analytics/PostHogInit";
 import { siteUrl } from "@/domain/booking/config";
 import "./globals.css";
@@ -44,6 +44,18 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  // viewport-fit=cover makes env(safe-area-inset-*) real. Without it the
+  // Instagram/Meta in-app browser (and notched Safari) reports 0 for every
+  // inset, so the safe-area padding the chrome relies on silently no-ops.
+  viewportFit: "cover",
+  width: "device-width",
+  initialScale: 1,
+  // Paints the in-app browser frame and Android toolbar in the site's dark
+  // ground instead of default white, so the page doesn't sit in a white frame.
+  themeColor: isMarketplace ? "#0B0B0F" : "#06070a",
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -51,12 +63,18 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+      {/* Montserrat is used only by the marketplace SPA (font-mont). The booking
+          site must not pay a render-blocking third-party stylesheet for a font
+          it never draws. */}
+      {isMarketplace && (
+        <head>
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+          <link
+            href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap"
+            rel="stylesheet"
+          />
+        </head>
+      )}
       <body className="font-sans">
         {/* Headless shared consent owner; compact controls live beside booking actions. */}
         <PostHogInit>{children}</PostHogInit>

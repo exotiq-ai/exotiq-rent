@@ -138,7 +138,7 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
           </aside>
         </div>
       </div>
-      <div className="absolute bottom-5 left-0 right-0 z-10 border-t border-[#2A2E3A] bg-[#0D0F14] px-4 pb-4 pt-3 shadow-[0_-24px_42px_rgba(13,15,20,.96)] lg:hidden">
+      <div className="absolute bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)+8px))] left-0 right-0 z-10 border-t border-[#2A2E3A] bg-[#0D0F14] px-4 pb-4 pt-3 shadow-[0_-24px_42px_rgba(13,15,20,.96)] lg:hidden">
         {yourDates}
         <CookieControls viewport="mobile" />
         <div className="flex items-stretch gap-2">

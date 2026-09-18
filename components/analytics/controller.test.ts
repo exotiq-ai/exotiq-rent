@@ -25,6 +25,17 @@ describe('consented tracking lifecycle', () => {
     expect(h.meta.capture.mock.calls.map(([name]) => name)).toEqual(['PageView', 'ViewContent']);
     expect(h.meta.capture.mock.calls[1][1]).toMatchObject({ content_ids: ['exotiq/huracan'], content_type: 'product' });
   });
+  it('tracks non-exotiq tenants with route-derived team and sends Meta InitiateCheckout on the book route', async () => {
+    const h = harness(consent(true, true));
+    h.go('/ark'); await settle();
+    expect(h.ph.capture.mock.calls.map(([name]) => name)).toEqual(['$pageview', 'storefront_view']);
+    expect(h.ph.capture.mock.calls[1][1]).toMatchObject({ team: 'ark', $current_url: 'https://book.exotiq.rent/ark' });
+    h.go('/ark/mclaren-gt'); await settle();
+    expect(h.meta.capture.mock.calls.map(([name]) => name)).toEqual(['PageView', 'PageView', 'ViewContent']);
+    expect(h.meta.capture.mock.calls[2][1]).toMatchObject({ content_ids: ['ark/mclaren-gt'], content_type: 'product' });
+    h.go('/ark/mclaren-gt/book'); await settle();
+    expect(h.meta.capture.mock.calls.map(([name]) => name)).toContain('InitiateCheckout');
+  });
   it('keeps permissions independent; tracks each channel once per meaningful navigation including back', async () => {
     const h = harness(consent(true, false));
     h.tracker.navigate(); h.tracker.navigate(); await settle();
@@ -53,7 +64,7 @@ describe('consented tracking lifecycle', () => {
     expect(h.deps.clearIdentifiers).toHaveBeenCalled(); expect(h.deps.reload).toHaveBeenCalledTimes(1);
   });
   it('full reloads and stops SDKs on private/other-tenant SPA transitions, also blocks stale before_send', async () => {
-    for (const path of ['/booking/BK-private', '/verify', '/saved', '/renters/saved', '/other/huracan', '/exotiq?token=PRIVATE', '/exotiq?T=PRIVATE', '/exotiq?r=PRIVATE']) {
+    for (const path of ['/booking/BK-private', '/verify', '/saved', '/renters/saved', '/exotiq?token=PRIVATE', '/exotiq?T=PRIVATE', '/exotiq?r=PRIVATE']) {
       const h = harness(consent(true, true)); h.tracker.navigate(); await settle();
       const before = h.ph.capture.mock.calls.length; h.go(path); h.tracker.track('checkout_started', {}); await settle();
       expect(h.deps.reload).toHaveBeenCalledTimes(1); expect(h.ph.stop).toHaveBeenCalled(); expect(h.meta.stop).toHaveBeenCalled();

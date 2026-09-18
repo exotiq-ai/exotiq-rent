@@ -61,10 +61,10 @@ function availabilityWindow(): { start: string; end: string } {
 }
 
 export async function getSupabaseTeamStorefront(teamSlug: string): Promise<PublicTeamStorefront | null> {
-  const teamRow = await fetchPublicTeam(teamSlug);
+  // Independent reads — in series they were the storefront's whole TTFB.
+  const [teamRow, fleetRows] = await Promise.all([fetchPublicTeam(teamSlug), fetchPublicTeamFleet(teamSlug)]);
   if (!teamRow) return null;
   const team = adaptTeam(teamRow);
-  const fleetRows = await fetchPublicTeamFleet(teamSlug);
   // Storefront quality gate (marketplace testing handoff, gap #3): vehicles
   // without a hero image render as blank cards, so they are excluded from
   // the public listing until photos are seeded. Direct vehicle URLs still
@@ -74,18 +74,22 @@ export async function getSupabaseTeamStorefront(teamSlug: string): Promise<Publi
 }
 
 export async function getSupabaseVehicleContext(teamSlug: string, vehicleSlug: string): Promise<PublicVehicleContext | null> {
-  const teamRow = await fetchPublicTeam(teamSlug);
+  const [teamRow, vehicleRow] = await Promise.all([fetchPublicTeam(teamSlug), fetchPublicVehicle(teamSlug, vehicleSlug)]);
   if (!teamRow) return null;
   const team = adaptTeam(teamRow);
-
-  const vehicleRow = await fetchPublicVehicle(teamSlug, vehicleSlug);
   if (!vehicleRow) return null;
 
   const window = availabilityWindow();
   // Media and availability are enhancements — fetch in parallel and degrade
   // to RPC photo URLs / an open calendar rather than failing the page.
+  // When the row already carries stable public photo URLs, skip the signing
+  // call entirely: it is an uncacheable edge-function round trip on the TTFB
+  // path, and the adapter prefers the public URLs anyway.
+  const hasStablePhotos = (vehicleRow.photos ?? []).some((photo) => photo.url?.includes('/storage/v1/object/public/'));
   const [media, busyRows] = await Promise.all([
-    fetchSignedVehicleMedia(teamSlug, vehicleSlug).catch(() => ({ photos: [], expiresIn: 0 })),
+    hasStablePhotos
+      ? Promise.resolve({ photos: [], expiresIn: 0 })
+      : fetchSignedVehicleMedia(teamSlug, vehicleSlug).catch(() => ({ photos: [], expiresIn: 0 })),
     fetchVehicleAvailability(teamSlug, vehicleSlug, window.start, window.end).catch(() => []),
   ]);
 

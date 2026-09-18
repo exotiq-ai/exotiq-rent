@@ -29,7 +29,7 @@ export function BrowseChrome({ children, view = 'browse_view', footerSignup = tr
         </div>
       </SiteBar>
       <main>{children}</main>
-      {view && <TrackView event={view} withQuery />}
+      {view && <TrackView event={view} />}
       <footer className="mt-20 border-t border-[#2A2E3A]">
         {/* MP-14: the lowest-effort signup there is — one field, and the button is the consent. */}
         {renterCaptureUiEnabled() && footerSignup && (

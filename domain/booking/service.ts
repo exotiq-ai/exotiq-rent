@@ -65,10 +65,15 @@ export async function getMarketplaceFacets(): Promise<MarketplaceFacets> {
   return getMockMarketplaceFacets();
 }
 
-export async function getPublicTeamStorefront(teamSlug: string): Promise<PublicTeamStorefront | null> {
-  if (getDataMode() === 'supabase') return getSupabaseTeamStorefront(teamSlug);
-  return getMockPublicTeamStorefront(teamSlug);
-}
+// perRequest: generateMetadata and the page body both call this — POST-based
+// RPC fetches are never memoized by Next, so without this the storefront pays
+// every read twice per request.
+export const getPublicTeamStorefront = perRequest(
+  async (teamSlug: string): Promise<PublicTeamStorefront | null> => {
+    if (getDataMode() === 'supabase') return getSupabaseTeamStorefront(teamSlug);
+    return getMockPublicTeamStorefront(teamSlug);
+  },
+);
 
 // React cache(): generateMetadata and the page body both call this per
 // request, and the signed-media fetch inside is deliberately uncacheable

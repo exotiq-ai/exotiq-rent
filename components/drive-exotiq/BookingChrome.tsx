@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, X } from 'lucide-react';
 import Image from 'next/image';
@@ -84,6 +84,24 @@ export function PhoneViewport({
 }) {
   const page = layout === 'page';
   const panel = layout === 'panel';
+  // 'page' condenses its phone chrome once the renter scrolls: the step bar
+  // folds away and the header row tightens, handing ~40px back to the fleet.
+  // The window never scrolls below lg — an inner section does — so the frame
+  // listens in the CAPTURE phase (scroll does not bubble) like CookieControls.
+  // The header sits outside the scroll container, so collapsing it never
+  // moves scrollTop and the threshold cannot oscillate.
+  const frameRef = useRef<HTMLDivElement>(null);
+  const [condensed, setCondensed] = useState(false);
+  useEffect(() => {
+    if (!page) return;
+    const frame = frameRef.current;
+    if (!frame) return;
+    const onScroll = (event: Event) => {
+      if (event.target instanceof HTMLElement) setCondensed(event.target.scrollTop > 40);
+    };
+    frame.addEventListener('scroll', onScroll, { capture: true, passive: true });
+    return () => frame.removeEventListener('scroll', onScroll, { capture: true });
+  }, [page]);
   const frameDesktop = page
     ? 'lg:h-auto lg:max-w-[1200px] lg:overflow-visible lg:bg-transparent lg:shadow-none'
     : panel
@@ -112,21 +130,29 @@ export function PhoneViewport({
             scroll internally — with min-h alone the frame grows to content and
             the "sticky" footer lands below the fold. Compact cookie controls
             are inside that footer, not above the frame. */}
-        <div className={`relative mx-auto flex h-dvh w-full max-w-[480px] flex-col overflow-hidden bg-[#0D0F14] shadow-[0_40px_90px_-20px_rgba(0,0,0,.72),0_18px_42px_-18px_rgba(200,166,100,.18)] ${frameDesktop}`}>
-          <div className={`grid flex-shrink-0 grid-cols-[40px_1fr_40px] items-center px-4 pb-1 pt-[calc(env(safe-area-inset-top)+10px)] ${page ? 'lg:hidden' : ''}`}>
+        <div ref={frameRef} className={`relative mx-auto flex h-dvh w-full max-w-[480px] flex-col overflow-hidden bg-[#0D0F14] shadow-[0_40px_90px_-20px_rgba(0,0,0,.72),0_18px_42px_-18px_rgba(200,166,100,.18)] ${frameDesktop}`}>
+          <div className={`grid flex-shrink-0 grid-cols-[40px_1fr_40px] items-center px-4 transition-[padding] duration-300 motion-reduce:transition-none ${page && condensed ? 'pb-0.5 pt-[calc(env(safe-area-inset-top)+4px)]' : 'pb-1 pt-[calc(env(safe-area-inset-top)+10px)]'} ${page ? 'lg:hidden' : ''}`}>
             <button type="button" onClick={onBack} disabled={!onBack} className="grid h-10 w-10 place-items-center rounded-lg text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5] disabled:opacity-30" aria-label="Back">
               <ArrowLeft size={20} />
             </button>
             <div className="flex items-center justify-center">
               {/* The Drive Exotiq lockup at 22px sits at the same optical size the
                   old 26px mark did inside the 40px header row (MP-12). */}
-              <Image src="/images/logos/drive-exotiq-lockup-transparent.png" alt="Drive Exotiq" width={110} height={22} priority style={{ height: 22, width: 'auto' }} className="opacity-95" />
+              {/* No `priority`: this row is lg:hidden, and a preload for a 17KB
+                  logo competes with the hero's LCP preload on every load. */}
+              <Image src="/images/logos/drive-exotiq-lockup-transparent.png" alt="Drive Exotiq" width={110} height={22} style={{ height: 22, width: 'auto' }} className="opacity-95" />
             </div>
             <Link href={closeHref} className="grid h-10 w-10 place-items-center rounded-lg text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5]" aria-label="Close booking flow">
               <X size={20} />
             </Link>
           </div>
-          {page ? <div className="lg:hidden">{stepBar}</div> : stepBar}
+          {page
+            ? (
+              <div aria-hidden={condensed} className={`overflow-hidden transition-[max-height,opacity] duration-300 motion-reduce:transition-none lg:hidden ${condensed ? 'max-h-0 opacity-0' : 'max-h-12 opacity-100'}`}>
+                {stepBar}
+              </div>
+            )
+            : stepBar}
           <div className="flex min-h-0 flex-1 flex-col">{children}</div>
         </div>
       </div>

@@ -6,16 +6,29 @@ export const PRODUCTION_HOST = 'book.exotiq.rent';
 export const DENIED: Consent = { analytics: false, marketing: false };
 export const EVENTS = ['browse_view', 'storefront_view', 'vehicle_view', 'book_start', 'book_step', 'booking_created', 'confirmation_view', 'favourite_added', 'capture_start', 'capture_sent', 'alert_created', 'saved_view', 'booking_request_failed', 'checkout_started'] as const;
 export type FunnelEvent = typeof EVENTS[number];
-export const ATTRIBUTION_FIELDS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'campaign_id', 'adset_id', 'ad_id', 'placement'] as const;
-export function attributionValue(value: unknown): string | undefined {
-  if (typeof value !== 'string' || !/^[a-zA-Z0-9 _.-]{1,80}$/.test(value) || /token|secret|password|bearer|ph[scx]_|sk_|eyJ|[a-f0-9]{32}|[a-zA-Z0-9]{40}/i.test(value)) return undefined;
-  return value;
+// fbclid joins the whitelist so a PostHog session can be tied back to the Meta
+// click that bought it; the pixel reads the live URL itself and never needed it.
+export const ATTRIBUTION_FIELDS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'campaign_id', 'adset_id', 'ad_id', 'placement', 'fbclid'] as const;
+export function attributionValue(value: unknown, field?: string): string | undefined {
+  if (typeof value !== 'string' || /token|secret|password|bearer|ph[scx]_|sk_|eyJ|[a-f0-9]{32}/i.test(value)) return undefined;
+  // fbclid is by design a long opaque click id — the generic "40 consecutive
+  // alphanumerics is a leaked credential" guard would reject every real value.
+  if (field === 'fbclid') return /^[a-zA-Z0-9_-]{1,128}$/.test(value) ? value : undefined;
+  return /^[a-zA-Z0-9 _.-]{1,80}$/.test(value) && !/[a-zA-Z0-9]{40}/.test(value) ? value : undefined;
 }
 const slug = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const opaque = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 
+// Every non-tenant top-level route. A new reserved route MUST be added here or
+// its visitors get the cookie row and a tenant-shaped $pageview.
+const RESERVED_ROUTES = new Set(['api', 'booking', 'browse', 'preview', 'privacy', 'renters', 'saved', 'share', 'terms', 'verify']);
+
+/** Any tenant storefront, vehicle page, or booking start — not just the exotiq
+ * launch tenant. Paid traffic lands on other slugs now (e.g. /ark). */
 export function eligibleRoute(path: string): boolean {
-  return /^\/exotiq(?:\/[a-z0-9]+(?:-[a-z0-9]+)*(?:\/book)?)?\/?$/.test(path) && path.length < 180;
+  if (path.length >= 180) return false;
+  const match = /^\/([a-z0-9]+(?:-[a-z0-9]+)*)(?:\/[a-z0-9]+(?:-[a-z0-9]+)*(?:\/book)?)?\/?$/.exec(path);
+  return !!match && !RESERVED_ROUTES.has(match[1]);
 }
 /** Meta reads the live URL itself. Do not load either SDK on a credential-bearing document. */
 export function credentialUrl(value: string): boolean {
@@ -45,7 +58,7 @@ export function consentValue(value: unknown, gpc: boolean): Consent {
 export function sanitizeProperties(event: string, props: Record<string, unknown>): Record<string, unknown> | null {
   if (event !== '$pageview' && !(EVENTS as readonly string[]).includes(event)) return null;
   const out: Record<string, unknown> = {};
-  if (props.team === 'exotiq') out.team = 'exotiq';
+  if (typeof props.team === 'string' && props.team.length <= 60 && slug.test(props.team) && !RESERVED_ROUTES.has(props.team)) out.team = props.team;
   if (typeof props.vehicle === 'string' && props.vehicle.length <= 120 && slug.test(props.vehicle)) out.vehicle = props.vehicle;
   if (typeof props.path === 'string' && eligibleRoute(props.path)) out.path = props.path;
   if (event === 'book_step' && Number.isInteger(props.step) && Number(props.step) >= 1 && Number(props.step) <= 10) out.step = props.step;
@@ -80,7 +93,7 @@ export function sanitizePostHogEvent(event: AnalyticsEvent | null): AnalyticsEve
   }
   for (const prefix of ['first', 'last']) for (const field of ATTRIBUTION_FIELDS) {
     const key = `${prefix}_${field}`;
-    const value = attributionValue(event.properties[key]);
+    const value = attributionValue(event.properties[key], field);
     if (value) properties[key] = value;
   }
   properties.$process_person_profile = false;

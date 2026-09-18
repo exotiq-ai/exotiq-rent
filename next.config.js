@@ -37,7 +37,14 @@ const nextConfig = {
       },
     ],
     formats: ['image/avif', 'image/webp'],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    // 2048 is the realistic ceiling: the widest frame is 840 CSS px inside a
+    // 1200px container, so 3840 only inflated srcsets and optimizer work.
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
+    // Optimized responses were shipping Cache-Control max-age=0, so browsers
+    // revalidated every photo on every view. Storage paths are immutable
+    // (a re-upload mints a new path) and signed URLs carry the token in the
+    // cache key, so 31 days is safe for both.
+    minimumCacheTTL: 2678400,
   },
   compress: true,
   poweredByHeader: false,
