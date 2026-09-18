@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays, SlidersHorizontal } from 'lucide-react';
 import type { MarketplaceFacets, MarketplaceQuery } from '@/domain/booking/publicContracts';
 import { MARKETPLACE_SORTS, PRICE_BANDS, daysBetween } from '@/domain/booking/marketplaceQuery';
 import { addDays } from '@/domain/booking/dates';
@@ -12,6 +12,9 @@ import { datePillClassName, microLabelClassName } from './tokens';
 
 /** The control that navigated, so its successor can take focus after the keyed remount (same document, no storage). */
 let pendingFocusId: string | null = null;
+/** Whether the mobile filter sheet was open, surviving the keyed remount a
+ * chip tap causes — otherwise the sheet slams shut after every selection. */
+let pendingFiltersOpen = false;
 
 function datesHint(start: string, end: string): string {
   if (start && end) return 'Cars shown are free for these dates.';
@@ -59,7 +62,10 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
     (b) => b.minCents === (query.minDailyRateCents ?? 0) && b.maxCents === query.maxDailyRateCents,
   )?.value ?? '';
   const hasWindow = Boolean(query.start && query.end);
-  const active = query.makes.length + query.types.length + (currentBand ? 1 : 0) + (hasWindow ? 1 : 0);
+  // chipActive counts what lives behind the mobile pill (dates stay outside it).
+  const chipActive = query.makes.length + query.types.length + (currentBand ? 1 : 0);
+  const active = chipActive + (hasWindow ? 1 : 0);
+  const [moreOpen, setMoreOpen] = useState(() => pendingFiltersOpen);
   const today = localTodayIso();
   const [hint, setHint] = useState(() => datesHint(query.start ?? '', query.end ?? ''));
 
@@ -151,6 +157,25 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
         </span>
         <p id={`${idPrefix}-dates-hint`} className="basis-full text-[11px] text-[#848A9A]" aria-live="polite">{hint}</p>
       </div>
+      {/* On a phone, everything but the dates lives behind one pill — the chip
+          stack was eating the storefront above the fold. Not a <details>: a
+          closed one removes its content from rendering entirely, so no class
+          could keep the rows visible on desktop. A button + hidden/lg:block
+          panel keeps desktop untouched, and the open state survives the keyed
+          remount via pendingFiltersOpen. Without JavaScript the pill is inert
+          and phones see dates only — the chips are an enhancement there. */}
+      <button
+        type="button"
+        onClick={() => { pendingFiltersOpen = !moreOpen; setMoreOpen(!moreOpen); }}
+        aria-expanded={moreOpen}
+        aria-controls={`${idPrefix}-more-filters`}
+        className="flex w-fit cursor-pointer items-center gap-2 rounded-full border border-[#3A3F4D] bg-[#161922] px-3.5 py-2 text-[12px] font-semibold text-[#F0F2F5] transition hover:border-[#C8A664]/40 active:scale-[0.97] lg:hidden"
+      >
+        <SlidersHorizontal size={14} className="text-[#C8A664]" aria-hidden />
+        Filters &amp; sort
+        {chipActive > 0 && <span className="rounded-full bg-[#C8A664]/15 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-[#C8A664]">{chipActive}</span>}
+      </button>
+      <div id={`${idPrefix}-more-filters`} className={`space-y-2.5 rounded-xl border border-[#2A2E3A] bg-[#0D0F14]/60 p-3 lg:block lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 ${moreOpen ? 'block' : 'hidden'}`}>
       <div className={row} role="group" aria-labelledby={`${idPrefix}-sort-label`}>
         <span id={`${idPrefix}-sort-label`} className={label}>Sort</span>
         {MARKETPLACE_SORTS.map((s) => (
@@ -205,6 +230,7 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
         <noscript>
           <button type="submit" className="rounded-full border border-[#C8A664]/40 px-3 py-1.5 text-[12px] font-semibold text-[#C8A664]">Apply</button>
         </noscript>
+      </div>
       </div>
     </form>
   );

@@ -61,9 +61,11 @@ export function createTracker(env: TrackingEnvironment, deps: TrackerDependencie
     const id = typeof clean.event_id === 'string' ? clean.event_id : undefined;
     const attribution = canSend('analytics') ? deps.attribution() : {};
     send('analytics', { event, properties: { ...clean, ...attribution, $current_url: `https://book.exotiq.rent${path}` }, id }, id || dedupe);
-    const metaEvent = event === '$pageview' ? 'PageView' : event === 'vehicle_view' ? 'ViewContent' : event === 'booking_created' ? 'Lead' : null;
+    // book_start → InitiateCheckout gives Meta a mid-funnel signal to optimize
+    // on; before this the pixel jumped from ViewContent straight to Lead.
+    const metaEvent = event === '$pageview' ? 'PageView' : event === 'vehicle_view' ? 'ViewContent' : event === 'book_start' ? 'InitiateCheckout' : event === 'booking_created' ? 'Lead' : null;
     if (metaEvent) {
-      const properties = clean.vehicle ? { content_ids: [`exotiq/${clean.vehicle}`], content_type: 'product' } : {};
+      const properties = clean.vehicle ? { content_ids: [`${clean.team || 'exotiq'}/${clean.vehicle}`], content_type: 'product' } : {};
       send('marketing', { event: metaEvent, properties, id }, id || dedupe);
     }
   }
@@ -76,10 +78,13 @@ export function createTracker(env: TrackingEnvironment, deps: TrackerDependencie
     if (halted) return;
     if (path !== loc.pathname.replace(/\/$/, '')) { path = loc.pathname.replace(/\/$/, ''); visit++; }
     if (canSend('analytics') || canSend('marketing')) safe(() => { deps.attribution(); });
-    dispatch('$pageview', { team: 'exotiq', path }, `${visit}:page`);
+    // The tenant is the first path segment — eligibleRoute() already vouched
+    // for its shape, and paid traffic lands on more slugs than 'exotiq' now.
     const parts = path.split('/').filter(Boolean);
+    const team = parts[0];
+    dispatch('$pageview', { team, path }, `${visit}:page`);
     const semantic = parts.length === 1 ? 'storefront_view' : parts.length === 2 ? 'vehicle_view' : 'book_start';
-    dispatch(semantic, { team: 'exotiq', path, ...(parts[1] ? { vehicle: parts[1] } : {}) }, `${visit}:${semantic}`);
+    dispatch(semantic, { team, path, ...(parts[1] ? { vehicle: parts[1] } : {}) }, `${visit}:${semantic}`);
   }
   function track(event: string, props: Record<string, unknown> = {}) {
     navigate();

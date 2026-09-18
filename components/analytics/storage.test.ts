@@ -24,9 +24,12 @@ describe('consent and scoped storage', () => {
 describe('consented attribution allowlist', () => {
   it('records first touch and last non-direct without unknown parameters, email, tokens or raw URLs', () => {
     const store = memory();
-    const first = captureAttribution(store, '?utm_source=facebook&utm_campaign=spring-drive&campaign_id=123&email=a%40b.com&fbclid=SECRET&utm_content=renter%40example.com&utm_term=phs_SECRET', 1000);
-    expect(first).toMatchObject({ first_utm_source: 'facebook', last_utm_source: 'facebook', first_campaign_id: '123' });
-    expect(JSON.stringify(first)).not.toMatch(/SECRET|email|renter|fbclid|utm_content|utm_term/);
+    // fbclid IS captured now (it joins PostHog sessions to Meta clicks) — with
+    // its own long-opaque-id shape, while credential-looking values still drop.
+    const first = captureAttribution(store, '?utm_source=facebook&utm_campaign=spring-drive&campaign_id=123&email=a%40b.com&fbclid=IwZXh0bgNhZW0CMTEAAR1x_Y2kQ8-abc123DEF456ghi789JKLmno&utm_content=renter%40example.com&utm_term=phs_SECRET', 1000);
+    expect(first).toMatchObject({ first_utm_source: 'facebook', last_utm_source: 'facebook', first_campaign_id: '123', first_fbclid: 'IwZXh0bgNhZW0CMTEAAR1x_Y2kQ8-abc123DEF456ghi789JKLmno' });
+    expect(JSON.stringify(first)).not.toMatch(/email|renter|utm_content|utm_term/);
+    expect(captureAttribution(memory(), '?fbclid=token-SECRET', 1000)).toEqual({});
     const direct = captureAttribution(store, '', 2000); expect(direct).toEqual(first);
     const next = captureAttribution(store, '?utm_source=google&ad_id=456&placement=feed', 3000);
     expect(next).toMatchObject({ first_utm_source: 'facebook', last_utm_source: 'google', last_ad_id: '456' });

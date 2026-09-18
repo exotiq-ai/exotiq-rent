@@ -7,10 +7,10 @@ const location = (path = '/exotiq', hostname = 'book.exotiq.rent', referrer = ''
 const input = { environment, location: location(), ready: true, hasSavedChoice: false };
 
 describe('compact cookie controls visibility', () => {
-  it.each(['/exotiq', '/exotiq/', '/exotiq/huracan', '/exotiq/huracan/book?start=2026-10-01&end=2026-10-04'])('offers the row on an eligible public route: %s', path => {
+  it.each(['/exotiq', '/exotiq/', '/exotiq/huracan', '/exotiq/huracan/book?start=2026-10-01&end=2026-10-04', '/ark', '/ark/mclaren-gt', '/ark/mclaren-gt/book'])('offers the row on an eligible public route: %s', path => {
     expect(cookieControlsVisibility({ ...input, location: location(path) })).toBe('row');
   });
-  it.each(['/ark', '/ark/mclaren-gt', '/ark/mclaren-gt/book', '/privacy', '/terms', '/booking/private', '/verify', '/saved', '/browse', '/exotiq/huracan/private'])('does not prompt a new visitor on %s', path => {
+  it.each(['/privacy', '/terms', '/booking/private', '/verify', '/saved', '/browse', '/exotiq/huracan/private'])('does not prompt a new visitor on %s', path => {
     expect(cookieControlsVisibility({ ...input, location: location(path) })).toBe('hidden');
   });
   it.each(['localhost', 'demo.exotiq.rent', 'exotiq.rent', 'preview.netlify.app'])('does not prompt on %s', host => {
@@ -38,7 +38,7 @@ describe('compact cookie controls visibility', () => {
   it('keeps the compact row for an existing eligible choice', () => {
     expect(cookieControlsVisibility({ ...input, hasSavedChoice: true })).toBe('row');
   });
-  it.each(['/privacy', '/ark', '/booking/private', '/exotiq?token=secret'])('allows only discreet saved preferences outside eligible tracking: %s', path => {
+  it.each(['/privacy', '/booking/private', '/exotiq?token=secret'])('allows only discreet saved preferences outside eligible tracking: %s', path => {
     expect(cookieControlsVisibility({ ...input, hasSavedChoice: true, location: location(path) })).toBe('preferences');
   });
   it('allows an explicit manual entry even without tracking, consent, or hydration', () => {

@@ -6,8 +6,10 @@ const env = { enabled: 'true', dataMode: 'supabase', posthogKey: 'phc_publicTest
 describe('production allowlist', () => {
   it('allows only approved live host, tenant and public storefront/vehicle/book routes', () => {
     expect(trackingConfig(env, 'book.exotiq.rent', '/exotiq')).toMatchObject({ eligible: true, posthogKey: env.posthogKey, metaPixelId: env.metaPixelId });
-    for (const path of ['/exotiq', '/exotiq/', '/exotiq/lamborghini-huracan', '/exotiq/lamborghini-huracan/book']) expect(eligibleRoute(path)).toBe(true);
-    for (const path of ['/', '/other', '/other/car', '/exotiq-evil/car', '/booking/BK-secret', '/verify', '/saved', '/renters/saved', '/exotiq/car/extra', '/exotiq/car?token=secret', '/exotiq/%65mail']) expect(eligibleRoute(path)).toBe(false);
+    // Any tenant storefront is eligible — paid traffic lands on /ark, not just
+    // the exotiq launch tenant. Reserved app routes stay excluded.
+    for (const path of ['/exotiq', '/exotiq/', '/exotiq/lamborghini-huracan', '/exotiq/lamborghini-huracan/book', '/ark', '/ark/mclaren-gt', '/ark/mclaren-gt/book', '/exotics-by-the-bay/rolls-royce-dawn']) expect(eligibleRoute(path)).toBe(true);
+    for (const path of ['/', '/booking/BK-secret', '/verify', '/saved', '/renters/saved', '/browse', '/privacy', '/terms', '/share/ark', '/preview', '/api/renters', '/exotiq/car/extra', '/exotiq/car?token=secret', '/exotiq/%65mail', '/Ark', '/ark-']) expect(eligibleRoute(path)).toBe(false);
     for (const hostname of ['localhost', 'demo.exotiq.rent', 'exotiq.rent', 'preview.netlify.app', 'book.exotiq.rent.evil.test']) expect(trackingConfig(env, hostname, '/exotiq').eligible).toBe(false);
     expect(trackingConfig({ ...env, enabled: undefined }, 'book.exotiq.rent', '/exotiq').eligible).toBe(false);
     expect(trackingConfig({ ...env, dataMode: 'mock' }, 'book.exotiq.rent', '/exotiq').eligible).toBe(false);
@@ -32,7 +34,10 @@ describe('explicit consent and GPC', () => {
 describe('allowlisted events only, with no identity or credential properties', () => {
   it('drops raw queries, private refs, arbitrary strings, nested values and PII', () => {
     expect(sanitizeProperties('vehicle_view', { team: 'exotiq', vehicle: 'huracan', path: '/exotiq/huracan', email: 'renter@example.com', query: '?t=SECRET', booking: 'BK-PRIVATE', nested: { token: 'SECRET' }, $set: { email: 'renter@example.com' } })).toEqual({ team: 'exotiq', vehicle: 'huracan', path: '/exotiq/huracan' });
-    expect(sanitizeProperties('book_step', { step: 2, team: 'other', vehicle: 'renter@example.com', status: 'SECRET', amount: 99 })).toEqual({ step: 2 });
+    expect(sanitizeProperties('vehicle_view', { team: 'ark', vehicle: 'mclaren-gt', path: '/ark/mclaren-gt' })).toEqual({ team: 'ark', vehicle: 'mclaren-gt', path: '/ark/mclaren-gt' });
+    expect(sanitizeProperties('book_step', { step: 2, team: 'Not A Slug!', vehicle: 'renter@example.com', status: 'SECRET', amount: 99 })).toEqual({ step: 2 });
+    // Reserved route names can never masquerade as a tenant.
+    expect(sanitizeProperties('storefront_view', { team: 'booking' })).toEqual({});
     expect(sanitizeProperties('booking_request_failed', { reason: 'network', error: 'renter@example.com' })).toEqual({ reason: 'network' });
     expect(sanitizeProperties('Purchase', { value: 1 })).toBeNull();
   });

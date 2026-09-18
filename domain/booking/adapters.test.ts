@@ -68,6 +68,25 @@ describe('M4 adapters (RPC rows -> domain, dollars -> cents)', () => {
     expect(vehicle.minRentalDays).toBe(2);
   });
 
+  it('prefers stored public object URLs over signed media — stable URLs are cacheable, tokens rotate hourly', () => {
+    const team = adaptTeam(teamRow);
+    const vehicle = adaptVehicleDetail(
+      {
+        ...vehicleRow,
+        photos: [
+          { url: 'https://x.supabase.co/storage/v1/object/public/vehicle-photos/b.jpg', thumbnail_url: null, display_order: 2 },
+          { url: 'https://x.supabase.co/storage/v1/object/public/vehicle-photos/a.jpg', thumbnail_url: null, display_order: 1 },
+        ],
+      },
+      team,
+      { expiresIn: 3600, photos: [{ signedUrl: 'https://signed/x.jpg', thumbnailUrl: null, displayOrder: 1 }] },
+    );
+    expect(vehicle.photos).toEqual([
+      'https://x.supabase.co/storage/v1/object/public/vehicle-photos/a.jpg',
+      'https://x.supabase.co/storage/v1/object/public/vehicle-photos/b.jpg',
+    ]);
+  });
+
   it('prefers signed media URLs over RPC photo URLs, ordered by display_order', () => {
     const team = adaptTeam(teamRow);
     const vehicle = adaptVehicleDetail(vehicleRow, team, {

@@ -17,7 +17,7 @@ function cleanTouch(value: unknown): Record<string, string> {
   if (!value || typeof value !== 'object') return {};
   const out: Record<string, string> = {};
   for (const field of ATTRIBUTION_FIELDS) {
-    const item = attributionValue((value as Record<string, unknown>)[field]);
+    const item = attributionValue((value as Record<string, unknown>)[field], field);
     if (item) out[field] = item;
   }
   return out;

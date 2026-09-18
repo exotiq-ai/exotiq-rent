@@ -94,16 +94,18 @@ export function adaptVehicleDetail(row: RpcVehicleDetailRow, team: Operator, med
     .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
     .map((photo) => publicImageUrl(photo.signedUrl))
     .filter((url): url is string => url !== null);
-  // The detail RPC already returns the stored gallery; when the media edge
-  // function fails or returns nothing, those URLs beat degrading to a
-  // one-image page. Fresh signed URLs still win — stored ones can be
-  // long-lived tokens that eventually expire.
   const storedPhotos = (row.photos ?? [])
     .slice()
     .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
     .map((photo) => publicImageUrl(photo.url))
     .filter((url): url is string => url !== null);
-  const photos = signedPhotos.length > 0 ? signedPhotos : storedPhotos.length > 0 ? storedPhotos : base.photos;
+  // Precedence: stored PUBLIC object URLs first — they are stable (a re-upload
+  // mints a new path), so the image optimizer and the browser can actually
+  // cache them, where a signed URL's hourly token rotates the cache key every
+  // hour. Signed media is the fallback for photos that only exist privately;
+  // other stored https URLs (e.g. legacy long-lived tokens) come after it.
+  const stablePhotos = storedPhotos.filter((url) => url.includes('/storage/v1/object/public/'));
+  const photos = stablePhotos.length > 0 ? stablePhotos : signedPhotos.length > 0 ? signedPhotos : storedPhotos.length > 0 ? storedPhotos : base.photos;
 
   return {
     ...base,
