@@ -6,6 +6,7 @@ import {
   CreditCard, Clock, Star, Zap, Car, Plus, Minus,
 } from 'lucide-react';
 import { Vehicle, PageType } from './data';
+import { tone } from '@/components/browse/tokens';
 
 interface BookingPageProps {
   vehicle: Vehicle;
@@ -226,7 +227,7 @@ export default function BookingPage({ vehicle, navigate }: BookingPageProps) {
                           className="text-[10px] px-2 py-0.5 rounded-full font-medium"
                           style={{
                             backgroundColor: plan.badge === 'RECOMMENDED' ? 'rgba(110,193,228,0.15)' : 'rgba(201,168,76,0.15)',
-                            color: plan.badge === 'RECOMMENDED' ? '#6EC1E4' : '#C9A84C',
+                            color: plan.badge === 'RECOMMENDED' ? '#6EC1E4' : tone.gold,
                           }}
                         >
                           {plan.badge}
