@@ -85,12 +85,12 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
             )}
 
             {/* Phone only — from lg the same facts live in the booking aside. */}
-            <div className="mt-4 rounded-xl border border-line bg-surface p-4 lg:hidden">
+            <div className="mt-4 border-t border-line pt-4 lg:hidden">
               <h2 className="mb-3 flex items-center gap-2 text-body font-medium"><CalendarDays size={16} className="text-muted" />Booking preview</h2>
-              <div className="grid grid-cols-3 gap-2 text-center text-label">
-                <div className="rounded-lg bg-surface2 p-3"><div className="text-body font-medium leading-none tabular-nums text-ink min-[360px]:text-title-sm min-[360px]:leading-none"><Money cents={vehicle.dailyRateCents} /></div><div className="mt-1.5 text-faint">Per day</div></div>
-                <div className="rounded-lg bg-surface2 p-3"><div className="text-body font-medium leading-none tabular-nums text-ink min-[360px]:text-title-sm min-[360px]:leading-none">{vehicle.minRentalDays}<span className="text-label font-normal text-faint"> {vehicle.minRentalDays === 1 ? 'day' : 'days'}</span></div><div className="mt-1.5 text-faint">Minimum</div></div>
-                <div className="rounded-lg bg-surface2 p-3"><div className="text-body font-medium leading-none text-ink min-[360px]:text-title-sm min-[360px]:leading-none">Verified</div><div className="mt-1.5 text-faint">Drivers</div></div>
+              <div className="grid grid-cols-3 divide-x divide-line text-center text-label">
+                <div className="px-1"><div className="text-body font-medium leading-none tabular-nums text-ink min-[360px]:text-title-sm min-[360px]:leading-none"><Money cents={vehicle.dailyRateCents} /></div><div className="mt-1.5 text-faint">Per day</div></div>
+                <div className="px-1"><div className="text-body font-medium leading-none tabular-nums text-ink min-[360px]:text-title-sm min-[360px]:leading-none">{vehicle.minRentalDays}<span className="text-label font-normal text-faint"> {vehicle.minRentalDays === 1 ? 'day' : 'days'}</span></div><div className="mt-1.5 text-faint">Minimum</div></div>
+                <div className="px-1"><div className="text-body font-medium leading-none text-ink min-[360px]:text-title-sm min-[360px]:leading-none">Verified</div><div className="mt-1.5 text-faint">Drivers</div></div>
               </div>
               <p className="mt-3 text-body-sm leading-5 text-muted">{vehicle.footnote}. Final availability is confirmed at the booking step.</p>
             </div>
