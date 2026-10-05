@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useCookieConsent } from './PostHogInit';
 import { cookieControlState, toggleOptionalCookies } from './cookieControlsModel';
 
-const focusRing = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8A664]';
+const focusRing = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
 
 function Toggle({ label, checked, onClick, disabled = false, master = false, describedBy }: {
   label: string; checked: boolean | 'mixed'; onClick: () => void; disabled?: boolean; master?: boolean; describedBy?: string;
@@ -22,8 +22,8 @@ function Toggle({ label, checked, onClick, disabled = false, master = false, des
       onClick={onClick}
       className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg disabled:cursor-not-allowed disabled:opacity-45 ${focusRing}`}
     >
-      <span aria-hidden="true" className={`relative h-5 w-[34px] rounded-full border transition-colors motion-reduce:transition-none ${checked === true ? 'border-[#C8A664] bg-[#C8A664]' : checked === 'mixed' ? 'border-[#C8A664] bg-[#C8A664]/30' : 'border-[#465064] bg-[#252B38]'}`}>
-        <span className={`absolute left-[3px] top-[3px] h-3 w-3 rounded-full transition-transform motion-reduce:transition-none ${checked === true ? 'translate-x-[14px] bg-[#1A1308]' : checked === 'mixed' ? 'translate-x-[7px] bg-[#C8A664]' : 'bg-[#CDD1D9]'}`} />
+      <span aria-hidden="true" className={`relative h-5 w-[34px] rounded-full border transition-colors motion-reduce:transition-none ${checked === true ? 'border-gold bg-gold' : checked === 'mixed' ? 'border-gold bg-gold/30' : 'border-[#465064] bg-[#252B38]'}`}>
+        <span className={`absolute left-[3px] top-[3px] h-3 w-3 rounded-full transition-transform motion-reduce:transition-none ${checked === true ? 'translate-x-[14px] bg-goldInk' : checked === 'mixed' ? 'translate-x-[7px] bg-gold' : 'bg-[#CDD1D9]'}`} />
       </span>
     </button>
   );
@@ -144,7 +144,7 @@ export function CookieControls({ manual = false, viewport = 'all', className = '
   // Responsive instances do not leave hidden interactive controls or dialogs.
   if (!visible) return null;
   return (
-    <div ref={root} data-cookie-controls={mode} className={`relative -mt-1 mb-1.5 font-[var(--font-drive-inter)] text-[#9BA1B0] ${className}`}>
+    <div ref={root} data-cookie-controls={mode} className={`relative -mt-1 mb-1.5 font-[var(--font-drive-inter)] text-muted ${className}`}>
       <div className="flex min-h-11 items-center gap-2">
         {mode === 'row' && <span className="flex-1 text-[12px] font-normal tracking-[.01em]">{open ? 'Your privacy choices' : 'Optional cookies'}</span>}
         <button
@@ -175,26 +175,26 @@ export function CookieControls({ manual = false, viewport = 'all', className = '
           aria-modal="false"
           aria-labelledby={`${id}-title`}
           style={position ? { ...position, visibility: 'visible' } : { visibility: 'hidden' }}
-          className="fixed z-[60] overflow-y-auto rounded-[14px] border border-[#353B49] bg-[#161922] px-4 pb-2 pt-3 text-[#F0F2F5] shadow-[0_12px_35px_#0008]"
+          className="fixed z-[60] overflow-y-auto rounded-[14px] border border-[#353B49] bg-surface px-4 pb-2 pt-3 text-ink shadow-[0_12px_35px_#0008]"
         >
           <div className="-mr-1.5 -mt-1 flex items-center justify-between gap-2">
             <span id={`${id}-title`} className="text-[14px] font-medium">Cookie preferences</span>
-            <button ref={closeButton} type="button" aria-label="Close cookie preferences" onClick={() => dismiss(true)} className={`grid h-11 w-11 shrink-0 place-items-center rounded-lg text-[#9BA1B0] ${focusRing}`}>
+            <button ref={closeButton} type="button" aria-label="Close cookie preferences" onClick={() => dismiss(true)} className={`grid h-11 w-11 shrink-0 place-items-center rounded-lg text-muted ${focusRing}`}>
               <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="m3 3 8 8M11 3l-8 8" stroke="currentColor" strokeWidth="1.3" /></svg>
             </button>
           </div>
-          <div className="flex min-h-[52px] items-center justify-between gap-3 border-t border-[#2A2E3A]">
-            <div><span className="block text-[12px] font-medium">Analytics</span><p className="mt-px text-[11px] leading-4 text-[#9BA1B0]">Help us improve the experience.</p></div>
+          <div className="flex min-h-[52px] items-center justify-between gap-3 border-t border-line">
+            <div><span className="block text-[12px] font-medium">Analytics</span><p className="mt-px text-[11px] leading-4 text-muted">Help us improve the experience.</p></div>
             <Toggle label="Analytics cookies" checked={choice.analytics} onClick={() => choose({ ...choice, analytics: !choice.analytics })} />
           </div>
-          <div className="flex min-h-[52px] items-center justify-between gap-3 border-t border-[#2A2E3A]">
-            <div><span className="block text-[12px] font-medium">Advertising</span><p className="mt-px text-[11px] leading-4 text-[#9BA1B0]">Help us measure our ads.</p></div>
+          <div className="flex min-h-[52px] items-center justify-between gap-3 border-t border-line">
+            <div><span className="block text-[12px] font-medium">Advertising</span><p className="mt-px text-[11px] leading-4 text-muted">Help us measure our ads.</p></div>
             <Toggle label="Advertising cookies" checked={choice.marketing && !gpc} disabled={gpc} describedBy={gpc ? `${id}-gpc` : undefined} onClick={() => choose({ ...choice, marketing: !choice.marketing })} />
           </div>
-          {gpc && <p id={`${id}-gpc`} role="status" className="mt-2 text-[11px] leading-4 text-[#9BA1B0]">Global Privacy Control is enabled. Advertising is disabled.</p>}
-          <div className="flex items-center justify-between gap-2 text-[10px] leading-4 text-[#9BA1B0]">
+          {gpc && <p id={`${id}-gpc`} role="status" className="mt-2 text-[11px] leading-4 text-muted">Global Privacy Control is enabled. Advertising is disabled.</p>}
+          <div className="flex items-center justify-between gap-2 text-[10px] leading-4 text-muted">
             <span>Changes apply instantly.</span>
-            <a href="/privacy" className={`inline-flex min-h-11 items-center rounded text-[#C8A664] underline underline-offset-[3px] ${focusRing}`}>Privacy notice</a>
+            <a href="/privacy" className={`inline-flex min-h-11 items-center rounded text-gold underline underline-offset-[3px] ${focusRing}`}>Privacy notice</a>
           </div>
         </section>
       )}
