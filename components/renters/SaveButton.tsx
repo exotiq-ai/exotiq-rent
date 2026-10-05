@@ -25,7 +25,7 @@ export function SaveButton({ car, className = '', size = 16, variant = 'icon' }:
       track('favourite_added', { team: car.team_slug, vehicle: car.vehicle_slug });
     }
   };
-  const heart = <Heart size={size} strokeWidth={1.75} className={`${saved ? 'fill-[#C8A664] text-[#C8A664]' : ''} ${bounce ? 'animate-heart-bounce' : ''}`} onAnimationEnd={() => setBounce(false)} aria-hidden />;
+  const heart = <Heart size={size} strokeWidth={1.75} className={`${saved ? 'fill-gold text-gold' : ''} ${bounce ? 'animate-heart-bounce' : ''}`} onAnimationEnd={() => setBounce(false)} aria-hidden />;
   if (variant === 'pill') {
     return (
       <button
@@ -33,7 +33,7 @@ export function SaveButton({ car, className = '', size = 16, variant = 'icon' }:
         onClick={onClick}
         aria-pressed={saved}
         aria-label={`Save ${car.name}`}
-        className={`inline-flex items-center justify-center gap-2 rounded-xl border border-[#2A2E3A] bg-[#161922] px-4 py-3 text-[13px] font-medium text-[#F0F2F5] transition hover:border-[#C8A664]/45 active:scale-[0.98] ${className}`}
+        className={`inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-surface px-4 py-3 text-body-sm font-medium text-ink transition hover:border-gold/45 active:scale-[0.98] ${className}`}
       >
         {heart}
         {saved ? 'Saved' : 'Save'}
@@ -47,7 +47,7 @@ export function SaveButton({ car, className = '', size = 16, variant = 'icon' }:
       aria-pressed={saved}
       aria-label={`Save ${car.name}`}
       title={saved ? 'Saved' : 'Save this car'}
-      className={`grid h-9 w-9 place-items-center rounded-full border border-[#C8A664]/25 bg-[#0D0F14]/70 text-[#F0F2F5] backdrop-blur transition hover:border-[#C8A664]/60 hover:text-[#C8A664] active:scale-95 ${className}`}
+      className={`grid h-9 w-9 place-items-center rounded-full border border-gold/25 bg-panel/70 text-ink backdrop-blur transition hover:border-gold/60 hover:text-gold active:scale-95 ${className}`}
     >
       {heart}
     </button>

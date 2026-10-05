@@ -21,9 +21,9 @@ export default function UnsubscribedPage({ searchParams }: { searchParams?: { st
   return (
     <BrowseChrome view={null} footerSignup={false}>
       <section className={`${containerClassName} max-w-2xl pb-24 pt-16 sm:pt-24`}>
-        <p className={`${eyebrowClassName} text-[#848A9A]`}>Drive Exotiq</p>
-        <h1 className="mt-3 text-[36px] leading-[1.05] text-[#F0F2F5] sm:text-[48px]" style={displaySerifStyle}>{copy.title}</h1>
-        <p className="mt-5 max-w-xl text-[15px] leading-7 text-[#9BA1B0]">{copy.body}</p>
+        <p className={`${eyebrowClassName} text-faint`}>Drive Exotiq</p>
+        <h1 className="mt-3 text-display leading-[1.05] text-ink sm:text-display-lg sm:leading-[1.05]" style={displaySerifStyle}>{copy.title}</h1>
+        <p className="mt-5 max-w-xl text-body leading-7 text-muted">{copy.body}</p>
       </section>
     </BrowseChrome>
   );

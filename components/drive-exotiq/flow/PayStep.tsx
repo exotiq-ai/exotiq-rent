@@ -58,61 +58,61 @@ export function PayStep({
             copy has to say that plainly — "Final payment / due today" read as a
             charge that never happened. */}
         <StepHeader eyebrow="Step 05" title="Reserve your dates." sub="Nothing is charged yet." />
-        <div className="rounded-xl border border-[#C8A664] bg-[#14130F] p-4 shadow-[0_0_0_1px_#C8A664,0_0_24px_rgba(200,166,100,.10)]">
-          <div className={`${eyebrowClassName} text-[#848A9A]`}>Total once approved</div>
+        <div className="rounded-xl border border-gold bg-goldWash p-4 shadow-[0_0_0_1px_var(--tone-gold),0_0_24px_rgba(200,166,100,.10)]">
+          <div className={`${eyebrowClassName} text-faint`}>Total once approved</div>
           <div className="mt-2"><Money cents={m.grandTotalCents} large /></div>
-          <p className="mt-2 text-xs leading-5 text-[#9BA1B0]">{cart.operator.name} reviews your request, then we email you a secure payment link. Your card is only charged when you pay from that link.</p>
+          <p className="mt-2 text-body-sm leading-5 text-muted">{cart.operator.name} reviews your request, then we email you a secure payment link. Your card is only charged when you pay from that link.</p>
         </div>
 
-        <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm">
+        <div className="mt-4 rounded-xl border border-line bg-surface p-4 text-body">
           {/* Tax rides INSIDE the operator charge (T-11) — itemised so the
               operator row plus the tax row sum to what the statement shows. */}
           {m.operatorTaxesCents > 0 ? (
             <>
               <div className="flex justify-between gap-3">
-                <span className="text-[#9BA1B0]">Operator rental</span>
+                <span className="text-muted">Operator rental</span>
                 <Money cents={m.operatorTotalCents - m.operatorTaxesCents} />
               </div>
-              <div className="mt-3 flex justify-between gap-3 border-t border-[#2A2E3A] pt-3">
-                <span className="text-[#9BA1B0]">{quote?.operatorTaxLabel ?? 'Tax'}{quote?.operatorTaxRate != null ? ` (${quote.operatorTaxRate}%)` : ''}</span>
+              <div className="mt-3 flex justify-between gap-3 border-t border-line pt-3">
+                <span className="text-muted">{quote?.operatorTaxLabel ?? 'Tax'}{quote?.operatorTaxRate != null ? ` (${quote.operatorTaxRate}%)` : ''}</span>
                 <Money cents={m.operatorTaxesCents} />
               </div>
             </>
           ) : (
             <div className="flex justify-between gap-3">
-              <span className="text-[#9BA1B0]">Operator rental charge</span>
+              <span className="text-muted">Operator rental charge</span>
               <Money cents={m.operatorTotalCents} />
             </div>
           )}
-          <div className="mt-2 text-xs leading-5 text-[#848A9A]">Charged by {cart.operator.name} — appears as its own line on your statement.</div>
-          <div className="mt-3 flex justify-between gap-3 border-t border-[#2A2E3A] pt-3">
-            <span className="text-[#9BA1B0]">Trip Fees ({platformPercent}%)</span>
+          <div className="mt-2 text-body-sm leading-5 text-faint">Charged by {cart.operator.name} — appears as its own line on your statement.</div>
+          <div className="mt-3 flex justify-between gap-3 border-t border-line pt-3">
+            <span className="text-muted">Trip Fees ({platformPercent}%)</span>
             <Money cents={m.platformFeeCents} />
           </div>
-          <div className="mt-1 text-xs leading-5 text-[#848A9A]">Calculated on the {formatMoney(feeBaseCents)} rental only.</div>
+          <div className="mt-1 text-body-sm leading-5 text-faint">Calculated on the {formatMoney(feeBaseCents)} rental only.</div>
           {/* T-12: protection is declinable — a $0 row for a declined booking
               reads as a glitch, so the row exists only when protection does. */}
           {m.protectionTotalCents > 0 ? (
-            <div className="mt-3 flex justify-between gap-3 border-t border-[#2A2E3A] pt-3">
-              <span className="text-[#9BA1B0]">Exotiq Protect (premium)</span>
+            <div className="mt-3 flex justify-between gap-3 border-t border-line pt-3">
+              <span className="text-muted">Exotiq Protect (premium)</span>
               <Money cents={m.protectionTotalCents} />
             </div>
           ) : null}
           {/* Itemise everything the server folded into exotiqTotalCents —
               otherwise the rows and the total disagree. */}
           {quote?.stateFeeCents ? (
-            <div className="mt-3 flex justify-between gap-3 border-t border-[#2A2E3A] pt-3">
-              <span className="text-[#9BA1B0]">{quote.stateFeeLabel ?? 'State rental fee'}</span>
+            <div className="mt-3 flex justify-between gap-3 border-t border-line pt-3">
+              <span className="text-muted">{quote.stateFeeLabel ?? 'State rental fee'}</span>
               <Money cents={quote.stateFeeCents} />
             </div>
           ) : null}
           {quote?.processingFeeCents ? (
-            <div className="mt-3 flex justify-between gap-3 border-t border-[#2A2E3A] pt-3">
-              <span className="text-[#9BA1B0]">Processing fees</span>
+            <div className="mt-3 flex justify-between gap-3 border-t border-line pt-3">
+              <span className="text-muted">Processing fees</span>
               <Money cents={quote.processingFeeCents} />
             </div>
           ) : null}
-          <div className="mt-3 flex justify-between gap-3 border-t border-[#2A2E3A] pt-3 font-medium text-[#F0F2F5]">
+          <div className="mt-3 flex justify-between gap-3 border-t border-line pt-3 font-medium text-ink">
             <span>Exotiq total</span>
             <Money cents={m.exotiqTotalCents} />
           </div>
@@ -122,20 +122,20 @@ export function PayStep({
             Exotiq quotes no amount, so there is no value to gate on. */}
         <DepositDisclosure operatorName={cart.operator.name} />
 
-        <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
+        <div className="mt-4 rounded-xl border border-line bg-surface p-4">
           <div className="flex items-start gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#C8A664]/10 text-[#C8A664]"><LockKeyhole size={16} /></div>
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-gold/10 text-gold"><LockKeyhole size={16} /></div>
             <div>
-              <div className="text-sm font-medium">What you&apos;ll see on your statement</div>
-              <p className="mt-1 text-xs leading-5 text-[#9BA1B0]">Two charges: {cart.operator.name}, and <span className="text-[#F0F2F5]">EXOTIQ.RENT</span> for Trip Fees and protection.</p>
+              <div className="text-body font-medium">What you&apos;ll see on your statement</div>
+              <p className="mt-1 text-body-sm leading-5 text-muted">Two charges: {cart.operator.name}, and <span className="text-ink">EXOTIQ.RENT</span> for Trip Fees and protection.</p>
             </div>
           </div>
         </div>
 
-        <p className="mt-4 text-center text-xs text-[#9BA1B0]">Free cancellation up to 72 hours before pickup.</p>
+        <p className="mt-4 text-center text-body-sm text-muted">Free cancellation up to 72 hours before pickup.</p>
       </ScreenShell>
       <Sticky>
-        {payError && <p className="rounded-xl border border-[#FFB84D]/45 bg-[#FFB84D]/10 p-3 text-center text-xs leading-5 text-[#F0F2F5]">{payError}</p>}
+        {payError && <p className="rounded-xl border border-warn/45 bg-warn/10 p-3 text-center text-body-sm leading-5 text-ink">{payError}</p>}
         {/* "Reserve for $X" implied an immediate charge of $X. It requests the
             booking; payment is a later, separate step. */}
         <PrimaryButton onClick={onPay} disabled={paying}>{paying ? 'Sending request…' : 'Request this booking'}</PrimaryButton>

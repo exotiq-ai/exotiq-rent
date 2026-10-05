@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { PostHogInit } from "@/components/analytics/PostHogInit";
 import { siteUrl } from "@/domain/booking/config";
+import { tone } from "@/components/browse/tokens";
 import "./globals.css";
 
 // Booking deploys (book./demo.exotiq.rent) are Drive Exotiq; the marketplace
@@ -53,7 +54,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   // Paints the in-app browser frame and Android toolbar in the site's dark
   // ground instead of default white, so the page doesn't sit in a white frame.
-  themeColor: isMarketplace ? "#0B0B0F" : "#06070a",
+  themeColor: isMarketplace ? "#0B0B0F" : tone.ground,
 };
 
 export default function RootLayout({

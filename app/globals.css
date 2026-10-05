@@ -2,6 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mirror of `tone` in components/browse/tokens.ts (MP-15): keep in sync, key for
+   key (surface2 -> --tone-surface-2, goldInk -> --tone-gold-ink). For the CSS that
+   cannot take a Tailwind colour name: multi-part arbitrary values (inset rings,
+   shadows) and the plain rules below. tests/design/tokens.test.ts holds them equal. */
+/* tone-mirror:begin */
+:root {
+  --tone-ground: #06070a;
+  --tone-panel: #0D0F14;
+  --tone-surface: #161922;
+  --tone-surface-2: #1E2230;
+  --tone-field: #10131A;
+  --tone-line: #2A2E3A;
+  --tone-line-2: #3A3F4D;
+  --tone-ink: #F0F2F5;
+  --tone-muted: #9BA1B0;
+  --tone-faint: #848A9A;
+  --tone-gold: #C8A664;
+  --tone-gold-ink: #1A1308;
+  --tone-verified: #6EC1E4;
+  --tone-warn: #FFB84D;
+  --tone-gold-wash: #14130F;
+  --tone-share-ground: #0B0D12;
+  --tone-dim: #3D4250;
+  --tone-dim-2: #5C6272;
+  --tone-ink-soft: #D7DAE0;
+}
+/* tone-mirror:end */
+
 @layer base {
   body {
     @apply bg-deep-black text-pure-white antialiased;
@@ -36,7 +64,7 @@
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #3A3F4D;
+    background: var(--tone-line-2);
   }
 
   /* Keyboard focus: one gold ring for every control that does not draw its
@@ -72,6 +100,9 @@
     display: none;
   }
 
+  /* legacy-marketplace:begin */
+  /* Marketplace mockup only (MP-15 fence): the Dfaalt faces its 24 inline
+     fontFamily styles load, and its range slider. Retire with it (T-2). */
   /* Dfaalt font-face declarations */
   @font-face {
     font-family: 'Dfaalt';
@@ -124,6 +155,7 @@
     background: rgba(78, 205, 196, 0.2);
     outline: none;
   }
+  /* legacy-marketplace:end */
 
   /* Ken Burns hero zoom */
   @keyframes kenBurns {
@@ -164,6 +196,8 @@
     30% { opacity: 1; transform: translateY(-4px); }
   }
 
+  /* legacy-marketplace:begin */
+  /* Marketplace mockup only: the chat typing indicator. Retire with it (T-2). */
   .typing-dot {
     display: inline-block;
     width: 6px;
@@ -175,6 +209,7 @@
 
   .typing-dot:nth-child(2) { animation-delay: 0.15s; }
   .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+  /* legacy-marketplace:end */
 
   /* Slide up for sections */
   @keyframes slideUp {
@@ -249,17 +284,19 @@
        `checked:hover` keeps a selected box solid gold — Tailwind sorts
        `hover:` after `checked:`, so without it a selected box dimmed under
        the pointer. */
-    @apply h-4 w-4 shrink-0 cursor-pointer appearance-none border border-[#848A9A]/80 bg-[#10131A] bg-center bg-no-repeat transition hover:border-[#C8A664]/60 checked:border-[#C8A664] checked:bg-[#C8A664] checked:hover:border-[#C8A664];
+    @apply h-4 w-4 shrink-0 cursor-pointer appearance-none border border-faint/80 bg-field bg-center bg-no-repeat transition hover:border-gold/60 checked:border-gold checked:bg-gold checked:hover:border-gold;
   }
   .control-check {
     @apply rounded;
   }
+  /* The tick's stroke is tone.goldInk, url-encoded: a CSS variable cannot reach
+     inside a data URI, so this is the one place the value is written out. */
   .control-check:checked {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%231A1308' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 6.5l2.5 2.5L9.5 3.5'/%3E%3C/svg%3E");
     background-size: 11px 11px;
   }
   .control-radio {
-    @apply rounded-full checked:shadow-[inset_0_0_0_3px_#10131A];
+    @apply rounded-full checked:shadow-[inset_0_0_0_3px_var(--tone-field)];
   }
   @media (forced-colors: active) {
     .control-check,
@@ -273,7 +310,7 @@
      thin, palette-coloured one. */
   .scroll-quiet {
     scrollbar-width: thin;
-    scrollbar-color: #2A2E3A transparent;
+    scrollbar-color: var(--tone-line) transparent;
   }
   .scroll-quiet::-webkit-scrollbar {
     width: 6px;
@@ -282,7 +319,7 @@
     background: transparent;
   }
   .scroll-quiet::-webkit-scrollbar-thumb {
-    background: #2A2E3A;
+    background: var(--tone-line);
     border-radius: 9999px;
   }
 }

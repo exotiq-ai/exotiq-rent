@@ -89,7 +89,7 @@ export default function PrivacyPage() {
           <a href="https://posthog.com/privacy" rel="noreferrer" target="_blank">PostHog&apos;s privacy policy</a> and{' '}
           <a href="https://www.facebook.com/privacy/policy/" rel="noreferrer" target="_blank">Meta&apos;s privacy policy</a>.
         </p>
-        <CookieControls manual className="mt-4 max-w-sm border-t border-[#2A2E3A]" />
+        <CookieControls manual className="mt-4 max-w-sm border-t border-line" />
       </section>
 
       {capture && (

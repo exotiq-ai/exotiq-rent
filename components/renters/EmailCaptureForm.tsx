@@ -113,29 +113,29 @@ export function EmailCaptureForm({
           autoComplete="email"
           required
           placeholder={placeholder}
-          className="h-10 min-w-0 flex-1 rounded-lg border border-[#2A2E3A] bg-[#10131A] px-3 text-[13px] text-[#F0F2F5] outline-none transition placeholder:text-[#848A9A] hover:border-[#3A3F4D] focus:border-[#C8A664]/70 focus-visible:ring-2 focus-visible:ring-[#C8A664]/60"
+          className="h-10 min-w-0 flex-1 rounded-lg border border-line bg-field px-3 text-body-lg text-ink outline-none transition placeholder:text-faint hover:border-line2 focus:border-gold/70 focus-visible:ring-2 focus-visible:ring-gold/60"
         />
         {/* Honeypot: hidden from people and named so contact autofill leaves it alone. */}
         <input name="hp_field" type="text" tabIndex={-1} autoComplete="off" aria-hidden className="absolute -left-[9999px] h-0 w-0 opacity-0" />
-        <button type="submit" aria-disabled={sending} className="h-10 shrink-0 rounded-lg bg-[#C8A664] px-4 text-[13px] font-semibold text-[#1A1308] transition hover:brightness-105 aria-disabled:cursor-progress aria-disabled:opacity-60">
+        <button type="submit" aria-disabled={sending} className="h-10 shrink-0 rounded-lg bg-gold px-4 text-body-sm font-semibold text-goldInk transition hover:brightness-105 aria-disabled:cursor-progress aria-disabled:opacity-60">
           {sending ? 'Sending…' : done ? 'Send again' : cta}
         </button>
       </div>
       {!consentImplied && (
-        <label className="mt-2.5 flex cursor-pointer items-start gap-2.5 text-[12px] leading-5 text-[#9BA1B0]">
+        <label className="mt-2.5 flex cursor-pointer items-start gap-2.5 text-body-sm leading-5 text-muted">
           <input type="checkbox" name="consent" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="control-check mt-0.5" />
           <span>{CONSENT_TEXT.form.text}</span>
         </label>
       )}
-      {consentImplied && <p className="mt-2 text-[11px] leading-5 text-[#848A9A]">{CONSENT_TEXT.footer.text}</p>}
+      {consentImplied && <p className="mt-2 text-label leading-5 text-faint">{CONSENT_TEXT.footer.text}</p>}
       <p
         ref={statusRef}
         tabIndex={-1}
         role={status.kind === 'error' ? 'alert' : 'status'}
         aria-live="polite"
-        className={`mt-2 flex items-start gap-2.5 text-[12px] leading-5 outline-none ${status.kind === 'error' ? 'text-[#FFB84D]' : 'text-[#9BA1B0]'} ${status.kind === 'idle' || sending ? 'sr-only' : ''}`}
+        className={`mt-2 flex items-start gap-2.5 text-body-sm leading-5 outline-none ${status.kind === 'error' ? 'text-warn' : 'text-muted'} ${status.kind === 'idle' || sending ? 'sr-only' : ''}`}
       >
-        {done && <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#C8A664]" aria-hidden />}
+        {done && <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" aria-hidden />}
         {done ? DONE_COPY[status.status] ?? DONE_COPY.sent : status.kind === 'error' ? status.message : ''}
       </p>
     </form>

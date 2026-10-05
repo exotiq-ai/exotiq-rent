@@ -42,35 +42,35 @@ export default async function SharePage({ params }: Props) {
   const { team, vehicle } = result;
 
   return (
-    <main className={`${driveFontClassName} min-h-dvh bg-[#0B0D12] font-[var(--font-drive-inter)] text-[#F0F2F5]`}>
+    <main className={`${driveFontClassName} min-h-dvh bg-shareGround font-[var(--font-drive-inter)] text-ink`}>
       <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col px-5 pb-10 pt-8">
-        <div className={`text-center ${eyebrowClassName} text-[#C8A664]`}>Drive Exotiq</div>
-        <div className="relative mt-6 overflow-hidden rounded-2xl border border-[#C8A664]/40 shadow-[0_0_0_1px_rgba(200,166,100,0.15),0_24px_60px_rgba(0,0,0,0.55)]">
+        <div className={`text-center ${eyebrowClassName} text-gold`}>Drive Exotiq</div>
+        <div className="relative mt-6 overflow-hidden rounded-2xl border border-gold/40 shadow-[0_0_0_1px_rgba(200,166,100,0.15),0_24px_60px_rgba(0,0,0,0.55)]">
           <div className="relative h-[300px]">
             {/* A photo-less vehicle must degrade, not throw — <Image src=""> crashes the route. */}
             {vehicle.heroImage
               ? <Image src={vehicle.heroImage} alt={vehicle.name} fill sizes="480px" priority className="object-cover" />
-              : <div className="absolute inset-0 bg-gradient-to-br from-[#1E2230] to-[#0D0F14]" />}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-[#0B0D12]" />
-            <div className={`absolute left-4 top-4 rounded-full bg-[#0B0D12]/70 px-3 py-1.5 ${microLabelClassName} text-[#C8A664] backdrop-blur`}>
-              <span className="mr-2 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#C8A664] align-middle" />
+              : <div className="absolute inset-0 bg-gradient-to-br from-surface2 to-panel" />}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-shareGround" />
+            <div className={`absolute left-4 top-4 rounded-full bg-shareGround/70 px-3 py-1.5 ${microLabelClassName} text-gold backdrop-blur`}>
+              <span className="mr-2 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-gold align-middle" />
               Reserved
             </div>
           </div>
-          <div className="bg-[#0B0D12] px-5 pb-6 pt-1 text-center">
-            <h1 className="text-[30px] leading-tight" style={serifStyle}>This one&apos;s spoken for.</h1>
-            <p className="mt-2 text-sm leading-6 text-[#9BA1B0]">The {vehicle.name} — reserved for an upcoming drive out of {team.city}, {team.state}.</p>
+          <div className="bg-shareGround px-5 pb-6 pt-1 text-center">
+            <h1 className="text-heading leading-tight" style={serifStyle}>This one&apos;s spoken for.</h1>
+            <p className="mt-2 text-body leading-6 text-muted">The {vehicle.name} — reserved for an upcoming drive out of {team.city}, {team.state}.</p>
           </div>
         </div>
         <div className="mt-8 flex flex-col gap-3">
-          <Link href={`/${params.operatorSlug}/${params.vehicleSlug}`} className="w-full rounded-xl bg-[#C8A664] px-5 py-4 text-center text-sm font-semibold text-[#1A1308]">
+          <Link href={`/${params.operatorSlug}/${params.vehicleSlug}`} className="w-full rounded-xl bg-gold px-5 py-4 text-center text-body font-semibold text-goldInk">
             See this car
           </Link>
-          <Link href={`/${params.operatorSlug}`} className="w-full rounded-xl border border-[#2A2E3A] px-5 py-4 text-center text-sm font-semibold text-[#F0F2F5]">
+          <Link href={`/${params.operatorSlug}`} className="w-full rounded-xl border border-line px-5 py-4 text-center text-body font-semibold text-ink">
             Explore the {team.name} fleet
           </Link>
         </div>
-        <p className="mt-auto pt-10 text-center text-[11px] leading-5 text-[#848A9A]">Curated exotic &amp; luxury rentals · drive.exotiq</p>
+        <p className="mt-auto pt-10 text-center text-label leading-5 text-faint">Curated exotic &amp; luxury rentals · drive.exotiq</p>
       </div>
     </main>
   );

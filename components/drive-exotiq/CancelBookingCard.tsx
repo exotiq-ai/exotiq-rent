@@ -49,10 +49,10 @@ export function CancelBookingCard({
   if (!confirming) {
     return (
       <div className="mt-5 text-center">
-        <button type="button" onClick={() => setConfirming(true)} className="text-xs text-[#848A9A] underline decoration-[#2A2E3A] underline-offset-4 transition hover:text-[#9BA1B0]">
+        <button type="button" onClick={() => setConfirming(true)} className="text-body-sm text-faint underline decoration-line underline-offset-4 transition hover:text-muted">
           Cancel this booking
         </button>
-        <p className="mt-1 text-[11px] text-[#3D4250]">
+        <p className="mt-1 text-label text-dim">
           {/* The date shown is the CANCEL-BY deadline (pickup − 72h) in the
               team's timezone — it used to print the pickup date itself, which
               read as three extra days of free cancellation (T-6). */}
@@ -63,9 +63,9 @@ export function CancelBookingCard({
   }
 
   return (
-    <div className={`mt-5 rounded-xl border p-4 ${free ? 'border-[#2A2E3A] bg-[#161922]' : 'border-[#FFB84D]/45 bg-[#FFB84D]/10'}`}>
-      <div className="text-sm font-medium text-[#F0F2F5]">{free ? 'Cancel this booking?' : 'Cancel and forfeit payments?'}</div>
-      <p className="mt-1 text-xs leading-5 text-[#9BA1B0]">
+    <div className={`mt-5 rounded-xl border p-4 ${free ? 'border-line bg-surface' : 'border-warn/45 bg-warn/10'}`}>
+      <div className="text-body font-medium text-ink">{free ? 'Cancel this booking?' : 'Cancel and forfeit payments?'}</div>
+      <p className="mt-1 text-body-sm leading-5 text-muted">
         {free
           ? paid
             ? 'You are inside the free window — both charges will be refunded in full and the dates released.'
@@ -75,14 +75,14 @@ export function CancelBookingCard({
             : 'The 72-hour window has passed. Nothing has been charged; the reservation is released.'}
       </p>
       <div className="mt-3 flex gap-2">
-        <button type="button" onClick={cancel} disabled={working} className={`flex-1 rounded-xl px-4 py-3 text-sm font-semibold disabled:opacity-60 ${free ? 'border border-[#2A2E3A] text-[#F0F2F5]' : 'bg-[#FFB84D] text-[#1A1308]'}`}>
+        <button type="button" onClick={cancel} disabled={working} className={`flex-1 rounded-xl px-4 py-3 text-body font-semibold disabled:opacity-60 ${free ? 'border border-line text-ink' : 'bg-warn text-goldInk'}`}>
           {working ? 'Cancelling…' : free ? 'Yes, cancel' : 'Cancel & forfeit'}
         </button>
-        <button type="button" onClick={() => setConfirming(false)} disabled={working} className="flex-1 rounded-xl bg-[#C8A664] px-4 py-3 text-sm font-semibold text-[#1A1308] disabled:opacity-60">
+        <button type="button" onClick={() => setConfirming(false)} disabled={working} className="flex-1 rounded-xl bg-gold px-4 py-3 text-body font-semibold text-goldInk disabled:opacity-60">
           Keep booking
         </button>
       </div>
-      {error && <p className="mt-3 text-xs leading-5 text-[#F0F2F5]">{error}</p>}
+      {error && <p className="mt-3 text-body-sm leading-5 text-ink">{error}</p>}
     </div>
   );
 }

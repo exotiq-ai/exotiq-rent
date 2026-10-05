@@ -1,4 +1,8 @@
 import type { Config } from "tailwindcss";
+// The palette is defined once, in components/browse/tokens.ts (MP-15). Relative
+// path on purpose: Tailwind loads this file with its own TS loader, not webpack,
+// so the `@/` alias does not resolve here.
+import { tone } from "./components/browse/tokens";
 
 const config: Config = {
   // MP-11 review: every hover: utility compiles under @media (hover: hover), so a
@@ -11,43 +15,44 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      // bg-ground, text-muted, border-line2, ring-gold/60 ... (keys as in `tone`).
       colors: {
-        // Primary
-        'gulf-blue': '#6EC1E4',
-
-        // Foundation
-        'deep-black': '#000000',
-        'jet-grey': '#1B1B1B',
-        'pure-white': '#FFFFFF',
-
-        // Supporting
-        'metallic-silver': '#C0C0C0',
-        'graphite': '#3A3A3A',
-        'midnight-blue': '#0A1929',
-
-        // Marketplace Colors
-        'exo-bg': '#0B0B0F',
-        'exo-bg-alt': '#111118',
-        'exo-card': '#161622',
-        'exo-card-hover': '#1C1C2E',
-        'exo-teal': '#6EC1E4',
-        'exo-teal-hover': '#8AD0EA',
-        'exo-gold': '#C9A84C',
-        'exo-text': '#F0F0F5',
-        'exo-muted': '#8888A0',
-        'exo-subtle': '#555570',
-        'exo-star': '#F5C842',
-        'exo-success': '#2ECC71',
-        'exo-error': '#E74C3C',
+        ...tone,
+        /* LEGACY:begin referenced only by app/globals.css @apply (body background and
+           text, site-wide scrollbar track and thumb); retire with the marketplace
+           mockup (T-2) */
+        "deep-black": "#000000",
+        "jet-grey": "#1B1B1B",
+        "pure-white": "#FFFFFF",
+        graphite: "#3A3A3A",
+        /* LEGACY:end */
+      },
+      // One type scale, paired line-heights (MP-15), listed small to large. This order
+      // does NOT decide which step wins when two meet on one element: Tailwind 3.4.19
+      // emits one plugin's utilities sorted by class name, so the alphabetically later
+      // step wins (title beats heading and display). To pair two steps on one element
+      // (a component's own step plus a caller's), give the caller's under a breakpoint
+      // variant, e.g. max-lg: and lg:, which are emitted after base utilities.
+      fontSize: {
+        micro: ["10px", { lineHeight: "1.4" }],
+        label: ["11px", { lineHeight: "1.45" }],
+        "body-sm": ["13px", { lineHeight: "1.5" }],
+        body: ["15px", { lineHeight: "1.5" }],
+        "body-lg": ["16px", { lineHeight: "1.5" }],
+        "title-sm": ["18px", { lineHeight: "1.4" }],
+        title: ["22px", { lineHeight: "1.35" }],
+        heading: ["28px", { lineHeight: "1.3" }],
+        display: ["36px", { lineHeight: "1.2" }],
+        "display-lg": ["48px", { lineHeight: "1.1" }],
+        "display-xl": ["56px", { lineHeight: "1.05" }],
       },
       fontFamily: {
         sans: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-        dfaalt: ['"Dfaalt"', 'sans-serif'],
+        /* LEGACY:begin font-mont x23 in components/marketplace/* (the marketplace-mode
+           deploy loads Montserrat through the gated <link> in app/layout.tsx); retire
+           with the mockup (T-2) */
         mont: ['"Montserrat"', 'sans-serif'],
-      },
-      letterSpacing: {
-        'tight-exotiq': '-0.02em',
-        'wide-exotiq': '0.20em',
+        /* LEGACY:end */
       },
     },
   },

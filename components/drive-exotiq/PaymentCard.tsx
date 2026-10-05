@@ -137,61 +137,61 @@ export function PaymentCard({
 
   if (finalizing) {
     return (
-      <div className="mt-4 rounded-xl border border-[#C8A664] bg-[#14130F] p-4 shadow-[0_0_0_1px_#C8A664,0_0_24px_rgba(200,166,100,.10)]">
+      <div className="mt-4 rounded-xl border border-gold bg-goldWash p-4 shadow-[0_0_0_1px_var(--tone-gold),0_0_24px_rgba(200,166,100,.10)]">
         <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#C8A664]/10 text-[#C8A664]">
-            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-[#C8A664]" />
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gold/10 text-gold">
+            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-gold" />
           </div>
           <div>
-            <div className="text-sm font-medium text-[#F0F2F5]">Payment received — finalizing</div>
-            <p className="mt-1 text-xs leading-5 text-[#9BA1B0]">Confirming your booking now. This usually takes a few seconds.</p>
+            <div className="text-body font-medium text-ink">Payment received — finalizing</div>
+            <p className="mt-1 text-body-sm leading-5 text-muted">Confirming your booking now. This usually takes a few seconds.</p>
           </div>
         </div>
-        {notice && <p className="mt-3 text-xs leading-5 text-[#9BA1B0]">{notice}</p>}
+        {notice && <p className="mt-3 text-body-sm leading-5 text-muted">{notice}</p>}
       </div>
     );
   }
 
   if (windowState === 'expired') {
     return (
-      <div className="mt-4 rounded-xl border border-[#FFB84D]/45 bg-[#FFB84D]/10 p-4">
-        <div className="text-sm font-medium text-[#F0F2F5]">Payment window closed</div>
-        <p className="mt-1 text-xs leading-5 text-[#9BA1B0]">The 48-hour payment window for this booking has passed and the dates may have been released. Contact {operatorName} or book again.</p>
+      <div className="mt-4 rounded-xl border border-warn/45 bg-warn/10 p-4">
+        <div className="text-body font-medium text-ink">Payment window closed</div>
+        <p className="mt-1 text-body-sm leading-5 text-muted">The 48-hour payment window for this booking has passed and the dates may have been released. Contact {operatorName} or book again.</p>
       </div>
     );
   }
 
   return (
-    <div className="mt-4 rounded-xl border border-[#C8A664] bg-[#14130F] p-4 shadow-[0_0_0_1px_#C8A664,0_0_24px_rgba(200,166,100,.10)]">
+    <div className="mt-4 rounded-xl border border-gold bg-goldWash p-4 shadow-[0_0_0_1px_var(--tone-gold),0_0_24px_rgba(200,166,100,.10)]">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-sm font-medium text-[#F0F2F5]">Approved — complete payment</div>
-          <p className="mt-1 text-xs leading-5 text-[#9BA1B0]">{operatorName} approved your booking. Pay to lock it in.</p>
+          <div className="text-body font-medium text-ink">Approved — complete payment</div>
+          <p className="mt-1 text-body-sm leading-5 text-muted">{operatorName} approved your booking. Pay to lock it in.</p>
         </div>
-        <span className={`flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] ${windowState === 'urgent' ? 'bg-[#FFB84D]/15 text-[#FFB84D]' : 'bg-[#C8A664]/10 text-[#C8A664]'}`}>
+        <span className={`flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-label ${windowState === 'urgent' ? 'bg-warn/15 text-warn' : 'bg-gold/10 text-gold'}`}>
           <Clock3 size={14} />
           {paymentCountdownLabel(dueAtIso, nowMs)}
         </span>
       </div>
-      <div className="mt-4 space-y-2 border-t border-[#2A2E3A] pt-3 text-sm">
-        <div className="flex justify-between gap-3"><span className="text-[#9BA1B0]">{operatorName} rental</span><Money cents={rentalCents - operatorTaxCents} /></div>
+      <div className="mt-4 space-y-2 border-t border-line pt-3 text-body">
+        <div className="flex justify-between gap-3"><span className="text-muted">{operatorName} rental</span><Money cents={rentalCents - operatorTaxCents} /></div>
         {operatorTaxCents > 0 && (
-          <div className="flex justify-between gap-3"><span className="text-[#9BA1B0]">{operatorTaxLabel ?? 'Tax'} — {operatorName}</span><Money cents={operatorTaxCents} /></div>
+          <div className="flex justify-between gap-3"><span className="text-muted">{operatorTaxLabel ?? 'Tax'} — {operatorName}</span><Money cents={operatorTaxCents} /></div>
         )}
-        <div className="flex justify-between gap-3"><span className="text-[#9BA1B0]">Protection &amp; fees</span><Money cents={exotiqCents} /></div>
-        <div className="flex justify-between gap-3 border-t border-[#2A2E3A] pt-2 font-medium text-[#F0F2F5]"><span>Total due</span><Money cents={rentalCents + exotiqCents} large /></div>
+        <div className="flex justify-between gap-3"><span className="text-muted">Protection &amp; fees</span><Money cents={exotiqCents} /></div>
+        <div className="flex justify-between gap-3 border-t border-line pt-2 font-medium text-ink"><span>Total due</span><Money cents={rentalCents + exotiqCents} large /></div>
       </div>
-      <p className="mt-2 text-xs leading-5 text-[#848A9A]">Two charges on your statement: the operator&apos;s rental, and an EXOTIQ RENT charge covering Trip Fees, protection, the state rental fee and card processing. One card entry.</p>
+      <p className="mt-2 text-body-sm leading-5 text-faint">Two charges on your statement: the operator&apos;s rental, and an EXOTIQ RENT charge covering Trip Fees, protection, the state rental fee and card processing. One card entry.</p>
       <button
         type="button"
         onClick={pay}
         disabled={starting}
-        className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#C8A664] px-5 py-4 text-sm font-semibold text-[#1A1308] transition active:scale-[0.99] disabled:opacity-60"
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gold px-5 py-4 text-body font-semibold text-goldInk transition active:scale-[0.99] disabled:opacity-60"
       >
         <CreditCard size={16} />
         {starting ? 'Opening secure checkout…' : 'Complete payment'}
       </button>
-      {notice && <p className="mt-3 rounded-xl border border-[#FFB84D]/45 bg-[#FFB84D]/10 p-3 text-xs leading-5 text-[#F0F2F5]">{notice}</p>}
+      {notice && <p className="mt-3 rounded-xl border border-warn/45 bg-warn/10 p-3 text-body-sm leading-5 text-ink">{notice}</p>}
     </div>
   );
 }

@@ -17,7 +17,7 @@ import { DriverStep } from './flow/DriverStep';
 import { PayStep } from './flow/PayStep';
 import { ReviewStep } from './flow/ReviewStep';
 import { captureBooking } from '@/components/renters/bookingCapture';
-import { eyebrowClassName } from '@/components/browse/tokens';
+import { eyebrowClassName, serifStyle } from '@/components/browse/tokens';
 
 export function BookingFlow({ operator, vehicle, initialDates }: { operator: Operator; vehicle: Vehicle; initialDates?: { start: string; end: string } }) {
   const [step, setStep] = useState(1);
@@ -128,19 +128,19 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
   // Facts only — dates and money are owned by the steps and the server quote,
   // and a second copy of a total is a second place for it to be wrong.
   const rail = (
-    <div className="overflow-hidden rounded-2xl border border-[#2A2E3A] bg-[#0D0F14]">
-      <div className="relative aspect-[4/3] bg-[#161922]">
+    <div className="overflow-hidden rounded-2xl border border-line bg-panel">
+      <div className="relative aspect-[4/3] bg-surface">
         {vehicle.heroImage && <Image src={vehicle.heroImage} alt={vehicle.name} fill sizes="320px" className="object-cover" />}
       </div>
       <div className="p-5">
-        <div className={`${eyebrowClassName} text-[#C8A664]`}>{operator.name}</div>
-        <h2 className="mt-2 text-[20px] leading-[1.15] text-[#F0F2F5]" style={{ fontFamily: 'var(--font-drive-newsreader), Georgia, serif', fontWeight: 500, letterSpacing: '-0.014em' }}>{vehicle.name}</h2>
-        <p className="mt-1 text-[12px] text-[#9BA1B0]">{operator.city}, {operator.state}</p>
-        <dl className="mt-4 space-y-2 border-t border-[#2A2E3A] pt-4 text-[13px]">
-          <div className="flex justify-between gap-4"><dt className="text-[#9BA1B0]">Daily rate</dt><dd className="text-[#F0F2F5]"><Money cents={vehicle.dailyRateCents} /></dd></div>
-          <div className="flex justify-between gap-4"><dt className="text-[#9BA1B0]">Minimum</dt><dd className="text-[#F0F2F5]">{vehicle.minRentalDays} {vehicle.minRentalDays === 1 ? 'day' : 'days'}</dd></div>
+        <div className={`${eyebrowClassName} text-gold`}>{operator.name}</div>
+        <h2 className="mt-2 text-title leading-[1.15] text-ink" style={serifStyle}>{vehicle.name}</h2>
+        <p className="mt-1 text-label text-muted">{operator.city}, {operator.state}</p>
+        <dl className="mt-4 space-y-2 border-t border-line pt-4 text-body-sm">
+          <div className="flex justify-between gap-4"><dt className="text-muted">Daily rate</dt><dd className="text-ink"><Money cents={vehicle.dailyRateCents} /></dd></div>
+          <div className="flex justify-between gap-4"><dt className="text-muted">Minimum</dt><dd className="text-ink">{vehicle.minRentalDays} {vehicle.minRentalDays === 1 ? 'day' : 'days'}</dd></div>
         </dl>
-        <p className="mt-4 text-[11px] leading-5 text-[#848A9A]">Your dates and total are confirmed in the steps. {operator.name} reviews every request before payment.</p>
+        <p className="mt-4 text-label leading-5 text-faint">Your dates and total are confirmed in the steps. {operator.name} reviews every request before payment.</p>
       </div>
     </div>
   );

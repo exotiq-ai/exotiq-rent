@@ -24,20 +24,20 @@ export default function BookingNotFound() {
     <div className={driveFontClassName}>
       <PhoneViewport step={6} className="font-[var(--font-drive-inter)]">
         <section className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-          <div className="grid h-14 w-14 place-items-center rounded-full border border-[#2A2E3A] bg-[#161922] text-[#C8A664]">
+          <div className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-gold">
             <LockKeyhole size={24} />
           </div>
-          <HTitle className="mt-5 text-[24px]">This booking needs its secure link.</HTitle>
-          <p className="mt-3 text-sm leading-6 text-[#9BA1B0]">
+          <HTitle className="mt-5 text-title">This booking needs its secure link.</HTitle>
+          <p className="mt-3 text-body leading-6 text-muted">
             Booking pages open only from the full link in your confirmation email — it carries a private
             access key, so the address alone won&apos;t do it. Open your most recent booking email and
             tap the button there.
           </p>
-          <p className="mt-4 text-xs leading-5 text-[#848A9A]">
+          <p className="mt-4 text-body-sm leading-5 text-faint">
             Can&apos;t find the email? Reply to your booking confirmation or call your operator and
             they&apos;ll resend it.
           </p>
-          <Link href={`/${process.env.NEXT_PUBLIC_DEFAULT_TEAM_SLUG ?? 'exotiq'}`} className="mt-6 rounded-xl bg-[#C8A664] px-6 py-3.5 text-sm font-semibold text-[#1A1308]">
+          <Link href={`/${process.env.NEXT_PUBLIC_DEFAULT_TEAM_SLUG ?? 'exotiq'}`} className="mt-6 rounded-xl bg-gold px-6 py-3.5 text-body font-semibold text-goldInk">
             Continue browsing
           </Link>
         </section>
