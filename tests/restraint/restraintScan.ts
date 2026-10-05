@@ -137,6 +137,16 @@ export function classOf(tagText: string): string {
   return m ? (m[1] ?? m[2] ?? m[3] ?? m[4] ?? '') : '';
 }
 
+/** The className of the <div> that opens just before the <h2> holding `heading` (a section's wrapper). */
+export function wrapperOf(src: string, heading: string): string {
+  const at = src.indexOf(heading);
+  if (at < 0) throw new Error(`heading not found: ${heading}`);
+  const h2 = src.lastIndexOf('<h2', at);
+  const div = src.lastIndexOf('<div', h2);
+  if (h2 < 0 || div < 0) throw new Error(`no wrapper before ${heading}`);
+  return classOf(openTags(src.slice(div), 'div')[0] ?? '');
+}
+
 /** Utilities whose variant chain includes hover:, active: or group-hover: and that name gold (AC3). */
 export const hoverGoldTokens = (text: string): string[] =>
   text.split(/[\s'"`{}]+/).filter((t) => /(^|:)(group-)?(hover|active):/.test(t) && goldCount(t) > 0);
