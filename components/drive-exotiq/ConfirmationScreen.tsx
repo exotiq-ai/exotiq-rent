@@ -36,7 +36,7 @@ export async function ConfirmationScreen({
     return (
       <PhoneViewport step={6} className="font-[var(--font-drive-inter)]" layout="panel">
         <section className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-          <div className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-gold"><LockKeyhole size={24} /></div>
+          <div className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-muted"><LockKeyhole size={24} /></div>
           <HTitle className="mt-5 text-title">Booking {lookup.bookingRef}</HTitle>
           <p className="mt-3 text-body leading-6 text-muted">Status: {lookup.status.replace(/_/g, ' ')}. To view the full confirmation, use the secure link from your booking — it carries your access key.</p>
         </section>
@@ -133,13 +133,13 @@ export async function ConfirmationScreen({
           <>
             <div className="mt-4 rounded-xl border border-line bg-surface p-4">
               <div className="mb-3 text-body font-medium">Charges</div>
-              <div className="flex justify-between border-t border-line py-3 text-body"><span><span className="block">Operator rental charge</span><span className="text-label text-gold">Charged by {cart.operator.name}</span></span><Money cents={cart.totals.operatorTotalCents} /></div>
-              <div className="flex justify-between border-t border-line py-3 text-body"><span><span className="block">Trip Fees ({platformPercent}%)</span><span className="text-label text-gold">Calculated on the rental only</span></span><Money cents={cart.totals.platformFeeCents} /></div>
-              <div className="flex justify-between border-t border-line py-3 text-body"><span><span className="block">Protection (included)</span><span className="text-label text-gold">Included in EXOTIQ RENT charge</span></span><Money cents={cart.totals.protectionTotalCents} /></div>
+              <div className="flex justify-between border-t border-line py-3 text-body"><span><span className="block">Operator rental charge</span><span className="text-label text-faint">Charged by {cart.operator.name}</span></span><Money cents={cart.totals.operatorTotalCents} /></div>
+              <div className="flex justify-between border-t border-line py-3 text-body"><span><span className="block">Trip Fees ({platformPercent}%)</span><span className="text-label text-faint">Calculated on the rental only</span></span><Money cents={cart.totals.platformFeeCents} /></div>
+              <div className="flex justify-between border-t border-line py-3 text-body"><span><span className="block">Protection (included)</span><span className="text-label text-faint">Included in EXOTIQ RENT charge</span></span><Money cents={cart.totals.protectionTotalCents} /></div>
               <div className="flex justify-between border-t border-line py-3 text-body font-medium"><span>Exotiq total</span><Money cents={cart.totals.exotiqTotalCents} /></div>
             </div>
             <div className="mt-4 rounded-xl border border-dashed border-dim2 bg-field p-4">
-              <div className="mb-3 flex items-center gap-2 text-body font-medium"><LockKeyhole size={16} className="text-gold" />Damage deposit at pickup</div>
+              <div className="mb-3 flex items-center gap-2 text-body font-medium"><LockKeyhole size={16} className="text-muted" />Damage deposit at pickup</div>
               <p className="text-body-sm leading-5 text-faint">{cart.operator.name} collects a refundable damage deposit at pickup. Amount and accepted payment methods vary by operator — they&apos;ll confirm before handoff.</p>
               <p className="mt-1 text-body-sm leading-5 text-faint">Not included in the charges above.</p>
             </div>
@@ -181,13 +181,13 @@ export async function ConfirmationScreen({
             <p className="text-body-sm leading-5 text-faint">Trip Fees and protection are itemized at payment, once the operator approves.</p>
           </div>
         )}
-        <div className="mt-4 rounded-xl border border-line bg-surface p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/10 text-gold">{initialsOf(cart.operator.name)}</div><div className="flex-1"><div className="text-body font-medium">{cart.operator.name}</div><div className="text-body-sm text-muted">{terminal ? (cart.operator.phone ? 'Questions about this booking? Call any time.' : 'Questions about this booking? Reply to your confirmation email.') : 'Will reach out before pickup'}</div></div>{(live?.supportEmail ?? cart.operator.supportEmail) && <a href={`mailto:${live?.supportEmail ?? cart.operator.supportEmail}`} className="rounded-full border border-gold/30 p-2 text-gold" aria-label="Email operator"><Mail size={16} /></a>}{(live?.supportPhone ?? cart.operator.phone) && <a href={`tel:${live?.supportPhone ?? cart.operator.phone}`} className="rounded-full border border-gold/30 p-2 text-gold" aria-label="Call operator"><Phone size={16} /></a>}</div></div>
+        <div className="mt-4 rounded-xl border border-line bg-surface p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface2 text-ink">{initialsOf(cart.operator.name)}</div><div className="flex-1"><div className="text-body font-medium">{cart.operator.name}</div><div className="text-body-sm text-muted">{terminal ? (cart.operator.phone ? 'Questions about this booking? Call any time.' : 'Questions about this booking? Reply to your confirmation email.') : 'Will reach out before pickup'}</div></div>{(live?.supportEmail ?? cart.operator.supportEmail) && <a href={`mailto:${live?.supportEmail ?? cart.operator.supportEmail}`} className="rounded-full border border-line2 p-2 text-muted transition hover:text-ink" aria-label="Email operator"><Mail size={16} /></a>}{(live?.supportPhone ?? cart.operator.phone) && <a href={`tel:${live?.supportPhone ?? cart.operator.phone}`} className="rounded-full border border-line2 p-2 text-muted transition hover:text-ink" aria-label="Call operator"><Phone size={16} /></a>}</div></div>
         {!terminal && (
           <>
-            <div className="mt-4 rounded-xl border border-line bg-surface p-4"><div className="mb-3 flex items-center gap-2 text-body font-medium"><Sparkles size={16} className="text-gold" />What happens next</div>{/* The deposit step describes an in-person handoff, not a link: Exotiq
+            <div className="mt-4 rounded-xl border border-line bg-surface p-4"><div className="mb-3 flex items-center gap-2 text-body font-medium"><Sparkles size={16} className="text-muted" />What happens next</div>{/* The deposit step describes an in-person handoff, not a link: Exotiq
                 takes no part in the deposit, so there is nothing for us to email and
                 no amount for us to quote. */}
-              {['Verify your identity above to confirm the booking.', 'Operator confirms final handoff details.', 'You receive pickup reminders before the rental.', `${cart.operator.name} collects a refundable damage deposit when you pick up the car.`].map((item, index) => <div key={item} className="flex gap-3 border-t border-line py-3 text-body text-muted"><span className="text-gold">0{index + 1}</span>{item}</div>)}</div>
+              {['Verify your identity above to confirm the booking.', 'Operator confirms final handoff details.', 'You receive pickup reminders before the rental.', `${cart.operator.name} collects a refundable damage deposit when you pick up the car.`].map((item, index) => <div key={item} className="flex gap-3 border-t border-line py-3 text-body text-muted"><span className="text-faint">0{index + 1}</span>{item}</div>)}</div>
             <ConfirmationActions
               bookingRef={confirmation.bookingRef}
               vehicleName={cart.vehicle.name}

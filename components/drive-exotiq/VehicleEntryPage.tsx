@@ -75,7 +75,7 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
                 <div key={spec.label} className="rounded-xl border border-line bg-surface p-[14px]">
                   <div className={`${eyebrowClassName} text-faint`}>{spec.label}</div>
                   <div className="mt-2 flex items-baseline gap-1 text-ink">
-                    <spec.icon className="mr-1 text-gold" size={16} />
+                    <spec.icon className="mr-1 text-muted" size={16} />
                     <span className="text-title font-medium leading-none tracking-[-0.02em] tabular-nums">{spec.value.split(' ')[0]}</span>
                     <span className="text-label text-muted">{spec.value.split(' ').slice(1).join(' ')}</span>
                   </div>
@@ -86,17 +86,17 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
 
             {/* Phone only — from lg the same facts live in the booking aside. */}
             <div className="mt-4 rounded-xl border border-line bg-surface p-4 lg:hidden">
-              <h2 className="mb-3 flex items-center gap-2 text-body font-medium"><CalendarDays size={16} className="text-gold" />Booking preview</h2>
+              <h2 className="mb-3 flex items-center gap-2 text-body font-medium"><CalendarDays size={16} className="text-muted" />Booking preview</h2>
               <div className="grid grid-cols-3 gap-2 text-center text-label">
-                <div className="rounded-lg bg-surface2 p-3"><div className="text-body font-medium leading-none tabular-nums text-gold min-[360px]:text-title-sm min-[360px]:leading-none"><Money cents={vehicle.dailyRateCents} /></div><div className="mt-1.5 text-faint">Per day</div></div>
-                <div className="rounded-lg bg-surface2 p-3"><div className="text-body font-medium leading-none tabular-nums text-gold min-[360px]:text-title-sm min-[360px]:leading-none">{vehicle.minRentalDays}<span className="text-label font-normal text-faint"> {vehicle.minRentalDays === 1 ? 'day' : 'days'}</span></div><div className="mt-1.5 text-faint">Minimum</div></div>
-                <div className="rounded-lg bg-surface2 p-3"><div className="text-body font-medium leading-none text-gold min-[360px]:text-title-sm min-[360px]:leading-none">Verified</div><div className="mt-1.5 text-faint">Drivers</div></div>
+                <div className="rounded-lg bg-surface2 p-3"><div className="text-body font-medium leading-none tabular-nums text-ink min-[360px]:text-title-sm min-[360px]:leading-none"><Money cents={vehicle.dailyRateCents} /></div><div className="mt-1.5 text-faint">Per day</div></div>
+                <div className="rounded-lg bg-surface2 p-3"><div className="text-body font-medium leading-none tabular-nums text-ink min-[360px]:text-title-sm min-[360px]:leading-none">{vehicle.minRentalDays}<span className="text-label font-normal text-faint"> {vehicle.minRentalDays === 1 ? 'day' : 'days'}</span></div><div className="mt-1.5 text-faint">Minimum</div></div>
+                <div className="rounded-lg bg-surface2 p-3"><div className="text-body font-medium leading-none text-ink min-[360px]:text-title-sm min-[360px]:leading-none">Verified</div><div className="mt-1.5 text-faint">Drivers</div></div>
               </div>
               <p className="mt-3 text-body-sm leading-5 text-muted">{vehicle.footnote}. Final availability is confirmed at the booking step.</p>
             </div>
 
             <div className="mt-4 rounded-xl border border-line bg-surface p-4">
-              <h2 className="mb-3 flex items-center gap-2 text-body font-medium"><MapPin size={16} className="text-gold" />Pickup</h2>
+              <h2 className="mb-3 flex items-center gap-2 text-body font-medium"><MapPin size={16} className="text-muted" />Pickup</h2>
               {/* The venue name only renders when it is real. Live reads have none, and
                   a fabricated one repeated the operator and the word "pickup". */}
               {vehicle.pickupLocation.name && <div className="text-body text-ink">{vehicle.pickupLocation.name}</div>}
@@ -105,11 +105,11 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
             </div>
 
             <div className="mt-4 rounded-xl border border-line bg-surface p-4">
-              <h2 className="mb-3 flex items-center gap-2 text-body font-medium"><ShieldCheck size={16} className="text-gold" />How it works</h2>
+              <h2 className="mb-3 flex items-center gap-2 text-body font-medium"><ShieldCheck size={16} className="text-muted" />How it works</h2>
               {/* Was: "Verify driver and insurance documents" (insurance verification is
                   not built) and "before single Stripe Checkout" (there are two charges,
                   and payment comes AFTER the operator approves — not at booking). */}
-              {['Choose your dates and pickup time.', `${operator.name} reviews your request.`, 'We email your payment link once approved.', 'Verify your identity — about two minutes.'].map((item, index) => <div key={item} className="flex gap-3 border-t border-line py-3 text-body text-muted"><span className="text-gold">0{index + 1}</span>{item}</div>)}
+              {['Choose your dates and pickup time.', `${operator.name} reviews your request.`, 'We email your payment link once approved.', 'Verify your identity — about two minutes.'].map((item, index) => <div key={item} className="flex gap-3 border-t border-line py-3 text-body text-muted"><span className="text-faint">0{index + 1}</span>{item}</div>)}
             </div>
           </div>
 

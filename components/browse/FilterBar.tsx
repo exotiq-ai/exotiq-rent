@@ -145,13 +145,13 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
         <span className="flex flex-nowrap items-center gap-2">
           <label className="sr-only" htmlFor={`${idPrefix}-start`}>Pickup date</label>
           <span className="relative inline-flex items-center">
-            <CalendarDays size={14} className="pointer-events-none absolute left-2.5 text-gold" aria-hidden />
+            <CalendarDays size={14} className="pointer-events-none absolute left-2.5 text-muted" aria-hidden />
             <input id={`${idPrefix}-start`} type="date" name="start" min={today} max={addDays(today, 180)} defaultValue={query.start ?? ''} aria-describedby={`${idPrefix}-dates-hint`} className={`${datePillClassName} min-w-[8.5rem]`} />
           </span>
           <span className="text-label text-faint">to</span>
           <label className="sr-only" htmlFor={`${idPrefix}-end`}>Drop-off date</label>
           <span className="relative inline-flex items-center">
-            <CalendarDays size={14} className="pointer-events-none absolute left-2.5 text-gold" aria-hidden />
+            <CalendarDays size={14} className="pointer-events-none absolute left-2.5 text-muted" aria-hidden />
             <input id={`${idPrefix}-end`} type="date" name="end" min={query.start ? addDays(query.start, 1) : addDays(today, 1)} max={addDays(today, 181)} defaultValue={query.end ?? ''} aria-describedby={`${idPrefix}-dates-hint`} className={`${datePillClassName} min-w-[8.5rem]`} />
           </span>
         </span>
@@ -171,7 +171,7 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
         aria-controls={`${idPrefix}-more-filters`}
         className="flex w-fit cursor-pointer items-center gap-2 rounded-full border border-line2 bg-surface px-3.5 py-2 text-body-sm font-semibold text-ink transition hover:border-gold/40 active:scale-[0.97] lg:hidden"
       >
-        <SlidersHorizontal size={14} className="text-gold" aria-hidden />
+        <SlidersHorizontal size={14} className="text-muted" aria-hidden />
         Filters &amp; sort
         {chipActive > 0 && <span className="rounded-full bg-gold/15 px-1.5 py-0.5 text-micro font-semibold tabular-nums text-gold">{chipActive}</span>}
       </button>

@@ -100,7 +100,7 @@ export function ConfirmationActions({
         {copied ? 'Link copied' : 'Share your Exotiq'}
       </button>
       <button type="button" onClick={addToCalendar} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-line px-5 py-4 text-body font-semibold text-ink transition active:scale-[0.99]">
-        <CalendarPlus size={16} className="text-gold" />
+        <CalendarPlus size={16} className="text-muted" />
         Add to calendar
       </button>
     </>

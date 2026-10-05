@@ -53,9 +53,9 @@ function AboutCard({ team, count, minRate, minDays, className = '' }: { team: Te
           17px line: a "From " prefix wrapped inside a 69px phone tile, so the
           caption carries the qualifier. Five-figure rates step down to 15px. */}
       <div className="mt-4 grid grid-cols-3 gap-2 text-center text-label">
-        <div className="rounded-lg bg-surface2 p-3"><div className="text-body font-medium leading-none tabular-nums text-gold min-[360px]:text-title-sm min-[360px]:leading-none">{count}</div><div className="mt-1.5 text-faint">Cars</div></div>
-        <div className="rounded-lg bg-surface2 p-3"><div className={`font-medium leading-none tabular-nums text-gold ${minRate >= 1_000_000 ? 'text-body-sm min-[360px]:text-body min-[360px]:leading-none' : 'text-body min-[360px]:text-title-sm min-[360px]:leading-none'}`}><Money cents={minRate} /></div><div className="mt-1.5 text-faint">Lowest rate</div></div>
-        <div className="rounded-lg bg-surface2 p-3"><div className="text-body font-medium leading-none tabular-nums text-gold min-[360px]:text-title-sm min-[360px]:leading-none">{minDays}+<span className="text-label font-normal text-faint"> {minDays === 1 ? 'day' : 'days'}</span></div><div className="mt-1.5 text-faint">Minimum</div></div>
+        <div className="rounded-lg bg-surface2 p-3"><div className="text-body font-medium leading-none tabular-nums text-ink min-[360px]:text-title-sm min-[360px]:leading-none">{count}</div><div className="mt-1.5 text-faint">Cars</div></div>
+        <div className="rounded-lg bg-surface2 p-3"><div className={`font-medium leading-none tabular-nums text-ink ${minRate >= 1_000_000 ? 'text-body-sm min-[360px]:text-body min-[360px]:leading-none' : 'text-body min-[360px]:text-title-sm min-[360px]:leading-none'}`}><Money cents={minRate} /></div><div className="mt-1.5 text-faint">Lowest rate</div></div>
+        <div className="rounded-lg bg-surface2 p-3"><div className="text-body font-medium leading-none tabular-nums text-ink min-[360px]:text-title-sm min-[360px]:leading-none">{minDays}+<span className="text-label font-normal text-faint"> {minDays === 1 ? 'day' : 'days'}</span></div><div className="mt-1.5 text-faint">Minimum</div></div>
       </div>
     </div>
   );
@@ -64,7 +64,7 @@ function AboutCard({ team, count, minRate, minDays, className = '' }: { team: Te
 function PolicyCard({ rows, className = '' }: { rows: PolicyRow[]; className?: string }) {
   return (
     <div className={`rounded-xl border border-line bg-surface p-4 ${className}`}>
-      <div className="mb-3 flex items-center gap-2 text-body font-medium"><FileCheck2 size={16} className="text-gold" />Rental policies</div>
+      <div className="mb-3 flex items-center gap-2 text-body font-medium"><FileCheck2 size={16} className="text-muted" />Rental policies</div>
       {rows.map((row) => (
         <div key={row.label} className="flex items-start gap-3 border-t border-line py-3">
           <row.icon size={16} className="mt-0.5 shrink-0 text-faint" />
@@ -81,7 +81,7 @@ function PolicyCard({ rows, className = '' }: { rows: PolicyRow[]; className?: s
 function WhyCard({ className = '' }: { className?: string }) {
   return (
     <div className={`rounded-xl border border-line bg-surface p-4 ${className}`}>
-      <div className="mb-3 flex items-center gap-2 text-body font-medium"><ShieldCheck size={16} className="text-gold" />Why renters book here</div>
+      <div className="mb-3 flex items-center gap-2 text-body font-medium"><ShieldCheck size={16} className="text-muted" />Why renters book here</div>
       {['Operator-owned rental charge stays clear.', 'Exotiq Protect is shown separately.', 'Documents are verified before pickup.', 'Concierge handoff details are coordinated before arrival.'].map((item) => <div key={item} className="border-t border-line py-3 text-body text-muted">{item}</div>)}
     </div>
   );
@@ -111,7 +111,7 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
         <TrackView event="storefront_view" properties={{ team: team.slug }} />
         <PhoneViewport step={1} stepStyle="numbered" className="font-[var(--font-drive-inter)]" closeHref={`/${team.slug}`} layout="page" desktopNav={desktopNav}>
           <section className="flex flex-1 flex-col items-center justify-center px-6 text-center lg:py-32">
-            <div className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-gold"><CarFront size={24} /></div>
+            <div className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-muted"><CarFront size={24} /></div>
             <HTitle className="mt-5 text-title">{team.name}</HTitle>
             <p className="mt-3 text-body leading-6 text-muted">No vehicles are listed right now. The fleet is being refreshed — check back soon{hasPhone ? ' or call to ask about upcoming availability' : ''}.</p>
             {hasPhone && (

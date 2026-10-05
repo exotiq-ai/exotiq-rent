@@ -54,7 +54,7 @@ export function ListingCard({
           ) : (
             <ListingPhotoPlaceholder />
           )}
-          <div className={`absolute left-3 top-3 rounded-full border border-gold/25 bg-panel/70 px-2.5 py-1 ${microLabelClassName} text-gold backdrop-blur`}>
+          <div className={`absolute left-3 top-3 rounded-full border border-line2 bg-panel/70 px-2.5 py-1 ${microLabelClassName} text-ink backdrop-blur`}>
             {vehicle.minRentalDays}-day min
           </div>
           {verified && (

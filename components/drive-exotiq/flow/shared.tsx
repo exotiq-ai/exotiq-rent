@@ -156,7 +156,7 @@ export function Breakdown({
       <div className="mb-3 flex justify-between">
         <div>
           <div className="text-body font-medium">{title}</div>
-          <div className="mt-1 text-label text-gold">{note}</div>
+          <div className="mt-1 text-label text-faint">{note}</div>
         </div>
         <FileText size={16} className="text-faint" />
       </div>
@@ -178,5 +178,5 @@ export function Breakdown({
 }
 
 export function VerifiedPill() {
-  return <CheckCircle2 size={20} className="text-gold" />;
+  return <CheckCircle2 size={20} className="text-verified" />;
 }

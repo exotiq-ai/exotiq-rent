@@ -127,14 +127,14 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
           <label className="block">
             <span className="block text-micro text-faint">Pickup</span>
             <span className="relative mt-1 flex items-center">
-              <CalendarDays size={14} className="pointer-events-none absolute left-2.5 text-gold" aria-hidden />
+              <CalendarDays size={14} className="pointer-events-none absolute left-2.5 text-muted" aria-hidden />
               <input type="date" name="start" min={today} max={addDays(today, 180)} defaultValue={query.start ?? ''} aria-describedby={`${idPrefix}-dates-hint`} className={`${datePillClassName} w-full min-w-0`} />
             </span>
           </label>
           <label className="block">
             <span className="block text-micro text-faint">Drop-off</span>
             <span className="relative mt-1 flex items-center">
-              <CalendarDays size={14} className="pointer-events-none absolute left-2.5 text-gold" aria-hidden />
+              <CalendarDays size={14} className="pointer-events-none absolute left-2.5 text-muted" aria-hidden />
               <input type="date" name="end" min={query.start ? addDays(query.start, 1) : addDays(today, 1)} max={addDays(today, 181)} defaultValue={query.end ?? ''} aria-describedby={`${idPrefix}-dates-hint`} className={`${datePillClassName} w-full min-w-0`} />
             </span>
           </label>
@@ -150,7 +150,7 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
               <option key={s} value={s}>{SORT_LABELS[s]}</option>
             ))}
           </select>
-          <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gold" aria-hidden />
+          <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted" aria-hidden />
         </span>
       </div>
 

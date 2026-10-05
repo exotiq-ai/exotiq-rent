@@ -98,11 +98,11 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
           <div className="mb-5 flex items-center justify-between gap-4">
             <div className={`${eyebrowClassName} text-faint`} aria-live="polite">
               {page.totalCount} {page.totalCount === 1 ? 'car' : 'cars'}
-              {activeFilters > 0 && <span className="ml-2 text-gold">· {activeFilters} {activeFilters === 1 ? 'filter' : 'filters'}</span>}
+              {activeFilters > 0 && <span className="ml-2 text-ink">· {activeFilters} {activeFilters === 1 ? 'filter' : 'filters'}</span>}
             </div>
             <details className="relative lg:hidden">
               <summary className="flex cursor-pointer list-none items-center gap-2 rounded-lg border border-line bg-surface px-3.5 py-2 text-body-sm font-semibold text-ink [&::-webkit-details-marker]:hidden">
-                <SlidersHorizontal size={14} className="text-gold" /> Filters &amp; sort
+                <SlidersHorizontal size={14} className="text-muted" /> Filters &amp; sort
               </summary>
               <div className="absolute right-0 z-30 mt-2 w-[min(92vw,22rem)] rounded-2xl border border-line bg-panel p-5 shadow-[0_24px_60px_-20px_rgba(0,0,0,.8)]">
                 <FilterForm key={filterKey} facets={facets} query={query} idPrefix="sheet" />

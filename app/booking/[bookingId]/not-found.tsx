@@ -24,7 +24,7 @@ export default function BookingNotFound() {
     <div className={driveFontClassName}>
       <PhoneViewport step={6} className="font-[var(--font-drive-inter)]">
         <section className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-          <div className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-gold">
+          <div className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-muted">
             <LockKeyhole size={24} />
           </div>
           <HTitle className="mt-5 text-title">This booking needs its secure link.</HTitle>
