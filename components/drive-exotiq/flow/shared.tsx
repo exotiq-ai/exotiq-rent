@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { CheckCircle2, FileText } from 'lucide-react';
 import { HTitle, Money } from '../BookingChrome';
-import { microLabelClassName } from '@/components/browse/tokens';
+import { microLabelClassName, stickyBarClassName } from '@/components/browse/tokens';
 import { CookieControls } from '@/components/analytics/CookieControls';
 
 export function StepHeader({ eyebrow, title, sub }: { eyebrow: string; title: string; sub?: string }) {
@@ -32,7 +32,7 @@ export function ScreenShell({ children, stickySafe = true }: { children: ReactNo
 
 export function Sticky({ children }: { children: ReactNode }) {
   return (
-    <div className="absolute bottom-4 left-0 right-0 z-10 border-t border-line bg-panel px-4 pb-4 pt-3 shadow-[0_-24px_42px_rgba(13,15,20,.96)] md:bottom-5">
+    <div className={`${stickyBarClassName} bottom-4 md:bottom-5`}>
       <CookieControls />
       <div className="space-y-3">{children}</div>
     </div>

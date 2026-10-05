@@ -143,6 +143,18 @@ export const ctaOutlineClassName =
   'aria-disabled:hover:border-line2 aria-disabled:hover:bg-transparent aria-disabled:active:scale-100 ' +
   'motion-reduce:transition-none motion-reduce:active:scale-100';
 
+/**
+ * The floating bar at the foot of a phone surface (MP-16, D8): the booking
+ * flow footer, the vehicle page Book bar and the storefront Call bar share
+ * everything here; each keeps its own bottom offset and visibility at the
+ * call site. It is that surface's one elevated element.
+ */
+export const stickyBarClassName =
+  'absolute left-0 right-0 z-10 border-t border-line bg-panel px-4 pb-4 pt-3 shadow-[0_-24px_42px_rgba(13,15,20,.96)]';
+
+/** The one floating card on a surface that has no sticky bar there (vehicle aside from lg, the browse filters popover, the share card). Neutral, never gold. */
+export const elevatedClassName = 'shadow-[0_24px_60px_-20px_rgba(0,0,0,.8)]';
+
 /** The daily rate on a card: one figure recipe for browse and storefront, unit beside it at a colour that still reads (5:1). */
 export const priceClassName = 'shrink-0 text-title-sm font-medium leading-none text-gold';
 export const priceUnitClassName = 'ml-1.5 text-micro font-normal uppercase tracking-[0.16em] text-faint';

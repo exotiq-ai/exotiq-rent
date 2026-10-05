@@ -102,8 +102,12 @@ export function PhoneViewport({
     frame.addEventListener('scroll', onScroll, { capture: true, passive: true });
     return () => frame.removeEventListener('scroll', onScroll, { capture: true });
   }, [page]);
+  // The frame carries no shadow (MP-16: the sticky bar or aside card is each
+  // surface's one elevated element). From 481px, where the 480px cage stops
+  // filling the viewport, a side hairline frames it; 'page' cancels it from lg,
+  // where the frame opens into the transparent 1200px page.
   const frameDesktop = page
-    ? 'lg:h-auto lg:max-w-[1200px] lg:overflow-visible lg:bg-transparent lg:shadow-none'
+    ? 'lg:h-auto lg:max-w-[1200px] lg:overflow-visible lg:border-0 lg:bg-transparent'
     : panel
       ? 'lg:mx-0 lg:h-[min(900px,calc(100dvh-5rem))] lg:rounded-2xl lg:border lg:border-line'
       : '';
@@ -130,7 +134,7 @@ export function PhoneViewport({
             scroll internally — with min-h alone the frame grows to content and
             the "sticky" footer lands below the fold. Compact cookie controls
             are inside that footer, not above the frame. */}
-        <div ref={frameRef} className={`relative mx-auto flex h-dvh w-full max-w-[480px] flex-col overflow-hidden bg-panel shadow-[0_40px_90px_-20px_rgba(0,0,0,.72),0_18px_42px_-18px_rgba(200,166,100,.18)] ${frameDesktop}`}>
+        <div ref={frameRef} className={`relative mx-auto flex h-dvh w-full max-w-[480px] flex-col overflow-hidden bg-panel min-[481px]:border-x min-[481px]:border-line ${frameDesktop}`}>
           <div className={`grid flex-shrink-0 grid-cols-[40px_1fr_40px] items-center px-4 transition-[padding] duration-300 motion-reduce:transition-none ${page && condensed ? 'pb-0.5 pt-[calc(env(safe-area-inset-top)+4px)]' : 'pb-1 pt-[calc(env(safe-area-inset-top)+10px)]'} ${page ? 'lg:hidden' : ''}`}>
             <button type="button" onClick={onBack} disabled={!onBack} className="grid h-10 w-10 place-items-center rounded-lg text-muted transition hover:bg-surface hover:text-ink disabled:opacity-30" aria-label="Back">
               <ArrowLeft size={20} />

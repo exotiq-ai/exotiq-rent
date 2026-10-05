@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { driveFontClassName } from '@/components/drive-exotiq/fonts';
 import { getSiteMode } from '@/domain/booking/config';
 import { getPublicVehicleContext } from '@/domain/booking/service';
-import { ctaClassName, eyebrowClassName, microLabelClassName, serifStyle } from '@/components/browse/tokens';
+import { ctaClassName, elevatedClassName, eyebrowClassName, microLabelClassName, serifStyle } from '@/components/browse/tokens';
 
 /**
  * Public share card — hype only, by design. No booking ref, dates, or money
@@ -45,7 +45,7 @@ export default async function SharePage({ params }: Props) {
     <main className={`${driveFontClassName} min-h-dvh bg-shareGround font-[var(--font-drive-inter)] text-ink`}>
       <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col px-5 pb-10 pt-8">
         <div className={`text-center ${eyebrowClassName} text-faint`}>Drive Exotiq</div>
-        <div className="relative mt-6 overflow-hidden rounded-2xl border border-gold/40 shadow-[0_0_0_1px_rgba(200,166,100,0.15),0_24px_60px_rgba(0,0,0,0.55)]">
+        <div className={`relative mt-6 overflow-hidden rounded-2xl border border-line ${elevatedClassName}`}>
           <div className="relative h-[300px]">
             {/* A photo-less vehicle must degrade, not throw — <Image src=""> crashes the route. */}
             {vehicle.heroImage

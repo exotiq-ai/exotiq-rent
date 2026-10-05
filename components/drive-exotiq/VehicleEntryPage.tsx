@@ -8,7 +8,7 @@ import { Money, PhoneViewport } from './BookingChrome';
 import { VehicleGallery } from './VehicleGallery';
 import { SaveButton } from '@/components/renters/SaveButton';
 import { CookieControls } from '@/components/analytics/CookieControls';
-import { ctaClassName, eyebrowClassName, stickyBelowBarClassName } from '@/components/browse/tokens';
+import { ctaClassName, elevatedClassName, eyebrowClassName, stickyBarClassName, stickyBelowBarClassName } from '@/components/browse/tokens';
 
 export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { operatorSlug: string; vehicleSlug: string; dates?: { start: string; end: string } }) {
   const teamSlug = operatorSlug;
@@ -116,7 +116,7 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
           {/* Desktop booking card: the phone's bottom bar and "Booking preview"
               tiles, as one sticky column beside the gallery. */}
           <aside className={`hidden lg:block ${stickyBelowBarClassName}`}>
-            <div className="rounded-2xl border border-line bg-surface p-6">
+            <div className={`rounded-2xl border border-line bg-surface p-6 ${elevatedClassName}`}>
               <div className={`${eyebrowClassName} text-faint`}>{operator.name}</div>
               <div className="mt-3 flex items-baseline gap-2 text-gold">
                 <Money cents={vehicle.dailyRateCents} large />
@@ -138,7 +138,7 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
           </aside>
         </div>
       </div>
-      <div className="absolute bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)+8px))] left-0 right-0 z-10 border-t border-line bg-panel px-4 pb-4 pt-3 shadow-[0_-24px_42px_rgba(13,15,20,.96)] lg:hidden">
+      <div className={`${stickyBarClassName} bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)+8px))] lg:hidden`}>
         {yourDates}
         <CookieControls viewport="mobile" />
         <div className="flex items-stretch gap-2">

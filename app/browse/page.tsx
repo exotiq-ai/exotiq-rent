@@ -6,7 +6,7 @@ import { BrowseChrome } from '@/components/browse/BrowseChrome';
 import { EmptyState } from '@/components/browse/EmptyState';
 import { FilterForm } from '@/components/browse/FilterForm';
 import { ListingGrid } from '@/components/browse/ListingGrid';
-import { containerClassName, displaySerifStyle, eyebrowClassName, stickyBelowBarClassName } from '@/components/browse/tokens';
+import { containerClassName, displaySerifStyle, elevatedClassName, eyebrowClassName, stickyBelowBarClassName } from '@/components/browse/tokens';
 import { browseEnabled } from '@/domain/booking/config';
 import { formatRangeLabel, formatShortDate } from '@/domain/booking/dates';
 import { parseMarketplaceQuery, toMarketplaceSearchParams, type SearchParamsLike } from '@/domain/booking/marketplaceQuery';
@@ -104,7 +104,7 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
               <summary className="flex cursor-pointer list-none items-center gap-2 rounded-lg border border-line bg-surface px-3.5 py-2 text-body-sm font-semibold text-ink [&::-webkit-details-marker]:hidden">
                 <SlidersHorizontal size={14} className="text-muted" /> Filters &amp; sort
               </summary>
-              <div className="absolute right-0 z-30 mt-2 w-[min(92vw,22rem)] rounded-2xl border border-line bg-panel p-5 shadow-[0_24px_60px_-20px_rgba(0,0,0,.8)]">
+              <div className={`absolute right-0 z-30 mt-2 w-[min(92vw,22rem)] rounded-2xl border border-line bg-panel p-5 ${elevatedClassName}`}>
                 <FilterForm key={filterKey} facets={facets} query={query} idPrefix="sheet" />
               </div>
             </details>

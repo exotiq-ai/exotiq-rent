@@ -9,7 +9,7 @@ import { HTitle, Money, PhoneViewport } from '@/components/drive-exotiq/BookingC
 import { FilterBar } from '@/components/browse/FilterBar';
 import { EmptyState } from '@/components/browse/EmptyState';
 import { ListingGrid } from '@/components/browse/ListingGrid';
-import { eyebrowClassName, microLabelClassName, stickyBelowBarClassName } from '@/components/browse/tokens';
+import { eyebrowClassName, microLabelClassName, stickyBarClassName, stickyBelowBarClassName } from '@/components/browse/tokens';
 import { browseEnabled, getSiteMode } from '@/domain/booking/config';
 import { formatRangeLabel, formatShortDate } from '@/domain/booking/dates';
 import { applyMarketplaceQuery, computeFacets, excludeBusy, filterListings } from '@/domain/booking/marketplaceCore';
@@ -251,7 +251,7 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
           </div>
         </section>
         {hasPhone && (
-          <div className="absolute bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)+8px))] left-0 right-0 z-10 border-t border-line bg-panel px-4 pb-4 pt-3 shadow-[0_-24px_42px_rgba(13,15,20,.96)] lg:hidden">
+          <div className={`${stickyBarClassName} bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)+8px))] lg:hidden`}>
             <CookieControls viewport="mobile" />
             <CallLink team={team} />
           </div>
