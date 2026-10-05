@@ -102,9 +102,11 @@ describe.skipIf(!DIR)('MP-15 visual proof (evidence in MP15_EVIDENCE_DIR)', () =
     expect(otherWarnings(after)).toEqual([]);
 
     const vitest = read('vitest.log');
-    const tests = vitest.match(/Tests\s+(\d+) passed \((\d+)\)/);
-    expect(tests, 'vitest.log has no all-passed summary').not.toBeNull();
+    // e.g. "Tests  249 passed | 6 skipped (255)": the six runtime tests skip when vitest.log is recorded.
+    const tests = vitest.match(/Tests\s+(\d+) passed(?: \| (\d+) skipped)? \((\d+)\)/);
+    expect(tests, 'vitest.log has no passed summary').not.toBeNull();
     expect(Number(tests?.[1])).toBeGreaterThanOrEqual(231);
+    expect(Number(tests?.[1]) + Number(tests?.[2] ?? 0)).toBe(Number(tests?.[3]));
     expect(vitest).not.toMatch(/\d+ failed/);
   });
 
