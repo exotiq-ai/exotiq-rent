@@ -12,12 +12,21 @@ export const tone = {
   panel: '#0D0F14',
   surface: '#161922',
   surface2: '#1E2230',
+  field: '#10131A',
   line: '#2A2E3A',
+  line2: '#3A3F4D',
   ink: '#F0F2F5',
   muted: '#9BA1B0',
   faint: '#848A9A',
   gold: '#C8A664',
+  goldInk: '#1A1308',
   verified: '#6EC1E4',
+  warn: '#FFB84D',
+  goldWash: '#14130F',
+  shareGround: '#0B0D12',
+  dim: '#3D4250',
+  dim2: '#5C6272',
+  inkSoft: '#D7DAE0',
 } as const;
 
 export const serifFamily = 'var(--font-drive-newsreader), Georgia, serif';
