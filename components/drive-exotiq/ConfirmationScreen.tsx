@@ -118,7 +118,7 @@ export async function ConfirmationScreen({
           // enhancement; the card still resolves truth from the endpoints.
           <IdentityVerificationCard bookingRef={confirmation.bookingRef} confirmationToken={accessToken} primary={live?.status !== 'pending_payment'} />
         )}
-        <div className="mt-4 grid grid-cols-2 gap-3 border-y border-line py-4 text-body"><Detail label="Dates" value={dateLabel} /><Detail label="Pickup" value={pickupLabel} /><Detail label="Location" value={live ? (live.pickupAddress ?? `${cart.operator.city}, ${cart.operator.state}`) : cart.vehicle.pickupLocation.address} /><Detail label="Total" value={totalLabel} /></div>
+        <div className="mt-4 grid grid-cols-2 gap-3 border-t border-line pt-4 text-body"><Detail label="Dates" value={dateLabel} /><Detail label="Pickup" value={pickupLabel} /><Detail label="Location" value={live ? (live.pickupAddress ?? `${cart.operator.city}, ${cart.operator.state}`) : cart.vehicle.pickupLocation.address} /><Detail label="Total" value={totalLabel} /></div>
         {/* Booking-time snapshots (T-15): instructions are operator free text —
             plain text only, never interpreted as HTML or links. */}
         {live?.pickupInstructions && (

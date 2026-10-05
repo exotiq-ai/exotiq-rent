@@ -189,8 +189,17 @@ describe('MP-16 de-box and elevation (AC6-AC9)', () => {
       if (literals(body).some(isBox)) problems.push(`${name}: still boxed`);
     }
     for (const rel of [REVIEW, PAY]) problems.push(...hair(rel, src(rel)));
+    // Summary grids take a top rule only: the hairline section that follows supplies the one
+    // below (a border-y there drew a double rule 16px apart, seen in the S06 and S08 captures).
     const review = src(REVIEW);
-    for (const s of literals(review).filter((x) => x.includes('grid grid-cols-3'))) problems.push(...missing('ReviewStep summary grid', s, 'border-y border-line'));
+    const grids: [string, string[]][] = [
+      ['ReviewStep summary grid', literals(review).filter((x) => x.includes('grid grid-cols-3'))],
+      ['ConfirmationScreen detail grid', literals(src(CONF)).filter((x) => x.includes('grid grid-cols-2 gap-3'))],
+    ];
+    for (const [label, found] of grids) {
+      if (found.length !== 1) problems.push(`${label}: ${found.length} literal(s)`);
+      for (const s of found) problems.push(...missing(label, s, 'border-t border-line'), ...present(label, s, 'border-y', 'border-b'));
+    }
     const verification = between(src(DRIVER), '>Verification<', '</div>\n');
     problems.push(...hair('DriverStep verification row', verification));
     if (literals(verification).some(isBox)) problems.push('DriverStep verification row: still boxed');

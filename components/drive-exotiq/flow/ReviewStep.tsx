@@ -93,7 +93,7 @@ export function ReviewStep({
     <>
       <ScreenShell>
         <StepHeader eyebrow="Step 04" title="Here's the breakdown." />
-        <div className="grid grid-cols-3 gap-2 border-y border-line py-3 text-center text-label"><div><span className="block text-faint">Dates</span>{dateLabel}</div><div><span className="block text-faint">Pickup</span>{cart.pickupTime}</div><div><span className="block text-faint">Location</span>{cart.operator.city}</div></div>
+        <div className="grid grid-cols-3 gap-2 border-t border-line pt-3 text-center text-label"><div><span className="block text-faint">Dates</span>{dateLabel}</div><div><span className="block text-faint">Pickup</span>{cart.pickupTime}</div><div><span className="block text-faint">Location</span>{cart.operator.city}</div></div>
         <Breakdown title="Operator" note={`Charge from ${cart.operator.name}`} rows={operatorRows} total={m.operatorTotalCents} />
         {/* T-12: Exotiq Protect is premium-by-default with a single decline
             toggle (no tier menu). Toggling recomputes the cart; quoteKey
