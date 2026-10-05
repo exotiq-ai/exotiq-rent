@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { Heart, X } from 'lucide-react';
 import { track } from '@/components/analytics/posthog';
-import { serifStyle } from '@/components/browse/tokens';
+import { ctaClassName, serifStyle } from '@/components/browse/tokens';
 import { EmailCaptureForm } from './EmailCaptureForm';
 import { readSaved, useSaved } from './savedStore';
 
@@ -42,7 +42,7 @@ export function SavedList() {
         <div className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-muted"><Heart size={24} /></div>
         <h2 className="mt-5 text-title text-ink" style={serifStyle}>Nothing saved yet.</h2>
         <p className="mt-3 max-w-md text-body leading-6 text-muted">Tap the heart on any car and it lands here. Saved cars live only in this browser; e-mail yourself the list to keep it anywhere else.</p>
-        <Link href="/browse" className="mt-6 rounded-xl bg-gold px-6 py-3.5 text-body font-semibold text-goldInk">Browse the fleet</Link>
+        <Link href="/browse" className={`mt-6 rounded-xl px-6 py-3.5 text-body font-semibold ${ctaClassName}`}>Browse the fleet</Link>
       </div>
     );
   }

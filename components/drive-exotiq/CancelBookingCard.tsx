@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { cancellationWindowState } from '@/domain/booking/payment';
 import { postRenterCancel } from '@/domain/booking/rpcClient';
 import { formatShortDate, tzDate } from '@/domain/booking/dates';
+import { ctaClassName } from '@/components/browse/tokens';
 
 /**
  * M6c: renter self-serve cancellation, window-aware (M6-D5/D7).
@@ -78,7 +79,7 @@ export function CancelBookingCard({
         <button type="button" onClick={cancel} disabled={working} className={`flex-1 rounded-xl px-4 py-3 text-body font-semibold disabled:opacity-60 ${free ? 'border border-line text-ink' : 'bg-danger text-goldInk'}`}>
           {working ? 'Cancelling…' : free ? 'Yes, cancel' : 'Cancel & forfeit'}
         </button>
-        <button type="button" onClick={() => setConfirming(false)} disabled={working} className="flex-1 rounded-xl bg-gold px-4 py-3 text-body font-semibold text-goldInk disabled:opacity-60">
+        <button type="button" onClick={() => setConfirming(false)} disabled={working} className={`flex-1 rounded-xl px-4 py-3 text-body font-semibold disabled:opacity-60 ${ctaClassName}`}>
           Keep booking
         </button>
       </div>

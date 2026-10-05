@@ -8,7 +8,7 @@ import type { MarketplaceFacets, MarketplaceQuery } from '@/domain/booking/publi
 import { MARKETPLACE_SORTS, PRICE_BANDS, daysBetween } from '@/domain/booking/marketplaceQuery';
 import { addDays } from '@/domain/booking/dates';
 import { localTodayIso } from '@/domain/booking/availability';
-import { datePillClassName, microLabelClassName, selectClassName } from './tokens';
+import { ctaOutlineClassName, datePillClassName, microLabelClassName, selectClassName } from './tokens';
 
 /** The control that navigated, so its successor can take focus after the keyed remount (same document, no storage). */
 let pendingFocusId: string | null = null;
@@ -213,7 +213,7 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
 
       <div className="flex items-center justify-between gap-3 border-t border-line pt-5">
         <Link href="/browse" className="text-body-sm text-faint underline decoration-line underline-offset-4 transition hover:text-muted">Clear all</Link>
-        <button type="submit" className="rounded-lg border border-gold/40 px-4 py-2 text-body-sm font-semibold text-gold transition hover:bg-gold/10">Show results</button>
+        <button type="submit" className={`rounded-lg px-4 py-2 text-body-sm font-semibold ${ctaOutlineClassName}`}>Show results</button>
       </div>
     </form>
   );

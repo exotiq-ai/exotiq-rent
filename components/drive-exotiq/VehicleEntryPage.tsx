@@ -8,7 +8,7 @@ import { Money, PhoneViewport } from './BookingChrome';
 import { VehicleGallery } from './VehicleGallery';
 import { SaveButton } from '@/components/renters/SaveButton';
 import { CookieControls } from '@/components/analytics/CookieControls';
-import { eyebrowClassName, stickyBelowBarClassName } from '@/components/browse/tokens';
+import { ctaClassName, eyebrowClassName, stickyBelowBarClassName } from '@/components/browse/tokens';
 
 export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { operatorSlug: string; vehicleSlug: string; dates?: { start: string; end: string } }) {
   const teamSlug = operatorSlug;
@@ -131,7 +131,7 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
               <CookieControls viewport="desktop" className="border-t border-line" />
               <div className="flex items-stretch gap-2">
                 <SaveButton car={saveCar} variant="pill" className="shrink-0" />
-                <Link href={bookHref} className="block min-w-0 flex-1 rounded-xl bg-gold px-5 py-4 text-center text-body font-medium text-goldInk shadow-[0_14px_34px_rgba(200,166,100,.20)] transition hover:brightness-105">{dates ? 'Book these dates' : 'Select dates'}</Link>
+                <Link href={bookHref} className={`block min-w-0 flex-1 rounded-xl px-5 py-4 text-center text-body font-medium ${ctaClassName}`}>{dates ? 'Book these dates' : 'Select dates'}</Link>
               </div>
               <p className="mt-4 text-body-sm leading-5 text-faint">{vehicle.footnote}. Final availability is confirmed at the booking step.</p>
             </div>
@@ -143,7 +143,7 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
         <CookieControls viewport="mobile" />
         <div className="flex items-stretch gap-2">
           <SaveButton car={saveCar} variant="pill" className="shrink-0" />
-          <Link href={bookHref} className="block min-w-0 flex-1 rounded-xl bg-gold px-5 py-4 text-center text-body font-medium text-goldInk shadow-[0_14px_34px_rgba(200,166,100,.20)]">{dates ? 'Book these dates' : 'Select dates'}</Link>
+          <Link href={bookHref} className={`block min-w-0 flex-1 rounded-xl px-5 py-4 text-center text-body font-medium ${ctaClassName}`}>{dates ? 'Book these dates' : 'Select dates'}</Link>
         </div>
       </div>
     </PhoneViewport>

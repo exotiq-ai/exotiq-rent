@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { driveFontClassName } from '@/components/drive-exotiq/fonts';
 import { getSiteMode } from '@/domain/booking/config';
 import { getPublicVehicleContext } from '@/domain/booking/service';
-import { eyebrowClassName, microLabelClassName, serifStyle } from '@/components/browse/tokens';
+import { ctaClassName, eyebrowClassName, microLabelClassName, serifStyle } from '@/components/browse/tokens';
 
 /**
  * Public share card — hype only, by design. No booking ref, dates, or money
@@ -63,7 +63,7 @@ export default async function SharePage({ params }: Props) {
           </div>
         </div>
         <div className="mt-8 flex flex-col gap-3">
-          <Link href={`/${params.operatorSlug}/${params.vehicleSlug}`} className="w-full rounded-xl bg-gold px-5 py-4 text-center text-body font-semibold text-goldInk">
+          <Link href={`/${params.operatorSlug}/${params.vehicleSlug}`} className={`w-full rounded-xl px-5 py-4 text-center text-body font-semibold ${ctaClassName}`}>
             See this car
           </Link>
           <Link href={`/${params.operatorSlug}`} className="w-full rounded-xl border border-line px-5 py-4 text-center text-body font-semibold text-ink">

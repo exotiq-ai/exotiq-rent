@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { SiteBar } from '@/components/browse/SiteBar';
 import { SavedLink } from '@/components/renters/SavedLink';
 import { browseEnabled } from '@/domain/booking/config';
-import { eyebrowClassName, groundClassName, microLabelClassName, serifStyle, tone } from '@/components/browse/tokens';
+import { ctaClassName, eyebrowClassName, groundClassName, microLabelClassName, serifStyle, tone } from '@/components/browse/tokens';
 
 type StepStyle = 'bars' | 'numbered';
 
@@ -188,8 +188,7 @@ export function PrimaryButton({ children, onClick, disabled = false }: { childre
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="w-full rounded-xl px-5 py-4 text-body font-semibold transition disabled:cursor-not-allowed disabled:opacity-45"
-      style={{ backgroundColor: tone.gold, color: tone.goldInk }}
+      className={`w-full rounded-xl px-5 py-4 text-body font-semibold disabled:cursor-not-allowed disabled:opacity-45 ${ctaClassName}`}
     >
       {children}
     </button>

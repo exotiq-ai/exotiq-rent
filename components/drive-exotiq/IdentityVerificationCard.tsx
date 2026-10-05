@@ -5,6 +5,7 @@ import { BadgeCheck, ShieldCheck } from 'lucide-react';
 import { getDataMode, getStripePublishableKey } from '@/domain/booking/config';
 import { getIdentityVerificationState, startIdentityVerification } from '@/domain/booking/service';
 import type { IdentityVerificationStatus } from '@/domain/booking/publicContracts';
+import { ctaClassName, ctaOutlineClassName } from '@/components/browse/tokens';
 
 const POLL_INTERVAL_MS = 2000;
 const MAX_POLLS = 90; // ~3 minutes, then show the still-processing note
@@ -28,10 +29,14 @@ export function IdentityVerificationCard({
   bookingRef,
   confirmationToken,
   initialStatus,
+  primary = true,
 }: {
   bookingRef: string;
   confirmationToken?: string;
   initialStatus?: 'verified';
+  /** One gold button per state (MP-16, D3): false while payment is the renter's next step, so the
+   * verify action yields to "Complete payment" and takes the quiet secondary style. Style only. */
+  primary?: boolean;
 }) {
   const [status, setStatus] = useState<IdentityVerificationStatus | 'idle'>(initialStatus ?? 'idle');
   const [errorReason, setErrorReason] = useState<string | undefined>();
@@ -165,7 +170,7 @@ export function IdentityVerificationCard({
                 href={hostedUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gold px-5 py-3.5 text-body font-semibold text-goldInk transition active:scale-[0.99]"
+                className={`mt-3 flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3.5 text-body font-semibold ${primary ? ctaClassName : ctaOutlineClassName}`}
               >
                 <ShieldCheck size={16} />
                 Continue to secure verification
@@ -179,7 +184,7 @@ export function IdentityVerificationCard({
               type="button"
               onClick={begin}
               disabled={status === 'processing'}
-              className="mt-3 w-full rounded-xl bg-gold px-5 py-3.5 text-body font-semibold text-goldInk transition disabled:opacity-60"
+              className={`mt-3 w-full rounded-xl px-5 py-3.5 text-body font-semibold disabled:opacity-60 ${primary ? ctaClassName : ctaOutlineClassName}`}
             >
               {status === 'processing' ? 'Verifying…' : 'Verify identity'}
             </button>

@@ -121,6 +121,28 @@ export const datePillClassName =
   'relative h-8 rounded-full border border-line2 bg-field pl-7 pr-2.5 text-body-lg leading-none text-ink outline-none transition hover:border-faint focus-visible:ring-2 focus-visible:ring-gold/60 [color-scheme:dark] ' +
   '[&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-y-0 [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-7 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0';
 
+/**
+ * The gold primary action (MP-16, D7): one recipe for every gold-filled button
+ * and link, so each gets the same states. A slight lighten under the pointer,
+ * a slight compress and darken on press, both still while the control is
+ * disabled or marked aria-disabled (anchors never match the enabled state, so
+ * the states are neutralised instead), and no compress under reduced motion.
+ * Hover only applies where hover exists (the config's hoverOnlyWhenSupported).
+ * Call sites keep their own size, radius and width.
+ */
+export const ctaClassName =
+  'bg-gold text-goldInk transition hover:brightness-110 active:scale-[0.98] active:brightness-95 ' +
+  'disabled:hover:brightness-100 disabled:active:scale-100 disabled:active:brightness-100 ' +
+  'aria-disabled:hover:brightness-100 aria-disabled:active:scale-100 aria-disabled:active:brightness-100 ' +
+  'motion-reduce:transition-none motion-reduce:active:scale-100';
+
+/** The quiet secondary beside a gold action (D3): ink on a line2 hairline, the same press, the same guards. */
+export const ctaOutlineClassName =
+  'border border-line2 text-ink transition hover:border-faint hover:bg-surface2 active:scale-[0.98] ' +
+  'disabled:hover:border-line2 disabled:hover:bg-transparent disabled:active:scale-100 ' +
+  'aria-disabled:hover:border-line2 aria-disabled:hover:bg-transparent aria-disabled:active:scale-100 ' +
+  'motion-reduce:transition-none motion-reduce:active:scale-100';
+
 /** The daily rate on a card: one figure recipe for browse and storefront, unit beside it at a colour that still reads (5:1). */
 export const priceClassName = 'shrink-0 text-title-sm font-medium leading-none text-gold';
 export const priceUnitClassName = 'ml-1.5 text-micro font-normal uppercase tracking-[0.16em] text-faint';

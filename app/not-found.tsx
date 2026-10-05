@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { CarFront } from 'lucide-react';
 import { HTitle, PhoneViewport } from '@/components/drive-exotiq/BookingChrome';
 import { driveFontClassName } from '@/components/drive-exotiq/fonts';
+import { ctaClassName } from '@/components/browse/tokens';
 import { getSiteMode } from '@/domain/booking/config';
 
 export default function NotFound() {
@@ -20,7 +21,7 @@ export default function NotFound() {
           <div className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-muted"><CarFront size={24} /></div>
           <HTitle className="mt-5 text-title">This page took a wrong turn.</HTitle>
           <p className="mt-3 text-body leading-6 text-muted">The vehicle, operator, or booking you&apos;re looking for isn&apos;t here. It may have been moved or is no longer listed.</p>
-          <Link href={home.href} className="mt-6 rounded-xl bg-gold px-6 py-3.5 text-body font-semibold text-goldInk">{home.label}</Link>
+          <Link href={home.href} className={`mt-6 rounded-xl px-6 py-3.5 text-body font-semibold ${ctaClassName}`}>{home.label}</Link>
         </section>
       </PhoneViewport>
     </div>

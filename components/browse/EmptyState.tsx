@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { CarFront } from 'lucide-react';
 import { formatRangeLabel } from '@/domain/booking/dates';
 import { EmailCaptureForm } from '@/components/renters/EmailCaptureForm';
-import { serifStyle } from './tokens';
+import { ctaClassName, ctaOutlineClassName, serifStyle } from './tokens';
 
 /**
  * A real zero-result state (MP-3). The cyan mockup silently fell back to
@@ -37,7 +37,7 @@ export function EmptyState({
         <div className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-muted"><CarFront size={24} /></div>
         <h2 className="mt-5 text-title text-ink" style={serifStyle}>The fleet is being refreshed.</h2>
         <p className="mt-3 max-w-md text-body leading-6 text-muted">No cars are listed right now. Give it a few minutes and try again.</p>
-        <Link href="/browse" className="mt-6 rounded-xl border border-gold/40 px-6 py-3.5 text-body font-semibold text-gold">Try again</Link>
+        <Link href="/browse" className={`mt-6 rounded-xl px-6 py-3.5 text-body font-semibold ${ctaOutlineClassName}`}>Try again</Link>
       </div>
     );
   }
@@ -52,7 +52,7 @@ export function EmptyState({
             ? `${ownerName} lists ${totalInCatalog} cars right now. Loosen a filter, or see them all.`
             : `${totalInCatalog} cars are listed across the fleet right now. Loosen a filter, or start over.`}
       </p>
-      <Link href={clearHref} className="mt-6 rounded-xl bg-gold px-6 py-3.5 text-body font-semibold text-goldInk">{dates ? (ownerName ? `See all ${totalInCatalog} (clears dates)` : 'See all cars (clears dates)') : ownerName ? `Show all ${totalInCatalog}` : 'Clear filters'}</Link>
+      <Link href={clearHref} className={`mt-6 rounded-xl px-6 py-3.5 text-body font-semibold ${ctaClassName}`}>{dates ? (ownerName ? `See all ${totalInCatalog} (clears dates)` : 'See all cars (clears dates)') : ownerName ? `Show all ${totalInCatalog}` : 'Clear filters'}</Link>
       {/* MP-14: one e-mail if a car frees up for the dates — any listed car, or this operator's. */}
       {dates && (
         <div className="mt-8 w-full max-w-sm border-t border-line pt-6 text-left">

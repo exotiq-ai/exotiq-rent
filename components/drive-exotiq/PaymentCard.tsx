@@ -7,6 +7,7 @@ import { Money } from './BookingChrome';
 import { paymentCountdownLabel, paymentWindowState } from '@/domain/booking/payment';
 import { postRenterCheckout } from '@/domain/booking/rpcClient';
 import { getBookingConfirmation } from '@/domain/booking/service';
+import { ctaClassName } from '@/components/browse/tokens';
 
 const CONFIRM_POLL_MS = 3000;
 const CONFIRM_POLL_MAX = 40; // ~2 minutes of webhook grace
@@ -187,7 +188,7 @@ export function PaymentCard({
         type="button"
         onClick={pay}
         disabled={starting}
-        className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gold px-5 py-4 text-body font-semibold text-goldInk transition active:scale-[0.99] disabled:opacity-60"
+        className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-5 py-4 text-body font-semibold disabled:opacity-60 ${ctaClassName}`}
       >
         <CreditCard size={16} />
         {starting ? 'Opening secure checkout…' : 'Complete payment'}

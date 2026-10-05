@@ -116,7 +116,7 @@ export async function ConfirmationScreen({
           // identity_verified is now ON the row (live.identityVerified, T-15) —
           // consuming it to render verified without a tap is the card's next
           // enhancement; the card still resolves truth from the endpoints.
-          <IdentityVerificationCard bookingRef={confirmation.bookingRef} confirmationToken={accessToken} />
+          <IdentityVerificationCard bookingRef={confirmation.bookingRef} confirmationToken={accessToken} primary={live?.status !== 'pending_payment'} />
         )}
         <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-line bg-surface p-4 text-body"><Detail label="Dates" value={dateLabel} /><Detail label="Pickup" value={pickupLabel} /><Detail label="Location" value={live ? (live.pickupAddress ?? `${cart.operator.city}, ${cart.operator.state}`) : cart.vehicle.pickupLocation.address} /><Detail label="Total" value={totalLabel} /></div>
         {/* Booking-time snapshots (T-15): instructions are operator free text —
