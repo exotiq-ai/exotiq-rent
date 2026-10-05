@@ -9,7 +9,8 @@ import { useSaved, type SavedCar } from './savedStore';
 /**
  * The heart (MP-14). A real button that never lives inside the card's link:
  * the card wraps both, so a tap on the heart saves and a tap anywhere else
- * opens the car. Gold when saved, with the mockup's bounce.
+ * opens the car. An ink fill when saved, with the mockup's bounce; over a photo the
+ * unsaved outline is ink too, on the same translucent pill as the card's chips (3:1 over white).
  */
 export function SaveButton({ car, className = '', size = 16, variant = 'icon' }: { car: Omit<SavedCar, 'savedAt'>; className?: string; size?: number; /** `pill` adds a Save/Saved label — for the vehicle page beside the book button. */ variant?: 'icon' | 'pill' }) {
   const { has, toggle, ready } = useSaved();
@@ -25,7 +26,7 @@ export function SaveButton({ car, className = '', size = 16, variant = 'icon' }:
       track('favourite_added', { team: car.team_slug, vehicle: car.vehicle_slug });
     }
   };
-  const heart = <Heart size={size} strokeWidth={1.75} className={`${saved ? 'fill-ink text-ink' : 'text-muted'} ${bounce ? 'animate-heart-bounce' : ''}`} onAnimationEnd={() => setBounce(false)} aria-hidden />;
+  const heart = <Heart size={size} strokeWidth={1.75} className={`${saved ? 'fill-ink text-ink' : variant === 'pill' ? 'text-muted' : 'text-ink'} ${bounce ? 'animate-heart-bounce' : ''}`} onAnimationEnd={() => setBounce(false)} aria-hidden />;
   if (variant === 'pill') {
     return (
       <button

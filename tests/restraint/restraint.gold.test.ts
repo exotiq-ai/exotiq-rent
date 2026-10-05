@@ -10,11 +10,13 @@ import {
   around,
   between,
   classOf,
+  contrast,
   goldByFile,
   goldCount,
   hoverGoldTokens,
   literals,
   missing,
+  mix,
   openTags,
   prepare,
   present,
@@ -336,6 +338,27 @@ describe('MP-16 gold is punctuation (AC1-AC5)', () => {
     // Planted: a gold selected chip is caught by the same filter.
     expect('peer-checked:border-gold/70 peer-checked:bg-gold/10'.split(/\s+/).filter((t) => t.startsWith('peer-checked:') && goldCount(t))).toHaveLength(2);
 
+    expect(problems).toEqual([]);
+  });
+
+  // Attempt 2, driver-ruled a11y floor (review S1): over a bright photo the icon button's 70% panel
+  // backing composites to about #56575B, where a muted heart is 2.79:1, under WCAG 1.4.11's 3:1.
+  it('the unsaved heart over a photo keeps 3:1 on the chip backing', () => {
+    const problems: string[] = [];
+    const heart = between(src(SAVEBTN), 'const heart =', '\n');
+    // Over photos (the icon variant) the unsaved heart takes the photo chips' ink; the labelled pill on a solid surface stays muted.
+    if (!/saved \? 'fill-ink text-ink' : variant === 'pill' \? 'text-muted' : 'text-ink'/.test(heart)) problems.push(`SaveButton heart: ${heart.trim()}`);
+    if (goldCount(heart)) problems.push('SaveButton heart: gold');
+    // Its backing is the same translucent pill the min-rental chip uses on the photo.
+    const pill = lits(SAVEBTN, 'grid h-9 w-9 place-items-center rounded-full');
+    const chip = lits(CARD, 'absolute left-3 top-3');
+    for (const [label, s] of [['icon button', pill[0] ?? ''], ['min-rental chip', chip[0] ?? '']] as const) problems.push(...missing(label, s, 'border-line2', 'bg-panel/70', 'text-ink', 'backdrop-blur'));
+    // Worst case: the 70% panel over pure white (a sky, white paint).
+    const backdrop = mix(tone.panel, '#ffffff', 0.7);
+    const ink = contrast(tone.ink, backdrop);
+    if (ink < 3) problems.push(`ink heart on the backing over white: ${ink.toFixed(2)}`);
+    // Planted: the muted heart is caught on the same backdrop.
+    expect(contrast(tone.muted, backdrop)).toBeLessThan(3);
     expect(problems).toEqual([]);
   });
 
