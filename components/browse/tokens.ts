@@ -1,9 +1,11 @@
 /**
- * Drive Exotiq browse tokens (MP-3 / M7b).
+ * Drive Exotiq tokens (MP-3 / M7b; the single source since MP-15).
  *
- * Extracted from what the booking flow actually renders — not a repo-wide
- * refactor of its hex literals. New marketplace code reads these; the flow
- * keeps its literals until a dedicated pass. Brand: Drive Exotiq (decision
+ * `tone` is the palette, written here and nowhere else: tailwind.config.ts
+ * spreads it into the theme as colour names (the keys below), app/globals.css
+ * mirrors it as CSS variables, and inline styles read tone.<key>. The eleven
+ * type steps (micro to display-xl) live in tailwind.config.ts. (No utility is
+ * quoted in these comments: Tailwind scans them.) Brand: Drive Exotiq (decision
  * 2026-08-21). Verified blue is the Exotiq mark's accent, reserved for the
  * Verified badge only.
  */
@@ -37,14 +39,23 @@ export const serifFamily = 'var(--font-drive-newsreader), Georgia, serif';
  * (11px), `microLabel` for field labels, pills, captions and counts (10px).
  * Colour is applied at the call site.
  */
-export const eyebrowClassName = 'text-[11px] uppercase tracking-[0.2em]';
-export const microLabelClassName = 'text-[10px] uppercase tracking-[0.16em]';
+export const eyebrowClassName = 'text-label uppercase tracking-[0.2em]';
+export const microLabelClassName = 'text-micro uppercase tracking-[0.16em]';
 
-/** The display-type recipe every headline on the booking surfaces uses. */
-export const serifStyle = { fontFamily: serifFamily, fontWeight: 500, letterSpacing: '-0.014em' } as const;
+/**
+ * The display-type recipe every headline on the booking surfaces uses, the
+ * one place it is written (MP-15: HTitle and the flow heading spread it).
+ * Newsreader loads without its optical-size axis today, so 'opsz' 32 is inert
+ * until fonts.ts asks for the axis (a separate decision).
+ */
+export const serifStyle = { fontFamily: serifFamily, fontWeight: 500, letterSpacing: '-0.014em', fontVariationSettings: "'opsz' 32" } as const;
 
-/** The display recipe for page titles at 36–56px: tighter than body headings (MP-12). */
-export const displaySerifStyle = { ...serifStyle, letterSpacing: '-0.02em' } as const;
+/**
+ * The display recipe for page titles at 36–56px: tighter than body headings
+ * (MP-12). Its optical size is its own: 'normal' keeps the titles exactly as
+ * they render today (auto optical sizing) rather than inheriting 'opsz' 32.
+ */
+export const displaySerifStyle = { ...serifStyle, letterSpacing: '-0.02em', fontVariationSettings: 'normal' } as const;
 
 /**
  * A sticky column under the 64px site bar (MP-12): the bar is sticky on
@@ -66,7 +77,7 @@ export const containerClassName = 'mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg
  * comments too and would emit the junk rule again.)
  */
 export const groundClassName =
-  'bg-[#06070a] bg-[image:radial-gradient(900px_560px_at_18%_-10%,rgba(200,166,100,0.07),transparent_58%),radial-gradient(760px_520px_at_90%_110%,rgba(200,166,100,0.045),transparent_60%)]';
+  'bg-ground bg-[image:radial-gradient(900px_560px_at_18%_-10%,rgba(200,166,100,0.07),transparent_58%),radial-gradient(760px_520px_at_90%_110%,rgba(200,166,100,0.045),transparent_60%)]';
 
 /**
  * The same card as a wrapper (MP-14): the card's link and its heart button
@@ -74,9 +85,9 @@ export const groundClassName =
  * lift on the wrapper; the keyboard ring follows the link inside via :has().
  */
 export const cardShellClassName =
-  'relative overflow-hidden rounded-2xl border border-[#2A2E3A] bg-[#161922] transition-[transform,border-color,box-shadow] duration-300 ease-out ' +
-  'hover:-translate-y-1 hover:border-[#C8A664]/45 hover:shadow-[0_18px_40px_-18px_rgba(0,0,0,.75),0_10px_30px_-16px_rgba(200,166,100,.22)] ' +
-  'has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-[#C8A664]/70 has-[a:focus-visible]:ring-offset-2 has-[a:focus-visible]:ring-offset-[#06070a] ' +
+  'relative overflow-hidden rounded-2xl border border-line bg-surface transition-[transform,border-color,box-shadow] duration-300 ease-out ' +
+  'hover:-translate-y-1 hover:border-gold/45 hover:shadow-[0_18px_40px_-18px_rgba(0,0,0,.75),0_10px_30px_-16px_rgba(200,166,100,.22)] ' +
+  'has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-gold/70 has-[a:focus-visible]:ring-offset-2 has-[a:focus-visible]:ring-offset-ground ' +
   'motion-reduce:transition-none motion-reduce:hover:translate-y-0';
 
 /** The card recipe (MP-11): both cards now wrap their link in the shell above, so this is the same string by construction. */
@@ -84,7 +95,7 @@ export const cardClassName = cardShellClassName;
 
 /** Photo frame: a 1px inner hairline so a dark photo never dissolves into the card. Nothing over the car. */
 export const photoFrameClassName =
-  'relative aspect-[4/3] overflow-hidden bg-[#1E2230] after:pointer-events-none after:absolute after:inset-0 after:shadow-[inset_0_0_0_1px_rgba(255,255,255,.05)]';
+  'relative aspect-[4/3] overflow-hidden bg-surface2 after:pointer-events-none after:absolute after:inset-0 after:shadow-[inset_0_0_0_1px_rgba(255,255,255,.05)]';
 
 /** Photo: the storefront hero's slightly-low focal point, so wheels and stance stay in frame; zoom eases, and stays still under reduced motion. */
 export const photoClassName =
@@ -92,7 +103,7 @@ export const photoClassName =
 
 /** Text, date and select fields on the gold surfaces: the Driver step's recipe, with hover and a keyboard ring. */
 export const fieldClassName =
-  'w-full rounded-lg border border-[#2A2E3A] bg-[#10131A] px-3 py-2.5 text-[13px] text-[#F0F2F5] outline-none transition placeholder:text-[#848A9A] hover:border-[#3A3F4D] focus:border-[#C8A664]/70 focus-visible:ring-2 focus-visible:ring-[#C8A664]/60 [color-scheme:dark]';
+  'w-full rounded-lg border border-line bg-field px-3 py-2.5 text-body-lg text-ink outline-none transition placeholder:text-faint hover:border-line2 focus:border-gold/70 focus-visible:ring-2 focus-visible:ring-gold/60 [color-scheme:dark]';
 
 /** A native select wearing the field recipe; pair with a ChevronDown in a `relative` wrapper. */
 export const selectClassName = `${fieldClassName} appearance-none pr-9`;
@@ -106,9 +117,9 @@ export const selectClassName = `${fieldClassName} appearance-none pr-9`;
  * whatever the wrapper. Wrap with a CalendarDays icon at left-2.5.
  */
 export const datePillClassName =
-  'relative h-8 rounded-full border border-[#3A3F4D] bg-[#10131A] pl-7 pr-2.5 text-[12px] leading-none text-[#F0F2F5] outline-none transition hover:border-[#C8A664]/40 focus-visible:ring-2 focus-visible:ring-[#C8A664]/60 [color-scheme:dark] ' +
+  'relative h-8 rounded-full border border-line2 bg-field pl-7 pr-2.5 text-body-lg leading-none text-ink outline-none transition hover:border-gold/40 focus-visible:ring-2 focus-visible:ring-gold/60 [color-scheme:dark] ' +
   '[&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-y-0 [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-7 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0';
 
 /** The daily rate on a card: one figure recipe for browse and storefront, unit beside it at a colour that still reads (5:1). */
-export const priceClassName = 'shrink-0 text-[18px] font-medium leading-none text-[#C8A664]';
-export const priceUnitClassName = 'ml-1.5 text-[10px] font-normal uppercase tracking-[0.16em] text-[#848A9A]';
+export const priceClassName = 'shrink-0 text-title-sm font-medium leading-none text-gold';
+export const priceUnitClassName = 'ml-1.5 text-micro font-normal uppercase tracking-[0.16em] text-faint';
