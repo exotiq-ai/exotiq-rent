@@ -39,25 +39,24 @@ export function Sticky({ children }: { children: ReactNode }) {
   );
 }
 
+/** The running total in the Dates bar: a hairline row, the gold on the figure, not the frame (MP-16, D2). */
 export function RunningTotalCard({
   label,
   detail,
   amountCents,
-  accent = true,
 }: {
   label: string;
   detail?: string;
   amountCents: number;
-  accent?: boolean;
 }) {
   return (
-    <div className={`rounded-xl border p-3 ${accent ? 'border-gold bg-goldWash shadow-[0_0_0_1px_var(--tone-gold),0_0_24px_rgba(200,166,100,.10)]' : 'border-line bg-surface'}`}>
+    <div className="border-t border-line pt-3">
       <div className="flex items-baseline justify-between gap-3">
         <div className="min-w-0">
           <div className="truncate text-body-sm font-medium text-ink">{label}</div>
           {detail && <div className="mt-1 text-label text-muted">{detail}</div>}
         </div>
-        <Money cents={amountCents} large />
+        <span className="text-gold"><Money cents={amountCents} large /></span>
       </div>
     </div>
   );
@@ -152,7 +151,7 @@ export function Breakdown({
   total: number;
 }) {
   return (
-    <div className="mt-4 rounded-xl border border-line bg-surface p-4">
+    <div className="mt-4 border-t border-line pt-4">
       <div className="mb-3 flex justify-between">
         <div>
           <div className="text-body font-medium">{title}</div>

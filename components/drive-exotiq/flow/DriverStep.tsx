@@ -118,8 +118,8 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
           </p>
         )}
         <div className={`mt-4 px-1 ${label}`}>Verification</div>
-        <div className="mt-3 flex items-start gap-3 rounded-xl border border-line bg-surface p-4">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-gold/10 text-gold"><IdCard size={16} /></div>
+        <div className="mt-3 flex items-start gap-3 border-t border-line px-1 pt-4">
+          <IdCard size={16} className="mt-0.5 shrink-0 text-muted" />
           <div>
             <div className="text-body font-medium text-ink">ID check comes after booking</div>
             <p className="mt-1 text-body-sm leading-5 text-muted">You&apos;ll verify your identity right after payment — takes two minutes, have your license ready.</p>

@@ -104,7 +104,7 @@ export async function ConfirmationScreen({
           <div className="p-4"><HTitle>{terminal ? terminal.title : `Your ${cart.vehicle.make} is reserved.`}</HTitle><p className="mt-2 text-body text-muted">Booking {confirmation.bookingRef}</p></div>
         </div>
         {terminal && (
-          <div className="mt-4 rounded-xl border border-line bg-surface p-4 text-body leading-6 text-muted">{terminal.note}</div>
+          <div className="mt-4 border-t border-line pt-4 text-body leading-6 text-muted">{terminal.note}</div>
         )}
         {!terminal && (
           // Identity state is NOT inferable from booking status: an operator
@@ -118,11 +118,11 @@ export async function ConfirmationScreen({
           // enhancement; the card still resolves truth from the endpoints.
           <IdentityVerificationCard bookingRef={confirmation.bookingRef} confirmationToken={accessToken} primary={live?.status !== 'pending_payment'} />
         )}
-        <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-line bg-surface p-4 text-body"><Detail label="Dates" value={dateLabel} /><Detail label="Pickup" value={pickupLabel} /><Detail label="Location" value={live ? (live.pickupAddress ?? `${cart.operator.city}, ${cart.operator.state}`) : cart.vehicle.pickupLocation.address} /><Detail label="Total" value={totalLabel} /></div>
+        <div className="mt-4 grid grid-cols-2 gap-3 border-y border-line py-4 text-body"><Detail label="Dates" value={dateLabel} /><Detail label="Pickup" value={pickupLabel} /><Detail label="Location" value={live ? (live.pickupAddress ?? `${cart.operator.city}, ${cart.operator.state}`) : cart.vehicle.pickupLocation.address} /><Detail label="Total" value={totalLabel} /></div>
         {/* Booking-time snapshots (T-15): instructions are operator free text —
             plain text only, never interpreted as HTML or links. */}
         {live?.pickupInstructions && (
-          <div className="mt-3 rounded-xl border border-line bg-surface p-4"><div className={`${microLabelClassName} text-faint`}>Pickup instructions</div><p className="mt-2 whitespace-pre-line text-body leading-6 text-muted">{live.pickupInstructions}</p></div>
+          <div className="mt-3 border-t border-line pt-3"><div className={`${microLabelClassName} text-faint`}>Pickup instructions</div><p className="mt-2 whitespace-pre-line text-body leading-6 text-muted">{live.pickupInstructions}</p></div>
         )}
         {live?.mileageLimitPerDay != null && live.mileageLimitPerDay > 0 && (
           <p className="mt-3 px-1 text-body-sm leading-5 text-faint">
@@ -131,7 +131,7 @@ export async function ConfirmationScreen({
         )}
         {!live && (
           <>
-            <div className="mt-4 rounded-xl border border-line bg-surface p-4">
+            <div className="mt-4 border-t border-line pt-4">
               <div className="mb-3 text-body font-medium">Charges</div>
               <div className="flex justify-between border-t border-line py-3 text-body"><span><span className="block">Operator rental charge</span><span className="text-label text-faint">Charged by {cart.operator.name}</span></span><Money cents={cart.totals.operatorTotalCents} /></div>
               <div className="flex justify-between border-t border-line py-3 text-body"><span><span className="block">Trip Fees ({platformPercent}%)</span><span className="text-label text-faint">Calculated on the rental only</span></span><Money cents={cart.totals.platformFeeCents} /></div>
@@ -161,7 +161,7 @@ export async function ConfirmationScreen({
           />
         )}
         {live && live.paidAt && !terminal && (
-          <div className="mt-4 rounded-xl border border-line bg-surface p-4">
+          <div className="mt-4 border-t border-line pt-4">
             <div className="mb-1 text-body font-medium">Paid — your receipt</div>
             {/* Tax is INSIDE totalCents (operator leg snapshot, T-11): itemise
                 it, never add it to a total again. Old bookings carry 0/absent
@@ -175,16 +175,16 @@ export async function ConfirmationScreen({
           </div>
         )}
         {live && !terminal && !live.paidAt && live.status !== 'pending_payment' && (
-          <div className="mt-4 rounded-xl border border-line bg-surface p-4">
+          <div className="mt-4 border-t border-line pt-4">
             <div className="mb-1 text-body font-medium">Operator rental total</div>
             <div className="flex justify-between border-t border-line py-3 text-body"><span className="text-muted">Charged by {cart.operator.name}</span><Money cents={live.totalCents} /></div>
             <p className="text-body-sm leading-5 text-faint">Trip Fees and protection are itemized at payment, once the operator approves.</p>
           </div>
         )}
-        <div className="mt-4 rounded-xl border border-line bg-surface p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface2 text-ink">{initialsOf(cart.operator.name)}</div><div className="flex-1"><div className="text-body font-medium">{cart.operator.name}</div><div className="text-body-sm text-muted">{terminal ? (cart.operator.phone ? 'Questions about this booking? Call any time.' : 'Questions about this booking? Reply to your confirmation email.') : 'Will reach out before pickup'}</div></div>{(live?.supportEmail ?? cart.operator.supportEmail) && <a href={`mailto:${live?.supportEmail ?? cart.operator.supportEmail}`} className="rounded-full border border-line2 p-2 text-muted transition hover:text-ink" aria-label="Email operator"><Mail size={16} /></a>}{(live?.supportPhone ?? cart.operator.phone) && <a href={`tel:${live?.supportPhone ?? cart.operator.phone}`} className="rounded-full border border-line2 p-2 text-muted transition hover:text-ink" aria-label="Call operator"><Phone size={16} /></a>}</div></div>
+        <div className="mt-4 border-t border-line pt-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface2 text-ink">{initialsOf(cart.operator.name)}</div><div className="flex-1"><div className="text-body font-medium">{cart.operator.name}</div><div className="text-body-sm text-muted">{terminal ? (cart.operator.phone ? 'Questions about this booking? Call any time.' : 'Questions about this booking? Reply to your confirmation email.') : 'Will reach out before pickup'}</div></div>{(live?.supportEmail ?? cart.operator.supportEmail) && <a href={`mailto:${live?.supportEmail ?? cart.operator.supportEmail}`} className="rounded-full border border-line2 p-2 text-muted transition hover:text-ink" aria-label="Email operator"><Mail size={16} /></a>}{(live?.supportPhone ?? cart.operator.phone) && <a href={`tel:${live?.supportPhone ?? cart.operator.phone}`} className="rounded-full border border-line2 p-2 text-muted transition hover:text-ink" aria-label="Call operator"><Phone size={16} /></a>}</div></div>
         {!terminal && (
           <>
-            <div className="mt-4 rounded-xl border border-line bg-surface p-4"><div className="mb-3 flex items-center gap-2 text-body font-medium"><Sparkles size={16} className="text-muted" />What happens next</div>{/* The deposit step describes an in-person handoff, not a link: Exotiq
+            <div className="mt-4 border-t border-line pt-4"><div className="mb-3 flex items-center gap-2 text-body font-medium"><Sparkles size={16} className="text-muted" />What happens next</div>{/* The deposit step describes an in-person handoff, not a link: Exotiq
                 takes no part in the deposit, so there is nothing for us to email and
                 no amount for us to quote. */}
               {['Verify your identity above to confirm the booking.', 'Operator confirms final handoff details.', 'You receive pickup reminders before the rental.', `${cart.operator.name} collects a refundable damage deposit when you pick up the car.`].map((item, index) => <div key={item} className="flex gap-3 border-t border-line py-3 text-body text-muted"><span className="text-faint">0{index + 1}</span>{item}</div>)}</div>
