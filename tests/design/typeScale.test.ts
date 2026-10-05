@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import config from '../../tailwind.config';
 import * as tokens from '../../components/browse/tokens';
-import { SIZE_EXEMPT_DIRS, scan, stripComments } from './lib/scan.mjs';
+import { SIZE_EXEMPT_DIRS, compileWith, scan, stripComments } from './lib/scan.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const read = (rel: string) => readFileSync(new URL(`../../${rel}`, import.meta.url), 'utf8');
@@ -29,6 +29,36 @@ const TEXT_NOT_SIZE = new Set(['left', 'center', 'right', 'justify', 'start', 'e
 function sizeClasses(classString: string): string[] {
   const size = /(?:^|:)text-(micro|label|body-sm|body-lg|body|title-sm|title|heading|display-xl|display-lg|display|\[[0-9.]+(?:px|rem|em)\]|xs|sm|base|lg|xl|[2-9]xl)$/;
   return classString.split(/\s+/).filter((cls) => size.test(cls));
+}
+
+/** Does a media query's params hold at this viewport width? (min-width, Tailwind's max-* form, max-width.) */
+function mediaMatches(params: string, width: number): boolean {
+  const notMin = /^not all and \(min-width:\s*(\d+)px\)$/.exec(params);
+  if (notMin) return width < Number(notMin[1]);
+  const min = /^\(min-width:\s*(\d+)px\)$/.exec(params);
+  if (min) return width >= Number(min[1]);
+  const max = /^\(max-width:\s*(\d+)px\)$/.exec(params);
+  if (max) return width <= Number(max[1]);
+  return false;
+}
+
+/**
+ * The font-size class that wins on ONE element carrying `classes`, as the browser resolves it:
+ * Tailwind compiles them with the real config, equal-specificity rules cascade in emitted order,
+ * and media rules apply only when they match `width`. (Tailwind 3.4 emits one plugin's
+ * utilities sorted by name, not by scale step or by className order.)
+ */
+async function winningSize(classes: string[], width: number): Promise<string | undefined> {
+  const { rules } = await compileWith(config, classes);
+  let winner: string | undefined;
+  for (const r of rules) {
+    if (!r.decls.some((d: string) => d.startsWith('font-size:'))) continue;
+    let applies = true;
+    for (let p = r.rule.parent; p && p.type !== 'root'; p = p.parent) if (p.type === 'atrule' && p.name === 'media') applies = applies && mediaMatches(p.params, width);
+    const cls = r.selector.replace(/\\(.)/g, '$1').replace(/^\./, '');
+    if (applies && classes.includes(cls)) winner = cls;
+  }
+  return winner?.slice(winner.lastIndexOf(':') + 1);
 }
 
 /** The first `className="..."` after an anchor in a source file. */
@@ -77,6 +107,31 @@ describe('MP-15 type scale', () => {
       }
     }
     expect(unknown).toEqual([]);
+  });
+
+  // R9 at the source level: AC9 only sees that a computed size is ON the scale, so a caller whose step
+  // silently loses to HTitle's own (both on the scale) passes it. This pins the caller's intent.
+  it('every HTitle caller renders the step it passes, under Tailwind\'s real emission order', async () => {
+    const chrome = read('components/drive-exotiq/BookingChrome.tsx');
+    const base = chrome.slice(chrome.indexOf('export function HTitle')).match(/className=\{`([^`$]*)\$\{className\}`\}/);
+    expect(base, 'HTitle base className not found').not.toBeNull();
+    const baseClasses = (base?.[1] ?? '').split(/\s+/).filter(Boolean);
+    const callers: { at: string; classes: string[] }[] = [];
+    for (const file of scan({ root }).files.filter((f: string) => f.endsWith('.tsx'))) {
+      for (const m of Array.from(read(file).matchAll(/<HTitle(?:\s+className="([^"]*)")?\s*>/g))) {
+        callers.push({ at: `${file}: ${m[0]}`, classes: (m[1] ?? '').split(/\s+/).filter(Boolean) });
+      }
+    }
+    expect(callers.length).toBeGreaterThanOrEqual(8);
+    const wrong: string[] = [];
+    for (const caller of callers) {
+      for (const width of [390, 1280]) {
+        const asked = (await winningSize(caller.classes, width)) ?? (await winningSize(baseClasses, width));
+        const got = await winningSize([...baseClasses, ...caller.classes], width);
+        if (got !== asked) wrong.push(`${caller.at} @${width}: asks ${asked}, renders ${got}`);
+      }
+    }
+    expect(wrong).toEqual([]);
   });
 
   it('every iOS-focusable input recipe is 16px and the viewport still allows zoom', () => {
