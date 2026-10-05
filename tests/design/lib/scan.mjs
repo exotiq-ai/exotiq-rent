@@ -158,17 +158,29 @@ export function scan({ root = process.cwd(), toneHex = AC1_TONE_HEX, hexExceptio
 }
 
 /**
- * git, for the tests that compare against the merge-base. A missing git or ref throws:
- * those tests fail loudly, they never skip.
+ * The ref MP-15's diff proofs compare against, set explicitly: MP15_BASE_REF=e1332a8 (the merge-base
+ * MP-15 was built on). The suite has two kinds of tests. Checks that stay true after merge (budget, type
+ * scale, fences, values) always run and fail loudly. Proofs that diff against the pre-MP-15 tree (the
+ * CookieControls reversal, the scope fence, the byte-identical layout/font-face/focus-ring checks) only
+ * mean something against that base: after MP-15 merges, `git merge-base HEAD origin/main` is MP-15 itself
+ * and a later ticket's own edits would trip them. So they run only when MP15_BASE_REF is set, the same
+ * way the runtime proofs run only with MP15_EVIDENCE_DIR; unset, they skip and say so.
+ */
+export const BASE_REF = process.env.MP15_BASE_REF ?? '';
+export const BASE_REF_SKIP_NOTE = 'diff vs the pre-MP-15 base: runs only with MP15_BASE_REF set (e.g. MP15_BASE_REF=e1332a8); skipped when unset';
+
+/**
+ * git, for the diff proofs. A missing git or ref throws: with MP15_BASE_REF set, those tests fail loudly.
  * @param {string} root @param {string[]} args
  */
 export function git(root, args) {
   return execFileSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
 }
 
-/** The merge-base with main (override the ref with MP15_BASE_REF). @param {string} root */
+/** The merge-base of HEAD with MP15_BASE_REF. Throws when it is unset (no silent fallback). @param {string} root */
 export function mergeBase(root) {
-  return git(root, ['merge-base', 'HEAD', process.env.MP15_BASE_REF ?? 'origin/main']).trim();
+  if (!BASE_REF) throw new Error('MP15_BASE_REF is not set: the diff proofs need the pre-MP-15 base, e.g. MP15_BASE_REF=e1332a8');
+  return git(root, ['merge-base', 'HEAD', BASE_REF]).trim();
 }
 
 /** A file's text at a ref. @param {string} root @param {string} ref @param {string} rel */

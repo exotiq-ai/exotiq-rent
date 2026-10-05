@@ -1,9 +1,10 @@
-// MP-15 scope fence (AC15, negative): the diff against the merge-base with main stays inside the
-// ticket's file list. Committed, staged, unstaged and untracked changes all count: a dirty tree
-// cannot hide. A missing git or base ref throws (the test fails loudly, it never skips).
+// MP-15 scope fence (AC15, negative): the diff against the pre-MP-15 base stays inside the ticket's
+// file list. Committed, staged, unstaged and untracked changes all count: a dirty tree cannot hide.
+// A diff proof, so it runs only with MP15_BASE_REF set (e.g. e1332a8): after merge, any later ticket's
+// own files would trip it. With the ref set, a missing git or ref throws: it fails loudly.
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { git, mergeBase } from './lib/scan.mjs';
+import { BASE_REF, BASE_REF_SKIP_NOTE, git, mergeBase } from './lib/scan.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 
@@ -66,7 +67,7 @@ const FENCE = [
 const FORBIDDEN = [/^domain\//, /^scripts\//, /^docs\//, /^app\/api\//, /^public\//, /^vitest\.config\.mts$/, /^package(-lock)?\.json$/, /^next\.config\.js$/, /^netlify/];
 const lines = (out: string) => out.split('\n').map((l) => l.trim()).filter(Boolean);
 
-describe('MP-15 scope fence', () => {
+describe.skipIf(!BASE_REF)(`MP-15 scope fence (${BASE_REF_SKIP_NOTE})`, () => {
   it('the diff stays inside the MP-15 file fence', () => {
     const base = mergeBase(root);
     const changed = new Set([

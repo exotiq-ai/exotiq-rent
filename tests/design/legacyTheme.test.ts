@@ -1,12 +1,14 @@
 // MP-15 legacy theme: delete what nothing references, quarantine the rest in commented LEGACY
 // groups (AC13), and leave marketplace-mode typography byte-identical (AC14, driver decision RD5).
+// AC14 has two halves (SP1): what must stay in place always runs; the byte-identical-to-base half
+// runs only with MP15_BASE_REF set.
 import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import config from '../../tailwind.config';
 import { tone } from '../../components/browse/tokens';
-import { compileWith, git, mergeBase, showAt, stripComments } from './lib/scan.mjs';
+import { BASE_REF, BASE_REF_SKIP_NOTE, compileWith, git, mergeBase, showAt, stripComments } from './lib/scan.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const read = (rel: string) => readFileSync(path.join(root, rel), 'utf8');
@@ -125,6 +127,41 @@ describe('MP-15 legacy theme', () => {
     });
   });
 
+  it('the gated Montserrat head, the mont family and the fenced Dfaalt faces are in place', async () => {
+    const problems: string[] = [];
+
+    // app/layout.tsx: the head that loads Montserrat renders only in marketplace mode.
+    const head = marketplaceHead(read('app/layout.tsx'));
+    if (!head.startsWith('{isMarketplace && (')) problems.push('layout.tsx: no {isMarketplace && (<head>...)} block');
+    if (!head.includes('<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />')) problems.push('layout.tsx: the fonts.gstatic.com preconnect is missing');
+    if (!head.includes('href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap"')) problems.push('layout.tsx: the Montserrat stylesheet link is missing or changed');
+
+    // app/globals.css: the three Dfaalt faces the mockup's inline styles load, each inside a legacy-marketplace fence.
+    const css = read('app/globals.css');
+    const faces = dfaaltFaces(css);
+    const expected = [['Regular', '400'], ['SemiBold', '600'], ['Bold', '700']];
+    if (faces.length !== 3) problems.push(`globals.css: ${faces.length} Dfaalt @font-face blocks, expected 3`);
+    for (const [cut, weight] of expected) {
+      const face = faces.find((f) => f.text.includes(`url('/fonts/dfaalt/Dfaalt-${cut}.woff') format('woff')`));
+      if (!face) { problems.push(`globals.css: no Dfaalt ${cut} face`); continue; }
+      if (!face.text.includes(`font-weight: ${weight};`) || !face.text.includes('font-style: normal;') || !face.text.includes('font-display: swap;')) problems.push(`globals.css: Dfaalt ${cut} face changed`);
+    }
+    for (const face of faces) {
+      const before = css.slice(0, face.at);
+      const lastBegin = before.lastIndexOf('/* legacy-marketplace:begin */');
+      if (lastBegin < 0 || before.lastIndexOf('/* legacy-marketplace:end */') > lastBegin) problems.push(`globals.css: Dfaalt face at ${face.at} is outside a legacy-marketplace fence`);
+    }
+    expect(problems).toEqual([]);
+
+    // fontFamily.mont compiles to the Montserrat stack.
+    const { css: mont } = await compileWith(config, ['font-mont']);
+    expect(mont).toMatch(/\.font-mont \{\s*font-family: "Montserrat", sans-serif;?\s*\}/);
+  });
+});
+
+// Diff proofs against the pre-MP-15 base (SP1): after merge a later ticket's own layout.tsx or
+// globals.css edits would trip them, so they run only when MP15_BASE_REF is set.
+describe.skipIf(!BASE_REF)(`MP-15 legacy theme (${BASE_REF_SKIP_NOTE})`, () => {
   it('the gated Montserrat head, the mont family and the Dfaalt font-face are byte-identical', async () => {
     const base = mergeBase(root);
     const problems: string[] = [];

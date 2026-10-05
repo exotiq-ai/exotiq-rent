@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import config from '../../tailwind.config';
 import * as tokens from '../../components/browse/tokens';
-import { HEX, URLHEX, compileWith, mergeBase, scan, showAt, stripComments } from './lib/scan.mjs';
+import { BASE_REF, BASE_REF_SKIP_NOTE, HEX, URLHEX, compileWith, mergeBase, scan, showAt, stripComments } from './lib/scan.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const read = (rel: string) => readFileSync(new URL(`../../${rel}`, import.meta.url), 'utf8');
@@ -84,13 +84,12 @@ describe('MP-15 token sources', () => {
     const expected = Object.fromEntries(Object.entries(tone).map(([key, value]) => [`--tone-${kebab(key)}`, value.toUpperCase()]));
     expect(vars).toEqual(expected);
 
-    // The a11y signature: both focus-ring rules byte-identical to the merge-base.
-    const baseCss = showAt(root, mergeBase(root), 'app/globals.css');
+    // The a11y signature: both focus-ring rules declare exactly the shipped ring, nothing else.
+    // (Their byte identity with the pre-MP-15 file is the MP15_BASE_REF-gated test below.)
     for (const selector of [':-moz-focusring', ':where(*:focus-visible)']) {
-      const now = ruleText(css, selector);
-      expect(now, selector).toContain('outline: 2px solid rgba(200, 166, 100, 0.7);');
-      expect(now, selector).toContain('outline-offset: 2px;');
-      expect(now, selector).toBe(ruleText(baseCss, selector));
+      const body = ruleText(css, selector);
+      const declarations = body.slice(body.indexOf('{') + 1, body.lastIndexOf('}')).split(';').map((d) => d.trim()).filter(Boolean);
+      expect(declarations, selector).toEqual(['outline: 2px solid rgba(200, 166, 100, 0.7)', 'outline-offset: 2px']);
     }
 
     // The check-tick SVG: exactly one url-encoded hex, and it is goldInk.
@@ -117,5 +116,17 @@ describe('MP-15 token sources', () => {
       if (count) copies[file] = count;
     }
     expect(copies).toEqual({ 'components/browse/tokens.ts': 1 });
+  });
+});
+
+// Diff proof against the pre-MP-15 base (SP1): runs only with MP15_BASE_REF set.
+describe.skipIf(!BASE_REF)(`MP-15 token sources (${BASE_REF_SKIP_NOTE})`, () => {
+  it('the focus-ring rules are byte-identical to the pre-MP-15 globals.css', () => {
+    const css = read('app/globals.css');
+    const baseCss = showAt(root, mergeBase(root), 'app/globals.css');
+    for (const selector of [':-moz-focusring', ':where(*:focus-visible)']) {
+      expect(ruleText(css, selector), selector).not.toBe('');
+      expect(ruleText(css, selector), selector).toBe(ruleText(baseCss, selector));
+    }
   });
 });
