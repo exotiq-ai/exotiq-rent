@@ -36,13 +36,13 @@ export function SavedList() {
   const heading = <h2 ref={headingRef} tabIndex={-1} className="sr-only outline-none">Your saved cars</h2>;
   if (saved.length === 0) {
     return (
-      <div className="flex flex-col items-center rounded-2xl border border-dashed border-[#2A2E3A] px-6 py-16 text-center">
+      <div className="flex flex-col items-center rounded-2xl border border-dashed border-line px-6 py-16 text-center">
         {status}
         {heading}
-        <div className="grid h-14 w-14 place-items-center rounded-full border border-[#2A2E3A] bg-[#161922] text-[#C8A664]"><Heart size={24} /></div>
-        <h2 className="mt-5 text-[24px] text-[#F0F2F5]" style={serifStyle}>Nothing saved yet.</h2>
-        <p className="mt-3 max-w-md text-sm leading-6 text-[#9BA1B0]">Tap the heart on any car and it lands here. Saved cars live only in this browser; e-mail yourself the list to keep it anywhere else.</p>
-        <Link href="/browse" className="mt-6 rounded-xl bg-[#C8A664] px-6 py-3.5 text-sm font-semibold text-[#1A1308]">Browse the fleet</Link>
+        <div className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-gold"><Heart size={24} /></div>
+        <h2 className="mt-5 text-title text-ink" style={serifStyle}>Nothing saved yet.</h2>
+        <p className="mt-3 max-w-md text-body leading-6 text-muted">Tap the heart on any car and it lands here. Saved cars live only in this browser; e-mail yourself the list to keep it anywhere else.</p>
+        <Link href="/browse" className="mt-6 rounded-xl bg-gold px-6 py-3.5 text-body font-semibold text-goldInk">Browse the fleet</Link>
       </div>
     );
   }
@@ -50,20 +50,20 @@ export function SavedList() {
     <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-10">
       {status}
       {heading}
-      <ul className="divide-y divide-[#2A2E3A] rounded-2xl border border-[#2A2E3A] bg-[#0D0F14]">
+      <ul className="divide-y divide-line rounded-2xl border border-line bg-panel">
         {saved.map((car) => (
           <li key={`${car.team_slug}/${car.vehicle_slug}`} className="flex items-center gap-4 p-4">
             <div className="min-w-0 flex-1">
-              <Link href={car.href} className="block truncate text-[17px] text-[#F0F2F5] transition hover:text-[#C8A664]" style={serifStyle}>{car.name}</Link>
-              <div className="mt-0.5 text-[12px] text-[#9BA1B0]">{car.priceCents !== undefined ? `${dollars(car.priceCents)} per day · ` : ''}{car.team_name ?? car.team_slug.replace(/-/g, ' ')}</div>
+              <Link href={car.href} className="block truncate text-title-sm text-ink transition hover:text-gold" style={serifStyle}>{car.name}</Link>
+              <div className="mt-0.5 text-label text-muted">{car.priceCents !== undefined ? `${dollars(car.priceCents)} per day · ` : ''}{car.team_name ?? car.team_slug.replace(/-/g, ' ')}</div>
             </div>
-            <button type="button" data-saved-remove onClick={() => onRemove(car, saved.indexOf(car))} aria-label={`Remove ${car.name}`} className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[#2A2E3A] text-[#848A9A] transition hover:border-[#C8A664]/45 hover:text-[#F0F2F5]"><X size={14} /></button>
+            <button type="button" data-saved-remove onClick={() => onRemove(car, saved.indexOf(car))} aria-label={`Remove ${car.name}`} className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-line text-faint transition hover:border-gold/45 hover:text-ink"><X size={14} /></button>
           </li>
         ))}
       </ul>
-      <aside className="mt-6 rounded-2xl border border-[#2A2E3A] bg-[#0D0F14] p-5 lg:sticky lg:top-24 lg:mt-0">
-        <h2 className="text-[20px] text-[#F0F2F5]" style={serifStyle}>E-mail me this list.</h2>
-        <p className="mt-2 text-[13px] leading-5 text-[#9BA1B0]">A copy with a link to each car, so it is not stuck in this browser.</p>
+      <aside className="mt-6 rounded-2xl border border-line bg-panel p-5 lg:sticky lg:top-24 lg:mt-0">
+        <h2 className="text-title text-ink" style={serifStyle}>E-mail me this list.</h2>
+        <p className="mt-2 text-body-sm leading-5 text-muted">A copy with a link to each car, so it is not stuck in this browser.</p>
         <EmailCaptureForm source="save_list" cta="Send my list" saved={readSaved} className="mt-4" />
       </aside>
     </div>
