@@ -55,14 +55,14 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
   const canContinue = fieldsComplete && !tooYoung;
 
   // Placeholder was #3D4250 (~1.6:1 on the field): the four boxes read as empty. #848A9A clears 4.5:1 (MP-11).
-  const fieldClass = 'mt-1 w-full rounded-lg border border-[#2A2E3A] bg-[#10131A] px-3 py-2.5 text-sm text-[#F0F2F5] outline-none transition placeholder:text-[#848A9A] hover:border-[#3A3F4D] focus:border-[#C8A664]/70 focus-visible:ring-2 focus-visible:ring-[#C8A664]/60 aria-[invalid=true]:border-[#FFB84D]/70 [color-scheme:dark]';
-  const label = `${microLabelClassName} text-[#848A9A]`;
+  const fieldClass = 'mt-1 w-full rounded-lg border border-line bg-field px-3 py-2.5 text-body-lg text-ink outline-none transition placeholder:text-faint hover:border-line2 focus:border-gold/70 focus-visible:ring-2 focus-visible:ring-gold/60 aria-[invalid=true]:border-warn/70 [color-scheme:dark]';
+  const label = `${microLabelClassName} text-faint`;
 
   return (
     <>
       <ScreenShell>
         <StepHeader eyebrow="Step 03" title="Who's driving?" sub="Takes about a minute." />
-        <div className="rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
+        <div className="rounded-xl border border-line bg-surface p-4">
           <label className="block">
             <span className={label}>Full name</span>
             <input type="text" value={cart.driver.name} onChange={(event) => setDriver({ name: event.target.value })} placeholder="Name as it appears on your license" autoComplete="name" className={fieldClass} />
@@ -101,28 +101,28 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
           </div>
           <p id="dob-hint" className="sr-only">Type the digits of your date of birth: month, day, year.</p>
           {/* Always mounted and polite: a live region that appears already populated is skipped by VoiceOver, and an assertive alert mid-typing talks over the digit just pressed. */}
-          <p id="dob-error" role="status" aria-live="polite" className={dobError ? 'mt-2 text-[12px] leading-5 text-[#FFB84D]' : 'sr-only'}>{dobError}</p>
+          <p id="dob-error" role="status" aria-live="polite" className={dobError ? 'mt-2 text-body-sm leading-5 text-warn' : 'sr-only'}>{dobError}</p>
           <label className="mt-3 block">
             <span className={label}>Email</span>
             <input type="email" value={cart.driver.email ?? ''} onChange={(event) => setDriver({ email: event.target.value })} placeholder="Where we send your confirmation" autoComplete="email" className={fieldClass} />
           </label>
         </div>
         {tooYoung && (
-          <p className="mt-3 rounded-xl border border-[#FFB84D]/45 bg-[#FFB84D]/10 p-3 text-[12px] leading-5 text-[#F0F2F5]">
+          <p className="mt-3 rounded-xl border border-warn/45 bg-warn/10 p-3 text-body-sm leading-5 text-ink">
             {cart.operator.name} requires drivers to be {minAge}+ on the pickup date for this rental.
           </p>
         )}
         {minAge == null && (
-          <p className="mt-3 px-1 text-[11px] leading-5 text-[#848A9A]">
+          <p className="mt-3 px-1 text-label leading-5 text-faint">
             Age and license requirements are set by {cart.operator.name} and confirmed before pickup.
           </p>
         )}
         <div className={`mt-4 px-1 ${label}`}>Verification</div>
-        <div className="mt-3 flex items-start gap-3 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#C8A664]/10 text-[#C8A664]"><IdCard size={16} /></div>
+        <div className="mt-3 flex items-start gap-3 rounded-xl border border-line bg-surface p-4">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-gold/10 text-gold"><IdCard size={16} /></div>
           <div>
-            <div className="text-sm font-medium text-[#F0F2F5]">ID check comes after booking</div>
-            <p className="mt-1 text-xs leading-5 text-[#9BA1B0]">You&apos;ll verify your identity right after payment — takes two minutes, have your license ready.</p>
+            <div className="text-body font-medium text-ink">ID check comes after booking</div>
+            <p className="mt-1 text-body-sm leading-5 text-muted">You&apos;ll verify your identity right after payment — takes two minutes, have your license ready.</p>
           </div>
         </div>
       </ScreenShell>

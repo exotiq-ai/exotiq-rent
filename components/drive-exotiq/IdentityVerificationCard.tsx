@@ -117,12 +117,12 @@ export function IdentityVerificationCard({
 
   if (status === 'verified') {
     return (
-      <div className="mt-4 rounded-xl border border-[#C8A664] bg-[#14130F] p-4 shadow-[0_0_0_1px_#C8A664,0_0_24px_rgba(200,166,100,.10)]">
+      <div className="mt-4 rounded-xl border border-gold bg-goldWash p-4 shadow-[0_0_0_1px_var(--tone-gold),0_0_24px_rgba(200,166,100,.10)]">
         <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#C8A664]/10 text-[#C8A664]"><BadgeCheck size={20} /></div>
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gold/10 text-gold"><BadgeCheck size={20} /></div>
           <div>
-            <div className="text-sm font-medium text-[#F0F2F5]">Identity verified — booking confirmed</div>
-            <p className="mt-1 text-xs leading-5 text-[#9BA1B0]">You&apos;re all set. The operator has been notified.</p>
+            <div className="text-body font-medium text-ink">Identity verified — booking confirmed</div>
+            <p className="mt-1 text-body-sm leading-5 text-muted">You&apos;re all set. The operator has been notified.</p>
           </div>
         </div>
       </div>
@@ -131,29 +131,29 @@ export function IdentityVerificationCard({
 
   if (status === 'requires_input' || status === 'manual_review') {
     return (
-      <div className="mt-4 rounded-xl border border-[#FFB84D]/45 bg-[#FFB84D]/10 p-4">
-        <div className="text-sm font-medium text-[#FFB84D]">{status === 'manual_review' ? "We're reviewing your booking" : "Verification didn't go through"}</div>
-        <p className="mt-1 text-xs leading-5 text-[#F0F2F5]">
+      <div className="mt-4 rounded-xl border border-warn/45 bg-warn/10 p-4">
+        <div className="text-body font-medium text-warn">{status === 'manual_review' ? "We're reviewing your booking" : "Verification didn't go through"}</div>
+        <p className="mt-1 text-body-sm leading-5 text-ink">
           {status === 'manual_review'
             ? 'The operator has been notified and will be in touch shortly. Your booking is held in the meantime.'
             : errorReason ?? 'Your document could not be verified. Please try again.'}
         </p>
         {status === 'requires_input' && (
-          <button type="button" onClick={begin} className="mt-3 rounded-lg border border-[#FFB84D]/45 px-4 py-2 text-xs font-semibold text-[#F0F2F5]">Try again</button>
+          <button type="button" onClick={begin} className="mt-3 rounded-lg border border-warn/45 px-4 py-2 text-body-sm font-semibold text-ink">Try again</button>
         )}
       </div>
     );
   }
 
   return (
-    <div className="mt-4 rounded-xl border border-[#C8A664] bg-[#14130F] p-4 shadow-[0_0_0_1px_#C8A664,0_0_24px_rgba(200,166,100,.10)]">
+    <div className="mt-4 rounded-xl border border-gold bg-goldWash p-4 shadow-[0_0_0_1px_var(--tone-gold),0_0_24px_rgba(200,166,100,.10)]">
       <div className="flex items-start gap-3">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#C8A664]/10 text-[#C8A664]"><ShieldCheck size={20} /></div>
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gold/10 text-gold"><ShieldCheck size={20} /></div>
         <div className="flex-1">
-          <div className="text-sm font-medium text-[#F0F2F5]">Confirm your booking — verify your identity</div>
-          <p className="mt-1 text-xs leading-5 text-[#9BA1B0]">Takes about two minutes. Have your driver&apos;s license ready. Exotiq never stores your ID — documents are processed securely by Stripe, our verification partner.</p>
+          <div className="text-body font-medium text-ink">Confirm your booking — verify your identity</div>
+          <p className="mt-1 text-body-sm leading-5 text-muted">Takes about two minutes. Have your driver&apos;s license ready. Exotiq never stores your ID — documents are processed securely by Stripe, our verification partner.</p>
           {missingToken ? (
-            <p className="mt-3 rounded-lg border border-[#2A2E3A] bg-[#10131A] px-3 py-2.5 text-xs leading-5 text-[#9BA1B0]">
+            <p className="mt-3 rounded-lg border border-line bg-field px-3 py-2.5 text-body-sm leading-5 text-muted">
               Open the link in your confirmation email to verify — it carries the
               secure access code for this booking.
             </p>
@@ -163,12 +163,12 @@ export function IdentityVerificationCard({
                 href={hostedUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#C8A664] px-5 py-3.5 text-sm font-semibold text-[#1A1308] transition active:scale-[0.99]"
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gold px-5 py-3.5 text-body font-semibold text-goldInk transition active:scale-[0.99]"
               >
                 <ShieldCheck size={16} />
                 Continue to secure verification
               </a>
-              <p className="mt-2 text-center text-[11px] leading-4 text-[#848A9A]">
+              <p className="mt-2 text-center text-label leading-4 text-faint">
                 Opens Stripe in a new tab. Leave this page open — it updates on its own when you&apos;re done.
               </p>
             </>
@@ -177,13 +177,13 @@ export function IdentityVerificationCard({
               type="button"
               onClick={begin}
               disabled={status === 'processing'}
-              className="mt-3 w-full rounded-xl bg-[#C8A664] px-5 py-3.5 text-sm font-semibold text-[#1A1308] transition disabled:opacity-60"
+              className="mt-3 w-full rounded-xl bg-gold px-5 py-3.5 text-body font-semibold text-goldInk transition disabled:opacity-60"
             >
               {status === 'processing' ? 'Verifying…' : 'Verify identity'}
             </button>
           )}
           {status === 'processing' && slowNote && (
-            <p className="mt-2 text-center text-[11px] text-[#848A9A]">Still processing — you can close this page; the operator sees the result either way.</p>
+            <p className="mt-2 text-center text-label text-faint">Still processing — you can close this page; the operator sees the result either way.</p>
           )}
         </div>
       </div>

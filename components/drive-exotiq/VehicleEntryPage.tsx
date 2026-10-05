@@ -41,15 +41,15 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
   // MP-14: the heart beside the book button, desktop and phone.
   const saveCar = { team_slug: operator.slug, vehicle_slug: vehicle.slug, name: vehicle.name, href: `/${operator.slug}/${vehicle.slug}`, priceCents: vehicle.dailyRateCents, team_name: operator.name };
   const yourDates = dates ? (
-    <p className="mb-2 flex items-center justify-between text-[12px] text-[#9BA1B0]">
-      <span>Your dates: <span className="text-[#F0F2F5]">{formatRangeLabel(dates.start, dates.end)}</span></span>
-      <Link href={`/${operator.slug}?start=${dates.start}&end=${dates.end}`} className="underline decoration-[#2A2E3A] underline-offset-4 hover:text-[#F0F2F5]">Change</Link>
+    <p className="mb-2 flex items-center justify-between text-body-sm text-muted">
+      <span>Your dates: <span className="text-ink">{formatRangeLabel(dates.start, dates.end)}</span></span>
+      <Link href={`/${operator.slug}?start=${dates.start}&end=${dates.end}`} className="underline decoration-line underline-offset-4 hover:text-ink">Change</Link>
     </p>
   ) : null;
   const desktopNav = (
     <>
-      <Link href={`/${operator.slug}`} className="transition hover:text-[#F0F2F5]">{operator.name}</Link>
-      {browseEnabled() && <Link href="/browse" className="transition hover:text-[#F0F2F5]">Browse the fleet</Link>}
+      <Link href={`/${operator.slug}`} className="transition hover:text-ink">{operator.name}</Link>
+      {browseEnabled() && <Link href="/browse" className="transition hover:text-ink">Browse the fleet</Link>}
     </>
   );
 
@@ -72,12 +72,12 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
             {specs.length > 0 && (
             <div className="mt-4 grid grid-cols-2 gap-2 lg:mt-6 lg:grid-cols-4">
               {specs.map((spec) => (
-                <div key={spec.label} className="rounded-xl border border-[#2A2E3A] bg-[#161922] p-[14px]">
-                  <div className={`${eyebrowClassName} text-[#848A9A]`}>{spec.label}</div>
-                  <div className="mt-2 flex items-baseline gap-1 text-[#F0F2F5]">
-                    <spec.icon className="mr-1 text-[#C8A664]" size={16} />
-                    <span className="text-[22px] font-medium leading-none tracking-[-0.02em] tabular-nums">{spec.value.split(' ')[0]}</span>
-                    <span className="text-xs text-[#9BA1B0]">{spec.value.split(' ').slice(1).join(' ')}</span>
+                <div key={spec.label} className="rounded-xl border border-line bg-surface p-[14px]">
+                  <div className={`${eyebrowClassName} text-faint`}>{spec.label}</div>
+                  <div className="mt-2 flex items-baseline gap-1 text-ink">
+                    <spec.icon className="mr-1 text-gold" size={16} />
+                    <span className="text-title font-medium leading-none tracking-[-0.02em] tabular-nums">{spec.value.split(' ')[0]}</span>
+                    <span className="text-label text-muted">{spec.value.split(' ').slice(1).join(' ')}</span>
                   </div>
                 </div>
               ))}
@@ -85,65 +85,65 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
             )}
 
             {/* Phone only — from lg the same facts live in the booking aside. */}
-            <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 lg:hidden">
-              <h2 className="mb-3 flex items-center gap-2 text-sm font-medium"><CalendarDays size={16} className="text-[#C8A664]" />Booking preview</h2>
-              <div className="grid grid-cols-3 gap-2 text-center text-[11px]">
-                <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[14px] font-medium leading-none tabular-nums text-[#C8A664] min-[360px]:text-[17px]"><Money cents={vehicle.dailyRateCents} /></div><div className="mt-1.5 text-[#848A9A]">Per day</div></div>
-                <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[14px] font-medium leading-none tabular-nums text-[#C8A664] min-[360px]:text-[17px]">{vehicle.minRentalDays}<span className="text-[11px] font-normal text-[#848A9A]"> {vehicle.minRentalDays === 1 ? 'day' : 'days'}</span></div><div className="mt-1.5 text-[#848A9A]">Minimum</div></div>
-                <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[14px] font-medium leading-none text-[#C8A664] min-[360px]:text-[17px]">Verified</div><div className="mt-1.5 text-[#848A9A]">Drivers</div></div>
+            <div className="mt-4 rounded-xl border border-line bg-surface p-4 lg:hidden">
+              <h2 className="mb-3 flex items-center gap-2 text-body font-medium"><CalendarDays size={16} className="text-gold" />Booking preview</h2>
+              <div className="grid grid-cols-3 gap-2 text-center text-label">
+                <div className="rounded-lg bg-surface2 p-3"><div className="text-body font-medium leading-none tabular-nums text-gold min-[360px]:text-title-sm min-[360px]:leading-none"><Money cents={vehicle.dailyRateCents} /></div><div className="mt-1.5 text-faint">Per day</div></div>
+                <div className="rounded-lg bg-surface2 p-3"><div className="text-body font-medium leading-none tabular-nums text-gold min-[360px]:text-title-sm min-[360px]:leading-none">{vehicle.minRentalDays}<span className="text-label font-normal text-faint"> {vehicle.minRentalDays === 1 ? 'day' : 'days'}</span></div><div className="mt-1.5 text-faint">Minimum</div></div>
+                <div className="rounded-lg bg-surface2 p-3"><div className="text-body font-medium leading-none text-gold min-[360px]:text-title-sm min-[360px]:leading-none">Verified</div><div className="mt-1.5 text-faint">Drivers</div></div>
               </div>
-              <p className="mt-3 text-[12px] leading-5 text-[#9BA1B0]">{vehicle.footnote}. Final availability is confirmed at the booking step.</p>
+              <p className="mt-3 text-body-sm leading-5 text-muted">{vehicle.footnote}. Final availability is confirmed at the booking step.</p>
             </div>
 
-            <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
-              <h2 className="mb-3 flex items-center gap-2 text-sm font-medium"><MapPin size={16} className="text-[#C8A664]" />Pickup</h2>
+            <div className="mt-4 rounded-xl border border-line bg-surface p-4">
+              <h2 className="mb-3 flex items-center gap-2 text-body font-medium"><MapPin size={16} className="text-gold" />Pickup</h2>
               {/* The venue name only renders when it is real. Live reads have none, and
                   a fabricated one repeated the operator and the word "pickup". */}
-              {vehicle.pickupLocation.name && <div className="text-sm text-[#F0F2F5]">{vehicle.pickupLocation.name}</div>}
-              <div className={`text-xs text-[#9BA1B0]${vehicle.pickupLocation.name ? ' mt-1' : ''}`}>{pickupParts.join(', ')}</div>
-              <p className="mt-2 text-[11px] leading-5 text-[#848A9A]">{operator.name} confirms the exact address before pickup.</p>
+              {vehicle.pickupLocation.name && <div className="text-body text-ink">{vehicle.pickupLocation.name}</div>}
+              <div className={`text-label text-muted${vehicle.pickupLocation.name ? ' mt-1' : ''}`}>{pickupParts.join(', ')}</div>
+              <p className="mt-2 text-label leading-5 text-faint">{operator.name} confirms the exact address before pickup.</p>
             </div>
 
-            <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
-              <h2 className="mb-3 flex items-center gap-2 text-sm font-medium"><ShieldCheck size={16} className="text-[#C8A664]" />How it works</h2>
+            <div className="mt-4 rounded-xl border border-line bg-surface p-4">
+              <h2 className="mb-3 flex items-center gap-2 text-body font-medium"><ShieldCheck size={16} className="text-gold" />How it works</h2>
               {/* Was: "Verify driver and insurance documents" (insurance verification is
                   not built) and "before single Stripe Checkout" (there are two charges,
                   and payment comes AFTER the operator approves — not at booking). */}
-              {['Choose your dates and pickup time.', `${operator.name} reviews your request.`, 'We email your payment link once approved.', 'Verify your identity — about two minutes.'].map((item, index) => <div key={item} className="flex gap-3 border-t border-[#2A2E3A] py-3 text-sm text-[#9BA1B0]"><span className="text-[#C8A664]">0{index + 1}</span>{item}</div>)}
+              {['Choose your dates and pickup time.', `${operator.name} reviews your request.`, 'We email your payment link once approved.', 'Verify your identity — about two minutes.'].map((item, index) => <div key={item} className="flex gap-3 border-t border-line py-3 text-body text-muted"><span className="text-gold">0{index + 1}</span>{item}</div>)}
             </div>
           </div>
 
           {/* Desktop booking card: the phone's bottom bar and "Booking preview"
               tiles, as one sticky column beside the gallery. */}
           <aside className={`hidden lg:block ${stickyBelowBarClassName}`}>
-            <div className="rounded-2xl border border-[#2A2E3A] bg-[#161922] p-6">
-              <div className={`${eyebrowClassName} text-[#848A9A]`}>{operator.name}</div>
-              <div className="mt-3 flex items-baseline gap-2 text-[#C8A664]">
+            <div className="rounded-2xl border border-line bg-surface p-6">
+              <div className={`${eyebrowClassName} text-faint`}>{operator.name}</div>
+              <div className="mt-3 flex items-baseline gap-2 text-gold">
                 <Money cents={vehicle.dailyRateCents} large />
-                <span className={`${eyebrowClassName} text-[#848A9A]`}>per day</span>
+                <span className={`${eyebrowClassName} text-faint`}>per day</span>
               </div>
-              <dl className="mt-5 space-y-3 border-t border-[#2A2E3A] pt-5 text-[13px]">
-                <div className="flex justify-between gap-4"><dt className="text-[#9BA1B0]">Minimum rental</dt><dd className="text-[#F0F2F5]">{vehicle.minRentalDays} {vehicle.minRentalDays === 1 ? 'day' : 'days'}</dd></div>
-                <div className="flex justify-between gap-4"><dt className="text-[#9BA1B0]">Drivers</dt><dd className="text-[#F0F2F5]">Verified before pickup</dd></div>
-                {pickupParts.length > 0 && <div className="flex justify-between gap-4"><dt className="text-[#9BA1B0]">Pickup</dt><dd className="text-right text-[#F0F2F5]">{pickupParts.join(', ')}</dd></div>}
+              <dl className="mt-5 space-y-3 border-t border-line pt-5 text-body-sm">
+                <div className="flex justify-between gap-4"><dt className="text-muted">Minimum rental</dt><dd className="text-ink">{vehicle.minRentalDays} {vehicle.minRentalDays === 1 ? 'day' : 'days'}</dd></div>
+                <div className="flex justify-between gap-4"><dt className="text-muted">Drivers</dt><dd className="text-ink">Verified before pickup</dd></div>
+                {pickupParts.length > 0 && <div className="flex justify-between gap-4"><dt className="text-muted">Pickup</dt><dd className="text-right text-ink">{pickupParts.join(', ')}</dd></div>}
               </dl>
               <div className="mt-6">{yourDates}</div>
-              <CookieControls viewport="desktop" className="border-t border-[#2A2E3A]" />
+              <CookieControls viewport="desktop" className="border-t border-line" />
               <div className="flex items-stretch gap-2">
                 <SaveButton car={saveCar} variant="pill" className="shrink-0" />
-                <Link href={bookHref} className="block min-w-0 flex-1 rounded-xl bg-[#C8A664] px-5 py-4 text-center text-[15px] font-medium text-[#1A1308] shadow-[0_14px_34px_rgba(200,166,100,.20)] transition hover:brightness-105">{dates ? 'Book these dates' : 'Select dates'}</Link>
+                <Link href={bookHref} className="block min-w-0 flex-1 rounded-xl bg-gold px-5 py-4 text-center text-body font-medium text-goldInk shadow-[0_14px_34px_rgba(200,166,100,.20)] transition hover:brightness-105">{dates ? 'Book these dates' : 'Select dates'}</Link>
               </div>
-              <p className="mt-4 text-[12px] leading-5 text-[#848A9A]">{vehicle.footnote}. Final availability is confirmed at the booking step.</p>
+              <p className="mt-4 text-body-sm leading-5 text-faint">{vehicle.footnote}. Final availability is confirmed at the booking step.</p>
             </div>
           </aside>
         </div>
       </div>
-      <div className="absolute bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)+8px))] left-0 right-0 z-10 border-t border-[#2A2E3A] bg-[#0D0F14] px-4 pb-4 pt-3 shadow-[0_-24px_42px_rgba(13,15,20,.96)] lg:hidden">
+      <div className="absolute bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)+8px))] left-0 right-0 z-10 border-t border-line bg-panel px-4 pb-4 pt-3 shadow-[0_-24px_42px_rgba(13,15,20,.96)] lg:hidden">
         {yourDates}
         <CookieControls viewport="mobile" />
         <div className="flex items-stretch gap-2">
           <SaveButton car={saveCar} variant="pill" className="shrink-0" />
-          <Link href={bookHref} className="block min-w-0 flex-1 rounded-xl bg-[#C8A664] px-5 py-4 text-center text-[15px] font-medium text-[#1A1308] shadow-[0_14px_34px_rgba(200,166,100,.20)]">{dates ? 'Book these dates' : 'Select dates'}</Link>
+          <Link href={bookHref} className="block min-w-0 flex-1 rounded-xl bg-gold px-5 py-4 text-center text-body font-medium text-goldInk shadow-[0_14px_34px_rgba(200,166,100,.20)]">{dates ? 'Book these dates' : 'Select dates'}</Link>
         </div>
       </div>
     </PhoneViewport>

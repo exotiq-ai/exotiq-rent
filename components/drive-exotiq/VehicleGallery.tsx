@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { MapPin } from 'lucide-react';
 import { HTitle, Money } from './BookingChrome';
-import { eyebrowClassName } from '@/components/browse/tokens';
+import { eyebrowClassName, tone } from '@/components/browse/tokens';
 
 /**
  * Vehicle hero + tappable gallery. Tapping a thumbnail promotes it into the
@@ -58,10 +58,10 @@ export function VehicleGallery({
     <>
       {/* No scrim. Nothing sits over the photo any more, so the car keeps its full
           frame — including the lower body and wheels the old gradient ate. */}
-      <div className="relative -mx-4 mt-[-4px] aspect-[4/3] overflow-hidden bg-[#161922] lg:mx-0 lg:mt-0 lg:aspect-[16/10] lg:rounded-2xl">
+      <div className="relative -mx-4 mt-[-4px] aspect-[4/3] overflow-hidden bg-surface lg:mx-0 lg:mt-0 lg:aspect-[16/10] lg:rounded-2xl">
         {hero
           ? <Image src={hero} alt={vehicleName} fill sizes="(min-width: 1024px) 800px, 480px" priority className="object-cover object-[50%_52%]" onError={() => markFailed(hero)} />
-          : <div className="absolute inset-0 bg-gradient-to-br from-[#1E2230] to-[#0D0F14]" />}
+          : <div className="absolute inset-0 bg-gradient-to-br from-surface2 to-panel" />}
       </div>
 
       {gallery.length > 1 && (
@@ -77,8 +77,8 @@ export function VehicleGallery({
                 aria-label={`Show ${shortName} photo ${index + 1}`}
                 className="relative h-20 w-32 shrink-0 overflow-hidden rounded-lg transition lg:h-24 lg:w-40"
                 style={{
-                  border: active ? '1.5px solid #C8A664' : '1px solid #2A2E3A',
-                  boxShadow: active ? '0 0 0 1px #C8A664, 0 0 14px rgba(200,166,100,.20)' : 'none',
+                  border: active ? `1.5px solid ${tone.gold}` : `1px solid ${tone.line}`,
+                  boxShadow: active ? `0 0 0 1px ${tone.gold}, 0 0 14px rgba(200,166,100,.20)` : 'none',
                 }}
               >
                 <Image src={photo} alt={`${shortName} photo ${index + 1}`} fill sizes="(min-width: 1024px) 160px, 128px" className="object-cover" onError={() => markFailed(photo)} />
@@ -93,9 +93,9 @@ export function VehicleGallery({
           photo, so contrast is a property of the design rather than a property of
           whichever image a tenant uploaded. */}
       <div className="mt-4">
-        <div className={`${eyebrowClassName} text-[#C8A664]`}>{operatorName} · From <Money cents={dailyRateCents} />/day</div>
-        <HTitle className="mt-2 text-[26px] lg:text-[36px]">{vehicleName}</HTitle>
-        <p className="mt-2 flex items-center gap-2 text-[13px] text-[#9BA1B0]"><MapPin size={14} className="text-[#C8A664]" />{city}, {state} · Concierge-approved rental</p>
+        <div className={`${eyebrowClassName} text-gold`}>{operatorName} · From <Money cents={dailyRateCents} />/day</div>
+        <HTitle className="mt-2 text-heading lg:text-display lg:leading-[1.12]">{vehicleName}</HTitle>
+        <p className="mt-2 flex items-center gap-2 text-body-sm text-muted"><MapPin size={14} className="text-gold" />{city}, {state} · Concierge-approved rental</p>
       </div>
     </>
   );

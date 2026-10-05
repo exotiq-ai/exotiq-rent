@@ -143,14 +143,14 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
       <ScreenShell>
         <StepHeader eyebrow="Step 02" title="When are you driving?" sub={`${cart.vehicle.minRentalDays}-day minimum · from ${formatMoney(cart.vehicle.dailyRateCents)}/day`} />
         <div className="mt-4 flex items-center justify-between px-1">
-          <button type="button" onClick={() => canGoPrev && setVisibleMonth(addMonths(visibleMonth, -1))} disabled={!canGoPrev} className="grid h-8 w-8 place-items-center rounded-lg text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5] disabled:opacity-30" aria-label="Previous month"><ChevronLeft size={16} /></button>
-          <span className="text-[15px] font-medium tracking-[-0.005em]">{monthLabel(visibleMonth)}</span>
-          <button type="button" onClick={() => canGoNext && setVisibleMonth(addMonths(visibleMonth, 1))} disabled={!canGoNext} className="grid h-8 w-8 place-items-center rounded-lg text-[#9BA1B0] transition hover:bg-[#161922] hover:text-[#F0F2F5] disabled:opacity-30" aria-label="Next month"><ChevronRight size={16} /></button>
+          <button type="button" onClick={() => canGoPrev && setVisibleMonth(addMonths(visibleMonth, -1))} disabled={!canGoPrev} className="grid h-8 w-8 place-items-center rounded-lg text-muted transition hover:bg-surface hover:text-ink disabled:opacity-30" aria-label="Previous month"><ChevronLeft size={16} /></button>
+          <span className="text-body font-medium tracking-[-0.005em]">{monthLabel(visibleMonth)}</span>
+          <button type="button" onClick={() => canGoNext && setVisibleMonth(addMonths(visibleMonth, 1))} disabled={!canGoNext} className="grid h-8 w-8 place-items-center rounded-lg text-muted transition hover:bg-surface hover:text-ink disabled:opacity-30" aria-label="Next month"><ChevronRight size={16} /></button>
         </div>
-        <div className={`mt-3 grid grid-cols-7 px-0.5 text-center ${microLabelClassName} text-[#848A9A]`}>
+        <div className={`mt-3 grid grid-cols-7 px-0.5 text-center ${microLabelClassName} text-faint`}>
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, index) => <span key={`${d}-${index}`} className="py-1.5">{d}</span>)}
         </div>
-        <div className="grid grid-cols-7 px-0.5 text-center text-sm">
+        <div className="grid grid-cols-7 px-0.5 text-center text-body">
           {Array.from({ length: leadingBlanks }).map((_, index) => <span key={`blank-${index}`} />)}
           {Array.from({ length: totalDays }, (_, i) => i + 1).map((day) => {
             const iso = isoDate(visibleMonth.year, visibleMonth.month, day);
@@ -172,42 +172,42 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
                 // MP-11: hover fill and keyboard ring are drawn on the same 34px
                 // disc the selected/today states use (a `before:` layer under
                 // the number), so the grid never mixes two circle sizes.
-                className="relative aspect-square text-[#9BA1B0] outline-none transition-colors before:pointer-events-none before:absolute before:left-1/2 before:top-1/2 before:h-[34px] before:w-[34px] before:-translate-x-1/2 before:-translate-y-1/2 before:rounded-full enabled:hover:text-[#F0F2F5] enabled:hover:before:bg-[#161922] focus-visible:before:ring-2 focus-visible:before:ring-[#C8A664]/60 disabled:cursor-not-allowed disabled:text-[#3D4250] data-[taken]:text-[#3D4250] data-[taken]:hover:text-[#5C6272]"
+                className="relative aspect-square text-muted outline-none transition-colors before:pointer-events-none before:absolute before:left-1/2 before:top-1/2 before:h-[34px] before:w-[34px] before:-translate-x-1/2 before:-translate-y-1/2 before:rounded-full enabled:hover:text-ink enabled:hover:before:bg-surface focus-visible:before:ring-2 focus-visible:before:ring-gold/60 disabled:cursor-not-allowed disabled:text-dim data-[taken]:text-dim data-[taken]:hover:text-dim2"
                 aria-pressed={inRange}
                 aria-label={`${longDate(iso)}${blocked ? (iso >= todayIso && captureOn ? ', taken — get an alert' : ', unavailable') : ''}`}
                 aria-current={iso === todayIso ? 'date' : undefined}
               >
-                {iso === todayIso && !inRange && !blocked && <span className="absolute left-1/2 top-1/2 h-[34px] w-[34px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#3A3F4D]" aria-hidden />}
-                {inRange && !isStart && !isEnd && <span className="absolute inset-y-[5px] left-0 right-0 bg-[#C8A664]/10" />}
-                {isStart && !isEnd && <span className="absolute inset-y-[5px] left-1/2 right-0 bg-[#C8A664]/10" />}
-                {isEnd && !isStart && <span className="absolute inset-y-[5px] left-0 right-1/2 bg-[#C8A664]/10" />}
-                {(isStart || isEnd) && <span className="absolute left-1/2 top-1/2 h-[34px] w-[34px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#C8A664] shadow-[0_0_0_1px_#C8A664,0_0_14px_rgba(200,166,100,.30)]" />}
-                {!inRange && !blocked && isMinHint && <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 translate-y-[15px] rounded-full bg-[#C8A664]/60" />}
-                <span className={`absolute inset-0 grid place-items-center tabular-nums${isStart || isEnd ? ' font-semibold text-[#1A1308]' : inRange ? ' text-[#F0F2F5]' : ''}${blocked ? ' line-through decoration-[#5C6272]' : ''}`}>{day}</span>
+                {iso === todayIso && !inRange && !blocked && <span className="absolute left-1/2 top-1/2 h-[34px] w-[34px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-line2" aria-hidden />}
+                {inRange && !isStart && !isEnd && <span className="absolute inset-y-[5px] left-0 right-0 bg-gold/10" />}
+                {isStart && !isEnd && <span className="absolute inset-y-[5px] left-1/2 right-0 bg-gold/10" />}
+                {isEnd && !isStart && <span className="absolute inset-y-[5px] left-0 right-1/2 bg-gold/10" />}
+                {(isStart || isEnd) && <span className="absolute left-1/2 top-1/2 h-[34px] w-[34px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold shadow-[0_0_0_1px_var(--tone-gold),0_0_14px_rgba(200,166,100,.30)]" />}
+                {!inRange && !blocked && isMinHint && <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 translate-y-[15px] rounded-full bg-gold/60" />}
+                <span className={`absolute inset-0 grid place-items-center tabular-nums${isStart || isEnd ? ' font-semibold text-goldInk' : inRange ? ' text-ink' : ''}${blocked ? ' line-through decoration-dim2' : ''}`}>{day}</span>
               </button>
             );
           })}
         </div>
-        <div className={`mt-3 text-center ${microLabelClassName} text-[#848A9A]`}>Tap start, then end · {cart.vehicle.minRentalDays}-day minimum{hasBlockedDays ? (captureOn ? ' · Crossed-out dates are taken — tap one for an alert' : ' · Crossed-out dates are unavailable') : ''}</div>
+        <div className={`mt-3 text-center ${microLabelClassName} text-faint`}>Tap start, then end · {cart.vehicle.minRentalDays}-day minimum{hasBlockedDays ? (captureOn ? ' · Crossed-out dates are taken — tap one for an alert' : ' · Crossed-out dates are unavailable') : ''}</div>
         {/* One sentence announces the card's arrival; the form below keeps its own status line (MP-14). */}
         <div aria-live="polite" className="sr-only">{alertWindow && captureOn ? `Alert offer for ${formatRangeLabel(alertWindow.start, alertWindow.end)} added below.` : ''}</div>
         <div>
           {alertWindow && captureOn && (
-            <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
-              <div className="text-sm font-medium text-[#F0F2F5]">{formatRangeLabel(alertWindow.start, alertWindow.end)} is taken.</div>
-              <p className="mt-1 text-xs leading-5 text-[#9BA1B0]">Get one e-mail if this car opens up for those dates. We check every morning.</p>
+            <div className="mt-4 rounded-xl border border-line bg-surface p-4">
+              <div className="text-body font-medium text-ink">{formatRangeLabel(alertWindow.start, alertWindow.end)} is taken.</div>
+              <p className="mt-1 text-body-sm leading-5 text-muted">Get one e-mail if this car opens up for those dates. We check every morning.</p>
               <EmailCaptureForm key={`${alertWindow.start}-${alertWindow.end}`} source="alert" cta="Alert me" compact teamSlug={cart.operator.slug} vehicleSlug={cart.vehicle.slug} alert={{ team_slug: cart.operator.slug, vehicle_slug: cart.vehicle.slug, start: alertWindow.start, end: alertWindow.end }} className="mt-3" />
             </div>
           )}
         </div>
-        <label className={`mt-5 block ${eyebrowClassName} text-[#848A9A]`}>Pickup time</label>
+        <label className={`mt-5 block ${eyebrowClassName} text-faint`}>Pickup time</label>
         {/* Still a native select (iOS wheel, screen-reader semantics), wearing
             the Driver step's field recipe with a gold chevron (MP-11). */}
         <span className="relative mt-2 block">
-          <select value={cart.pickupTime} onChange={(event) => setCart(recomputeBookingCart({ ...cart, pickupTime: event.target.value }))} className="w-full appearance-none rounded-lg border border-[#2A2E3A] bg-[#10131A] py-3 pl-4 pr-10 text-sm text-[#F0F2F5] outline-none transition hover:border-[#3A3F4D] focus:border-[#C8A664]/70 focus-visible:ring-2 focus-visible:ring-[#C8A664]/60 [color-scheme:dark]" aria-label="Pickup time">
+          <select value={cart.pickupTime} onChange={(event) => setCart(recomputeBookingCart({ ...cart, pickupTime: event.target.value }))} className="w-full appearance-none rounded-lg border border-line bg-field py-3 pl-4 pr-10 text-body-lg text-ink outline-none transition hover:border-line2 focus:border-gold/70 focus-visible:ring-2 focus-visible:ring-gold/60 [color-scheme:dark]" aria-label="Pickup time">
             {PICKUP_TIMES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
-          <ChevronDown size={16} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#C8A664]" aria-hidden />
+          <ChevronDown size={16} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-gold" aria-hidden />
         </span>
       </ScreenShell>
       <Sticky>

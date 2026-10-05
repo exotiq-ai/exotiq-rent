@@ -93,18 +93,18 @@ export function ReviewStep({
     <>
       <ScreenShell>
         <StepHeader eyebrow="Step 04" title="Here's the breakdown." />
-        <div className="grid grid-cols-3 gap-2 rounded-xl border border-[#2A2E3A] bg-[#161922] p-3 text-center text-[11px]"><div><span className="block text-[#848A9A]">Dates</span>{dateLabel}</div><div><span className="block text-[#848A9A]">Pickup</span>{cart.pickupTime}</div><div><span className="block text-[#848A9A]">Location</span>{cart.operator.city}</div></div>
+        <div className="grid grid-cols-3 gap-2 rounded-xl border border-line bg-surface p-3 text-center text-label"><div><span className="block text-faint">Dates</span>{dateLabel}</div><div><span className="block text-faint">Pickup</span>{cart.pickupTime}</div><div><span className="block text-faint">Location</span>{cart.operator.city}</div></div>
         <Breakdown title="Operator" note={`Charge from ${cart.operator.name}`} rows={operatorRows} total={m.operatorTotalCents} />
         {/* T-12: Exotiq Protect is premium-by-default with a single decline
             toggle (no tier menu). Toggling recomputes the cart; quoteKey
             includes the tier, so the flow blocks on a fresh server quote
             before the renter can commit either way. */}
         {onProtectionChange && (
-          <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
+          <div className="mt-4 rounded-xl border border-line bg-surface p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <div className="text-sm font-medium text-[#F0F2F5]">Exotiq Protect</div>
-                <p className="mt-1 text-xs leading-5 text-[#9BA1B0]">
+                <div className="text-body font-medium text-ink">Exotiq Protect</div>
+                <p className="mt-1 text-body-sm leading-5 text-muted">
                   {protectionOn
                     ? // Rate from the same source as the charged row (m), not the
                       // client constant — review note: constant drift would make
@@ -119,48 +119,48 @@ export function ReviewStep({
                 aria-checked={protectionOn}
                 aria-label="Exotiq Protect"
                 onClick={() => onProtectionChange(protectionOn ? 'decline' : 'premium')}
-                className={`relative h-7 w-12 shrink-0 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C8A664]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#161922] ${protectionOn ? 'bg-[#C8A664]' : 'bg-[#2A2E3A]'}`}
+                className={`relative h-7 w-12 shrink-0 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${protectionOn ? 'bg-gold' : 'bg-line'}`}
               >
-                <span className={`absolute top-1 h-5 w-5 rounded-full bg-[#F0F2F5] shadow-[0_1px_2px_rgba(0,0,0,.4)] transition-all ${protectionOn ? 'left-6' : 'left-1'}`} />
+                <span className={`absolute top-1 h-5 w-5 rounded-full bg-ink shadow-[0_1px_2px_rgba(0,0,0,.4)] transition-all ${protectionOn ? 'left-6' : 'left-1'}`} />
               </button>
             </div>
           </div>
         )}
         <Breakdown title="Exotiq.Rent" note="Charged separately by EXOTIQ.RENT" rows={exotiqRows} total={m.exotiqTotalCents} />
-        <div className="mt-4 rounded-xl border border-[#C8A664] bg-[#14130F] p-4"><div className="flex items-center justify-between"><span className="text-sm text-[#9BA1B0]">Total due today</span><Money cents={m.grandTotalCents} large /></div></div>
+        <div className="mt-4 rounded-xl border border-gold bg-goldWash p-4"><div className="flex items-center justify-between"><span className="text-body text-muted">Total due today</span><Money cents={m.grandTotalCents} large /></div></div>
         {/* Unconditional: the deposit is the operator's to collect at pickup and
             Exotiq quotes no amount, so there is no value to gate on. */}
         <DepositDisclosure operatorName={cart.operator.name} />
         {/* One collapsed policy affordance, not three. Cancellation terms and
             what protection covers were separate blocks competing for the same
             attention; neither is read at this moment, both must be available. */}
-        <details className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm text-[#F0F2F5]">
+        <details className="mt-4 rounded-xl border border-line bg-surface p-4 text-body text-ink">
           <summary className="cursor-pointer font-medium">Cancellation &amp; coverage</summary>
           {/* T-6: this mirrors the platform-enforced rule (and the derived
               cancellation_policy text snapshotted on every booking) — the old
               copy claimed post-72h refunds "follow the operator's policy",
               which no code implements. */}
-          <p className="mt-3 text-xs leading-5 text-[#9BA1B0]">Free cancellation until 72 hours before your scheduled pickup — both charges refunded in full. Within 72 hours of pickup, the booking total is non-refundable.</p>
+          <p className="mt-3 text-body-sm leading-5 text-muted">Free cancellation until 72 hours before your scheduled pickup — both charges refunded in full. Within 72 hours of pickup, the booking total is non-refundable.</p>
           {/* T-6: no specific coverage figures until the protect-plan T&C are
               finalized — the old "$0 deductible / $250K liability / roadside"
               line asserted terms no document backs. Neutral, true, and gone
               entirely when protection is declined. */}
           {protectionOn && (
-            <p className="mt-3 text-xs leading-5 text-[#9BA1B0]">Exotiq Protect covers damage to the vehicle during your rental period. Full coverage terms are provided before pickup.</p>
+            <p className="mt-3 text-body-sm leading-5 text-muted">Exotiq Protect covers damage to the vehicle during your rental period. Full coverage terms are provided before pickup.</p>
           )}
         </details>
-        <label className="mt-4 flex gap-3 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-xs leading-5 text-[#F0F2F5]">
+        <label className="mt-4 flex gap-3 rounded-xl border border-line bg-surface p-4 text-body-sm leading-5 text-ink">
           <input
             type="checkbox"
             checked={termsAccepted}
             onChange={(event) => setTermsAccepted(event.target.checked)}
             className="control-check mt-0.5"
           />
-          <span>I agree to the <span className="text-[#C8A664] underline underline-offset-2">Rental Terms &amp; Conditions</span>.</span>
+          <span>I agree to the <span className="text-gold underline underline-offset-2">Rental Terms &amp; Conditions</span>.</span>
         </label>
         {/* MP-14: opt-in, unchecked, never required. Posted with the booking. */}
         {onMarketingConsentChange && renterCaptureUiEnabled() && (
-          <label className="mt-3 flex gap-3 px-1 text-xs leading-5 text-[#9BA1B0]">
+          <label className="mt-3 flex gap-3 px-1 text-body-sm leading-5 text-muted">
             <input type="checkbox" checked={Boolean(cart.driver.marketingConsent)} onChange={(event) => onMarketingConsentChange(event.target.checked)} className="control-check mt-0.5" />
             <span>{CONSENT_TEXT.booking.text}</span>
           </label>

@@ -36,9 +36,9 @@ export async function ConfirmationScreen({
     return (
       <PhoneViewport step={6} className="font-[var(--font-drive-inter)]" layout="panel">
         <section className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-          <div className="grid h-14 w-14 place-items-center rounded-full border border-[#2A2E3A] bg-[#161922] text-[#C8A664]"><LockKeyhole size={24} /></div>
-          <HTitle className="mt-5 text-[24px]">Booking {lookup.bookingRef}</HTitle>
-          <p className="mt-3 text-sm leading-6 text-[#9BA1B0]">Status: {lookup.status.replace(/_/g, ' ')}. To view the full confirmation, use the secure link from your booking — it carries your access key.</p>
+          <div className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-gold"><LockKeyhole size={24} /></div>
+          <HTitle className="mt-5 text-title">Booking {lookup.bookingRef}</HTitle>
+          <p className="mt-3 text-body leading-6 text-muted">Status: {lookup.status.replace(/_/g, ' ')}. To view the full confirmation, use the secure link from your booking — it carries your access key.</p>
         </section>
       </PhoneViewport>
     );
@@ -91,20 +91,20 @@ export async function ConfirmationScreen({
     <PhoneViewport step={6} className="font-[var(--font-drive-inter)]" closeHref={`/${cart.operator.slug}`} layout="panel">
       <section className="flex-1 overflow-y-auto px-4 pb-8 pt-2 [scrollbar-width:none]">
         {returnNotice && <ReturnNotice {...returnNotice} />}
-        <div className="relative overflow-hidden rounded-2xl border border-[#2A2E3A] bg-[#161922]">
+        <div className="relative overflow-hidden rounded-2xl border border-line bg-surface">
           <div className="relative h-56">
             {cart.vehicle.heroImage
               ? <Image src={cart.vehicle.heroImage} alt={cart.vehicle.name} fill sizes="393px" className="object-cover" />
-              : <div className="absolute inset-0 bg-gradient-to-br from-[#1E2230] to-[#0D0F14]" />}
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#161922]" />
+              : <div className="absolute inset-0 bg-gradient-to-br from-surface2 to-panel" />}
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-surface" />
             {/* One-time celebration: a single champagne-gold sheen across the car. */}
             <div aria-hidden className="animate-gold-sheen pointer-events-none absolute inset-y-0 w-1/3" />
-            <div className={`animate-reserve-pop absolute right-3 top-3 rounded-full px-3 py-1 text-xs ${terminal ? 'bg-[#2A2E3A]/60 text-[#9BA1B0]' : 'bg-[#C8A664]/10 text-[#C8A664]'}`}>{!terminal && <span className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-[#C8A664]" />}{terminal ? terminal.badge : 'Reserved'}</div>
+            <div className={`animate-reserve-pop absolute right-3 top-3 rounded-full px-3 py-1 text-label ${terminal ? 'bg-line/60 text-muted' : 'bg-gold/10 text-gold'}`}>{!terminal && <span className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-gold" />}{terminal ? terminal.badge : 'Reserved'}</div>
           </div>
-          <div className="p-4"><HTitle>{terminal ? terminal.title : `Your ${cart.vehicle.make} is reserved.`}</HTitle><p className="mt-2 text-sm text-[#9BA1B0]">Booking {confirmation.bookingRef}</p></div>
+          <div className="p-4"><HTitle>{terminal ? terminal.title : `Your ${cart.vehicle.make} is reserved.`}</HTitle><p className="mt-2 text-body text-muted">Booking {confirmation.bookingRef}</p></div>
         </div>
         {terminal && (
-          <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm leading-6 text-[#9BA1B0]">{terminal.note}</div>
+          <div className="mt-4 rounded-xl border border-line bg-surface p-4 text-body leading-6 text-muted">{terminal.note}</div>
         )}
         {!terminal && (
           // Identity state is NOT inferable from booking status: an operator
@@ -118,30 +118,30 @@ export async function ConfirmationScreen({
           // enhancement; the card still resolves truth from the endpoints.
           <IdentityVerificationCard bookingRef={confirmation.bookingRef} confirmationToken={accessToken} />
         )}
-        <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 text-sm"><Detail label="Dates" value={dateLabel} /><Detail label="Pickup" value={pickupLabel} /><Detail label="Location" value={live ? (live.pickupAddress ?? `${cart.operator.city}, ${cart.operator.state}`) : cart.vehicle.pickupLocation.address} /><Detail label="Total" value={totalLabel} /></div>
+        <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-line bg-surface p-4 text-body"><Detail label="Dates" value={dateLabel} /><Detail label="Pickup" value={pickupLabel} /><Detail label="Location" value={live ? (live.pickupAddress ?? `${cart.operator.city}, ${cart.operator.state}`) : cart.vehicle.pickupLocation.address} /><Detail label="Total" value={totalLabel} /></div>
         {/* Booking-time snapshots (T-15): instructions are operator free text —
             plain text only, never interpreted as HTML or links. */}
         {live?.pickupInstructions && (
-          <div className="mt-3 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className={`${microLabelClassName} text-[#848A9A]`}>Pickup instructions</div><p className="mt-2 whitespace-pre-line text-sm leading-6 text-[#9BA1B0]">{live.pickupInstructions}</p></div>
+          <div className="mt-3 rounded-xl border border-line bg-surface p-4"><div className={`${microLabelClassName} text-faint`}>Pickup instructions</div><p className="mt-2 whitespace-pre-line text-body leading-6 text-muted">{live.pickupInstructions}</p></div>
         )}
         {live?.mileageLimitPerDay != null && live.mileageLimitPerDay > 0 && (
-          <p className="mt-3 px-1 text-xs leading-5 text-[#848A9A]">
+          <p className="mt-3 px-1 text-body-sm leading-5 text-faint">
             {live.mileageLimitPerDay} miles/day included{live.mileageOverageRate ? ` · then $${live.mileageOverageRate.toFixed(2)}/mile` : ''} — terms locked at booking.
           </p>
         )}
         {!live && (
           <>
-            <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
-              <div className="mb-3 text-sm font-medium">Charges</div>
-              <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block">Operator rental charge</span><span className="text-xs text-[#C8A664]">Charged by {cart.operator.name}</span></span><Money cents={cart.totals.operatorTotalCents} /></div>
-              <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block">Trip Fees ({platformPercent}%)</span><span className="text-xs text-[#C8A664]">Calculated on the rental only</span></span><Money cents={cart.totals.platformFeeCents} /></div>
-              <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block">Protection (included)</span><span className="text-xs text-[#C8A664]">Included in EXOTIQ RENT charge</span></span><Money cents={cart.totals.protectionTotalCents} /></div>
-              <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm font-medium"><span>Exotiq total</span><Money cents={cart.totals.exotiqTotalCents} /></div>
+            <div className="mt-4 rounded-xl border border-line bg-surface p-4">
+              <div className="mb-3 text-body font-medium">Charges</div>
+              <div className="flex justify-between border-t border-line py-3 text-body"><span><span className="block">Operator rental charge</span><span className="text-label text-gold">Charged by {cart.operator.name}</span></span><Money cents={cart.totals.operatorTotalCents} /></div>
+              <div className="flex justify-between border-t border-line py-3 text-body"><span><span className="block">Trip Fees ({platformPercent}%)</span><span className="text-label text-gold">Calculated on the rental only</span></span><Money cents={cart.totals.platformFeeCents} /></div>
+              <div className="flex justify-between border-t border-line py-3 text-body"><span><span className="block">Protection (included)</span><span className="text-label text-gold">Included in EXOTIQ RENT charge</span></span><Money cents={cart.totals.protectionTotalCents} /></div>
+              <div className="flex justify-between border-t border-line py-3 text-body font-medium"><span>Exotiq total</span><Money cents={cart.totals.exotiqTotalCents} /></div>
             </div>
-            <div className="mt-4 rounded-xl border border-dashed border-[#5C6272] bg-[#10131A] p-4">
-              <div className="mb-3 flex items-center gap-2 text-sm font-medium"><LockKeyhole size={16} className="text-[#C8A664]" />Damage deposit at pickup</div>
-              <p className="text-xs leading-5 text-[#848A9A]">{cart.operator.name} collects a refundable damage deposit at pickup. Amount and accepted payment methods vary by operator — they&apos;ll confirm before handoff.</p>
-              <p className="mt-1 text-xs leading-5 text-[#848A9A]">Not included in the charges above.</p>
+            <div className="mt-4 rounded-xl border border-dashed border-dim2 bg-field p-4">
+              <div className="mb-3 flex items-center gap-2 text-body font-medium"><LockKeyhole size={16} className="text-gold" />Damage deposit at pickup</div>
+              <p className="text-body-sm leading-5 text-faint">{cart.operator.name} collects a refundable damage deposit at pickup. Amount and accepted payment methods vary by operator — they&apos;ll confirm before handoff.</p>
+              <p className="mt-1 text-body-sm leading-5 text-faint">Not included in the charges above.</p>
             </div>
           </>
         )}
@@ -161,33 +161,33 @@ export async function ConfirmationScreen({
           />
         )}
         {live && live.paidAt && !terminal && (
-          <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
-            <div className="mb-1 text-sm font-medium">Paid — your receipt</div>
+          <div className="mt-4 rounded-xl border border-line bg-surface p-4">
+            <div className="mb-1 text-body font-medium">Paid — your receipt</div>
             {/* Tax is INSIDE totalCents (operator leg snapshot, T-11): itemise
                 it, never add it to a total again. Old bookings carry 0/absent
                 and render the single row exactly as before. */}
-            <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block text-[#9BA1B0]">{cart.operator.name} rental</span><span className="text-xs text-[#848A9A]">{(live.operatorTaxCents ?? 0) > 0 ? `Statement shows ${cart.operator.name} — one charge including tax` : `Appears as ${cart.operator.name} on your statement`}</span></span><Money cents={live.totalCents - (live.operatorTaxCents ?? 0)} /></div>
+            <div className="flex justify-between border-t border-line py-3 text-body"><span><span className="block text-muted">{cart.operator.name} rental</span><span className="text-label text-faint">{(live.operatorTaxCents ?? 0) > 0 ? `Statement shows ${cart.operator.name} — one charge including tax` : `Appears as ${cart.operator.name} on your statement`}</span></span><Money cents={live.totalCents - (live.operatorTaxCents ?? 0)} /></div>
             {(live.operatorTaxCents ?? 0) > 0 && (
-              <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span className="text-[#9BA1B0]">{live.operatorTaxLabel ?? 'Tax'} — charged by {cart.operator.name}</span><Money cents={live.operatorTaxCents ?? 0} /></div>
+              <div className="flex justify-between border-t border-line py-3 text-body"><span className="text-muted">{live.operatorTaxLabel ?? 'Tax'} — charged by {cart.operator.name}</span><Money cents={live.operatorTaxCents ?? 0} /></div>
             )}
-            <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span><span className="block text-[#9BA1B0]">Trip Fees + protection</span><span className="text-xs text-[#848A9A]">Appears as EXOTIQ RENT</span></span><Money cents={exotiqLegCents} /></div>
-            <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm font-medium"><span>Total paid</span><Money cents={live.totalCents + exotiqLegCents} /></div>
+            <div className="flex justify-between border-t border-line py-3 text-body"><span><span className="block text-muted">Trip Fees + protection</span><span className="text-label text-faint">Appears as EXOTIQ RENT</span></span><Money cents={exotiqLegCents} /></div>
+            <div className="flex justify-between border-t border-line py-3 text-body font-medium"><span>Total paid</span><Money cents={live.totalCents + exotiqLegCents} /></div>
           </div>
         )}
         {live && !terminal && !live.paidAt && live.status !== 'pending_payment' && (
-          <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4">
-            <div className="mb-1 text-sm font-medium">Operator rental total</div>
-            <div className="flex justify-between border-t border-[#2A2E3A] py-3 text-sm"><span className="text-[#9BA1B0]">Charged by {cart.operator.name}</span><Money cents={live.totalCents} /></div>
-            <p className="text-xs leading-5 text-[#848A9A]">Trip Fees and protection are itemized at payment, once the operator approves.</p>
+          <div className="mt-4 rounded-xl border border-line bg-surface p-4">
+            <div className="mb-1 text-body font-medium">Operator rental total</div>
+            <div className="flex justify-between border-t border-line py-3 text-body"><span className="text-muted">Charged by {cart.operator.name}</span><Money cents={live.totalCents} /></div>
+            <p className="text-body-sm leading-5 text-faint">Trip Fees and protection are itemized at payment, once the operator approves.</p>
           </div>
         )}
-        <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#C8A664]/10 text-[#C8A664]">{initialsOf(cart.operator.name)}</div><div className="flex-1"><div className="text-sm font-medium">{cart.operator.name}</div><div className="text-xs text-[#9BA1B0]">{terminal ? (cart.operator.phone ? 'Questions about this booking? Call any time.' : 'Questions about this booking? Reply to your confirmation email.') : 'Will reach out before pickup'}</div></div>{(live?.supportEmail ?? cart.operator.supportEmail) && <a href={`mailto:${live?.supportEmail ?? cart.operator.supportEmail}`} className="rounded-full border border-[#C8A664]/30 p-2 text-[#C8A664]" aria-label="Email operator"><Mail size={16} /></a>}{(live?.supportPhone ?? cart.operator.phone) && <a href={`tel:${live?.supportPhone ?? cart.operator.phone}`} className="rounded-full border border-[#C8A664]/30 p-2 text-[#C8A664]" aria-label="Call operator"><Phone size={16} /></a>}</div></div>
+        <div className="mt-4 rounded-xl border border-line bg-surface p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/10 text-gold">{initialsOf(cart.operator.name)}</div><div className="flex-1"><div className="text-body font-medium">{cart.operator.name}</div><div className="text-body-sm text-muted">{terminal ? (cart.operator.phone ? 'Questions about this booking? Call any time.' : 'Questions about this booking? Reply to your confirmation email.') : 'Will reach out before pickup'}</div></div>{(live?.supportEmail ?? cart.operator.supportEmail) && <a href={`mailto:${live?.supportEmail ?? cart.operator.supportEmail}`} className="rounded-full border border-gold/30 p-2 text-gold" aria-label="Email operator"><Mail size={16} /></a>}{(live?.supportPhone ?? cart.operator.phone) && <a href={`tel:${live?.supportPhone ?? cart.operator.phone}`} className="rounded-full border border-gold/30 p-2 text-gold" aria-label="Call operator"><Phone size={16} /></a>}</div></div>
         {!terminal && (
           <>
-            <div className="mt-4 rounded-xl border border-[#2A2E3A] bg-[#161922] p-4"><div className="mb-3 flex items-center gap-2 text-sm font-medium"><Sparkles size={16} className="text-[#C8A664]" />What happens next</div>{/* The deposit step describes an in-person handoff, not a link: Exotiq
+            <div className="mt-4 rounded-xl border border-line bg-surface p-4"><div className="mb-3 flex items-center gap-2 text-body font-medium"><Sparkles size={16} className="text-gold" />What happens next</div>{/* The deposit step describes an in-person handoff, not a link: Exotiq
                 takes no part in the deposit, so there is nothing for us to email and
                 no amount for us to quote. */}
-              {['Verify your identity above to confirm the booking.', 'Operator confirms final handoff details.', 'You receive pickup reminders before the rental.', `${cart.operator.name} collects a refundable damage deposit when you pick up the car.`].map((item, index) => <div key={item} className="flex gap-3 border-t border-[#2A2E3A] py-3 text-sm text-[#9BA1B0]"><span className="text-[#C8A664]">0{index + 1}</span>{item}</div>)}</div>
+              {['Verify your identity above to confirm the booking.', 'Operator confirms final handoff details.', 'You receive pickup reminders before the rental.', `${cart.operator.name} collects a refundable damage deposit when you pick up the car.`].map((item, index) => <div key={item} className="flex gap-3 border-t border-line py-3 text-body text-muted"><span className="text-gold">0{index + 1}</span>{item}</div>)}</div>
             <ConfirmationActions
               bookingRef={confirmation.bookingRef}
               vehicleName={cart.vehicle.name}
@@ -211,7 +211,7 @@ export async function ConfirmationScreen({
           />
         )}
         {!terminal && (
-          <p className="mt-5 rounded-xl border border-dashed border-[#2A2E3A] p-3 text-center text-[11.5px] leading-5 text-[#848A9A]">Exotiq never stores your ID — identity documents are processed securely by Stripe, our verification partner. Verified status lasts until your document expires.</p>
+          <p className="mt-5 rounded-xl border border-dashed border-line p-3 text-center text-label leading-5 text-faint">Exotiq never stores your ID — identity documents are processed securely by Stripe, our verification partner. Verified status lasts until your document expires.</p>
         )}
       </section>
     </PhoneViewport>
@@ -257,14 +257,14 @@ function ReturnNotice({ tone, title, body }: ReturnNoticeProps) {
   return (
     <div
       role="status"
-      className={`mb-3 rounded-xl border p-4 ${good ? 'border-[#C8A664] bg-[#14130F]' : 'border-[#FFB84D]/45 bg-[#FFB84D]/10'}`}
+      className={`mb-3 rounded-xl border p-4 ${good ? 'border-gold bg-goldWash' : 'border-warn/45 bg-warn/10'}`}
     >
-      <div className={`text-sm font-medium ${good ? 'text-[#C8A664]' : 'text-[#FFB84D]'}`}>{title}</div>
-      <p className="mt-1 text-xs leading-5 text-[#F0F2F5]">{body}</p>
+      <div className={`text-body font-medium ${good ? 'text-gold' : 'text-warn'}`}>{title}</div>
+      <p className="mt-1 text-body-sm leading-5 text-ink">{body}</p>
     </div>
   );
 }
 
 function Detail({ label, value }: { label: string; value: string }) {
-  return <div><div className={`${microLabelClassName} text-[#848A9A]`}>{label}</div><div className="mt-1 text-[#F0F2F5]">{value}</div></div>;
+  return <div><div className={`${microLabelClassName} text-faint`}>{label}</div><div className="mt-1 text-ink">{value}</div></div>;
 }
