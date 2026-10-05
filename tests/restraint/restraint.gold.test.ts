@@ -61,11 +61,17 @@ const lits = (rel: string, needle: string): string[] => literals(src(rel)).filte
 /**
  * The Gold budget table (spec), set to the exact post-change counts. Ceilings: no file may
  * exceed its row; every renter file not listed must be zero. The two untouched files (D6) are
- * pinned exactly. Total ceiling 43 (the MP-15 tone-mirror fence is skipped, LD2).
+ * pinned exactly. The MP-15 tone-mirror fence is skipped (LD2).
+ *
+ * One row the spec's table omits: ConfirmationScreen keeps 1, the confirmation sheen element
+ * itself (MOMENT). Its class name matches the spec's own pattern (the gold-sheen utility, the
+ * same name the table counts twice in globals.css), and AC13(b) requires the element exactly
+ * once. So the floor is the spec's 43 plus that one: total ceiling 44 (build finding, handoff).
  */
 export const GOLD_BUDGET: Record<string, number> = {
   [TOKENS]: 9,
   [CSS]: 6,
+  [CONF]: 1,
   [DATES]: 7,
   [REVIEW]: 3,
   [DRIVER]: 2,
@@ -81,7 +87,7 @@ export const GOLD_UNTOUCHED: Record<string, number> = {
   'app/share/[operatorSlug]/[vehicleSlug]/opengraph-image.tsx': 4,
   'app/preview/page.tsx': 4,
 };
-export const GOLD_TOTAL_CEILING = 43;
+export const GOLD_TOTAL_CEILING = 44;
 
 /** Budget findings for a census map: unlisted files, files over their row, untouched files moved, the total. */
 export function goldBudgetProblems(byFile: Record<string, number>): string[] {
@@ -165,7 +171,9 @@ describe('MP-16 gold is punctuation (AC1-AC5)', () => {
     const planted = goldBudgetProblems({ ...GOLD_BUDGET, ...GOLD_UNTOUCHED, 'components/x/Planted.tsx': 2, [TOKENS]: 10 });
     expect(planted).toContain('components/x/Planted.tsx: 2 gold reference(s), file is not in the budget (must be 0)');
     expect(planted).toContain(`${TOKENS}: 10 gold reference(s), ceiling 9`);
-    expect(planted).toContain('total: 46 gold references, ceiling 43');
+    expect(planted).toContain('total: 47 gold references, ceiling 44');
+    // The sheen element is the one reference ConfirmationScreen keeps (AC13b), and nothing else there is gold.
+    expect(goldCount(prepare(CONF, read(CONF)).replace(/\banimate-gold-sheen\b/, ''))).toBe(0);
 
     expect(goldBudgetProblems(byFile)).toEqual([]);
   });
@@ -358,7 +366,7 @@ describe('MP-16 gold is punctuation (AC1-AC5)', () => {
 
     // Line items, subtotals, receipts, the rail rate and the D5 stat figures stay ink.
     if (goldCount(sliceFunction(src(SHARED), 'Breakdown'))) problems.push('Breakdown carries gold');
-    if (goldCount(src(CONF))) problems.push('ConfirmationScreen (receipt rows, totals) carries gold');
+    if (goldCount(src(CONF).replace(/\banimate-gold-sheen\b/, ''))) problems.push('ConfirmationScreen (receipt rows, totals) carries gold beyond the sheen');
     const rail = between(src(FLOW), 'Daily rate', '</div>');
     if (goldCount(rail) || !rail.includes('text-ink')) problems.push('BookingFlow rail Daily rate is not ink');
     if (goldCount(sliceFunction(src(SF), 'AboutCard'))) problems.push('AboutCard (Lowest rate) carries gold');
