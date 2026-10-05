@@ -54,30 +54,30 @@ export function ListingCard({
           ) : (
             <ListingPhotoPlaceholder />
           )}
-          <div className={`absolute left-3 top-3 rounded-full border border-[#C8A664]/25 bg-[#0D0F14]/70 px-2.5 py-1 ${microLabelClassName} text-[#C8A664] backdrop-blur`}>
+          <div className={`absolute left-3 top-3 rounded-full border border-gold/25 bg-panel/70 px-2.5 py-1 ${microLabelClassName} text-gold backdrop-blur`}>
             {vehicle.minRentalDays}-day min
           </div>
           {verified && (
-            <div className={`absolute right-3 top-3 flex items-center gap-1.5 rounded-full border border-[#6EC1E4]/35 bg-[#0D0F14]/70 px-2.5 py-1 ${microLabelClassName} text-[#6EC1E4] backdrop-blur`}>
+            <div className={`absolute right-3 top-3 flex items-center gap-1.5 rounded-full border border-verified/35 bg-panel/70 px-2.5 py-1 ${microLabelClassName} text-verified backdrop-blur`}>
               <BadgeCheck size={11} strokeWidth={2.25} aria-hidden /> Verified
             </div>
           )}
         </div>
-        <div className="flex flex-1 flex-col border-t border-[#2A2E3A] px-4 pb-4 pt-3.5">
+        <div className="flex flex-1 flex-col border-t border-line px-4 pb-4 pt-3.5">
           {/* Name gets the full width and up to two lines — at three columns a
               price beside it truncated "2024 McLaren 750S Spider" to "750…". */}
-          <h3 className="line-clamp-2 text-[17px] leading-[1.25] text-[#F0F2F5]" style={serifStyle}>
+          <h3 className="line-clamp-2 text-title-sm leading-[1.25] text-ink" style={serifStyle}>
             {vehicle.name}
           </h3>
           <div className="mt-auto flex items-baseline justify-between gap-4 pt-2">
-            <div className="flex min-w-0 items-center gap-1.5 truncate text-[12px] text-[#9BA1B0]">
+            <div className="flex min-w-0 items-center gap-1.5 truncate text-label text-muted">
               {provenance !== null ? (
                 provenance !== '' && <span className="truncate">{provenance}</span>
               ) : (
-                <span className="truncate">{team.name} <span className="text-[#848A9A]">· {team.city}, {team.state}</span></span>
+                <span className="truncate">{team.name} <span className="text-faint">· {team.city}, {team.state}</span></span>
               )}
               {photoCount > 1 && (
-                <span className="flex shrink-0 items-center gap-1 text-[#848A9A]">
+                <span className="flex shrink-0 items-center gap-1 text-faint">
                   <Images size={14} strokeWidth={1.75} aria-hidden />
                   <span className="tabular-nums">{photoCount}</span>
                   <span className="sr-only">photos</span>
@@ -104,9 +104,9 @@ export function ListingCard({
 /** A tenant with no public hero: says so, quietly, instead of an empty gradient (MP-12). */
 export function ListingPhotoPlaceholder() {
   return (
-    <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-[#1E2230] to-[#0D0F14]">
-      <CarFront size={28} strokeWidth={1.5} className="text-[#2A2E3A]" aria-hidden />
-      <span className={`absolute bottom-3 ${microLabelClassName} text-[#848A9A]`}>No photos yet</span>
+    <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-surface2 to-panel">
+      <CarFront size={28} strokeWidth={1.5} className="text-line" aria-hidden />
+      <span className={`absolute bottom-3 ${microLabelClassName} text-faint`}>No photos yet</span>
     </div>
   );
 }
@@ -114,13 +114,13 @@ export function ListingPhotoPlaceholder() {
 /** The same shell while a grid streams in — for any future loading state (MP-12). */
 export function ListingCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-[#2A2E3A] bg-[#161922]" aria-hidden>
-      <div className="aspect-[4/3] animate-pulse bg-[#1E2230] motion-reduce:animate-none" />
-      <div className="space-y-3 border-t border-[#2A2E3A] px-4 pb-4 pt-3.5">
-        <div className="h-4 w-3/4 animate-pulse rounded bg-[#1E2230] motion-reduce:animate-none" />
+    <div className="overflow-hidden rounded-2xl border border-line bg-surface" aria-hidden>
+      <div className="aspect-[4/3] animate-pulse bg-surface2 motion-reduce:animate-none" />
+      <div className="space-y-3 border-t border-line px-4 pb-4 pt-3.5">
+        <div className="h-4 w-3/4 animate-pulse rounded bg-surface2 motion-reduce:animate-none" />
         <div className="flex justify-between">
-          <div className="h-3 w-1/2 animate-pulse rounded bg-[#1E2230] motion-reduce:animate-none" />
-          <div className="h-4 w-16 animate-pulse rounded bg-[#1E2230] motion-reduce:animate-none" />
+          <div className="h-3 w-1/2 animate-pulse rounded bg-surface2 motion-reduce:animate-none" />
+          <div className="h-4 w-16 animate-pulse rounded bg-surface2 motion-reduce:animate-none" />
         </div>
       </div>
     </div>

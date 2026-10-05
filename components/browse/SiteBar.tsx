@@ -26,7 +26,7 @@ export function SiteBar({ homeHref, homeLabel, className = '', children }: { hom
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
   return (
-    <header className={`sticky top-0 z-40 border-b border-[#2A2E3A]/70 bg-[#06070a]/85 backdrop-blur-md ${className}`}>
+    <header className={`sticky top-0 z-40 border-b border-line/70 bg-ground/85 backdrop-blur-md ${className}`}>
       <div className={`${containerClassName} flex items-center justify-between gap-6 transition-[height] duration-300 motion-reduce:transition-none ${condensed ? 'h-12' : 'h-16'}`}>
         <Link href={homeHref} className="flex items-center" aria-label={homeLabel}>
           <Image src="/images/logos/drive-exotiq-lockup-transparent.png" alt="Drive Exotiq" width={100} height={20} style={{ height: 20, width: 'auto' }} className="opacity-95" />

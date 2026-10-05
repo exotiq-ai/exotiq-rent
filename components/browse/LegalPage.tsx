@@ -12,10 +12,10 @@ export function LegalPage({ eyebrow, title, updated, children }: { eyebrow: stri
   return (
     <BrowseChrome view={null}>
       <article className="mx-auto w-full max-w-3xl px-4 pb-24 pt-12 sm:px-6 sm:pt-16 lg:px-8">
-        <p className={`${eyebrowClassName} text-[#848A9A]`}>{eyebrow}</p>
-        <h1 className="mt-3 text-[36px] leading-[1.05] text-[#F0F2F5] sm:text-[48px]" style={displaySerifStyle}>{title}</h1>
-        <p className="mt-3 text-[12px] text-[#848A9A]">Last updated {updated}</p>
-        <div className="mt-10 space-y-8 text-[15px] leading-7 text-[#9BA1B0] [&_h2]:mb-2 [&_h2]:text-[11px] [&_h2]:uppercase [&_h2]:tracking-[0.2em] [&_h2]:text-[#C8A664] [&_strong]:text-[#F0F2F5] [&_a]:text-[#C8A664] [&_a]:underline [&_a]:decoration-[#C8A664]/40 [&_a]:underline-offset-4">
+        <p className={`${eyebrowClassName} text-faint`}>{eyebrow}</p>
+        <h1 className="mt-3 text-display leading-[1.05] text-ink sm:text-display-lg sm:leading-[1.05]" style={displaySerifStyle}>{title}</h1>
+        <p className="mt-3 text-label text-faint">Last updated {updated}</p>
+        <div className="mt-10 space-y-8 text-body leading-7 text-muted [&_h2]:mb-2 [&_h2]:text-label [&_h2]:leading-7 [&_h2]:uppercase [&_h2]:tracking-[0.2em] [&_h2]:text-gold [&_strong]:text-ink [&_a]:text-gold [&_a]:underline [&_a]:decoration-gold/40 [&_a]:underline-offset-4">
           {children}
         </div>
       </article>
@@ -25,7 +25,7 @@ export function LegalPage({ eyebrow, title, updated, children }: { eyebrow: stri
 
 export function InterimNotice({ what }: { what: string }) {
   return (
-    <div className="rounded-xl border border-[#C8A664]/30 bg-[#161922] p-5 text-[14px] leading-6">
+    <div className="rounded-xl border border-gold/30 bg-surface p-5 text-body leading-6">
       <strong>Interim version.</strong> {what} The final text is being reviewed by counsel before public launch and will replace this page; the date above will change when it does.
     </div>
   );
