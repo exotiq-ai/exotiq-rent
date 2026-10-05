@@ -133,7 +133,7 @@ export function EmailCaptureForm({
         tabIndex={-1}
         role={status.kind === 'error' ? 'alert' : 'status'}
         aria-live="polite"
-        className={`mt-2 flex items-start gap-2.5 text-body-sm leading-5 outline-none ${status.kind === 'error' ? 'text-warn' : 'text-muted'} ${status.kind === 'idle' || sending ? 'sr-only' : ''}`}
+        className={`mt-2 flex items-start gap-2.5 text-body-sm leading-5 outline-none ${status.kind === 'error' ? 'text-danger' : 'text-muted'} ${status.kind === 'idle' || sending ? 'sr-only' : ''}`}
       >
         {done && <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" aria-hidden />}
         {done ? DONE_COPY[status.status] ?? DONE_COPY.sent : status.kind === 'error' ? status.message : ''}

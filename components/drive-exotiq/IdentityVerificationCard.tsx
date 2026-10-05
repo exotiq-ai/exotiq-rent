@@ -130,16 +130,18 @@ export function IdentityVerificationCard({
   }
 
   if (status === 'requires_input' || status === 'manual_review') {
+    // A failed check blocks the renter (danger); a manual review is a heads-up (warn).
+    const failed = status === 'requires_input';
     return (
-      <div className="mt-4 rounded-xl border border-warn/45 bg-warn/10 p-4">
-        <div className="text-body font-medium text-warn">{status === 'manual_review' ? "We're reviewing your booking" : "Verification didn't go through"}</div>
+      <div className={`mt-4 rounded-xl border p-4 ${failed ? 'border-danger/45 bg-danger/10' : 'border-warn/45 bg-warn/10'}`}>
+        <div className={`text-body font-medium ${failed ? 'text-danger' : 'text-warn'}`}>{status === 'manual_review' ? "We're reviewing your booking" : "Verification didn't go through"}</div>
         <p className="mt-1 text-body-sm leading-5 text-ink">
           {status === 'manual_review'
             ? 'The operator has been notified and will be in touch shortly. Your booking is held in the meantime.'
             : errorReason ?? 'Your document could not be verified. Please try again.'}
         </p>
         {status === 'requires_input' && (
-          <button type="button" onClick={begin} className="mt-3 rounded-lg border border-warn/45 px-4 py-2 text-body-sm font-semibold text-ink">Try again</button>
+          <button type="button" onClick={begin} className="mt-3 rounded-lg border border-danger/45 px-4 py-2 text-body-sm font-semibold text-ink">Try again</button>
         )}
       </div>
     );

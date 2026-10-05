@@ -84,7 +84,8 @@ describe('MP-16 warn and error split (AC12)', () => {
     const pc = src(PAYCARD);
     if (!/type Notice = \{ kind: 'warn' \| 'danger'; text: string \}/.test(pc)) problems.push('PaymentCard: no Notice kind type');
     if (!/useState<Notice \| undefined>/.test(pc)) problems.push('PaymentCard: notice state is not a Notice');
-    if (count(pc, /kind: 'warn'/g) !== 2) problems.push(`PaymentCard: ${count(pc, /kind: 'warn'/g)} warn notices, expected 2 (poll timeout, cancelled return)`);
+    const warnNotices = count(pc, /setNotice\(\{ kind: 'warn'/g);
+    if (warnNotices !== 2) problems.push(`PaymentCard: ${warnNotices} warn notices, expected 2 (poll timeout, cancelled return)`);
     if (!/setNotice\(\{ kind: 'danger', text: err instanceof Error/.test(pc)) problems.push('PaymentCard: the thrown start failure is not a danger notice');
     if (!/notice\.kind === 'danger' \? 'border-danger\/45 bg-danger\/10' : 'border-warn\/45 bg-warn\/10'/.test(pc)) problems.push('PaymentCard: the pay banner does not pick its tone by kind');
     problems.push(...missing('PaymentCard urgent pill', pc, "'bg-warn/15 text-warn'"));

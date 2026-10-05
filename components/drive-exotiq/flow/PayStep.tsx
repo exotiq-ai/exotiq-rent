@@ -135,7 +135,7 @@ export function PayStep({
         <p className="mt-4 text-center text-body-sm text-muted">Free cancellation up to 72 hours before pickup.</p>
       </ScreenShell>
       <Sticky>
-        {payError && <p className="rounded-xl border border-warn/45 bg-warn/10 p-3 text-center text-body-sm leading-5 text-ink">{payError}</p>}
+        {payError && <p className="rounded-xl border border-danger/45 bg-danger/10 p-3 text-center text-body-sm leading-5 text-ink">{payError}</p>}
         {/* "Reserve for $X" implied an immediate charge of $X. It requests the
             booking; payment is a later, separate step. */}
         <PrimaryButton onClick={onPay} disabled={paying}>{paying ? 'Sending request…' : 'Request this booking'}</PrimaryButton>

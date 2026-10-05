@@ -55,7 +55,7 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
   const canContinue = fieldsComplete && !tooYoung;
 
   // Placeholder was #3D4250 (~1.6:1 on the field): the four boxes read as empty. #848A9A clears 4.5:1 (MP-11).
-  const fieldClass = 'mt-1 w-full rounded-lg border border-line bg-field px-3 py-2.5 text-body-lg text-ink outline-none transition placeholder:text-faint hover:border-line2 focus:border-gold/70 focus-visible:ring-2 focus-visible:ring-gold/60 aria-[invalid=true]:border-warn/70 [color-scheme:dark]';
+  const fieldClass = 'mt-1 w-full rounded-lg border border-line bg-field px-3 py-2.5 text-body-lg text-ink outline-none transition placeholder:text-faint hover:border-line2 focus:border-gold/70 focus-visible:ring-2 focus-visible:ring-gold/60 aria-[invalid=true]:border-danger/70 [color-scheme:dark]';
   const label = `${microLabelClassName} text-faint`;
 
   return (
@@ -101,14 +101,14 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
           </div>
           <p id="dob-hint" className="sr-only">Type the digits of your date of birth: month, day, year.</p>
           {/* Always mounted and polite: a live region that appears already populated is skipped by VoiceOver, and an assertive alert mid-typing talks over the digit just pressed. */}
-          <p id="dob-error" role="status" aria-live="polite" className={dobError ? 'mt-2 text-body-sm leading-5 text-warn' : 'sr-only'}>{dobError}</p>
+          <p id="dob-error" role="status" aria-live="polite" className={dobError ? 'mt-2 text-body-sm leading-5 text-danger' : 'sr-only'}>{dobError}</p>
           <label className="mt-3 block">
             <span className={label}>Email</span>
             <input type="email" value={cart.driver.email ?? ''} onChange={(event) => setDriver({ email: event.target.value })} placeholder="Where we send your confirmation" autoComplete="email" className={fieldClass} />
           </label>
         </div>
         {tooYoung && (
-          <p className="mt-3 rounded-xl border border-warn/45 bg-warn/10 p-3 text-body-sm leading-5 text-ink">
+          <p className="mt-3 rounded-xl border border-danger/45 bg-danger/10 p-3 text-body-sm leading-5 text-ink">
             {cart.operator.name} requires drivers to be {minAge}+ on the pickup date for this rental.
           </p>
         )}

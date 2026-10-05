@@ -11,6 +11,9 @@ import { getBookingConfirmation } from '@/domain/booking/service';
 const CONFIRM_POLL_MS = 3000;
 const CONFIRM_POLL_MAX = 40; // ~2 minutes of webhook grace
 
+/** A note under the card: a heads-up (warn) or a failure that blocks the renter (danger). */
+type Notice = { kind: 'warn' | 'danger'; text: string };
+
 /**
  * M6b: the pay surface on the confirmation page for approved
  * (pending_payment) bookings. Renders only when payment_due_at is present —
@@ -50,7 +53,7 @@ export function PaymentCard({
   const router = useRouter();
   const [starting, setStarting] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
-  const [notice, setNotice] = useState<string | undefined>();
+  const [notice, setNotice] = useState<Notice | undefined>();
   const [nowMs, setNowMs] = useState(() => Date.now());
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -74,7 +77,7 @@ export function PaymentCard({
       if (polls > CONFIRM_POLL_MAX) {
         if (pollTimer.current) clearInterval(pollTimer.current);
         pollTimer.current = null;
-        setNotice('Payment received — confirmation is taking a little longer than usual. Your payment is safe; reopen your booking link in a minute to see the receipt.');
+        setNotice({ kind: 'warn', text: 'Payment received — confirmation is taking a little longer than usual. Your payment is safe; reopen your booking link in a minute to see the receipt.' });
         return;
       }
       try {
@@ -103,7 +106,7 @@ export function PaymentCard({
       setFinalizing(true);
       startConfirmPoll();
     } else if (params.get('payment') === 'cancelled') {
-      setNotice('Payment was not completed — your reservation is still held. Pick up where you left off below.');
+      setNotice({ kind: 'warn', text: 'Payment was not completed — your reservation is still held. Pick up where you left off below.' });
     }
     return () => {
       clearInterval(tick);
@@ -129,7 +132,7 @@ export function PaymentCard({
         setFinalizing(true);
         startConfirmPoll();
       } else {
-        setNotice(err instanceof Error ? err.message : 'Payment could not be started — please try again.');
+        setNotice({ kind: 'danger', text: err instanceof Error ? err.message : 'Payment could not be started — please try again.' });
       }
       setStarting(false);
     }
@@ -147,14 +150,14 @@ export function PaymentCard({
             <p className="mt-1 text-body-sm leading-5 text-muted">Confirming your booking now. This usually takes a few seconds.</p>
           </div>
         </div>
-        {notice && <p className="mt-3 text-body-sm leading-5 text-muted">{notice}</p>}
+        {notice && <p className="mt-3 text-body-sm leading-5 text-muted">{notice.text}</p>}
       </div>
     );
   }
 
   if (windowState === 'expired') {
     return (
-      <div className="mt-4 rounded-xl border border-warn/45 bg-warn/10 p-4">
+      <div className="mt-4 rounded-xl border border-danger/45 bg-danger/10 p-4">
         <div className="text-body font-medium text-ink">Payment window closed</div>
         <p className="mt-1 text-body-sm leading-5 text-muted">The 48-hour payment window for this booking has passed and the dates may have been released. Contact {operatorName} or book again.</p>
       </div>
@@ -191,7 +194,7 @@ export function PaymentCard({
         <CreditCard size={16} />
         {starting ? 'Opening secure checkout…' : 'Complete payment'}
       </button>
-      {notice && <p className="mt-3 rounded-xl border border-warn/45 bg-warn/10 p-3 text-body-sm leading-5 text-ink">{notice}</p>}
+      {notice && <p className={`mt-3 rounded-xl border p-3 text-body-sm leading-5 text-ink ${notice.kind === 'danger' ? 'border-danger/45 bg-danger/10' : 'border-warn/45 bg-warn/10'}`}>{notice.text}</p>}
     </div>
   );
 }

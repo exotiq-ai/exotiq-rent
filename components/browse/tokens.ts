@@ -24,6 +24,7 @@ export const tone = {
   goldInk: '#1A1308',
   verified: '#6EC1E4',
   warn: '#FFB84D',
+  danger: '#F87171',
   goldWash: '#14130F',
   shareGround: '#0B0D12',
   dim: '#3D4250',

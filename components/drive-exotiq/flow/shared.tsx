@@ -95,11 +95,11 @@ export function QuoteNotice({
     );
   }
   return (
-    <div className="mt-4 rounded-xl border border-warn/45 bg-warn/10 p-4">
-      <div className="text-body font-medium text-warn">We couldn&apos;t confirm final pricing</div>
+    <div className="mt-4 rounded-xl border border-danger/45 bg-danger/10 p-4">
+      <div className="text-body font-medium text-danger">We couldn&apos;t confirm final pricing</div>
       <p className="mt-1 text-body-sm leading-5 text-ink">{message ?? 'Please try again in a moment.'}</p>
       {onRetry && (
-        <button type="button" onClick={onRetry} className="mt-3 rounded-lg border border-warn/45 px-4 py-2 text-body-sm font-semibold text-ink">
+        <button type="button" onClick={onRetry} className="mt-3 rounded-lg border border-danger/45 px-4 py-2 text-body-sm font-semibold text-ink">
           Try again
         </button>
       )}

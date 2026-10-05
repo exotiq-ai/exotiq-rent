@@ -75,7 +75,7 @@ export function CancelBookingCard({
             : 'The 72-hour window has passed. Nothing has been charged; the reservation is released.'}
       </p>
       <div className="mt-3 flex gap-2">
-        <button type="button" onClick={cancel} disabled={working} className={`flex-1 rounded-xl px-4 py-3 text-body font-semibold disabled:opacity-60 ${free ? 'border border-line text-ink' : 'bg-warn text-goldInk'}`}>
+        <button type="button" onClick={cancel} disabled={working} className={`flex-1 rounded-xl px-4 py-3 text-body font-semibold disabled:opacity-60 ${free ? 'border border-line text-ink' : 'bg-danger text-goldInk'}`}>
           {working ? 'Cancelling…' : free ? 'Yes, cancel' : 'Cancel & forfeit'}
         </button>
         <button type="button" onClick={() => setConfirming(false)} disabled={working} className="flex-1 rounded-xl bg-gold px-4 py-3 text-body font-semibold text-goldInk disabled:opacity-60">
