@@ -71,11 +71,11 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
   return (
     <BrowseChrome>
       <section className={`${containerClassName} pb-6 pt-12 sm:pt-16`}>
-        <p className={`${eyebrowClassName} text-[#848A9A]`}>Drive Exotiq</p>
-        <h1 className="mt-3 text-[40px] leading-[1.02] text-[#F0F2F5] sm:text-[56px]" style={displaySerifStyle}>
+        <p className={`${eyebrowClassName} text-faint`}>Drive Exotiq</p>
+        <h1 className="mt-3 text-display leading-[1.02] text-ink sm:text-display-xl sm:leading-[1.02]" style={displaySerifStyle}>
           The fleet.
         </h1>
-        <p className="mt-4 max-w-xl text-[15px] leading-7 text-[#9BA1B0]">
+        <p className="mt-4 max-w-xl text-body leading-7 text-muted">
           {catalogTotal} cars across {facets.cities.length} {facets.cities.length === 1 ? 'city' : 'cities'} — every one rented from a single
           accountable operator, booked in a few taps.
         </p>
@@ -89,22 +89,22 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
               types + makes + bands the rail outgrows a 13-inch screen, and a
               stuck sticky element's bottom (Clear all / Show results) is
               unreachable until the grid ends (MP-11). */}
-          <div className={`scroll-quiet rounded-2xl border border-[#2A2E3A] bg-[#0D0F14] p-5 ${stickyBelowBarClassName}`}>
+          <div className={`scroll-quiet rounded-2xl border border-line bg-panel p-5 ${stickyBelowBarClassName}`}>
             <FilterForm key={filterKey} facets={facets} query={query} idPrefix="rail" />
           </div>
         </aside>
 
         <div className="min-w-0">
           <div className="mb-5 flex items-center justify-between gap-4">
-            <div className={`${eyebrowClassName} text-[#848A9A]`} aria-live="polite">
+            <div className={`${eyebrowClassName} text-faint`} aria-live="polite">
               {page.totalCount} {page.totalCount === 1 ? 'car' : 'cars'}
-              {activeFilters > 0 && <span className="ml-2 text-[#C8A664]">· {activeFilters} {activeFilters === 1 ? 'filter' : 'filters'}</span>}
+              {activeFilters > 0 && <span className="ml-2 text-gold">· {activeFilters} {activeFilters === 1 ? 'filter' : 'filters'}</span>}
             </div>
             <details className="relative lg:hidden">
-              <summary className="flex cursor-pointer list-none items-center gap-2 rounded-lg border border-[#2A2E3A] bg-[#161922] px-3.5 py-2 text-[12px] font-semibold text-[#F0F2F5] [&::-webkit-details-marker]:hidden">
-                <SlidersHorizontal size={14} className="text-[#C8A664]" /> Filters &amp; sort
+              <summary className="flex cursor-pointer list-none items-center gap-2 rounded-lg border border-line bg-surface px-3.5 py-2 text-body-sm font-semibold text-ink [&::-webkit-details-marker]:hidden">
+                <SlidersHorizontal size={14} className="text-gold" /> Filters &amp; sort
               </summary>
-              <div className="absolute right-0 z-30 mt-2 w-[min(92vw,22rem)] rounded-2xl border border-[#2A2E3A] bg-[#0D0F14] p-5 shadow-[0_24px_60px_-20px_rgba(0,0,0,.8)]">
+              <div className="absolute right-0 z-30 mt-2 w-[min(92vw,22rem)] rounded-2xl border border-line bg-panel p-5 shadow-[0_24px_60px_-20px_rgba(0,0,0,.8)]">
                 <FilterForm key={filterKey} facets={facets} query={query} idPrefix="sheet" />
               </div>
             </details>
@@ -114,12 +114,12 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
               The failed check keeps the amber box (MP-11). */}
           {availability && (
             availability.checked ? (
-              <p className="mb-4 flex items-center gap-2.5 text-[12px] text-[#9BA1B0]">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#C8A664]" aria-hidden />
-                <span>Showing cars available <span className="text-[#F0F2F5]" aria-label={`${formatShortDate(availability.start)} to ${formatShortDate(availability.end)}`}>{formatRangeLabel(availability.start, availability.end)}</span>. We&apos;ll confirm your exact dates when you book.</span>
+              <p className="mb-4 flex items-center gap-2.5 text-body-sm text-muted">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold" aria-hidden />
+                <span>Showing cars available <span className="text-ink" aria-label={`${formatShortDate(availability.start)} to ${formatShortDate(availability.end)}`}>{formatRangeLabel(availability.start, availability.end)}</span>. We&apos;ll confirm your exact dates when you book.</span>
               </p>
             ) : (
-              <p className="mb-4 rounded-lg border border-[#FFB84D]/45 bg-[#FFB84D]/10 px-3.5 py-2.5 text-[12px] text-[#F0F2F5]">
+              <p className="mb-4 rounded-lg border border-warn/45 bg-warn/10 px-3.5 py-2.5 text-body-sm text-ink">
                 We couldn&apos;t check availability for {formatRangeLabel(availability.start, availability.end)} just now, so every car is shown. We&apos;ll confirm your exact dates when you book.
               </p>
             )
@@ -127,15 +127,15 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
           {page.listings.length > 0 ? <ListingGrid listings={page.listings} dates={availability ? { start: availability.start, end: availability.end } : undefined} /> : <EmptyState totalInCatalog={catalogTotal} dates={emptyByDates && availability ? { start: availability.start, end: availability.end } : undefined} />}
 
           {(hasPrev || hasNext) && (
-            <nav className="mt-10 flex items-center justify-between text-[13px]" aria-label="Pagination">
+            <nav className="mt-10 flex items-center justify-between text-body-sm" aria-label="Pagination">
               {hasPrev ? (
-                <Link href={pageLink(Math.max(0, query.offset - query.limit))} className="rounded-lg border border-[#2A2E3A] px-4 py-2 text-[#F0F2F5] transition hover:border-[#C8A664]/45">← Previous</Link>
+                <Link href={pageLink(Math.max(0, query.offset - query.limit))} className="rounded-lg border border-line px-4 py-2 text-ink transition hover:border-gold/45">← Previous</Link>
               ) : <span />}
-              <span className="text-[#848A9A] tabular-nums">
+              <span className="text-faint tabular-nums">
                 {query.offset + 1}–{Math.min(query.offset + query.limit, page.totalCount)} of {page.totalCount}
               </span>
               {hasNext ? (
-                <Link href={pageLink(query.offset + query.limit)} className="rounded-lg border border-[#2A2E3A] px-4 py-2 text-[#F0F2F5] transition hover:border-[#C8A664]/45">Next →</Link>
+                <Link href={pageLink(query.offset + query.limit)} className="rounded-lg border border-line px-4 py-2 text-ink transition hover:border-gold/45">Next →</Link>
               ) : <span />}
             </nav>
           )}

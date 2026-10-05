@@ -14,8 +14,8 @@ export default function SavedPage() {
   return (
     <BrowseChrome view={null}>
       <section className={`${containerClassName} pb-16 pt-12 sm:pt-16`}>
-        <p className={`${eyebrowClassName} text-[#848A9A]`}>Drive Exotiq</p>
-        <h1 className="mt-3 text-[40px] leading-[1.02] text-[#F0F2F5] sm:text-[56px]" style={displaySerifStyle}>Saved cars.</h1>
+        <p className={`${eyebrowClassName} text-faint`}>Drive Exotiq</p>
+        <h1 className="mt-3 text-display leading-[1.02] text-ink sm:text-display-xl sm:leading-[1.02]" style={displaySerifStyle}>Saved cars.</h1>
         <div className="mt-10"><SavedList /></div>
       </section>
     </BrowseChrome>

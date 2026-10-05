@@ -46,16 +46,16 @@ export async function generateMetadata({ params, searchParams }: Props) {
 // layout. Text only, no images, so the duplication costs nothing measurable.
 function AboutCard({ team, count, minRate, minDays, className = '' }: { team: Team; count: number; minRate: number; minDays: number; className?: string }) {
   return (
-    <div className={`rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 ${className}`}>
-      <p className="text-[13px] leading-5 text-[#9BA1B0]">{team.about ?? 'A concierge-approved fleet with mobile-first booking, verified drivers, transparent rental charges, and optional Exotiq Protect shown separately.'}</p>
+    <div className={`rounded-xl border border-line bg-surface p-4 ${className}`}>
+      <p className="text-body-sm leading-5 text-muted">{team.about ?? 'A concierge-approved fleet with mobile-first booking, verified drivers, transparent rental charges, and optional Exotiq Protect shown separately.'}</p>
       {/* Big figure over a small label — set at the same 11px as its caption,
           a tile read as two lines of caption (MP-11). Figures alone on the
           17px line: a "From " prefix wrapped inside a 69px phone tile, so the
           caption carries the qualifier. Five-figure rates step down to 15px. */}
-      <div className="mt-4 grid grid-cols-3 gap-2 text-center text-[11px]">
-        <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[14px] font-medium leading-none tabular-nums text-[#C8A664] min-[360px]:text-[17px]">{count}</div><div className="mt-1.5 text-[#848A9A]">Cars</div></div>
-        <div className="rounded-lg bg-[#1E2230] p-3"><div className={`font-medium leading-none tabular-nums text-[#C8A664] ${minRate >= 1_000_000 ? 'text-[13px] min-[360px]:text-[15px]' : 'text-[14px] min-[360px]:text-[17px]'}`}><Money cents={minRate} /></div><div className="mt-1.5 text-[#848A9A]">Lowest rate</div></div>
-        <div className="rounded-lg bg-[#1E2230] p-3"><div className="text-[14px] font-medium leading-none tabular-nums text-[#C8A664] min-[360px]:text-[17px]">{minDays}+<span className="text-[11px] font-normal text-[#848A9A]"> {minDays === 1 ? 'day' : 'days'}</span></div><div className="mt-1.5 text-[#848A9A]">Minimum</div></div>
+      <div className="mt-4 grid grid-cols-3 gap-2 text-center text-label">
+        <div className="rounded-lg bg-surface2 p-3"><div className="text-body font-medium leading-none tabular-nums text-gold min-[360px]:text-title-sm min-[360px]:leading-none">{count}</div><div className="mt-1.5 text-faint">Cars</div></div>
+        <div className="rounded-lg bg-surface2 p-3"><div className={`font-medium leading-none tabular-nums text-gold ${minRate >= 1_000_000 ? 'text-body-sm min-[360px]:text-body min-[360px]:leading-none' : 'text-body min-[360px]:text-title-sm min-[360px]:leading-none'}`}><Money cents={minRate} /></div><div className="mt-1.5 text-faint">Lowest rate</div></div>
+        <div className="rounded-lg bg-surface2 p-3"><div className="text-body font-medium leading-none tabular-nums text-gold min-[360px]:text-title-sm min-[360px]:leading-none">{minDays}+<span className="text-label font-normal text-faint"> {minDays === 1 ? 'day' : 'days'}</span></div><div className="mt-1.5 text-faint">Minimum</div></div>
       </div>
     </div>
   );
@@ -63,14 +63,14 @@ function AboutCard({ team, count, minRate, minDays, className = '' }: { team: Te
 
 function PolicyCard({ rows, className = '' }: { rows: PolicyRow[]; className?: string }) {
   return (
-    <div className={`rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 ${className}`}>
-      <div className="mb-3 flex items-center gap-2 text-sm font-medium"><FileCheck2 size={16} className="text-[#C8A664]" />Rental policies</div>
+    <div className={`rounded-xl border border-line bg-surface p-4 ${className}`}>
+      <div className="mb-3 flex items-center gap-2 text-body font-medium"><FileCheck2 size={16} className="text-gold" />Rental policies</div>
       {rows.map((row) => (
-        <div key={row.label} className="flex items-start gap-3 border-t border-[#2A2E3A] py-3">
-          <row.icon size={16} className="mt-0.5 shrink-0 text-[#848A9A]" />
+        <div key={row.label} className="flex items-start gap-3 border-t border-line py-3">
+          <row.icon size={16} className="mt-0.5 shrink-0 text-faint" />
           <div className="min-w-0">
-            <div className={`${eyebrowClassName} text-[#848A9A]`}>{row.label}</div>
-            <div className="mt-0.5 text-[13px] leading-5 text-[#D7DAE0]">{row.value}</div>
+            <div className={`${eyebrowClassName} text-faint`}>{row.label}</div>
+            <div className="mt-0.5 text-body-sm leading-5 text-inkSoft">{row.value}</div>
           </div>
         </div>
       ))}
@@ -80,16 +80,16 @@ function PolicyCard({ rows, className = '' }: { rows: PolicyRow[]; className?: s
 
 function WhyCard({ className = '' }: { className?: string }) {
   return (
-    <div className={`rounded-xl border border-[#2A2E3A] bg-[#161922] p-4 ${className}`}>
-      <div className="mb-3 flex items-center gap-2 text-sm font-medium"><ShieldCheck size={16} className="text-[#C8A664]" />Why renters book here</div>
-      {['Operator-owned rental charge stays clear.', 'Exotiq Protect is shown separately.', 'Documents are verified before pickup.', 'Concierge handoff details are coordinated before arrival.'].map((item) => <div key={item} className="border-t border-[#2A2E3A] py-3 text-sm text-[#9BA1B0]">{item}</div>)}
+    <div className={`rounded-xl border border-line bg-surface p-4 ${className}`}>
+      <div className="mb-3 flex items-center gap-2 text-body font-medium"><ShieldCheck size={16} className="text-gold" />Why renters book here</div>
+      {['Operator-owned rental charge stays clear.', 'Exotiq Protect is shown separately.', 'Documents are verified before pickup.', 'Concierge handoff details are coordinated before arrival.'].map((item) => <div key={item} className="border-t border-line py-3 text-body text-muted">{item}</div>)}
     </div>
   );
 }
 
 function CallLink({ team }: { team: Team }) {
   return (
-    <a href={`tel:${team.phone}`} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#C8A664]/35 bg-[#161922] px-5 py-4 text-sm font-semibold text-[#F0F2F5]"><Phone size={16} />Call {team.name}</a>
+    <a href={`tel:${team.phone}`} className="flex w-full items-center justify-center gap-2 rounded-xl border border-gold/35 bg-surface px-5 py-4 text-body font-semibold text-ink"><Phone size={16} />Call {team.name}</a>
   );
 }
 
@@ -103,7 +103,7 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
   // they become dead links (observed live, 2026-07-24). Mock/demo data has one.
   const hasPhone = Boolean(team.phone);
   // Desktop site bar: the only cross-tenant link, and only where /browse exists.
-  const desktopNav = browseEnabled() ? <Link href="/browse" className="transition hover:text-[#F0F2F5]">Browse the fleet</Link> : undefined;
+  const desktopNav = browseEnabled() ? <Link href="/browse" className="transition hover:text-ink">Browse the fleet</Link> : undefined;
 
   if (vehicles.length === 0) {
     return (
@@ -111,11 +111,11 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
         <TrackView event="storefront_view" properties={{ team: team.slug }} />
         <PhoneViewport step={1} stepStyle="numbered" className="font-[var(--font-drive-inter)]" closeHref={`/${team.slug}`} layout="page" desktopNav={desktopNav}>
           <section className="flex flex-1 flex-col items-center justify-center px-6 text-center lg:py-32">
-            <div className="grid h-14 w-14 place-items-center rounded-full border border-[#2A2E3A] bg-[#161922] text-[#C8A664]"><CarFront size={24} /></div>
-            <HTitle className="mt-5 text-[24px]">{team.name}</HTitle>
-            <p className="mt-3 text-sm leading-6 text-[#9BA1B0]">No vehicles are listed right now. The fleet is being refreshed — check back soon{hasPhone ? ' or call to ask about upcoming availability' : ''}.</p>
+            <div className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-gold"><CarFront size={24} /></div>
+            <HTitle className="mt-5 text-title">{team.name}</HTitle>
+            <p className="mt-3 text-body leading-6 text-muted">No vehicles are listed right now. The fleet is being refreshed — check back soon{hasPhone ? ' or call to ask about upcoming availability' : ''}.</p>
             {hasPhone && (
-              <a href={`tel:${team.phone}`} className="mt-6 flex items-center gap-2 rounded-xl border border-[#C8A664]/35 bg-[#161922] px-5 py-3 text-sm font-semibold text-[#F0F2F5]"><Phone size={16} />Call {team.name}</a>
+              <a href={`tel:${team.phone}`} className="mt-6 flex items-center gap-2 rounded-xl border border-gold/35 bg-surface px-5 py-3 text-body font-semibold text-ink"><Phone size={16} />Call {team.name}</a>
             )}
           </section>
         </PhoneViewport>
@@ -182,12 +182,12 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
                   relationship in the most prominent position on the page, and it was the
                   third element competing in a block that should hold one. If partner
                   status needs disclosing it belongs in copy, not a gold pill over a car. */}
-              <div className="relative -mx-4 mt-[-8px] aspect-[3/2] overflow-hidden bg-[#161922] lg:mx-0 lg:mt-0 lg:aspect-[21/9] lg:rounded-2xl">
+              <div className="relative -mx-4 mt-[-8px] aspect-[3/2] overflow-hidden bg-surface lg:mx-0 lg:mt-0 lg:aspect-[21/9] lg:rounded-2xl">
                 {heroVehicle.heroImage && <Image src={heroVehicle.heroImage} alt={heroVehicle.name} fill priority sizes="(min-width: 1024px) 840px, 480px" className="object-cover object-[50%_52%]" />}
               </div>
               <div className="mt-4 lg:mt-6">
-                <HTitle className="text-[22px] lg:text-[34px]">{team.name}</HTitle>
-                <p className={`mt-1.5 ${eyebrowClassName} text-[#848A9A]`}>{team.city}, {team.state}</p>
+                <HTitle className="text-title lg:text-display lg:leading-[1.12]">{team.name}</HTitle>
+                <p className={`mt-1.5 ${eyebrowClassName} text-faint`}>{team.city}, {team.state}</p>
               </div>
 
               <AboutCard team={team} count={vehicles.length} minRate={minRate} minDays={minDays} className="mt-4 lg:hidden" />
@@ -198,12 +198,12 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
               {/* A successful check is a status line, not an alert (MP-11). */}
               {availability && (
                 availability.checked ? (
-                  <p className="mt-4 flex items-center gap-2.5 px-1 text-[12px] text-[#9BA1B0]">
-                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#C8A664]" aria-hidden />
-                    <span>Showing cars available <span className="text-[#F0F2F5]" aria-label={`${formatShortDate(availability.start)} to ${formatShortDate(availability.end)}`}>{formatRangeLabel(availability.start, availability.end)}</span>. We&apos;ll confirm your exact dates when you book.</span>
+                  <p className="mt-4 flex items-center gap-2.5 px-1 text-body-sm text-muted">
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold" aria-hidden />
+                    <span>Showing cars available <span className="text-ink" aria-label={`${formatShortDate(availability.start)} to ${formatShortDate(availability.end)}`}>{formatRangeLabel(availability.start, availability.end)}</span>. We&apos;ll confirm your exact dates when you book.</span>
                   </p>
                 ) : (
-                  <p className="mt-4 rounded-lg border border-[#FFB84D]/45 bg-[#FFB84D]/10 px-3.5 py-2.5 text-[12px] text-[#F0F2F5]">
+                  <p className="mt-4 rounded-lg border border-warn/45 bg-warn/10 px-3.5 py-2.5 text-body-sm text-ink">
                     We couldn&apos;t check availability for {formatRangeLabel(availability.start, availability.end)} just now, so every car is shown. We&apos;ll confirm your exact dates when you book.
                   </p>
                 )
@@ -211,8 +211,8 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
               <div className="mt-4 flex items-center justify-between px-1">
                 {/* 'Available now' claimed a check that was never made; the aside
                     says availability is confirmed at booking (MP-11). */}
-                <h2 className={`${microLabelClassName} text-[#848A9A]`}>{availability ? (availability.checked ? 'Available for your dates' : 'All cars') : 'The fleet'}</h2>
-                <div className="text-[11px] text-[#9BA1B0]" aria-live="polite">
+                <h2 className={`${microLabelClassName} text-faint`}>{availability ? (availability.checked ? 'Available for your dates' : 'All cars') : 'The fleet'}</h2>
+                <div className="text-label text-muted" aria-live="polite">
                   {shown.length === vehicles.length ? `${vehicles.length} cars` : `${shown.length} of ${vehicles.length} cars`}
                 </div>
               </div>
@@ -236,7 +236,7 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
 
               {policyRows.length > 0 && <PolicyCard rows={policyRows} className="mt-4 lg:hidden" />}
               <WhyCard className="mt-4 lg:hidden" />
-              <CookieControls viewport={hasPhone ? 'desktop' : 'all'} className="mt-6 max-w-sm border-t border-[#2A2E3A]" />
+              <CookieControls viewport={hasPhone ? 'desktop' : 'all'} className="mt-6 max-w-sm border-t border-line" />
             </div>
 
             {/* Capped to the viewport with its own quiet scroll; the 1px negative
@@ -251,7 +251,7 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
           </div>
         </section>
         {hasPhone && (
-          <div className="absolute bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)+8px))] left-0 right-0 z-10 border-t border-[#2A2E3A] bg-[#0D0F14] px-4 pb-4 pt-3 shadow-[0_-24px_42px_rgba(13,15,20,.96)] lg:hidden">
+          <div className="absolute bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)+8px))] left-0 right-0 z-10 border-t border-line bg-panel px-4 pb-4 pt-3 shadow-[0_-24px_42px_rgba(13,15,20,.96)] lg:hidden">
             <CookieControls viewport="mobile" />
             <CallLink team={team} />
           </div>

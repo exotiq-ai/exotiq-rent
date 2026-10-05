@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { ImageResponse } from 'next/og';
 import { getPublicVehicleContext } from '@/domain/booking/service';
+import { tone } from '@/components/browse/tokens';
 
 /**
  * The shareable card itself: this is what unfurls when the share link lands
@@ -36,7 +37,7 @@ export default async function ShareCard({ params }: { params: { operatorSlug: st
           width: '100%',
           height: '100%',
           display: 'flex',
-          backgroundColor: '#0B0D12',
+          backgroundColor: tone.shareGround,
           padding: 28,
         }}
       >
@@ -47,7 +48,7 @@ export default async function ShareCard({ params }: { params: { operatorSlug: st
             border: '2px solid rgba(200,166,100,0.55)',
             borderRadius: 24,
             overflow: 'hidden',
-            backgroundColor: '#0B0D12',
+            backgroundColor: tone.shareGround,
           }}
         >
           <div
@@ -61,16 +62,16 @@ export default async function ShareCard({ params }: { params: { operatorSlug: st
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 10, height: 10, borderRadius: 10, backgroundColor: '#C8A664', display: 'flex' }} />
-              <div style={{ color: '#C8A664', fontSize: 22, letterSpacing: 8, display: 'flex' }}>RESERVED</div>
+              <div style={{ width: 10, height: 10, borderRadius: 10, backgroundColor: tone.gold, display: 'flex' }} />
+              <div style={{ color: tone.gold, fontSize: 22, letterSpacing: 8, display: 'flex' }}>RESERVED</div>
             </div>
-            <div style={{ color: '#F0F2F5', fontSize: 58, lineHeight: 1.1, fontWeight: 600, display: 'flex' }}>
+            <div style={{ color: tone.ink, fontSize: 58, lineHeight: 1.1, fontWeight: 600, display: 'flex' }}>
               {vehicle ? vehicle.name : 'An exotic worth the wait'}
             </div>
-            <div style={{ color: '#9BA1B0', fontSize: 24, display: 'flex' }}>
+            <div style={{ color: tone.muted, fontSize: 24, display: 'flex' }}>
               {team ? `${team.city}, ${team.state}` : 'Curated exotic & luxury rentals'}
             </div>
-            <div style={{ marginTop: 18, color: '#C8A664', fontSize: 24, letterSpacing: 6, display: 'flex' }}>DRIVE EXOTIQ</div>
+            <div style={{ marginTop: 18, color: tone.gold, fontSize: 24, letterSpacing: 6, display: 'flex' }}>DRIVE EXOTIQ</div>
           </div>
           <div style={{ flex: 1, display: 'flex', position: 'relative' }}>
             {hero ? (
@@ -83,13 +84,13 @@ export default async function ShareCard({ params }: { params: { operatorSlug: st
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
             ) : (
-              <div style={{ width: '100%', height: '100%', backgroundColor: '#161922', display: 'flex' }} />
+              <div style={{ width: '100%', height: '100%', backgroundColor: tone.surface, display: 'flex' }} />
             )}
             <div
               style={{
                 position: 'absolute',
                 inset: 0,
-                background: 'linear-gradient(90deg, #0B0D12 0%, rgba(11,13,18,0) 30%)',
+                background: `linear-gradient(90deg, ${tone.shareGround} 0%, rgba(11,13,18,0) 30%)`,
                 display: 'flex',
               }}
             />
