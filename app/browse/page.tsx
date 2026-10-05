@@ -110,7 +110,7 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
             </details>
           </div>
 
-          {/* A successful check is a status line, not an alert: gold dot, no box.
+          {/* A successful check is a status line, not an alert: faint dot, no box.
               The failed check keeps the amber box (MP-11). */}
           {availability && (
             availability.checked ? (

@@ -48,7 +48,7 @@ export function SaveButton({ car, className = '', size = 16, variant = 'icon' }:
       aria-pressed={saved}
       aria-label={`Save ${car.name}`}
       title={saved ? 'Saved' : 'Save this car'}
-      className={`grid h-9 w-9 place-items-center rounded-full border border-line2 bg-panel/70 text-ink backdrop-blur transition hover:border-faint hover:text-ink active:scale-95 ${className}`}
+      className={`grid h-9 w-9 place-items-center rounded-full border border-line2 bg-panel/70 text-ink backdrop-blur transition hover:border-faint active:scale-95 ${className}`}
     >
       {heart}
     </button>

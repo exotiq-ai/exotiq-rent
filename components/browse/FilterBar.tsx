@@ -44,7 +44,7 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
   const router = useRouter();
   const form = useRef<HTMLFormElement>(null);
   // MP-12: a chip flipped and then nothing happened for the RPC round-trip.
-  // The push runs in a transition so the form knows it is pending: a gold
+  // The push runs in a transition so the form knows it is pending: an ink
   // hairline at the top and dimmed controls until the new grid commits.
   const [isPending, startTransition] = useTransition();
   // The form remounts (keyed on the query) when a change commits, which drops

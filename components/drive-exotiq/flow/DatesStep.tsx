@@ -202,7 +202,7 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
         </div>
         <label className={`mt-5 block ${eyebrowClassName} text-faint`}>Pickup time</label>
         {/* Still a native select (iOS wheel, screen-reader semantics), wearing
-            the Driver step's field recipe with a gold chevron (MP-11). */}
+            the Driver step's field recipe with a muted chevron (MP-11; muted since MP-16). */}
         <span className="relative mt-2 block">
           <select value={cart.pickupTime} onChange={(event) => setCart(recomputeBookingCart({ ...cart, pickupTime: event.target.value }))} className="w-full appearance-none rounded-lg border border-line bg-field py-3 pl-4 pr-10 text-body-lg text-ink outline-none transition hover:border-line2 focus:border-gold/70 focus-visible:ring-2 focus-visible:ring-gold/60 [color-scheme:dark]" aria-label="Pickup time">
             {PICKUP_TIMES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}

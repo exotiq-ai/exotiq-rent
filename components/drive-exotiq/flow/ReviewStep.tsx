@@ -119,7 +119,7 @@ export function ReviewStep({
                 aria-checked={protectionOn}
                 aria-label="Exotiq Protect"
                 onClick={() => onProtectionChange(protectionOn ? 'decline' : 'premium')}
-                className={`relative h-7 w-12 shrink-0 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${protectionOn ? 'bg-gold' : 'bg-line'}`}
+                className={`relative h-7 w-12 shrink-0 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-panel ${protectionOn ? 'bg-gold' : 'bg-line'}`}
               >
                 <span className={`absolute top-1 h-5 w-5 rounded-full bg-ink shadow-[0_1px_2px_rgba(0,0,0,.4)] transition-all ${protectionOn ? 'left-6' : 'left-1'}`} />
               </button>

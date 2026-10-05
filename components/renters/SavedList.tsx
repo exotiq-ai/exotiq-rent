@@ -54,7 +54,7 @@ export function SavedList() {
         {saved.map((car) => (
           <li key={`${car.team_slug}/${car.vehicle_slug}`} className="flex items-center gap-4 p-4">
             <div className="min-w-0 flex-1">
-              <Link href={car.href} className="block truncate text-title-sm text-ink transition hover:text-ink" style={serifStyle}>{car.name}</Link>
+              <Link href={car.href} className="block truncate text-title-sm text-ink" style={serifStyle}>{car.name}</Link>
               <div className="mt-0.5 text-label text-muted">{car.priceCents !== undefined ? `${dollars(car.priceCents)} per day · ` : ''}{car.team_name ?? car.team_slug.replace(/-/g, ' ')}</div>
             </div>
             <button type="button" data-saved-remove onClick={() => onRemove(car, saved.indexOf(car))} aria-label={`Remove ${car.name}`} className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-line text-faint transition hover:border-faint hover:text-ink"><X size={14} /></button>

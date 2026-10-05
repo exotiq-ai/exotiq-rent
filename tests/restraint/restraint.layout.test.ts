@@ -200,8 +200,12 @@ describe('MP-16 de-box and elevation (AC6-AC9)', () => {
       if (found.length !== 1) problems.push(`${label}: ${found.length} literal(s)`);
       for (const s of found) problems.push(...missing(label, s, 'border-t border-line'), ...present(label, s, 'border-y', 'border-b'));
     }
-    const verification = between(src(DRIVER), '>Verification<', '</div>\n');
-    problems.push(...hair('DriverStep verification row', verification));
+    // The verification row is the hairline section that opens just before the ID icon. Attempt 2
+    // (review N6): the separate "Verification" micro-label above it is gone (it floated over the rule).
+    const driver = src(DRIVER);
+    const idAt = driver.indexOf('<IdCard');
+    const verification = idAt < 0 ? '' : driver.slice(driver.lastIndexOf('<div', idAt), idAt);
+    problems.push(...hair('DriverStep verification row', verification), ...present('DriverStep', driver, '>Verification<'));
     if (literals(verification).some(isBox)) problems.push('DriverStep verification row: still boxed');
 
     // No tinted icon tile is left in Driver, Pay or Confirmation.

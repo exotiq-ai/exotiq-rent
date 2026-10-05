@@ -254,10 +254,12 @@ describe('MP-16 gold is punctuation (AC1-AC5)', () => {
     for (const s of lits(SAVEBTN, 'inline-flex items-center justify-center gap-2 rounded-xl border')) problems.push(...missing('SaveButton pill', s, 'hover:border-line2'));
     const iconBtn = lits(SAVEBTN, 'grid h-9 w-9 place-items-center rounded-full');
     if (iconBtn.length !== 1) problems.push(`SaveButton icon literal count ${iconBtn.length}`);
-    for (const s of iconBtn) problems.push(...missing('SaveButton icon', s, 'border-line2', 'hover:border-faint', 'hover:text-ink'));
+    // Attempt 2 (review N2): the spec's hover:text-ink on these two was a no-op (their text is already
+    // ink), so it is gone; the border carries the icon button's hover.
+    for (const s of iconBtn) problems.push(...missing('SaveButton icon', s, 'border-line2', 'hover:border-faint'), ...present('SaveButton icon', s, 'hover:text-ink'));
     for (const s of lits(SAVEDLINK, 'inline-flex items-center gap-1.5 rounded-full')) problems.push(...missing('SavedLink', s, 'hover:border-line2', 'hover:text-ink'));
     for (const s of lits(SAVEDLIST, 'grid h-9 w-9 shrink-0 place-items-center rounded-full')) problems.push(...missing('SavedList remove', s, 'hover:border-faint', 'hover:text-ink'));
-    for (const s of lits(SAVEDLIST, 'block truncate text-title-sm')) problems.push(...missing('SavedList name', s, 'hover:text-ink'));
+    for (const s of lits(SAVEDLIST, 'block truncate text-title-sm')) problems.push(...missing('SavedList name', s, 'text-ink'), ...present('SavedList name', s, 'hover:text-ink'));
     const pager = lits(BROWSE, 'rounded-lg border border-line px-4 py-2 text-ink');
     if (pager.length !== 2) problems.push(`/browse pager literal count ${pager.length}`);
     for (const s of pager) problems.push(...missing('/browse pager', s, 'hover:border-line2'));

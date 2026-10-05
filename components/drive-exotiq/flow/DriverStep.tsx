@@ -117,8 +117,7 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
             Age and license requirements are set by {cart.operator.name} and confirmed before pickup.
           </p>
         )}
-        <div className={`mt-4 px-1 ${label}`}>Verification</div>
-        <div className="mt-3 flex items-start gap-3 border-t border-line px-1 pt-4">
+        <div className="mt-4 flex items-start gap-3 border-t border-line px-1 pt-4">
           <IdCard size={16} className="mt-0.5 shrink-0 text-muted" />
           <div>
             <div className="text-body font-medium text-ink">ID check comes after booking</div>
