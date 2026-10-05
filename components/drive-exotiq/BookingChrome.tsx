@@ -164,6 +164,13 @@ export function BookingChrome({ step, children, onBack, closeHref, rail }: { ste
   return <PhoneViewport step={step} onBack={onBack} closeHref={closeHref} layout="panel" rail={rail}>{children}</PhoneViewport>;
 }
 
+/**
+ * Page title on the booking surfaces: its own step is title, and a caller that
+ * wants another size must pass it under a breakpoint variant. Two size steps
+ * on one element do not resolve by className order or by scale: Tailwind emits
+ * them sorted by name, so the alphabetically later step wins (MP-15). Variant
+ * steps are emitted after base ones and always win.
+ */
 export function HTitle({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
     <h1

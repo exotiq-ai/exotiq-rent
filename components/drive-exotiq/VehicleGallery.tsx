@@ -94,7 +94,7 @@ export function VehicleGallery({
           whichever image a tenant uploaded. */}
       <div className="mt-4">
         <div className={`${eyebrowClassName} text-gold`}>{operatorName} · From <Money cents={dailyRateCents} />/day</div>
-        <HTitle className="mt-2 text-heading lg:text-display lg:leading-[1.12]">{vehicleName}</HTitle>
+        <HTitle className="mt-2 max-lg:text-heading max-lg:leading-[1.12] lg:text-display lg:leading-[1.12]">{vehicleName}</HTitle>
         <p className="mt-2 flex items-center gap-2 text-body-sm text-muted"><MapPin size={14} className="text-gold" />{city}, {state} · Concierge-approved rental</p>
       </div>
     </>
