@@ -113,6 +113,42 @@ export const between = (src: string, from: string, to: string): string => {
   return src.slice(a, b);
 };
 
+/** Every JSX opening tag `<Tag …>` / `<Tag … />` in `src` (braces skipped, so an arrow inside a prop never ends the tag). */
+export function openTags(src: string, tag: string): string[] {
+  const out: string[] = [];
+  const re = new RegExp(`<${tag.replace(/\./g, '\\.')}(?=[\\s/>])`, 'g');
+  for (const m of Array.from(src.matchAll(re))) {
+    let depth = 0;
+    let i = m.index ?? 0;
+    for (; i < src.length; i++) {
+      const c = src[i];
+      if (c === '{') depth++;
+      else if (c === '}') depth--;
+      else if (c === '>' && depth === 0) break;
+    }
+    out.push(src.slice(m.index, i + 1));
+  }
+  return out;
+}
+
+/** The className expression of one opening tag ('' when it has none). */
+export function classOf(tagText: string): string {
+  const m = /className=(?:"([^"]*)"|\{`([^`]*)`\}|\{'([^']*)'\}|\{([^}]*)\})/.exec(tagText);
+  return m ? (m[1] ?? m[2] ?? m[3] ?? m[4] ?? '') : '';
+}
+
+/** Utilities whose variant chain includes hover:, active: or group-hover: and that name gold (AC3). */
+export const hoverGoldTokens = (text: string): string[] =>
+  text.split(/[\s'"`{}]+/).filter((t) => /(^|:)(group-)?(hover|active):/.test(t) && goldCount(t) > 0);
+
+/** Each needle missing from `text`, labelled. */
+export const missing = (label: string, text: string, ...needles: string[]): string[] =>
+  needles.filter((n) => !text.includes(n)).map((n) => `${label}: missing ${n}`);
+
+/** Each needle present in `text`, labelled. */
+export const present = (label: string, text: string, ...needles: string[]): string[] =>
+  needles.filter((n) => text.includes(n)).map((n) => `${label}: still has ${n}`);
+
 const lin = (v: number) => {
   const s = v / 255;
   return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
