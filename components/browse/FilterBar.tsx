@@ -169,7 +169,7 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
         onClick={() => { pendingFiltersOpen = !moreOpen; setMoreOpen(!moreOpen); }}
         aria-expanded={moreOpen}
         aria-controls={`${idPrefix}-more-filters`}
-        className="flex w-fit cursor-pointer items-center gap-2 rounded-full border border-line2 bg-surface px-3.5 py-2 text-body-sm font-semibold text-ink transition hover:border-gold/40 active:scale-[0.97] lg:hidden"
+        className="flex w-fit cursor-pointer items-center gap-2 rounded-full border border-line2 bg-surface px-3.5 py-2 text-body-sm font-semibold text-ink transition hover:border-faint active:scale-[0.97] lg:hidden"
       >
         <SlidersHorizontal size={14} className="text-muted" aria-hidden />
         Filters &amp; sort

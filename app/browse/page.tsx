@@ -129,13 +129,13 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
           {(hasPrev || hasNext) && (
             <nav className="mt-10 flex items-center justify-between text-body-sm" aria-label="Pagination">
               {hasPrev ? (
-                <Link href={pageLink(Math.max(0, query.offset - query.limit))} className="rounded-lg border border-line px-4 py-2 text-ink transition hover:border-gold/45">← Previous</Link>
+                <Link href={pageLink(Math.max(0, query.offset - query.limit))} className="rounded-lg border border-line px-4 py-2 text-ink transition hover:border-line2">← Previous</Link>
               ) : <span />}
               <span className="text-faint tabular-nums">
                 {query.offset + 1}–{Math.min(query.offset + query.limit, page.totalCount)} of {page.totalCount}
               </span>
               {hasNext ? (
-                <Link href={pageLink(query.offset + query.limit)} className="rounded-lg border border-line px-4 py-2 text-ink transition hover:border-gold/45">Next →</Link>
+                <Link href={pageLink(query.offset + query.limit)} className="rounded-lg border border-line px-4 py-2 text-ink transition hover:border-line2">Next →</Link>
               ) : <span />}
             </nav>
           )}

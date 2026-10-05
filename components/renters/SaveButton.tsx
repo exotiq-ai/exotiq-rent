@@ -33,7 +33,7 @@ export function SaveButton({ car, className = '', size = 16, variant = 'icon' }:
         onClick={onClick}
         aria-pressed={saved}
         aria-label={`Save ${car.name}`}
-        className={`inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-surface px-4 py-3 text-body-sm font-medium text-ink transition hover:border-gold/45 active:scale-[0.98] ${className}`}
+        className={`inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-surface px-4 py-3 text-body-sm font-medium text-ink transition hover:border-line2 active:scale-[0.98] ${className}`}
       >
         {heart}
         {saved ? 'Saved' : 'Save'}
@@ -47,7 +47,7 @@ export function SaveButton({ car, className = '', size = 16, variant = 'icon' }:
       aria-pressed={saved}
       aria-label={`Save ${car.name}`}
       title={saved ? 'Saved' : 'Save this car'}
-      className={`grid h-9 w-9 place-items-center rounded-full border border-gold/25 bg-panel/70 text-ink backdrop-blur transition hover:border-gold/60 hover:text-gold active:scale-95 ${className}`}
+      className={`grid h-9 w-9 place-items-center rounded-full border border-line2 bg-panel/70 text-ink backdrop-blur transition hover:border-faint hover:text-ink active:scale-95 ${className}`}
     >
       {heart}
     </button>

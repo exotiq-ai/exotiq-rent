@@ -89,7 +89,7 @@ function WhyCard({ className = '' }: { className?: string }) {
 
 function CallLink({ team }: { team: Team }) {
   return (
-    <a href={`tel:${team.phone}`} className="flex w-full items-center justify-center gap-2 rounded-xl border border-gold/35 bg-surface px-5 py-4 text-body font-semibold text-ink"><Phone size={16} />Call {team.name}</a>
+    <a href={`tel:${team.phone}`} className="flex w-full items-center justify-center gap-2 rounded-xl border border-line2 bg-surface px-5 py-4 text-body font-semibold text-ink"><Phone size={16} />Call {team.name}</a>
   );
 }
 
@@ -115,7 +115,7 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
             <HTitle className="mt-5 text-title">{team.name}</HTitle>
             <p className="mt-3 text-body leading-6 text-muted">No vehicles are listed right now. The fleet is being refreshed — check back soon{hasPhone ? ' or call to ask about upcoming availability' : ''}.</p>
             {hasPhone && (
-              <a href={`tel:${team.phone}`} className="mt-6 flex items-center gap-2 rounded-xl border border-gold/35 bg-surface px-5 py-3 text-body font-semibold text-ink"><Phone size={16} />Call {team.name}</a>
+              <a href={`tel:${team.phone}`} className="mt-6 flex items-center gap-2 rounded-xl border border-line2 bg-surface px-5 py-3 text-body font-semibold text-ink"><Phone size={16} />Call {team.name}</a>
             )}
           </section>
         </PhoneViewport>

@@ -87,7 +87,7 @@ export const groundClassName =
  */
 export const cardShellClassName =
   'relative overflow-hidden rounded-2xl border border-line bg-surface transition-[transform,border-color,box-shadow] duration-300 ease-out ' +
-  'hover:-translate-y-1 hover:border-gold/45 hover:shadow-[0_18px_40px_-18px_rgba(0,0,0,.75),0_10px_30px_-16px_rgba(200,166,100,.22)] ' +
+  'hover:-translate-y-1 hover:border-line2 hover:shadow-[0_18px_40px_-18px_rgba(0,0,0,.75)] ' +
   'has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-gold/70 has-[a:focus-visible]:ring-offset-2 has-[a:focus-visible]:ring-offset-ground ' +
   'motion-reduce:transition-none motion-reduce:hover:translate-y-0';
 
@@ -118,7 +118,7 @@ export const selectClassName = `${fieldClassName} appearance-none pr-9`;
  * whatever the wrapper. Wrap with a CalendarDays icon at left-2.5.
  */
 export const datePillClassName =
-  'relative h-8 rounded-full border border-line2 bg-field pl-7 pr-2.5 text-body-lg leading-none text-ink outline-none transition hover:border-gold/40 focus-visible:ring-2 focus-visible:ring-gold/60 [color-scheme:dark] ' +
+  'relative h-8 rounded-full border border-line2 bg-field pl-7 pr-2.5 text-body-lg leading-none text-ink outline-none transition hover:border-faint focus-visible:ring-2 focus-visible:ring-gold/60 [color-scheme:dark] ' +
   '[&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-y-0 [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-7 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0';
 
 /** The daily rate on a card: one figure recipe for browse and storefront, unit beside it at a colour that still reads (5:1). */
