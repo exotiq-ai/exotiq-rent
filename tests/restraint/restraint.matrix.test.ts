@@ -17,7 +17,8 @@ const EVIDENCE = process.env.RESTRAINT_EVIDENCE_DIR ?? '';
 const SPEC_STATES = ['S01', 'S02', 'S03', 'S04', 'S05', 'S05b', 'S06', 'S06b', 'S07', 'S08', 'S09', 'S10', 'S11', 'S12', 'S13'];
 const SPEC_HOVER = ['S14', 'S15'];
 /** LD8 extras for states mock mode cannot otherwise show (both viewports). */
-const EXTRAS = ['X1', 'X2', 'X3', 'X4'];
+// X5 (attempt 2, B1): the Dates step with no saved consent, so the cookie row renders nothing.
+const EXTRAS = ['X1', 'X2', 'X3', 'X4', 'X5'];
 
 type Cell = { state: string; viewport: string; route: string };
 type State = { id: string; route: string; viewports?: string[] };
@@ -70,7 +71,8 @@ describe('MP-16 screenshot matrix and legibility (AC14)', () => {
   });
 
   it.skipIf(!EVIDENCE)('the captured matrix has a non-empty, different PNG before and after for every cell (RESTRAINT_EVIDENCE_DIR)', () => {
-    const manifest = JSON.parse(readFileSync(join(EVIDENCE, 'AC14-screenshot-matrix.json'), 'utf8')) as { cells: { state: string; viewport: string; before: string; after: string; sha256: { before: string; after: string } }[] };
+    type Pair = { gap: number };
+    const manifest = JSON.parse(readFileSync(join(EVIDENCE, 'AC14-screenshot-matrix.json'), 'utf8')) as { cells: { state: string; viewport: string; before: string; after: string; sha256: { before: string; after: string }; hairlinePairs?: { before?: Pair[]; after?: Pair[] } }[] };
     const problems: string[] = [];
     for (const c of allCells() as Cell[]) {
       const entry = manifest.cells.find((m) => m.state === c.state && m.viewport === c.viewport);
@@ -82,6 +84,10 @@ describe('MP-16 screenshot matrix and legibility (AC14)', () => {
         else if (sha(file) !== entry.sha256[phase]) problems.push(`${name}: ${phase} sha256 does not match the manifest`);
       }
       if (entry.sha256.before === entry.sha256.after) problems.push(`${name}: after is identical to before`);
+      // B1: a browser probe of two horizontal hairlines within 20px. Every after cell is measured; none may double.
+      const pairs = entry.hairlinePairs?.after;
+      if (!Array.isArray(pairs)) problems.push(`${name}: no hairline probe in the manifest`);
+      else if (pairs.length) problems.push(`${name}: ${pairs.length} doubled hairline(s) ${JSON.stringify(pairs)}`);
     }
     expect(problems).toEqual([]);
   });

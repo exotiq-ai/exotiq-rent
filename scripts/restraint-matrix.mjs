@@ -14,10 +14,12 @@
 // <dir>/AC14-screenshot-matrix.json and <dir>/AC13-privacy-link.json. Capture both phases on the
 // same day: the calendar and the date filters are relative to today.
 //
-// No repo dependency: playwright-core is resolved at run time from PLAYWRIGHT_CORE (default: the
-// shop's capture toolbox) and drives the installed Chrome. The cookie row is seeded as answered
-// (both off) so it renders and is never clicked; DOM clicks keep the mouse still, so no hover
-// leaks into a resting cell.
+// No repo dependency: playwright-core is resolved at run time from the PLAYWRIGHT_CORE env var
+// (a path to an installed playwright-core) or, failing that, from normal module resolution, and it
+// drives the installed Chrome. The cookie row is seeded as answered (both off) so it renders and is
+// never clicked, except in X5, which captures the row's absence. DOM clicks keep the mouse still, so
+// no hover leaks into a resting cell. Every cell also records a doubled-hairline probe.
+// --phase check captures into screens/check/ (a one-off comparison) without writing a manifest.
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
@@ -68,6 +70,10 @@ export const EXTRA_STATES = [
   { id: 'X2', label: 'confirmation after a completed payment (ReturnNotice, good)', route: '/booking/BK-100001?payment=success' },
   { id: 'X3', label: 'confirmation, identity verified', route: '/booking/BK-100001', setup: 'verify-identity' },
   { id: 'X4', label: 'flow: Driver, under-age date of birth (danger banner)', route: BOOK, steps: 1, setup: 'dob-under-age', reveal: '[data-under-age]' },
+  // Attempt 2 (auto-review B1): every other cell seeds a saved consent choice, so the cookie row
+  // always rendered and the doubled rule it hides was never photographed. No seed here: on any host
+  // but production, with no saved choice, the row renders nothing (as before hydration everywhere).
+  { id: 'X5', label: 'flow: Dates, no saved consent (cookie row absent)', route: BOOK, seed: false },
 ];
 
 export const cellName = (state, viewport) => `${state}__${viewport}`;
@@ -88,6 +94,32 @@ const MOBILE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleW
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const isoDay = (offset) => { const d = new Date(); d.setDate(d.getDate() + offset); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const sha256 = (file) => createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+
+/**
+ * Doubled hairlines in the viewport: pairs of horizontal rules (an element's top or bottom border
+ * where it has no side borders, so a boxed card's edge is not a rule) closer than 20px that overlap
+ * horizontally. The auto-review's B1 probe, run on every cell.
+ */
+const HAIRLINE_PROBE = `(() => {
+  const lines = [];
+  for (const el of document.querySelectorAll('body *')) {
+    const cs = getComputedStyle(el);
+    if (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) === 0) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width < 1 || r.bottom < 0 || r.top > innerHeight || r.right < 0 || r.left > innerWidth) continue;
+    const side = parseFloat(cs.borderLeftWidth) > 0 || parseFloat(cs.borderRightWidth) > 0;
+    if (side) continue;
+    const name = (el.className && typeof el.className === 'string' ? el.className : el.tagName).slice(0, 60);
+    if (parseFloat(cs.borderTopWidth) > 0 && cs.borderTopStyle !== 'none') lines.push({ y: r.top, x0: r.left, x1: r.right, el: name });
+    if (parseFloat(cs.borderBottomWidth) > 0 && cs.borderBottomStyle !== 'none') lines.push({ y: r.bottom, x0: r.left, x1: r.right, el: name });
+  }
+  const pairs = [];
+  for (let i = 0; i < lines.length; i++) for (let j = i + 1; j < lines.length; j++) {
+    const a = lines[i], b = lines[j], gap = Math.abs(a.y - b.y);
+    if (gap > 1 && gap < 20 && Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0) > 0) pairs.push({ gap: Math.round(gap * 10) / 10, y: Math.round(Math.min(a.y, b.y)), a: a.el, b: b.el });
+  }
+  return pairs;
+})()`;
 
 async function settle(page) {
   await page.evaluate(async () => { await document.fonts.ready; });
@@ -179,7 +211,7 @@ async function captureCell(browser, cell, state, phase, dirs, dates) {
     hasTouch: vp.touch,
     ...(vp.touch ? { userAgent: MOBILE_UA } : {}),
   });
-  await ctx.addInitScript(SEED);
+  if (state.seed !== false) await ctx.addInitScript(SEED);
   const page = await ctx.newPage();
   const url = dirs.base + state.route.replace('{start}', dates.start).replace('{end}', dates.end);
   const res = await page.goto(url, { waitUntil: 'load', timeout: 60000 });
@@ -208,8 +240,10 @@ async function captureCell(browser, cell, state, phase, dirs, dates) {
     await sleep(300);
   }
   await page.screenshot({ path: file, animations: 'disabled', caret: 'hide' });
+  const hairlinePairs = await page.evaluate(HAIRLINE_PROBE);
+  const cookieRow = await page.evaluate(() => document.querySelectorAll('[data-cookie-controls]').length);
   await ctx.close(); // never releases the pressed CTA: no navigation
-  return { file, bytes: fs.statSync(file).size, url: url.replace(dirs.base, ''), status };
+  return { file, bytes: fs.statSync(file).size, url: url.replace(dirs.base, ''), status, hairlinePairs, cookieRow };
 }
 
 /** The consent dialog on /privacy, opened: its gold "Privacy notice" link must keep its colour (LD4). */
@@ -247,24 +281,34 @@ async function main() {
   const evidence = arg('--evidence');
   const ref = arg('--ref', '');
   const only = arg('--only');
-  if (!['before', 'after'].includes(phase) || !evidence) {
-    console.error('usage: node scripts/restraint-matrix.mjs --phase before|after --base <url> --evidence <dir> [--ref <sha>] [--only S01,S02]');
+  const usage = 'usage: PLAYWRIGHT_CORE=<path to playwright-core> node scripts/restraint-matrix.mjs --phase before|after|check --base <url> --evidence <dir> [--ref <sha>] [--only S01,X5]';
+  if (!['before', 'after', 'check'].includes(phase) || !evidence) {
+    console.error(usage);
     process.exit(2);
   }
   const require = createRequire(import.meta.url);
-  const { chromium } = require(process.env.PLAYWRIGHT_CORE ?? '/Users/g.r./Documents/EXOTIQ/Claude/zomedia-capture/node_modules/playwright-core');
+  let chromium;
+  try {
+    ({ chromium } = require(process.env.PLAYWRIGHT_CORE ?? 'playwright-core'));
+  } catch {
+    console.error('playwright-core not found (the repo does not depend on it).\n' + usage);
+    process.exit(2);
+  }
   const screens = path.join(evidence, 'screens', phase);
   fs.mkdirSync(screens, { recursive: true });
   const dates = { start: isoDay(7), end: isoDay(10) };
   const byId = Object.fromEntries([...STATES, ...HOVER_STATES, ...EXTRA_STATES].map((s) => [s.id, s]));
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   const run = { phase, base, ref, dates, captured: new Date().toISOString(), cells: [] };
+  // --only re-captures some cells into an existing phase: keep the others' records.
+  const runFile = path.join(screens, '_run.json');
+  const previous = only && fs.existsSync(runFile) ? JSON.parse(fs.readFileSync(runFile, 'utf8')) : null;
   try {
     for (const cell of allCells()) {
       if (only && !only.split(',').includes(cell.state)) continue;
       const r = await captureCell(browser, cell, byId[cell.state], phase, { base, screens }, dates);
-      run.cells.push({ cell: cellName(cell.state, cell.viewport), url: r.url, status: r.status, bytes: r.bytes });
-      console.log(`${phase} ${cellName(cell.state, cell.viewport)} ${r.bytes}B ${r.url}`);
+      run.cells.push({ cell: cellName(cell.state, cell.viewport), url: r.url, status: r.status, bytes: r.bytes, cookieRow: r.cookieRow, hairlinePairs: r.hairlinePairs });
+      console.log(`${phase} ${cellName(cell.state, cell.viewport)} ${r.bytes}B ${r.url} cookieRow=${r.cookieRow} hairlinePairs=${r.hairlinePairs.length}`);
     }
     const probe = await privacyProbe(browser, base);
     fs.writeFileSync(path.join(evidence, `privacy-link-${phase}.json`), JSON.stringify({ phase, base, ref, ...probe }, null, 1));
@@ -272,7 +316,13 @@ async function main() {
   } finally {
     await browser.close();
   }
-  fs.writeFileSync(path.join(screens, '_run.json'), JSON.stringify(run, null, 1));
+  if (previous) {
+    const fresh = new Set(run.cells.map((c) => c.cell));
+    run.cells = [...previous.cells.filter((c) => !fresh.has(c.cell)), ...run.cells];
+    run.merged = [...(previous.merged ?? []), { only, captured: run.captured, ref }];
+    run.captured = previous.captured;
+  }
+  fs.writeFileSync(runFile, JSON.stringify(run, null, 1));
 
   if (phase === 'after') {
     const beforeRun = JSON.parse(fs.readFileSync(path.join(evidence, 'screens', 'before', '_run.json'), 'utf8'));
@@ -282,14 +332,21 @@ async function main() {
       const abs = { before: path.join(evidence, rel.before), after: path.join(evidence, rel.after) };
       for (const p of Object.values(abs)) if (!fs.existsSync(p)) throw new Error(`missing ${p}`);
       const sha = { before: sha256(abs.before), after: sha256(abs.after) };
-      return { state: c.state, viewport: c.viewport, label: c.label, route: c.route, before: rel.before, after: rel.after, bytes: { before: fs.statSync(abs.before).size, after: fs.statSync(abs.after).size }, sha256: sha, differs: sha.before !== sha.after };
+      const probe = (r) => r.cells.find((x) => x.cell === cellName(c.state, c.viewport))?.hairlinePairs;
+      return { state: c.state, viewport: c.viewport, label: c.label, route: c.route, before: rel.before, after: rel.after, bytes: { before: fs.statSync(abs.before).size, after: fs.statSync(abs.after).size }, sha256: sha, differs: sha.before !== sha.after, hairlinePairs: { before: probe(beforeRun), after: probe(run) } };
     });
     const manifest = {
-      spec: 'MP-16 AC14 screenshot matrix (15 states x 2 viewports + 2 desktop hover states = 32 spec cells; LD8 extras X1-X4 at both viewports)',
+      spec: 'MP-16 AC14 screenshot matrix (15 states x 2 viewports + 2 desktop hover states = 32 spec cells; LD8 extras X1-X4 and the attempt-2 no-consent cell X5, at both viewports)',
       before: { base: beforeRun.base, ref: beforeRun.ref, captured: beforeRun.captured, dates: beforeRun.dates },
       after: { base, ref, captured: run.captured, dates },
       viewports: VIEWPORTS,
-      summary: { cells: cells.length, differ: cells.filter((c) => c.differs).length, identical: cells.filter((c) => !c.differs).map((c) => cellName(c.state, c.viewport)) },
+      summary: {
+        cells: cells.length,
+        differ: cells.filter((c) => c.differs).length,
+        identical: cells.filter((c) => !c.differs).map((c) => cellName(c.state, c.viewport)),
+        doubledHairlinesAfter: cells.filter((c) => c.hairlinePairs.after?.length).map((c) => cellName(c.state, c.viewport)),
+        doubledHairlinesBefore: cells.filter((c) => c.hairlinePairs.before?.length).map((c) => cellName(c.state, c.viewport)),
+      },
       cells,
     };
     fs.writeFileSync(path.join(evidence, 'AC14-screenshot-matrix.json'), JSON.stringify(manifest, null, 1));
