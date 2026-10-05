@@ -98,10 +98,23 @@ const sha256 = (file) => createHash('sha256').update(fs.readFileSync(file)).dige
 /**
  * Doubled hairlines in the viewport: pairs of horizontal rules (an element's top or bottom border
  * where it has no side borders, so a boxed card's edge is not a rule) closer than 20px that overlap
- * horizontally. The auto-review's B1 probe, run on every cell.
+ * horizontally. The auto-review's B1 probe, run on every cell. Each rule records its layer (the
+ * nearest absolute, fixed or sticky ancestor, or the page flow): a pair inside one layer is a design
+ * defect at every scroll position (B1: the bar's border and the total inside the same bar); a pair
+ * across layers is scrolling content passing a fixed bar's edge at this scroll offset (incidental).
  */
 const HAIRLINE_PROBE = `(() => {
   const lines = [];
+  const layers = new Map();
+  const layerOf = (el) => {
+    for (let n = el; n && n !== document.body; n = n.parentElement) {
+      if (['absolute', 'fixed', 'sticky'].includes(getComputedStyle(n).position)) {
+        if (!layers.has(n)) layers.set(n, layers.size + 1);
+        return layers.get(n);
+      }
+    }
+    return 0;
+  };
   for (const el of document.querySelectorAll('body *')) {
     const cs = getComputedStyle(el);
     if (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) === 0) continue;
@@ -110,13 +123,14 @@ const HAIRLINE_PROBE = `(() => {
     const side = parseFloat(cs.borderLeftWidth) > 0 || parseFloat(cs.borderRightWidth) > 0;
     if (side) continue;
     const name = (el.className && typeof el.className === 'string' ? el.className : el.tagName).slice(0, 60);
-    if (parseFloat(cs.borderTopWidth) > 0 && cs.borderTopStyle !== 'none') lines.push({ y: r.top, x0: r.left, x1: r.right, el: name });
-    if (parseFloat(cs.borderBottomWidth) > 0 && cs.borderBottomStyle !== 'none') lines.push({ y: r.bottom, x0: r.left, x1: r.right, el: name });
+    const layer = layerOf(el);
+    if (parseFloat(cs.borderTopWidth) > 0 && cs.borderTopStyle !== 'none') lines.push({ y: r.top, x0: r.left, x1: r.right, el: name, layer });
+    if (parseFloat(cs.borderBottomWidth) > 0 && cs.borderBottomStyle !== 'none') lines.push({ y: r.bottom, x0: r.left, x1: r.right, el: name, layer });
   }
   const pairs = [];
   for (let i = 0; i < lines.length; i++) for (let j = i + 1; j < lines.length; j++) {
     const a = lines[i], b = lines[j], gap = Math.abs(a.y - b.y);
-    if (gap > 1 && gap < 20 && Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0) > 0) pairs.push({ gap: Math.round(gap * 10) / 10, y: Math.round(Math.min(a.y, b.y)), a: a.el, b: b.el });
+    if (gap > 1 && gap < 20 && Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0) > 0) pairs.push({ gap: Math.round(gap * 10) / 10, y: Math.round(Math.min(a.y, b.y)), a: a.el, b: b.el, sameLayer: a.layer === b.layer });
   }
   return pairs;
 })()`;
@@ -308,7 +322,7 @@ async function main() {
       if (only && !only.split(',').includes(cell.state)) continue;
       const r = await captureCell(browser, cell, byId[cell.state], phase, { base, screens }, dates);
       run.cells.push({ cell: cellName(cell.state, cell.viewport), url: r.url, status: r.status, bytes: r.bytes, cookieRow: r.cookieRow, hairlinePairs: r.hairlinePairs });
-      console.log(`${phase} ${cellName(cell.state, cell.viewport)} ${r.bytes}B ${r.url} cookieRow=${r.cookieRow} hairlinePairs=${r.hairlinePairs.length}`);
+      console.log(`${phase} ${cellName(cell.state, cell.viewport)} ${r.bytes}B ${r.url} cookieRow=${r.cookieRow} doubled=${r.hairlinePairs.filter((p) => p.sameLayer).length} incidental=${r.hairlinePairs.filter((p) => !p.sameLayer).length}`);
     }
     const probe = await privacyProbe(browser, base);
     fs.writeFileSync(path.join(evidence, `privacy-link-${phase}.json`), JSON.stringify({ phase, base, ref, ...probe }, null, 1));
@@ -344,8 +358,9 @@ async function main() {
         cells: cells.length,
         differ: cells.filter((c) => c.differs).length,
         identical: cells.filter((c) => !c.differs).map((c) => cellName(c.state, c.viewport)),
-        doubledHairlinesAfter: cells.filter((c) => c.hairlinePairs.after?.length).map((c) => cellName(c.state, c.viewport)),
-        doubledHairlinesBefore: cells.filter((c) => c.hairlinePairs.before?.length).map((c) => cellName(c.state, c.viewport)),
+        doubledHairlinesAfter: cells.filter((c) => c.hairlinePairs.after?.some((p) => p.sameLayer)).map((c) => cellName(c.state, c.viewport)),
+        doubledHairlinesBefore: cells.filter((c) => c.hairlinePairs.before?.some((p) => p.sameLayer)).map((c) => cellName(c.state, c.viewport)),
+        incidentalCrossLayerPairsAfter: cells.filter((c) => c.hairlinePairs.after?.some((p) => !p.sameLayer)).map((c) => cellName(c.state, c.viewport)),
       },
       cells,
     };
