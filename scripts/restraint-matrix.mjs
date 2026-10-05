@@ -299,8 +299,13 @@ async function main() {
       claim: 'The consent dialog opened on /privacy keeps its gold "Privacy notice" link (frozen analytics zone, LD4) while the LegalPage prose links turn ink.',
       before: { consentLink: before.consentLink, proseLink: before.proseLink, h2: before.h2 },
       after: { consentLink: after.consentLink, proseLink: after.proseLink, h2: after.h2 },
-      consentLinkUnchanged: before.consentLink.color === after.consentLink.color && before.consentLink.color === 'rgb(200, 166, 100)',
+      consentLinkColorUnchanged: before.consentLink.color === after.consentLink.color && before.consentLink.color === 'rgb(200, 166, 100)',
       proseLinkNowInk: after.proseLink.color === 'rgb(240, 242, 245)',
+      consentLinkUnderline: {
+        before: before.consentLink.decoration,
+        after: after.consentLink.decoration,
+        note: 'Before, LegalPage\'s bare descendant rule leaked its 40% gold underline into the consent link on /privacy; with the scoped rule the link keeps its own underline (currentColor, its gold), as on every other page that mounts it.',
+      },
     }, null, 1));
     console.log(`manifest: ${manifest.summary.cells} cells, ${manifest.summary.differ} differ`);
   }
