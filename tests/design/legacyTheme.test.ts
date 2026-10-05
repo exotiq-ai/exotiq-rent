@@ -111,12 +111,12 @@ describe('MP-15 legacy theme', () => {
     expect(fontFamily.sans).toEqual(SANS);
 
     // The four referenced colours resolve to the same values wherever they now live.
-    const { decls } = await compileWith(config, [], read('app/globals.css'), path.join(root, 'app/globals.css'));
+    const { bySelector } = await compileWith(config, [], read('app/globals.css'), path.join(root, 'app/globals.css'));
     expect({
-      bodyBackground: resolveColor(decls('body'), 'background-color'),
-      bodyText: resolveColor(decls('body'), 'color'),
-      scrollbarTrack: resolveColor(decls('::-webkit-scrollbar-track'), 'background-color'),
-      scrollbarThumb: resolveColor(decls('::-webkit-scrollbar-thumb'), 'background-color'),
+      bodyBackground: resolveColor(bySelector('body'), 'background-color'),
+      bodyText: resolveColor(bySelector('body'), 'color'),
+      scrollbarTrack: resolveColor(bySelector('::-webkit-scrollbar-track'), 'background-color'),
+      scrollbarThumb: resolveColor(bySelector('::-webkit-scrollbar-thumb'), 'background-color'),
     }).toEqual({
       bodyBackground: { channels: '0 0 0', alpha: '1' },
       bodyText: { channels: '255 255 255', alpha: '1' },

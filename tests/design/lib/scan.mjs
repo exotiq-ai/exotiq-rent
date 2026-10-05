@@ -207,7 +207,9 @@ export async function compileWith(config, classes, css = '@tailwind utilities;',
     }
     return out;
   };
-  return { css: result.css, rules, decls };
+  /** Declarations of every rule whose selector is exactly `selector` (element or pseudo selectors). @param {string} selector */
+  const bySelector = (selector) => rules.filter((r) => r.selector === selector).flatMap((r) => r.decls);
+  return { css: result.css, rules, decls, bySelector };
 }
 
 /** True when the report breaks the budget (the CLI's exit 1). */
