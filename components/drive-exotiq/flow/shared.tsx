@@ -39,7 +39,12 @@ export function Sticky({ children }: { children: ReactNode }) {
   );
 }
 
-/** The running total in the Dates bar: a hairline row, the gold on the figure, not the frame (MP-16, D2). */
+/**
+ * The running total in the Dates bar: a hairline row, the gold on the figure, not the frame
+ * (MP-16, D2). Its rule separates it from the cookie row above. When that row renders nothing
+ * (before hydration, or no row on this host) the wrapper it sits in becomes the bar's first
+ * child, and the rule and its padding drop so the bar's own border is the only line.
+ */
 export function RunningTotalCard({
   label,
   detail,
@@ -50,7 +55,7 @@ export function RunningTotalCard({
   amountCents: number;
 }) {
   return (
-    <div className="border-t border-line pt-3">
+    <div className="border-t border-line pt-3 [:first-child>&]:border-t-0 [:first-child>&]:pt-0">
       <div className="flex items-baseline justify-between gap-3">
         <div className="min-w-0">
           <div className="truncate text-body-sm font-medium text-ink">{label}</div>

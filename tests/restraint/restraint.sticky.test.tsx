@@ -36,7 +36,8 @@ function tree(html: string): El {
   for (const m of Array.from(html.matchAll(/<(\/?)([a-zA-Z][\w-]*)([^>]*?)(\/?)>/g))) {
     const [, close, tag, attrs, self] = m;
     if (close) { cur = cur.parent ?? root; continue; }
-    const el: El = { tag, cls: (/class="([^"]*)"/.exec(attrs)?.[1] ?? '').split(/\s+/).filter(Boolean), children: [], parent: cur };
+    const decoded = (/class="([^"]*)"/.exec(attrs)?.[1] ?? '').replace(/&gt;/g, '>').replace(/&lt;/g, '<').replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&amp;/g, '&');
+    const el: El = { tag, cls: decoded.split(/\s+/).filter(Boolean), children: [], parent: cur };
     cur.children.push(el);
     if (!self && !VOID.has(tag)) cur = el;
   }
@@ -53,9 +54,10 @@ const render = (children: ReactNode, withCookieRow: boolean) => {
 /** The conditional rule-dropper as Tailwind compiles it: `:first-child > .<cls>` with the given declaration. */
 async function dropper(candidates: string[], decl: string): Promise<string | undefined> {
   const { rules } = await compileWith(config, candidates);
-  const hit = rules.find((r) => r.decls.includes(decl) && /^:first-child > \./.test(r.selector));
+  const shape = (s: string) => s.replace(/\s*>\s*/, '>');
+  const hit = rules.find((r) => r.decls.includes(decl) && /^:first-child\s*>\s*\./.test(r.selector));
   if (!hit) return undefined;
-  return candidates.find((c) => hit.selector === `:first-child > .${c.replace(/[[\]:>&]/g, (ch) => `\\${ch}`)}`);
+  return candidates.find((c) => shape(hit.selector) === `:first-child>.${c.replace(/[[\]:>&]/g, (ch) => `\\${ch}`)}`);
 }
 
 /** Elements that draw a top rule, after the conditional dropper (whose parent must be a first child) is applied. */
@@ -74,7 +76,8 @@ describe('MP-16 B1: one rule at the top of the Dates bar', () => {
 
     // The total's own classes, and the dropper Tailwind actually emits for them.
     const noRow = render(<>{total}{button}</>, false);
-    const totalEl = walk(noRow).find((el) => el.cls.includes('pt-3') && el.cls.includes('border-t'));
+    // (The bar itself also carries a top border and pt-3: the total is the one inside it.)
+    const totalEl = walk(noRow).find((el) => el !== noRow && el.cls.includes('pt-3') && el.cls.includes('border-t'));
     expect(totalEl, 'RunningTotalCard root').toBeDefined();
     const dropBorder = await dropper(totalEl!.cls, 'border-top-width:0px');
     const dropPad = await dropper(totalEl!.cls, 'padding-top:0px');
