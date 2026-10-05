@@ -10,7 +10,11 @@ import { SIZE_EXEMPT_DIRS, compileWith, scan, stripComments } from './lib/scan.m
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const read = (rel: string) => readFileSync(new URL(`../../${rel}`, import.meta.url), 'utf8');
 
-// D5 / AC7, in emission order: a later (larger) step wins a className-order tie (R9).
+// D5 / AC7, in the contract's order (the config keeps it). This is not the CSS order: Tailwind 3.4.19
+// emits one plugin's utilities sorted by class name, so when two steps meet on one element the
+// alphabetically later one wins, whatever their size or className order (spec R9's prose is wrong;
+// kb/tickets/MP-15.md holds the correction). Pair two steps through a breakpoint variant (max-lg:/lg:),
+// emitted after base utilities; the HTitle test below pins it.
 const STEPS: [string, string, string][] = [
   ['micro', '10px', '1.4'], ['label', '11px', '1.45'], ['body-sm', '13px', '1.5'], ['body', '15px', '1.5'],
   ['body-lg', '16px', '1.5'], ['title-sm', '18px', '1.4'], ['title', '22px', '1.35'], ['heading', '28px', '1.3'],

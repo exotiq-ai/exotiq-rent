@@ -27,8 +27,12 @@ const config: Config = {
         graphite: "#3A3A3A",
         /* LEGACY:end */
       },
-      // One type scale, paired line-heights (MP-15). Order matters: Tailwind emits
-      // these in this order, so when two steps meet on one element the larger wins.
+      // One type scale, paired line-heights (MP-15), listed small to large. This order
+      // does NOT decide which step wins when two meet on one element: Tailwind 3.4.19
+      // emits one plugin's utilities sorted by class name, so the alphabetically later
+      // step wins (title beats heading and display). To pair two steps on one element
+      // (a component's own step plus a caller's), give the caller's under a breakpoint
+      // variant, e.g. max-lg: and lg:, which are emitted after base utilities.
       fontSize: {
         micro: ["10px", { lineHeight: "1.4" }],
         label: ["11px", { lineHeight: "1.45" }],
