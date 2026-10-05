@@ -137,11 +137,14 @@ async function advance(page, steps) {
   }
 }
 
+/** The mock cart pre-fills a birth date: clear it first, or the digits splice into it. */
 async function typeDob(page, digits) {
   const dob = page.locator('input[autocomplete="bday"]');
-  await dob.click();
+  await dob.fill('');
   await dob.pressSequentially(digits, { delay: 20 });
   await sleep(300);
+  const shown = await dob.inputValue();
+  if (shown.replace(/\D/g, '') !== digits) throw new Error(`date of birth shows "${shown}", typed ${digits}`);
 }
 
 /** Stage a state; returns an optional pointer action to run after settling. */
@@ -216,6 +219,9 @@ async function privacyProbe(browser, base) {
   const page = await ctx.newPage();
   await page.goto(`${base}/privacy`, { waitUntil: 'load', timeout: 60000 });
   await settle(page);
+  // The dialog closes itself while its anchor is off screen, and on /privacy the controls sit below the fold.
+  await page.evaluate(() => document.querySelector('[data-cookie-controls]').scrollIntoView({ block: 'center' }));
+  await sleep(400);
   await page.evaluate(() => [...document.querySelectorAll('[data-cookie-controls] button')].find((b) => b.textContent.trim() === 'Privacy preferences').click());
   await waitFor(page, () => { const d = document.querySelector('[data-cookie-controls] [role=dialog]'); return Boolean(d) && getComputedStyle(d).visibility === 'visible'; }, null, 'the consent dialog');
   await sleep(400);
