@@ -130,14 +130,14 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
   const label = `mr-1 ${microLabelClassName} text-faint`;
   const chip = 'relative cursor-pointer group-data-[pending]:opacity-75 group-data-[pending]:cursor-progress transition-opacity';
   const face =
-    'inline-flex select-none items-center gap-1.5 rounded-full border border-line2 bg-field px-3 py-1.5 text-body-sm text-muted transition active:scale-[0.97] active:bg-gold/15 ' +
-    'peer-checked:border-gold/70 peer-checked:bg-gold/10 peer-checked:font-semibold peer-checked:text-ink peer-focus-visible:ring-2 peer-focus-visible:ring-gold/60 hover:border-gold/40 hover:text-ink';
+    'inline-flex select-none items-center gap-1.5 rounded-full border border-line2 bg-field px-3 py-1.5 text-body-sm text-muted transition active:scale-[0.97] active:bg-surface2 ' +
+    'peer-checked:border-ink peer-checked:bg-surface2 peer-checked:font-semibold peer-checked:text-ink peer-focus-visible:ring-2 peer-focus-visible:ring-gold/60 hover:border-faint hover:text-ink';
   const count = 'text-micro tabular-nums text-faint';
 
   return (
     <form ref={form} method="get" action={action} onSubmit={onSubmit} onChange={navigate} className="group relative space-y-2.5" aria-busy={isPending} data-pending={isPending ? '' : undefined} aria-label="Filter the fleet">
       {/* Always mounted, opacity-toggled, so the rail never jumps. */}
-      <span aria-hidden className={`pointer-events-none absolute -top-2 left-0 h-px w-full bg-gold transition-opacity motion-reduce:animate-none ${isPending ? 'animate-pulse opacity-100' : 'opacity-0'}`} />
+      <span aria-hidden className={`pointer-events-none absolute -top-2 left-0 h-px w-full bg-ink transition-opacity motion-reduce:animate-none ${isPending ? 'animate-pulse opacity-100' : 'opacity-0'}`} />
       <p role="status" className="sr-only">{isPending ? 'Updating results…' : ''}</p>
       <div className={row} role="group" aria-labelledby={`${idPrefix}-dates-label`}>
         <span id={`${idPrefix}-dates-label`} className={`${label} basis-full sm:basis-auto`}>Dates</span>
@@ -173,7 +173,7 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
       >
         <SlidersHorizontal size={14} className="text-muted" aria-hidden />
         Filters &amp; sort
-        {chipActive > 0 && <span className="rounded-full bg-gold/15 px-1.5 py-0.5 text-micro font-semibold tabular-nums text-gold">{chipActive}</span>}
+        {chipActive > 0 && <span className="rounded-full bg-surface2 px-1.5 py-0.5 text-micro font-semibold tabular-nums text-ink">{chipActive}</span>}
       </button>
       <div id={`${idPrefix}-more-filters`} className={`space-y-2.5 rounded-xl border border-line bg-panel/60 p-3 lg:block lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 ${moreOpen ? 'block' : 'hidden'}`}>
       <div className={row} role="group" aria-labelledby={`${idPrefix}-sort-label`}>

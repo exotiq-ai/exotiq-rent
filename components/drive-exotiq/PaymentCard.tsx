@@ -140,11 +140,9 @@ export function PaymentCard({
 
   if (finalizing) {
     return (
-      <div className="mt-4 rounded-xl border border-gold bg-goldWash p-4 shadow-[0_0_0_1px_var(--tone-gold),0_0_24px_rgba(200,166,100,.10)]">
+      <div className="mt-4 rounded-xl border border-line bg-surface p-4">
         <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gold/10 text-gold">
-            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-gold" />
-          </div>
+          <span className="inline-block h-2 w-2 shrink-0 animate-pulse rounded-full bg-ink" />
           <div>
             <div className="text-body font-medium text-ink">Payment received — finalizing</div>
             <p className="mt-1 text-body-sm leading-5 text-muted">Confirming your booking now. This usually takes a few seconds.</p>
@@ -165,13 +163,13 @@ export function PaymentCard({
   }
 
   return (
-    <div className="mt-4 rounded-xl border border-gold bg-goldWash p-4 shadow-[0_0_0_1px_var(--tone-gold),0_0_24px_rgba(200,166,100,.10)]">
+    <div className="mt-4 rounded-xl border border-line bg-surface p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-body font-medium text-ink">Approved — complete payment</div>
           <p className="mt-1 text-body-sm leading-5 text-muted">{operatorName} approved your booking. Pay to lock it in.</p>
         </div>
-        <span className={`flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-label ${windowState === 'urgent' ? 'bg-warn/15 text-warn' : 'bg-gold/10 text-gold'}`}>
+        <span className={`flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-label ${windowState === 'urgent' ? 'bg-warn/15 text-warn' : 'bg-surface2 text-ink'}`}>
           <Clock3 size={14} />
           {paymentCountdownLabel(dueAtIso, nowMs)}
         </span>

@@ -181,8 +181,8 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
                 {inRange && !isStart && !isEnd && <span className="absolute inset-y-[5px] left-0 right-0 bg-gold/10" />}
                 {isStart && !isEnd && <span className="absolute inset-y-[5px] left-1/2 right-0 bg-gold/10" />}
                 {isEnd && !isStart && <span className="absolute inset-y-[5px] left-0 right-1/2 bg-gold/10" />}
-                {(isStart || isEnd) && <span className="absolute left-1/2 top-1/2 h-[34px] w-[34px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold shadow-[0_0_0_1px_var(--tone-gold),0_0_14px_rgba(200,166,100,.30)]" />}
-                {!inRange && !blocked && isMinHint && <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 translate-y-[15px] rounded-full bg-gold/60" />}
+                {(isStart || isEnd) && <span className="absolute left-1/2 top-1/2 h-[34px] w-[34px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold" />}
+                {!inRange && !blocked && isMinHint && <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 translate-y-[15px] rounded-full bg-faint" />}
                 <span className={`absolute inset-0 grid place-items-center tabular-nums${isStart || isEnd ? ' font-semibold text-goldInk' : inRange ? ' text-ink' : ''}${blocked ? ' line-through decoration-dim2' : ''}`}>{day}</span>
               </button>
             );

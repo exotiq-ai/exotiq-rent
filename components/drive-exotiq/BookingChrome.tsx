@@ -37,9 +37,9 @@ function StepIndicator({ step, total = 6, variant = 'bars' }: { step: number; to
 
     return (
       <div className={`flex items-center gap-3 px-6 pb-4 pt-1 ${eyebrowClassName} text-faint`}>
-        <div className="tabular-nums"><b className="font-semibold text-gold">{String(step).padStart(2, '0')}</b><span> / {String(total).padStart(2, '0')}</span></div>
+        <div className="tabular-nums"><b className="font-semibold text-ink">{String(step).padStart(2, '0')}</b><span> / {String(total).padStart(2, '0')}</span></div>
         <div className="relative h-px flex-1 overflow-hidden rounded bg-line">
-          <span className="absolute inset-y-0 left-0 bg-gold" style={{ width: pct }} />
+          <span className="absolute inset-y-0 left-0 bg-muted" style={{ width: pct }} />
         </div>
         <div className={`${microLabelClassName}`}>{labels[step - 1]}</div>
       </div>
@@ -50,7 +50,7 @@ function StepIndicator({ step, total = 6, variant = 'bars' }: { step: number; to
     <div className="flex justify-center gap-1 px-4 pb-2 pt-0">
       {Array.from({ length: total }).map((_, index) => {
         const current = index + 1;
-        return <span key={current} className="h-[3px] w-8 rounded-full" style={{ backgroundColor: current <= step ? tone.gold : tone.line }} />;
+        return <span key={current} className="h-[3px] w-8 rounded-full" style={{ backgroundColor: current <= step ? tone.ink : tone.line }} />;
       })}
     </div>
   );

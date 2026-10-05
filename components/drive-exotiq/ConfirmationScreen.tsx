@@ -99,7 +99,7 @@ export async function ConfirmationScreen({
             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-surface" />
             {/* One-time celebration: a single champagne-gold sheen across the car. */}
             <div aria-hidden className="animate-gold-sheen pointer-events-none absolute inset-y-0 w-1/3" />
-            <div className={`animate-reserve-pop absolute right-3 top-3 rounded-full px-3 py-1 text-label ${terminal ? 'bg-line/60 text-muted' : 'bg-gold/10 text-gold'}`}>{!terminal && <span className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-gold" />}{terminal ? terminal.badge : 'Reserved'}</div>
+            <div className={`animate-reserve-pop absolute right-3 top-3 rounded-full px-3 py-1 text-label ${terminal ? 'bg-line/60 text-muted' : 'border border-line2 bg-panel/70 text-ink backdrop-blur'}`}>{!terminal && <span className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-ink" />}{terminal ? terminal.badge : 'Reserved'}</div>
           </div>
           <div className="p-4"><HTitle>{terminal ? terminal.title : `Your ${cart.vehicle.make} is reserved.`}</HTitle><p className="mt-2 text-body text-muted">Booking {confirmation.bookingRef}</p></div>
         </div>
@@ -257,9 +257,9 @@ function ReturnNotice({ tone, title, body }: ReturnNoticeProps) {
   return (
     <div
       role="status"
-      className={`mb-3 rounded-xl border p-4 ${good ? 'border-gold bg-goldWash' : 'border-warn/45 bg-warn/10'}`}
+      className={`mb-3 rounded-xl border p-4 ${good ? 'border-line bg-surface' : 'border-warn/45 bg-warn/10'}`}
     >
-      <div className={`text-body font-medium ${good ? 'text-gold' : 'text-warn'}`}>{title}</div>
+      <div className={`text-body font-medium ${good ? 'text-ink' : 'text-warn'}`}>{title}</div>
       <p className="mt-1 text-body-sm leading-5 text-ink">{body}</p>
     </div>
   );

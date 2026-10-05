@@ -25,7 +25,7 @@ export function SaveButton({ car, className = '', size = 16, variant = 'icon' }:
       track('favourite_added', { team: car.team_slug, vehicle: car.vehicle_slug });
     }
   };
-  const heart = <Heart size={size} strokeWidth={1.75} className={`${saved ? 'fill-gold text-gold' : ''} ${bounce ? 'animate-heart-bounce' : ''}`} onAnimationEnd={() => setBounce(false)} aria-hidden />;
+  const heart = <Heart size={size} strokeWidth={1.75} className={`${saved ? 'fill-ink text-ink' : 'text-muted'} ${bounce ? 'animate-heart-bounce' : ''}`} onAnimationEnd={() => setBounce(false)} aria-hidden />;
   if (variant === 'pill') {
     return (
       <button

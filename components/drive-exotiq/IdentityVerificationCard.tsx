@@ -117,9 +117,9 @@ export function IdentityVerificationCard({
 
   if (status === 'verified') {
     return (
-      <div className="mt-4 rounded-xl border border-gold bg-goldWash p-4 shadow-[0_0_0_1px_var(--tone-gold),0_0_24px_rgba(200,166,100,.10)]">
+      <div className="mt-4 rounded-xl border border-line bg-surface p-4">
         <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gold/10 text-gold"><BadgeCheck size={20} /></div>
+          <BadgeCheck size={20} className="shrink-0 text-ink" />
           <div>
             <div className="text-body font-medium text-ink">Identity verified — booking confirmed</div>
             <p className="mt-1 text-body-sm leading-5 text-muted">You&apos;re all set. The operator has been notified.</p>
@@ -148,9 +148,9 @@ export function IdentityVerificationCard({
   }
 
   return (
-    <div className="mt-4 rounded-xl border border-gold bg-goldWash p-4 shadow-[0_0_0_1px_var(--tone-gold),0_0_24px_rgba(200,166,100,.10)]">
+    <div className="mt-4 rounded-xl border border-line bg-surface p-4">
       <div className="flex items-start gap-3">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gold/10 text-gold"><ShieldCheck size={20} /></div>
+        <ShieldCheck size={20} className="mt-0.5 shrink-0 text-muted" />
         <div className="flex-1">
           <div className="text-body font-medium text-ink">Confirm your booking — verify your identity</div>
           <p className="mt-1 text-body-sm leading-5 text-muted">Takes about two minutes. Have your driver&apos;s license ready. Exotiq never stores your ID — documents are processed securely by Stripe, our verification partner.</p>

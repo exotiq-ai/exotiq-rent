@@ -117,7 +117,7 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
   return (
     <form ref={form} method="get" action="/browse" onSubmit={onSubmit} onChange={navigate} className="group relative space-y-7" aria-busy={isPending} data-pending={isPending ? '' : undefined}>
       {/* Always mounted, opacity-toggled, so the rail never jumps. */}
-      <span aria-hidden className={`pointer-events-none absolute -top-2 left-0 h-px w-full bg-gold transition-opacity motion-reduce:animate-none ${isPending ? 'animate-pulse opacity-100' : 'opacity-0'}`} />
+      <span aria-hidden className={`pointer-events-none absolute -top-2 left-0 h-px w-full bg-ink transition-opacity motion-reduce:animate-none ${isPending ? 'animate-pulse opacity-100' : 'opacity-0'}`} />
       <p role="status" className="sr-only">{isPending ? 'Updating results…' : ''}</p>
       <fieldset>
         <legend className={section}>Dates</legend>

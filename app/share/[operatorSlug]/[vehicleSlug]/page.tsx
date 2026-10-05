@@ -53,7 +53,7 @@ export default async function SharePage({ params }: Props) {
               : <div className="absolute inset-0 bg-gradient-to-br from-surface2 to-panel" />}
             <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-shareGround" />
             <div className={`absolute left-4 top-4 rounded-full bg-shareGround/70 px-3 py-1.5 ${microLabelClassName} text-ink backdrop-blur`}>
-              <span className="mr-2 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-gold align-middle" />
+              <span className="mr-2 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-ink align-middle" />
               Reserved
             </div>
           </div>

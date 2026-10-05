@@ -156,7 +156,7 @@ export function ReviewStep({
             onChange={(event) => setTermsAccepted(event.target.checked)}
             className="control-check mt-0.5"
           />
-          <span>I agree to the <span className="text-gold underline underline-offset-2">Rental Terms &amp; Conditions</span>.</span>
+          <span>I agree to the <span className="text-ink underline decoration-faint underline-offset-2">Rental Terms &amp; Conditions</span>.</span>
         </label>
         {/* MP-14: opt-in, unchecked, never required. Posted with the booking. */}
         {onMarketingConsentChange && renterCaptureUiEnabled() && (

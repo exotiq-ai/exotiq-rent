@@ -199,7 +199,7 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
               {availability && (
                 availability.checked ? (
                   <p className="mt-4 flex items-center gap-2.5 px-1 text-body-sm text-muted">
-                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold" aria-hidden />
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-faint" aria-hidden />
                     <span>Showing cars available <span className="text-ink" aria-label={`${formatShortDate(availability.start)} to ${formatShortDate(availability.end)}`}>{formatRangeLabel(availability.start, availability.end)}</span>. We&apos;ll confirm your exact dates when you book.</span>
                   </p>
                 ) : (
