@@ -6,6 +6,7 @@ import { cancellationWindowState } from '@/domain/booking/payment';
 import { postRenterCancel } from '@/domain/booking/rpcClient';
 import { formatShortDate, tzDate } from '@/domain/booking/dates';
 import { ctaClassName } from '@/components/browse/tokens';
+import { protectEnabled } from '@/domain/booking/protect';
 
 /**
  * M6c: renter self-serve cancellation, window-aware (M6-D5/D7).
@@ -19,6 +20,7 @@ export function CancelBookingCard({
   pickupAtIso,
   paid,
   timezone,
+  protectionCharged = false,
 }: {
   bookingRef: string;
   accessToken: string;
@@ -26,6 +28,8 @@ export function CancelBookingCard({
   paid: boolean;
   /** Team timezone — the 72h deadline renders as the team-local date (T-6). */
   timezone?: string;
+  /** MP-30: the booking already carries a Protect charge (made before the flip), so the forfeit sentence still names it. */
+  protectionCharged?: boolean;
 }) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
@@ -67,13 +71,7 @@ export function CancelBookingCard({
     <div className={`mt-5 rounded-xl border p-4 ${free ? 'border-line bg-surface' : 'border-warn/45 bg-warn/10'}`}>
       <div className="text-body font-medium text-ink">{free ? 'Cancel this booking?' : 'Cancel and forfeit payments?'}</div>
       <p className="mt-1 text-body-sm leading-5 text-muted">
-        {free
-          ? paid
-            ? 'You are inside the free window — both charges will be refunded in full and the dates released.'
-            : 'Nothing has been charged — the reservation is simply released.'
-          : paid
-            ? 'The 72-hour window has passed: the rental, Trip Fees, and protection are non-refundable. Cancelling releases the dates without a refund.'
-            : 'The 72-hour window has passed. Nothing has been charged; the reservation is released.'}
+        {cancelNotice({ free, paid, protection: protectEnabled() || protectionCharged })}
       </p>
       <div className="mt-3 flex gap-2">
         <button type="button" onClick={cancel} disabled={working} className={`flex-1 rounded-xl px-4 py-3 text-body font-semibold disabled:opacity-60 ${free ? 'border border-line text-ink' : 'bg-danger text-goldInk'}`}>
@@ -86,4 +84,15 @@ export function CancelBookingCard({
       {error && <p className="mt-3 text-body-sm leading-5 text-ink">{error}</p>}
     </div>
   );
+}
+
+// TODO(PROTECT_ENABLED): see domain/booking/protect.ts. The forfeit-and-paid sentence names
+// protection only when the flag is on or the booking carries a Protect charge (protectionCharged).
+/** The confirming-state sentence (MP-30): today's four, byte for byte, except that the forfeit-and-paid one drops protection when `protection` is false. */
+export function cancelNotice({ free, paid, protection }: { free: boolean; paid: boolean; protection: boolean }): string {
+  if (free) return paid ? 'You are inside the free window — both charges will be refunded in full and the dates released.' : 'Nothing has been charged — the reservation is simply released.';
+  if (!paid) return 'The 72-hour window has passed. Nothing has been charged; the reservation is released.';
+  return protection
+    ? 'The 72-hour window has passed: the rental, Trip Fees, and protection are non-refundable. Cancelling releases the dates without a refund.'
+    : 'The 72-hour window has passed: the rental and Trip Fees are non-refundable. Cancelling releases the dates without a refund.';
 }

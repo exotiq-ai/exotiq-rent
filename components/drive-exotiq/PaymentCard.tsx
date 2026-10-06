@@ -10,6 +10,8 @@ import { paymentCountdownLabel, paymentWindowState } from '@/domain/booking/paym
 import { postRenterCheckout } from '@/domain/booking/rpcClient';
 import { getBookingConfirmation } from '@/domain/booking/service';
 import { ctaClassName } from '@/components/browse/tokens';
+// TODO(PROTECT_ENABLED): see domain/booking/protect.ts. The statement names protection only when the flag is on or this booking carries a Protect charge.
+import { mentionProtect } from '@/domain/booking/protect';
 
 const CONFIRM_POLL_MS = 3000;
 const CONFIRM_POLL_MAX = 40; // ~2 minutes of webhook grace
@@ -196,7 +198,7 @@ export function PaymentCard({
       <div className="mt-3 text-body">
         <div data-money="total" className="flex justify-between gap-3 border-t border-line pt-2 font-medium text-ink"><span>Total due</span><span className="text-gold"><Money cents={rentalCents + exotiqCents} large /></span></div>
       </div>
-      <p className="mt-2 text-body-sm leading-5 text-faint">Two charges on your statement: the operator&apos;s rental, and an EXOTIQ RENT charge covering Trip fees, protection, the state rental fee and card processing. One card entry.</p>
+      <p className="mt-2 text-body-sm leading-5 text-faint">Two charges on your statement: the operator&apos;s rental, and an EXOTIQ RENT charge covering Trip fees, {mentionProtect(protectionTotalCents) && 'protection, '}the state rental fee and card processing. One card entry.</p>
       <button
         type="button"
         onClick={pay}

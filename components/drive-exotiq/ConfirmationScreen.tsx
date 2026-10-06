@@ -12,6 +12,8 @@ import { foldFees } from './feeGroups';
 import { IdentityVerificationCard } from './IdentityVerificationCard';
 import { PaymentCard } from './PaymentCard';
 import { microLabelClassName } from '@/components/browse/tokens';
+// TODO(PROTECT_ENABLED): see domain/booking/protect.ts. The requested note and the cancel card name protection only when the flag is on or the booking carries a Protect charge.
+import { mentionProtect } from '@/domain/booking/protect';
 
 // Operator avatar initials — was a hardcoded "DE" (Drive Exotiq) for every
 // tenant (T-8). Two significant words max, so "Exotics By The Bay" → "EB".
@@ -203,7 +205,7 @@ export async function ConfirmationScreen({
           <div className="mt-4 border-t border-line pt-4">
             <div className="mb-1 text-body font-medium">Operator rental total</div>
             <div className="flex justify-between border-t border-line py-3 text-body"><span className="text-muted">Charged by {cart.operator.name}</span><Money cents={live.totalCents} /></div>
-            <p className="text-body-sm leading-5 text-faint">Trip fees and protection are itemized at payment, once the operator approves.</p>
+            <p className="text-body-sm leading-5 text-faint">{mentionProtect(live.protectionTotalCents) ? 'Trip fees and protection are itemized at payment, once the operator approves.' : 'Trip fees are itemized at payment, once the operator approves.'}</p>
           </div>
         )}
         <div className="mt-4 border-t border-line pt-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface2 text-ink">{initialsOf(cart.operator.name)}</div><div className="flex-1"><div className="text-body font-medium">{cart.operator.name}</div><div className="text-body-sm text-muted">{terminal ? (cart.operator.phone ? 'Questions about this booking? Call any time.' : 'Questions about this booking? Reply to your confirmation email.') : 'Will reach out before pickup'}</div></div>{(live?.supportEmail ?? cart.operator.supportEmail) && <a href={`mailto:${live?.supportEmail ?? cart.operator.supportEmail}`} className="rounded-full border border-line2 p-2 text-muted transition hover:text-ink" aria-label="Email operator"><Mail size={16} /></a>}{(live?.supportPhone ?? cart.operator.phone) && <a href={`tel:${live?.supportPhone ?? cart.operator.phone}`} className="rounded-full border border-line2 p-2 text-muted transition hover:text-ink" aria-label="Call operator"><Phone size={16} /></a>}</div></div>
@@ -233,6 +235,7 @@ export async function ConfirmationScreen({
             pickupAtIso={live.startAt}
             paid={Boolean(live.paidAt)}
             timezone={tz}
+            protectionCharged={(live.protectionTotalCents ?? 0) > 0}
           />
         )}
         {!terminal && (
