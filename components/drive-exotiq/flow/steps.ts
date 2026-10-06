@@ -40,3 +40,10 @@ export function requestButtonState({ blocked, pending, termsAccepted, requesting
   if (!termsAccepted) return { label: 'Request this booking', inert: true };
   return { label: 'Request this booking', inert: false };
 }
+
+/** AC21: a handler that does nothing while a request is in flight. */
+export function whileIdle<A extends unknown[]>(requesting: boolean, handler: (...args: A) => void): (...args: A) => void {
+  return (...args) => {
+    if (!requesting) handler(...args);
+  };
+}

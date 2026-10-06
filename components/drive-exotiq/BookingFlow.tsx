@@ -50,7 +50,8 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
   const [reserving, setReserving] = useState(false);
   const [reserveError, setReserveError] = useState<string | undefined>();
   const next = () => setStep((value) => Math.min(value + 1, FLOW_STEPS.length));
-  const back = step > 1 ? () => setStep((value) => value - 1) : undefined;
+  // Back freezes with the step while a request is in flight (AC21 driver ruling).
+  const back = step > 1 && !reserving ? () => setStep((value) => value - 1) : undefined;
 
   // Funnel: one event per step reached after the first (the book page's own
   // mount already records book_start). Renter details never ride along.

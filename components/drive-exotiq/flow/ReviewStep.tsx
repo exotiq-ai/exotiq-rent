@@ -10,7 +10,7 @@ import { formatMoney } from '@/domain/booking/totals';
 import type { BookingCart, BookingTotals, ProtectionTier } from '@/domain/booking/types';
 import type { PublicQuote } from '@/domain/booking/publicContracts';
 import { DepositDisclosure, QuoteNotice, ScreenShell, StepHeader, Sticky } from './shared';
-import { requestButtonState, stepEyebrow } from './steps';
+import { requestButtonState, stepEyebrow, whileIdle } from './steps';
 import { renterCaptureUiEnabled } from '@/domain/renters/flags';
 import { CONSENT_TEXT } from '@/domain/renters/consentText';
 
@@ -62,6 +62,11 @@ export function ReviewStep({
   const [termsAccepted, setTermsAccepted] = useState(false);
   const protectionOn = cart.protection !== 'decline';
   const button = requestButtonState({ blocked: Boolean(blocked), pending: Boolean(quotePending), termsAccepted, requesting });
+  // A request in flight freezes the payload controls: reserve posts the cart as it was at the
+  // click, so a change made now would show on screen and never reach the booking.
+  const onProtect = onProtectionChange && whileIdle(requesting, onProtectionChange);
+  const onConsent = onMarketingConsentChange && whileIdle(requesting, onMarketingConsentChange);
+  const toDates = whileIdle(requesting, () => goTo(1));
 
   if (blocked) {
     return (
@@ -98,13 +103,14 @@ export function ReviewStep({
   return (
     <>
       <ScreenShell>
+        <div aria-busy={requesting || undefined}>
         <StepHeader eyebrow={stepEyebrow(3)} title="Here's the breakdown." sub="Nothing is charged yet." />
         <div className="grid grid-cols-3 gap-2 border-t border-line pt-3 text-center text-label"><div><span className="block text-faint">Dates</span>{dateLabel}</div><div><span className="block text-faint">Pickup</span>{cart.pickupTime}</div><div><span className="block text-faint">Location</span>{cart.operator.city}</div></div>
-        {/* Only the Rental row is navigable: it returns to the dates step. */}
+        {/* Only the Rental row is navigable: it returns to the dates step, never mid-request. */}
         <TwoPartyBreakdown
           groups={groups}
-          onRentalClick={() => goTo(1)}
-          between={onProtectionChange && <ProtectSwitch cart={cart} m={m} protectionOn={protectionOn} onProtectionChange={onProtectionChange} />}
+          onRentalClick={requesting ? undefined : toDates}
+          between={onProtect && <ProtectSwitch cart={cart} m={m} protectionOn={protectionOn} onProtectionChange={onProtect} disabled={requesting} />}
         />
         <div className="mt-4 border-t border-line pt-4">
           <div data-money="total" className="flex items-center justify-between gap-3"><span className="text-body text-muted">Total once approved</span><span className="text-gold"><Money cents={m.grandTotalCents} large /></span></div>
@@ -148,12 +154,13 @@ export function ReviewStep({
           <span>I agree to the <span className="text-ink underline decoration-faint underline-offset-2">Rental Terms &amp; Conditions</span>.</span>
         </label>
         {/* MP-14: opt-in, unchecked, never required. Posted with the booking. */}
-        {onMarketingConsentChange && renterCaptureUiEnabled() && (
+        {onConsent && renterCaptureUiEnabled() && (
           <label className="mt-3 flex gap-3 px-1 text-body-sm leading-5 text-muted">
-            <input type="checkbox" checked={Boolean(cart.driver.marketingConsent)} onChange={(event) => onMarketingConsentChange(event.target.checked)} className="control-check mt-0.5" />
+            <input type="checkbox" checked={Boolean(cart.driver.marketingConsent)} disabled={requesting} onChange={(event) => onConsent(event.target.checked)} className="control-check mt-0.5" />
             <span>{CONSENT_TEXT.booking.text}</span>
           </label>
         )}
+        </div>
       </ScreenShell>
       <Sticky>
         {requestError && <p className="rounded-xl border border-danger/45 bg-danger/10 p-3 text-center text-body-sm leading-5 text-ink">{requestError}</p>}
@@ -177,11 +184,14 @@ function ProtectSwitch({
   m,
   protectionOn,
   onProtectionChange,
+  disabled,
 }: {
   cart: BookingCart;
   m: PublicQuote | BookingTotals;
   protectionOn: boolean;
   onProtectionChange: (tier: ProtectChoice) => void;
+  /** AC21: frozen while a request is in flight; the class string never changes. */
+  disabled: boolean;
 }) {
   return (
     <div className="mt-4 border-t border-line pt-4">
@@ -203,6 +213,7 @@ function ProtectSwitch({
           aria-checked={protectionOn}
           aria-label="Exotiq Protect"
           onClick={() => onProtectionChange(protectionOn ? 'decline' : 'premium')}
+          disabled={disabled}
           className={`relative h-7 w-12 shrink-0 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-panel ${protectionOn ? 'bg-gold' : 'bg-line'}`}
         >
           <span className={`absolute top-1 h-5 w-5 rounded-full bg-ink shadow-[0_1px_2px_rgba(0,0,0,.4)] transition-all ${protectionOn ? 'left-6' : 'left-1'}`} />

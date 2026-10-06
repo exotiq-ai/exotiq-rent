@@ -145,8 +145,28 @@ export type InflightProbe = {
 };
 
 export function inflightProbeProblems(probe: InflightProbe): string[] {
-  void probe;
-  return [];
+  const p: string[] = [];
+  const { atSend: send, inFlight: f, received: got } = probe;
+  if (!(probe.delayMs >= 1000)) p.push(`delayMs ${probe.delayMs}: the answer must be held at least 1000ms`);
+  // The probe must have something to protect: non-default values at the click, or a dropped click would pass.
+  if (send.step !== 3) p.push(`atSend: step ${send.step}, expected 3`);
+  if (send.protection !== 'decline' || send.consent !== true) p.push(`atSend: default values (protection ${send.protection}, consent ${send.consent}); flip Protect off and tick the opt-in first`);
+  for (const [name, ctl] of [['switch', f.switch], ['opt-in', f.optIn], ['rental', f.rental]] as const) if (!ctl.clicked) p.push(`${name}: never clicked during flight`);
+  if (f.ariaBusy !== 'true') p.push(`aria-busy ${f.ariaBusy}, expected "true"`);
+  if (f.buttonLabel !== 'Sending request…') p.push(`button "${f.buttonLabel}", expected "Sending request…"`);
+  if (f.step !== 3) p.push(`step ${f.step} during flight, expected 3`);
+  if (!f.switch.disabled) p.push('switch: not disabled during flight');
+  if (f.switch.checkedBefore !== f.switch.checkedAfter) p.push(`switch: aria-checked ${f.switch.checkedBefore} -> ${f.switch.checkedAfter} during flight`);
+  if (!f.optIn.disabled) p.push('opt-in: not disabled during flight');
+  if (f.optIn.checkedBefore !== f.optIn.checkedAfter) p.push(`opt-in: checked ${f.optIn.checkedBefore} -> ${f.optIn.checkedAfter} during flight`);
+  if (f.rental.enabledButton) p.push('rental: an enabled button during flight');
+  if (f.rental.stepBefore !== 3 || f.rental.stepAfter !== 3) p.push(`rental: step ${f.rental.stepBefore} -> ${f.rental.stepAfter}, expected 3 -> 3`);
+  if (f.terms.disabled) p.push('terms: disabled (not a payload control)');
+  if (f.tripFees.disabled) p.push('Trip fees: disabled (not a payload control)');
+  if (!f.chromeBack.disabled) p.push('chrome Back: enabled during flight (driver ruling: it freezes)');
+  if (got.bookingProtection !== send.protection) p.push(`received: rent-create-booking protection ${got.bookingProtection}, sent at the click ${send.protection}`);
+  if (got.captureConsent !== send.consent) p.push(`received: capture consent ${got.captureConsent}, at the click ${send.consent}`);
+  return p;
 }
 
 function goodInflight(): InflightProbe {
