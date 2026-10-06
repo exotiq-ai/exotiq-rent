@@ -14,8 +14,8 @@ import { recomputeBookingCart } from './flow/state';
 import type { BookingCart, Operator, Vehicle } from '@/domain/booking/types';
 import { DatesStep } from './flow/DatesStep';
 import { DriverStep } from './flow/DriverStep';
-import { PayStep } from './flow/PayStep';
 import { ReviewStep } from './flow/ReviewStep';
+import { FLOW_STEPS, shouldRequestQuote } from './flow/steps';
 import { captureBooking } from '@/components/renters/bookingCapture';
 import { eyebrowClassName, serifStyle } from '@/components/browse/tokens';
 
@@ -49,8 +49,9 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
   });
   const [reserving, setReserving] = useState(false);
   const [reserveError, setReserveError] = useState<string | undefined>();
-  const next = () => setStep((value) => Math.min(value + 1, 4));
-  const back = step > 1 ? () => setStep((value) => value - 1) : undefined;
+  const next = () => setStep((value) => Math.min(value + 1, FLOW_STEPS.length));
+  // Back freezes with the step while a request is in flight (AC21 driver ruling).
+  const back = step > 1 && !reserving ? () => setStep((value) => value - 1) : undefined;
 
   // Funnel: one event per step reached after the first (the book page's own
   // mount already records book_start). Renter details never ride along.
@@ -84,15 +85,15 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
     }
   }, [cart]);
 
-  // Quote once the renter reaches the commit steps, and re-quote whenever the
-  // priced selection changes underneath them (e.g. they step back and edit).
-  // Review is step 3 now that Extras and Protect are gone — this threshold
-  // moved with them. If it drifts high the renter reaches Review before a
-  // quote is requested and sees the blocked state for no reason; if it drifts
-  // low we quote on every date tap and burn the anonymous rate limit.
+  // Quote once the renter reaches Review & Request, the one step that holds
+  // the request button, and re-quote whenever the priced selection changes
+  // underneath it (they step back and edit, or flip Protect: the tier is part
+  // of quoteKey). shouldRequestQuote holds the rule and its threshold: set too
+  // high, the renter lands on the step blocked for no reason; too low, every
+  // date tap spends the anonymous rate limit. A failed quote for the current
+  // selection waits for the renter's retry.
   useEffect(() => {
-    if (!quotingEnabled() || step < 3) return;
-    if (quoteState.status !== 'idle' && quoteState.key === currentKey) return;
+    if (!shouldRequestQuote({ step, enabled: quotingEnabled(), state: quoteState, currentKey })) return;
     void refreshQuote();
   }, [step, currentKey, quoteState, refreshQuote]);
 
@@ -146,14 +147,16 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
   );
 
   return (
-    <BookingChrome step={step + 1} onBack={back} closeHref={`/${cart.operator.slug}`} rail={rail}>
+    <BookingChrome step={step} stepTotal={FLOW_STEPS.length} onBack={back} closeHref={`/${cart.operator.slug}`} rail={rail}>
       {step === 1 && <DatesStep cart={cart} setCart={setCart} next={next} />}
       {step === 2 && <DriverStep cart={cart} setCart={setCart} next={next} />}
       {step === 3 && (
         <ReviewStep
           cart={cart}
           goTo={setStep}
-          next={next}
+          onRequest={reserve}
+          requesting={reserving}
+          requestError={reserveError}
           quote={quote}
           quotePending={quoteState.status === 'loading'}
           quoteError={quoteState.status === 'error' && quoteState.key === currentKey ? quoteState.message : undefined}
@@ -165,19 +168,6 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
           // no path to committing against the old tier's total.
           onProtectionChange={(tier) => setCart(recomputeBookingCart({ ...cart, protection: tier }))}
           onMarketingConsentChange={(checked) => setCart({ ...cart, driver: { ...cart.driver, marketingConsent: checked } })}
-        />
-      )}
-      {step === 4 && (
-        <PayStep
-          cart={cart}
-          onPay={reserve}
-          paying={reserving}
-          payError={reserveError}
-          quote={quote}
-          quotePending={quoteState.status === 'loading'}
-          quoteError={quoteState.status === 'error' && quoteState.key === currentKey ? quoteState.message : undefined}
-          onRetryQuote={refreshQuote}
-          blocked={quoteBlocking}
         />
       )}
     </BookingChrome>

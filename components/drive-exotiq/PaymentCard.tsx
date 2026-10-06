@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Clock3, CreditCard } from 'lucide-react';
 import { Money } from './BookingChrome';
+import { TwoPartyBreakdown } from './FeeCard';
+import { foldFees } from './feeGroups';
 import { paymentCountdownLabel, paymentWindowState } from '@/domain/booking/payment';
 import { postRenterCheckout } from '@/domain/booking/rpcClient';
 import { getBookingConfirmation } from '@/domain/booking/service';
@@ -175,15 +177,26 @@ export function PaymentCard({
           {paymentCountdownLabel(dueAtIso, nowMs)}
         </span>
       </div>
-      <div className="mt-4 space-y-2 border-t border-line pt-3 text-body">
-        <div className="flex justify-between gap-3"><span className="text-muted">{operatorName} rental</span><Money cents={rentalCents - operatorTaxCents} /></div>
-        {operatorTaxCents > 0 && (
-          <div className="flex justify-between gap-3"><span className="text-muted">{operatorTaxLabel ?? 'Tax'} — {operatorName}</span><Money cents={operatorTaxCents} /></div>
-        )}
-        <div className="flex justify-between gap-3"><span className="text-muted">Protection &amp; fees</span><Money cents={exotiqCents} /></div>
-        <div className="flex justify-between gap-3 border-t border-line pt-2 font-medium text-ink"><span>Total due</span><span className="text-gold"><Money cents={rentalCents + exotiqCents} large /></span></div>
+      {/* The two charges, each itemised and subtotalled (MP-26). This surface
+          holds no platform percent or state-fee label, so the Trip-fees detail
+          uses generic labels rather than guessing either. */}
+      <TwoPartyBreakdown
+        groups={foldFees({
+          operatorName,
+          operatorTotalCents: rentalCents,
+          operatorTaxCents,
+          operatorTaxLabel,
+          platformFeeCents,
+          protectionTotalCents,
+          stateFeeCents,
+          processingFeeCents,
+          exotiqTotalCents: exotiqCents,
+        })}
+      />
+      <div className="mt-3 text-body">
+        <div data-money="total" className="flex justify-between gap-3 border-t border-line pt-2 font-medium text-ink"><span>Total due</span><span className="text-gold"><Money cents={rentalCents + exotiqCents} large /></span></div>
       </div>
-      <p className="mt-2 text-body-sm leading-5 text-faint">Two charges on your statement: the operator&apos;s rental, and an EXOTIQ RENT charge covering Trip Fees, protection, the state rental fee and card processing. One card entry.</p>
+      <p className="mt-2 text-body-sm leading-5 text-faint">Two charges on your statement: the operator&apos;s rental, and an EXOTIQ RENT charge covering Trip fees, protection, the state rental fee and card processing. One card entry.</p>
       <button
         type="button"
         onClick={pay}

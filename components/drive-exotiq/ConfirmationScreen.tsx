@@ -7,6 +7,8 @@ import { formatMoney } from '@/domain/booking/totals';
 import { HTitle, Money, PhoneViewport } from './BookingChrome';
 import { CancelBookingCard } from './CancelBookingCard';
 import { ConfirmationActions } from './ConfirmationActions';
+import { TwoPartyBreakdown } from './FeeCard';
+import { foldFees } from './feeGroups';
 import { IdentityVerificationCard } from './IdentityVerificationCard';
 import { PaymentCard } from './PaymentCard';
 import { microLabelClassName } from '@/components/browse/tokens';
@@ -133,10 +135,23 @@ export async function ConfirmationScreen({
           <>
             <div className="mt-4 border-t border-line pt-4">
               <div className="mb-3 text-body font-medium">Charges</div>
-              <div className="flex justify-between border-t border-line py-3 text-body"><span><span className="block">Operator rental charge</span><span className="text-label text-faint">Charged by {cart.operator.name}</span></span><Money cents={cart.totals.operatorTotalCents} /></div>
-              <div className="flex justify-between border-t border-line py-3 text-body"><span><span className="block">Trip Fees ({platformPercent}%)</span><span className="text-label text-faint">Calculated on the rental only</span></span><Money cents={cart.totals.platformFeeCents} /></div>
-              <div className="flex justify-between border-t border-line py-3 text-body"><span><span className="block">Protection (included)</span><span className="text-label text-faint">Included in EXOTIQ RENT charge</span></span><Money cents={cart.totals.protectionTotalCents} /></div>
-              <div className="flex justify-between border-t border-line py-3 text-body font-medium"><span>Exotiq total</span><Money cents={cart.totals.exotiqTotalCents} /></div>
+              {/* The demo cart's own figures (no tax, no state fee, no processing);
+                  the page's Total tile above is their sum. */}
+              <TwoPartyBreakdown
+                groups={foldFees({
+                  operatorName: cart.operator.name,
+                  operatorTotalCents: cart.totals.operatorTotalCents,
+                  operatorTaxCents: cart.totals.operatorTaxesCents,
+                  days: cart.totals.days,
+                  dailyRateCents: cart.vehicle.dailyRateCents,
+                  platformFeeCents: cart.totals.platformFeeCents,
+                  platformFeePercent: platformPercent,
+                  protectionTotalCents: cart.totals.protectionTotalCents,
+                  stateFeeCents: 0,
+                  processingFeeCents: 0,
+                  exotiqTotalCents: cart.totals.exotiqTotalCents,
+                })}
+              />
             </div>
             <div className="mt-4 rounded-xl border border-dashed border-dim2 bg-field p-4">
               <div className="mb-3 flex items-center gap-2 text-body font-medium"><LockKeyhole size={16} className="text-muted" />Damage deposit at pickup</div>
@@ -165,20 +180,30 @@ export async function ConfirmationScreen({
             <div className="mb-1 text-body font-medium">Paid — your receipt</div>
             {/* Tax is INSIDE totalCents (operator leg snapshot, T-11): itemise
                 it, never add it to a total again. Old bookings carry 0/absent
-                and render the single row exactly as before. */}
-            <div className="flex justify-between border-t border-line py-3 text-body"><span><span className="block text-muted">{cart.operator.name} rental</span><span className="text-label text-faint">{(live.operatorTaxCents ?? 0) > 0 ? `Statement shows ${cart.operator.name} — one charge including tax` : `Appears as ${cart.operator.name} on your statement`}</span></span><Money cents={live.totalCents - (live.operatorTaxCents ?? 0)} /></div>
-            {(live.operatorTaxCents ?? 0) > 0 && (
-              <div className="flex justify-between border-t border-line py-3 text-body"><span className="text-muted">{live.operatorTaxLabel ?? 'Tax'} — charged by {cart.operator.name}</span><Money cents={live.operatorTaxCents ?? 0} /></div>
-            )}
-            <div className="flex justify-between border-t border-line py-3 text-body"><span><span className="block text-muted">Trip Fees + protection</span><span className="text-label text-faint">Appears as EXOTIQ RENT</span></span><Money cents={exotiqLegCents} /></div>
-            <div className="flex justify-between border-t border-line py-3 text-body font-medium"><span>Total paid</span><Money cents={live.totalCents + exotiqLegCents} /></div>
+                tax and show the rental line alone. Only plain data crosses
+                into the client card. */}
+            <TwoPartyBreakdown
+              groups={foldFees({
+                operatorName: cart.operator.name,
+                operatorTotalCents: live.totalCents,
+                operatorTaxCents: live.operatorTaxCents ?? 0,
+                operatorTaxLabel: live.operatorTaxLabel,
+                platformFeeCents: live.platformFeeCents ?? 0,
+                protectionTotalCents: live.protectionTotalCents ?? 0,
+                stateFeeCents: live.stateFeeCents ?? 0,
+                processingFeeCents: live.processingFeeCents ?? 0,
+                exotiqTotalCents: exotiqLegCents,
+              })}
+              operatorNote={(live.operatorTaxCents ?? 0) > 0 ? `Statement shows ${cart.operator.name} — one charge including tax` : `Appears as ${cart.operator.name} on your statement`}
+            />
+            <div data-money="total" className="mt-3 flex justify-between gap-3 border-t border-line py-3 text-body font-medium"><span>Total paid</span><Money cents={live.totalCents + exotiqLegCents} /></div>
           </div>
         )}
         {live && !terminal && !live.paidAt && live.status !== 'pending_payment' && (
           <div className="mt-4 border-t border-line pt-4">
             <div className="mb-1 text-body font-medium">Operator rental total</div>
             <div className="flex justify-between border-t border-line py-3 text-body"><span className="text-muted">Charged by {cart.operator.name}</span><Money cents={live.totalCents} /></div>
-            <p className="text-body-sm leading-5 text-faint">Trip Fees and protection are itemized at payment, once the operator approves.</p>
+            <p className="text-body-sm leading-5 text-faint">Trip fees and protection are itemized at payment, once the operator approves.</p>
           </div>
         )}
         <div className="mt-4 border-t border-line pt-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface2 text-ink">{initialsOf(cart.operator.name)}</div><div className="flex-1"><div className="text-body font-medium">{cart.operator.name}</div><div className="text-body-sm text-muted">{terminal ? (cart.operator.phone ? 'Questions about this booking? Call any time.' : 'Questions about this booking? Reply to your confirmation email.') : 'Will reach out before pickup'}</div></div>{(live?.supportEmail ?? cart.operator.supportEmail) && <a href={`mailto:${live?.supportEmail ?? cart.operator.supportEmail}`} className="rounded-full border border-line2 p-2 text-muted transition hover:text-ink" aria-label="Email operator"><Mail size={16} /></a>}{(live?.supportPhone ?? cart.operator.phone) && <a href={`tel:${live?.supportPhone ?? cart.operator.phone}`} className="rounded-full border border-line2 p-2 text-muted transition hover:text-ink" aria-label="Call operator"><Phone size={16} /></a>}</div></div>

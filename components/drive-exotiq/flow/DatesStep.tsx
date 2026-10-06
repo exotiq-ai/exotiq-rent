@@ -22,6 +22,7 @@ import { EmailCaptureForm } from '@/components/renters/EmailCaptureForm';
 import { renterCaptureUiEnabled } from '@/domain/renters/flags';
 import { MAX_WINDOW_DAYS, daysBetween } from '@/domain/booking/marketplaceQuery';
 import { recomputeBookingCart } from './state';
+import { stepEyebrow } from './steps';
 import { eyebrowClassName, microLabelClassName } from '@/components/browse/tokens';
 
 // value is what the booking stores and what the backend casts into a
@@ -141,7 +142,7 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
   return (
     <>
       <ScreenShell>
-        <StepHeader eyebrow="Step 02" title="When are you driving?" sub={`${cart.vehicle.minRentalDays}-day minimum · from ${formatMoney(cart.vehicle.dailyRateCents)}/day`} />
+        <StepHeader eyebrow={stepEyebrow(1)} title="When are you driving?" sub={`${cart.vehicle.minRentalDays}-day minimum · from ${formatMoney(cart.vehicle.dailyRateCents)}/day`} />
         <div className="mt-4 flex items-center justify-between px-1">
           <button type="button" onClick={() => canGoPrev && setVisibleMonth(addMonths(visibleMonth, -1))} disabled={!canGoPrev} className="grid h-8 w-8 place-items-center rounded-lg text-muted transition hover:bg-surface hover:text-ink disabled:opacity-30" aria-label="Previous month"><ChevronLeft size={16} /></button>
           <span className="text-body font-medium tracking-[-0.005em]">{monthLabel(visibleMonth)}</span>

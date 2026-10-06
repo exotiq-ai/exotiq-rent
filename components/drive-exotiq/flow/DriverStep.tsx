@@ -7,6 +7,7 @@ import { caretAfterDigits, digitsBefore, displayFromIso, maskDob } from '@/domai
 import { PrimaryButton } from '../BookingChrome';
 import type { BookingCart, Driver } from '@/domain/booking/types';
 import { ScreenShell, StepHeader, Sticky } from './shared';
+import { stepEyebrow } from './steps';
 
 function ageOn(dobIso: string, onIso: string): number {
   const dob = new Date(`${dobIso}T00:00:00Z`);
@@ -50,8 +51,9 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
     Boolean(cart.driver.dob) &&
     cart.driver.phone.replace(/\D/g, '').length >= 10 &&
     (cart.driver.email ?? '').includes('@');
-  // ID verification is post-payment via Stripe Identity (ID plan V1 ruling);
-  // insurance is handled with the operator before pickup, not collected here.
+  // ID verification runs through Stripe Identity once the booking request
+  // exists (the confirmation page offers it from then on); insurance is
+  // handled with the operator before pickup, not collected here.
   const canContinue = fieldsComplete && !tooYoung;
 
   // Placeholder was #3D4250 (~1.6:1 on the field): the four boxes read as empty. #848A9A clears 4.5:1 (MP-11).
@@ -61,7 +63,7 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
   return (
     <>
       <ScreenShell>
-        <StepHeader eyebrow="Step 03" title="Who's driving?" sub="Takes about a minute." />
+        <StepHeader eyebrow={stepEyebrow(2)} title="Who's driving?" sub="Takes about a minute." />
         <div className="rounded-xl border border-line bg-surface p-4">
           <label className="block">
             <span className={label}>Full name</span>
@@ -121,7 +123,7 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
           <IdCard size={16} className="mt-0.5 shrink-0 text-muted" />
           <div>
             <div className="text-body font-medium text-ink">ID check comes after booking</div>
-            <p className="mt-1 text-body-sm leading-5 text-muted">You&apos;ll verify your identity right after payment — takes two minutes, have your license ready.</p>
+            <p className="mt-1 text-body-sm leading-5 text-muted">You&apos;ll verify your identity right after you request the booking — takes about two minutes, have your license ready.</p>
           </div>
         </div>
       </ScreenShell>
