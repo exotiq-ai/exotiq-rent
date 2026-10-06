@@ -24,7 +24,7 @@ import { BookingFlow } from '@/components/drive-exotiq/BookingFlow';
 import { DatesStep } from '@/components/drive-exotiq/flow/DatesStep';
 import { DriverStep } from '@/components/drive-exotiq/flow/DriverStep';
 import { ReviewStep } from '@/components/drive-exotiq/flow/ReviewStep';
-import { quoteKey, type QuoteState } from '@/domain/booking/quote';
+import { quoteKey } from '@/domain/booking/quote';
 import { stripComments } from '../design/lib/scan.mjs';
 import { openTags } from '../restraint/restraintScan';
 import { NOW_ISO, OPERATOR, VEHICLE, fixture, parseHtml, elements, classes, norm, textOf, quoteOf, reviewCartOf } from './fixtures';
@@ -163,8 +163,8 @@ describe('MP-26 flow: three steps (AC7, AC8, AC10, AC12)', () => {
     const rendered: [string, string | undefined, string][] = [
       ['DatesStep', eyebrowText(renderToStaticMarkup(createElement(DatesStep, { cart, setCart: noop, next: noop }))), 'Step 1 of 3'],
       ['DriverStep', eyebrowText(renderToStaticMarkup(createElement(DriverStep, { cart, setCart: noop, next: noop }))), 'Step 2 of 3'],
-      ['ReviewStep', eyebrowText(renderToStaticMarkup(createElement(Review, { cart, goTo: noop, next: noop, onRequest: noop, quote: q, onProtectionChange: noop }))), 'Step 3 of 3'],
-      ['ReviewStep blocked', eyebrowText(renderToStaticMarkup(createElement(Review, { cart, goTo: noop, next: noop, onRequest: noop, quote: null, blocked: true, quotePending: true }))), 'Step 3 of 3'],
+      ['ReviewStep', eyebrowText(renderToStaticMarkup(createElement(Review, { cart, goTo: noop, onRequest: noop, quote: q, onProtectionChange: noop }))), 'Step 3 of 3'],
+      ['ReviewStep blocked', eyebrowText(renderToStaticMarkup(createElement(Review, { cart, goTo: noop, onRequest: noop, quote: null, blocked: true, quotePending: true }))), 'Step 3 of 3'],
     ];
     for (const [label, got, want] of rendered) if (got !== want) problems.push(`${label} eyebrow "${got}", expected "${want}"`);
     for (const [rel, n] of [[DATES, 1], [DRIVER, 2]] as const) if (!src(rel).includes(`eyebrow={stepEyebrow(${n})}`)) problems.push(`${rel}: eyebrow not from stepEyebrow(${n})`);
@@ -214,7 +214,7 @@ describe('MP-26 flow: three steps (AC7, AC8, AC10, AC12)', () => {
     // Blocked (live mode before the quote arrives): the notice, no figure, no card, an inert button.
     const cart = reviewCartOf(fixture('FX-T1S1P1'));
     for (const [label, extra] of [['pending', { quotePending: true }], ['failed', { quoteError: 'We could not confirm final pricing.', onRetryQuote: noop }]] as const) {
-      const html = renderToStaticMarkup(createElement(Review, { cart, goTo: noop, next: noop, onRequest: noop, quote: null, blocked: true, ...extra }));
+      const html = renderToStaticMarkup(createElement(Review, { cart, goTo: noop, onRequest: noop, quote: null, blocked: true, ...extra }));
       const root = parseHtml(html);
       const text = norm(textOf(root));
       if (/\$\d/.test(text)) problems.push(`blocked ${label}: a $ figure is shown`);
@@ -228,7 +228,7 @@ describe('MP-26 flow: three steps (AC7, AC8, AC10, AC12)', () => {
     }
     // The terms box starts unticked, so a ready quote still renders an inert button; in flight it says so.
     for (const [label, extra, want] of [['ready, terms unticked', {}, 'Request this booking'], ['requesting', { requesting: true }, 'Sending request…']] as const) {
-      const root = parseHtml(renderToStaticMarkup(createElement(Review, { cart, goTo: noop, next: noop, onRequest: noop, quote: quoteOf(fixture('FX-T1S1P1')), onProtectionChange: noop, ...extra })));
+      const root = parseHtml(renderToStaticMarkup(createElement(Review, { cart, goTo: noop, onRequest: noop, quote: quoteOf(fixture('FX-T1S1P1')), onProtectionChange: noop, ...extra })));
       const buttons = elements(root).filter((e) => e.tag === 'button' && classes(e).includes('w-full'));
       const cta = buttons[buttons.length - 1];
       if (!cta || norm(textOf(cta)) !== want || !('disabled' in cta.attrs || cta.attrs['aria-disabled'] === 'true')) problems.push(`${label}: button "${cta ? norm(textOf(cta)) : ''}" ${cta && 'disabled' in cta.attrs ? 'inert' : 'ACTIVE'}`);
