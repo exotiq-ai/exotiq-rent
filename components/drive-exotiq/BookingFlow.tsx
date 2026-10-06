@@ -48,6 +48,13 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
     return recomputeBookingCart({ ...base5, driver: { name: '', dob: '', phone: '', email: '' } });
   });
   const [reserving, setReserving] = useState(false);
+  // MP-18 (driver errata #2): the flow's polite status region, mounted from the first paint so a
+  // screen reader announces what a step writes into it. The Driver step writes its missing-field
+  // summary here; a new step starts it empty.
+  const [announcement, setAnnouncement] = useState('');
+  useEffect(() => {
+    setAnnouncement('');
+  }, [step]);
   const [reserveError, setReserveError] = useState<string | undefined>();
   const next = () => setStep((value) => Math.min(value + 1, FLOW_STEPS.length));
   // Back freezes with the step while a request is in flight (AC21 driver ruling).
@@ -149,7 +156,7 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
   return (
     <BookingChrome step={step} onBack={back} closeHref={`/${cart.operator.slug}`} rail={rail}>
       {step === 1 && <DatesStep cart={cart} setCart={setCart} next={next} />}
-      {step === 2 && <DriverStep cart={cart} setCart={setCart} next={next} />}
+      {step === 2 && <DriverStep cart={cart} setCart={setCart} next={next} announce={setAnnouncement} />}
       {step === 3 && (
         <ReviewStep
           cart={cart}
@@ -170,6 +177,7 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
           onMarketingConsentChange={(checked) => setCart({ ...cart, driver: { ...cart.driver, marketingConsent: checked } })}
         />
       )}
+      <p id="flow-status" role="status" aria-live="polite" className="sr-only">{announcement}</p>
     </BookingChrome>
   );
 }

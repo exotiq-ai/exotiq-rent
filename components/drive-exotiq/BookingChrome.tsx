@@ -185,13 +185,21 @@ export function HTitle({ children, className = '' }: { children: ReactNode; clas
   );
 }
 
-export function PrimaryButton({ children, onClick, disabled = false }: { children: ReactNode; onClick?: () => void; disabled?: boolean }) {
+/**
+ * `disabled` is inert: for states the renter cannot fix (pending quote, request in flight).
+ * `softDisabled` (MP-18) looks the same but stays focusable and keeps its onClick, marked
+ * aria-disabled: the handler explains what is missing instead of doing nothing. A real disable
+ * wins over a soft one. Without softDisabled the button renders exactly as before.
+ */
+export function PrimaryButton({ children, onClick, disabled = false, softDisabled = false }: { children: ReactNode; onClick?: () => void; disabled?: boolean; softDisabled?: boolean }) {
+  const soft = softDisabled && !disabled;
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`w-full rounded-xl px-5 py-4 text-body font-semibold disabled:cursor-not-allowed disabled:opacity-45 ${ctaClassName}`}
+      aria-disabled={soft ? true : undefined}
+      className={`w-full rounded-xl px-5 py-4 text-body font-semibold disabled:cursor-not-allowed disabled:opacity-45 ${ctaClassName}${soft ? ' cursor-not-allowed opacity-45' : ''}`}
     >
       {children}
     </button>
