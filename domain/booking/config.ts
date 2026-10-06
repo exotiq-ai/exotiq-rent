@@ -36,6 +36,19 @@ export function browseEnabled(): boolean {
 }
 
 /**
+ * Where a failure surface (the 404, the error boundary) sends the renter (MP-18, lifted from the
+ * 404). Tenant-neutral (T-8): booking mode lands on the default tenant's storefront through the
+ * same env the root redirect uses, never the mock tenant's slug; "Continue browsing", not "Browse
+ * the fleet": with several operators there is no single fleet to promise. The env reads are
+ * literal, so Next inlines them when the client error boundary bundles this module.
+ */
+export function homeLink(): { href: string; label: string } {
+  return getSiteMode() === 'marketplace'
+    ? { href: '/', label: 'Back to Drive Exotiq' }
+    : { href: `/${process.env.NEXT_PUBLIC_DEFAULT_TEAM_SLUG ?? 'exotiq'}`, label: 'Continue browsing' };
+}
+
+/**
  * Absolute origin of THIS deploy, for canonical URLs, the sitemap and OG
  * images. One build serves several hosts, so it must come from the
  * environment: NEXT_PUBLIC_SITE_URL when set, else the URL Netlify injects per
