@@ -19,6 +19,8 @@ const readOr = (rel: string) => (existsSync(join(REPO, rel)) ? read(rel) : '');
 const ENV = 'NEXT_PUBLIC_PROTECT_ENABLED';
 const BASE = process.env.MP30_BASE_REF ?? '';
 const git = (...a: string[]) => execFileSync('git', a, { cwd: REPO, encoding: 'utf8' }).trim();
+/** A file at the base, byte for byte (git() trims, which would drop the final newline). */
+const atBase = (rel: string) => execFileSync('git', ['show', `${BASE}:${rel}`], { cwd: REPO, encoding: 'utf8' });
 const lines = (s: string) => s.split('\n').map((l) => l.trim()).filter(Boolean);
 function walk(dir: string, out: string[] = []): string[] {
   if (!existsSync(join(REPO, dir))) return out; // lib/ does not exist in this repo
@@ -296,7 +298,7 @@ describe('MP-30 scope', () => {
     const changed = Array.from(new Set([...lines(git('diff', '--name-only', BASE)), ...lines(git('ls-files', '--others', '--exclude-standard'))]));
     problems.push(...scopeProblems(changed));
     problems.push(...lockstepProblems(git('diff', '-U0', BASE, '--', 'tests/fees/fees.surfaces.test.tsx')));
-    if (sliceFunction(stripComments(git('show', `${BASE}:${REVIEW}`)), 'ProtectSwitch') !== sliceFunction(stripComments(read(REVIEW)), 'ProtectSwitch')) problems.push('ProtectSwitch body differs from the base (comments aside)');
+    if (sliceFunction(stripComments(atBase(REVIEW)), 'ProtectSwitch') !== sliceFunction(stripComments(read(REVIEW)), 'ProtectSwitch')) problems.push('ProtectSwitch body differs from the base (comments aside)');
     expect(problems).toEqual([]);
   });
 
