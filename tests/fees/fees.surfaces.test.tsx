@@ -855,7 +855,7 @@ describe('MP-26 two-party money card on every surface', () => {
       const c = fixture(state.fixture as Parameters<typeof fixture>[0]);
       let markup: string;
       if (state.surface === 'review') {
-        markup = renderToStaticMarkup(<BookingChrome step={3} stepTotal={3} closeHref={`/${OPERATOR.slug}`}><Review cart={reviewCartOf(c)} goTo={noop} onRequest={noop} quote={quoteOf(c)} onProtectionChange={noop} onMarketingConsentChange={noop} /></BookingChrome>);
+        markup = renderToStaticMarkup(<BookingChrome step={3} closeHref={`/${OPERATOR.slug}`}><Review cart={reviewCartOf(c)} goTo={noop} onRequest={noop} quote={quoteOf(c)} onProtectionChange={noop} onMarketingConsentChange={noop} /></BookingChrome>);
         if (state.open) {
           // The detail open, as defaultOpen renders it: aria-expanded true and the region not hidden.
           const root = parseHtml(markup);

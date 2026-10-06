@@ -1,6 +1,6 @@
 // MP-26 AC7, AC8, AC10, AC12: the flow is three steps (Dates, Driver, Review & Request), the step
-// count is true for the flow and unchanged for every other caller, the quote still gates the
-// request exactly as before, and analytics are unchanged. Pure helpers are tested directly;
+// count is true for the flow and no other caller wears step chrome (MP-17 AC16), the quote still
+// gates the request exactly as before, and analytics are unchanged. Pure helpers are tested directly;
 // BookingFlow's wiring is pinned by source (comments stripped) and by react-dom/server renders.
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
@@ -18,17 +18,17 @@ vi.mock('next/navigation', () => ({
   notFound: () => { throw new Error('notFound'); },
 }));
 
-import { tone } from '@/components/browse/tokens';
 import { BookingChrome, PhoneViewport } from '@/components/drive-exotiq/BookingChrome';
 import { BookingFlow } from '@/components/drive-exotiq/BookingFlow';
 import { DatesStep } from '@/components/drive-exotiq/flow/DatesStep';
 import { DriverStep } from '@/components/drive-exotiq/flow/DriverStep';
 import { ReviewStep } from '@/components/drive-exotiq/flow/ReviewStep';
+import { FLOW_STEPS } from '@/components/drive-exotiq/flow/steps';
 import { quoteKey } from '@/domain/booking/quote';
 import { stripComments } from '../design/lib/scan.mjs';
 import { openTags } from '../restraint/restraintScan';
 import { NOW_ISO, OPERATOR, VEHICLE, fixture, parseHtml, elements, classes, norm, textOf, quoteOf, reviewCartOf } from './fixtures';
-import { barsStrip, numberedStrip, readGolden, REPO } from './goldens';
+import { REPO } from './goldens';
 
 const read = (rel: string) => readFileSync(join(REPO, rel), 'utf8');
 const src = (rel: string) => stripComments(read(rel));
@@ -90,12 +90,19 @@ export function flowSourceProblems(text: string): string[] {
   return problems;
 }
 
-/** AC8: the bars in a rendered step strip: count, and how many are filled (ink). */
-function bars(html: string): { count: number; filled: number } {
+/** AC16: the labelled items of a rendered flow progress, or null when there is none. */
+function progressItems(html: string): { label: string; state?: string; current: boolean }[] | null {
+  const nav = elements(parseHtml(html)).find((e) => e.tag === 'nav' && e.attrs['data-chrome'] === 'progress');
+  return nav ? elements(nav).filter((e) => e.tag === 'li').map((li) => ({ label: norm(textOf(li)), state: li.attrs['data-state'], current: li.attrs['aria-current'] === 'step' })) : null;
+}
+/** AC16: any step chrome in a render: a progress, a bar of the old strip, a numbered counter. */
+function stepChrome(html: string): string[] {
   const root = parseHtml(html);
-  const strip = elements(root).find((e) => e.tag === 'div' && classes(e).join(' ') === 'flex justify-center gap-1 px-4 pb-2 pt-0');
-  const spans = strip ? elements(strip).filter((e) => e.tag === 'span' && classes(e).includes('h-[3px]')) : [];
-  return { count: spans.length, filled: spans.filter((s) => (s.attrs.style ?? '').toLowerCase().includes(tone.ink.toLowerCase())).length };
+  const found: string[] = [];
+  if (progressItems(html) !== null) found.push('a progress');
+  if (elements(root).some((e) => classes(e).includes('h-[3px]'))) found.push('a step bar');
+  if (/\b0?\d\s*\/\s*0?\d\b/.test(norm(textOf(root)))) found.push('a step counter');
+  return found;
 }
 /** The StepHeader eyebrow text of a rendered step. */
 function eyebrowText(html: string): string | undefined {
@@ -133,29 +140,32 @@ describe('MP-26 flow: three steps (AC7, AC8, AC10, AC12)', () => {
     expect(problems).toEqual([]);
   });
 
-  it('the step indicator and eyebrows count three steps and other callers keep six', async () => {
+  it("the flow's progress names three steps and no other caller wears step chrome", async () => {
     const problems: string[] = [];
     const s = await steps();
     if (!s) problems.push('components/drive-exotiq/flow/steps.ts does not exist');
     else for (const n of [1, 2, 3]) if (s.stepEyebrow(n) !== `Step ${n} of 3`) problems.push(`stepEyebrow(${n}) = "${s.stepEyebrow(n)}"`);
 
-    // The flow's chrome: three bars, the first n filled.
+    // The flow's chrome: a named progress of the FLOW_STEPS labels, the steps before n done, n current.
     for (const n of [1, 2, 3]) {
-      const b = bars(renderToStaticMarkup(createElement(Chrome, { step: n, stepTotal: 3 }, createElement('p', null, 'x'))));
-      if (b.count !== 3 || b.filled !== n) problems.push(`BookingChrome step=${n} stepTotal=3: ${b.count} bars, ${b.filled} filled`);
+      const items = progressItems(renderToStaticMarkup(createElement(Chrome, { step: n }, createElement('p', null, 'x'))));
+      const want = FLOW_STEPS.map((st, i) => ({ label: st.label, state: i + 1 < n ? 'done' : i + 1 === n ? 'current' : 'upcoming', current: i + 1 === n }));
+      if (JSON.stringify(items) !== JSON.stringify(want)) problems.push(`BookingChrome step=${n}: ${JSON.stringify(items)}`);
     }
     const flow = src(FLOW);
     const chrome = openTags(flow, 'BookingChrome')[0] ?? '';
-    if (!chrome.includes('step={step}') || !chrome.includes('stepTotal={FLOW_STEPS.length}')) problems.push(`BookingFlow chrome: ${chrome}`);
+    if (!chrome.includes('step={step}') || /\bstepTotal\b/.test(chrome)) problems.push(`BookingFlow chrome: ${chrome}`);
     if (/step=\{step \+ 1\}/.test(flow)) problems.push('BookingFlow still hands step + 1 to the chrome');
 
-    // Every other caller keeps the default (six bars, or the numbered strip), equal to the base goldens.
-    if (barsStrip(renderToStaticMarkup(createElement(PhoneViewport, { step: 6, layout: 'panel', children: createElement('p', null, 'x') }))) !== readGolden('stepbar-default-6.html')) problems.push('PhoneViewport step=6 strip differs from the base golden');
-    if (numberedStrip(renderToStaticMarkup(createElement(PhoneViewport, { step: 1, stepStyle: 'numbered', layout: 'page', children: createElement('p', null, 'x') }))) !== readGolden('stepbar-numbered.html')) problems.push('PhoneViewport numbered strip differs from the base golden');
+    // No other caller wears step chrome: not the confirmation's panel, not the page layout, and no
+    // caller passes a step, a step style or a total.
+    const noStep = stepChrome(renderToStaticMarkup(createElement(PhoneViewport, { layout: 'panel', children: createElement('p', null, 'x') })));
+    if (noStep.length) problems.push(`a panel without a step renders ${noStep.join(', ')}`);
+    const page = stepChrome(renderToStaticMarkup(createElement(PhoneViewport, { layout: 'page', step: 1, children: createElement('p', null, 'x') })));
+    if (page.length) problems.push(`the page layout renders ${page.join(', ')}`);
     for (const rel of ['components/drive-exotiq/ConfirmationScreen.tsx', 'components/drive-exotiq/VehicleEntryPage.tsx', 'app/[operatorSlug]/page.tsx', 'app/not-found.tsx', 'app/booking/[bookingId]/not-found.tsx']) {
-      for (const tag of openTags(src(rel), 'PhoneViewport')) if (tag.includes('stepTotal')) problems.push(`${rel}: passes stepTotal`);
+      for (const tag of openTags(src(rel), 'PhoneViewport')) if (/\b(step|stepStyle|stepTotal)=/.test(tag)) problems.push(`${rel}: ${tag} wears step chrome`);
     }
-    if (!/function StepIndicator\(\{ step, total = 6,/.test(src('components/drive-exotiq/BookingChrome.tsx'))) problems.push('StepIndicator default total is not 6');
 
     // Eyebrows: rendered and in source; no literal "Step 0n" left in flow/*.tsx.
     const cart = reviewCartOf(fixture('FX-T1S1P1'));
@@ -173,8 +183,10 @@ describe('MP-26 flow: three steps (AC7, AC8, AC10, AC12)', () => {
     const flowDir = 'components/drive-exotiq/flow';
     for (const f of readdirSync(join(REPO, flowDir)).filter((f) => f.endsWith('.tsx'))) if (/Step 0\d/.test(src(`${flowDir}/${f}`))) problems.push(`${flowDir}/${f}: a literal "Step 0n" eyebrow`);
 
-    // Planted: six bars at stepTotal 3 and a step + 1 hand-off are caught.
-    expect(bars('<div class="flex justify-center gap-1 px-4 pb-2 pt-0"><span class="h-[3px] w-8" style="background-color:#F0F2F5"></span><span class="h-[3px] w-8"></span></div>')).toEqual({ count: 2, filled: 1 });
+    // Planted: a progress is read item by item, the old strip and counter are caught, and a step + 1 hand-off is caught.
+    expect(progressItems('<nav data-chrome="progress"><ol><li data-state="current" aria-current="step">Dates</li></ol></nav>')).toEqual([{ label: 'Dates', state: 'current', current: true }]);
+    expect(progressItems('<div>none</div>')).toBeNull();
+    expect(stepChrome('<div class="flex justify-center gap-1"><span class="h-[3px] w-8"></span></div><div><b>01</b><span> / 06</span></div>')).toEqual(['a step bar', 'a step counter']);
     expect(/step=\{step \+ 1\}/.test('<BookingChrome step={step + 1} />')).toBe(true);
 
     expect(problems).toEqual([]);

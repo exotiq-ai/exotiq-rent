@@ -109,7 +109,7 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
     return (
       <div className={driveFontClassName}>
         <TrackView event="storefront_view" properties={{ team: team.slug }} />
-        <PhoneViewport step={1} stepStyle="numbered" className="font-[var(--font-drive-inter)]" closeHref={`/${team.slug}`} layout="page" desktopNav={desktopNav}>
+        <PhoneViewport className="font-[var(--font-drive-inter)]" closeHref={`/${team.slug}`} layout="page" desktopNav={desktopNav}>
           <section className="flex flex-1 flex-col items-center justify-center px-6 text-center lg:py-32">
             <div className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-muted"><CarFront size={24} /></div>
             <HTitle className="mt-5 text-title">{team.name}</HTitle>
@@ -165,7 +165,7 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
   return (
     <div className={driveFontClassName}>
       <TrackView event="storefront_view" properties={{ team: team.slug }} />
-      <PhoneViewport step={1} stepStyle="numbered" className="font-[var(--font-drive-inter)]" closeHref={`/${team.slug}`} layout="page" desktopNav={desktopNav}>
+      <PhoneViewport className="font-[var(--font-drive-inter)]" closeHref={`/${team.slug}`} layout="page" desktopNav={desktopNav}>
         {/* From lg the frame no longer scrolls internally (see PhoneViewport
             'page'), so this section becomes ordinary page flow and the aside
             below can stick to the viewport. */}
