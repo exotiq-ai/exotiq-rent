@@ -15,11 +15,17 @@
 //   (verify lane, against the AC11 stub's live-mode build:)
 //   node scripts/fee-matrix.mjs --phase probe --base <live app> --evidence <dir> --surfaces payment,paid \
 //     --payment-path '/booking/<ref>?t=<token>' --paid-path '/booking/<ref>?t=<token>'
+//   (AC21, verify lane, the same stub with rent-create-booking answering after ~1.5 s:)
+//   node scripts/fee-matrix.mjs --phase inflight --base <live app> --evidence <dir> [--book-path <path>] [--stub <url>]
+//   (build-lane smoke on the mock app, which answers at once: --hold-navigation-ms 1500 aborts the
+//   /booking/ document navigation, which keeps the step in flight; delaying it does not, Chrome drops
+//   the page as soon as the intercepted navigation starts)
 //
 // Writes <dir>/screens/<phase>/<state>__<viewport>.png (fixture cells under screens/after), a
 // <dir>/screens/<phase>/_run.json per phase, the manifest <dir>/AC20-screenshot-matrix.json after
 // the after phase (it needs fixtures and before), and the probe files <dir>/AC4-a11y-probe-390.json
-// and <dir>/AC6-hierarchy-probe-390.json (merged per surface, so two probe runs add up).
+// and <dir>/AC6-hierarchy-probe-390.json (merged per surface, so two probe runs add up). The inflight
+// phase writes <dir>/AC21-inflight-probe.json (schema in tests/fees/fees.live.test.ts).
 //
 // Fixture pages are served from the branch build's own origin (request interception), so their
 // links to /_next assets, fonts and images resolve; their frame height is released to the content
@@ -369,6 +375,119 @@ async function probeSurface(browser, base, surface, opts, dates) {
   return { route: route.replace(/([?&]t=)[^&]+/, '$1REDACTED'), disclosure, hierarchy };
 }
 
+// ---- the AC21 in-flight probe ----------------------------------------------------------------
+
+/**
+ * AC21: send the request with non-default choices (Protect declined, the opt-in ticked), then, while
+ * rent-create-booking is pending, programmatically click the switch, the opt-in and the Rental row and
+ * read every control before and after. The request bodies are read off the wire (page.on('request')).
+ */
+const INFLIGHT_READ = () => {
+  const sw = document.querySelector('[role=switch][aria-label="Exotiq Protect"]');
+  const terms = [...document.querySelectorAll('label')].find((l) => l.textContent.replace(/\s+/g, ' ').trim() === 'I agree to the Rental Terms & Conditions.')?.querySelector('input');
+  const opt = [...document.querySelectorAll('label input.control-check')].find((i) => i !== terms);
+  const rental = document.querySelector('[data-money-line="rental"]');
+  const eyebrow = document.querySelector('h1')?.previousElementSibling?.textContent ?? '';
+  const cta = [...document.querySelectorAll('button')].find((b) => b.offsetParent !== null && ['Request this booking', 'Sending request…', 'Getting final pricing…'].includes(b.textContent.trim()));
+  return {
+    step: Number(/Step (\d+)/.exec(eyebrow)?.[1] ?? 0),
+    ariaBusy: document.querySelector('[aria-busy]')?.getAttribute('aria-busy') ?? null,
+    buttonLabel: cta?.textContent.trim() ?? null,
+    switchChecked: sw?.getAttribute('aria-checked') ?? null,
+    switchDisabled: Boolean(sw?.disabled),
+    optChecked: Boolean(opt?.checked),
+    optDisabled: Boolean(opt?.disabled),
+    rentalEnabledButton: Boolean(rental && ((rental.tagName === 'BUTTON' && !rental.disabled) || [...rental.querySelectorAll('button')].some((b) => !b.disabled))),
+    termsDisabled: Boolean(terms?.disabled),
+    tripFeesDisabled: Boolean(document.querySelector('[data-money="trip-fees-toggle"]')?.disabled),
+    backDisabled: Boolean(document.querySelector('button[aria-label="Back"]')?.disabled),
+  };
+};
+
+async function inflightProbe(browser, base, opts, dates) {
+  const ctx = await newContext(browser, VIEWPORTS['390']);
+  const page = await ctx.newPage();
+  const received = { bookingProtection: null, captureConsent: null };
+  const timing = { createSent: null, createAnswered: null };
+  page.on('request', (req) => {
+    if (req.method() !== 'POST') return;
+    let body = {};
+    try { body = JSON.parse(req.postData() ?? '{}'); } catch { body = {}; }
+    if (req.url().includes('/functions/v1/rent-create-booking')) { received.bookingProtection = body.protection ?? null; timing.createSent = Date.now(); }
+    if (req.url().includes('/api/renters/capture')) received.captureConsent = typeof body.consent === 'boolean' ? body.consent : null;
+  });
+  page.on('response', (res) => { if (res.url().includes('/functions/v1/rent-create-booking') && res.request().method() === 'POST') timing.createAnswered = Date.now(); });
+  if (opts.holdMs) {
+    // Mock-mode smoke only. Chrome discards the current document as soon as an intercepted navigation
+    // starts, even while the route handler delays it, so a delayed /booking/ navigation cannot keep the
+    // step on screen. Aborting it (net::ERR_ABORTED) leaves the page as it is with reserving still true.
+    await page.route('**/booking/**', (route) => (route.request().resourceType() === 'document' ? route.abort('aborted') : route.continue()));
+  }
+  const route = opts.bookPath ?? BOOK.replace('{start}', dates.start).replace('{end}', dates.end);
+  await page.goto(base + route, { waitUntil: 'load', timeout: 60000 });
+  await page.evaluate(async () => { await document.fonts.ready; });
+  await sleep(600);
+  await advance(page, 2);
+  const ready = () => waitFor(page, () => [...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Request this booking') && Boolean(document.querySelector('[data-money="card"]')), null, 'the merged step with its card', 150);
+  await ready();
+  // Non-default choices first, so a dropped or reversed click would show in the payload.
+  await page.evaluate(() => document.querySelector('[role=switch][aria-label="Exotiq Protect"]').click());
+  await waitFor(page, () => document.querySelector('[role=switch][aria-label="Exotiq Protect"]')?.getAttribute('aria-checked') === 'false', null, 'Protect declined', 150);
+  await ready();
+  await page.evaluate(() => {
+    const terms = [...document.querySelectorAll('label')].find((l) => l.textContent.replace(/\s+/g, ' ').trim() === 'I agree to the Rental Terms & Conditions.')?.querySelector('input');
+    if (terms && !terms.checked) terms.click();
+    const opt = [...document.querySelectorAll('label input.control-check')].find((i) => i !== terms);
+    if (opt && !opt.checked) opt.click();
+  });
+  await waitFor(page, () => [...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Request this booking' && !b.disabled), null, 'the request button enabled', 150);
+  const send = await page.evaluate(INFLIGHT_READ);
+  const atSend = { step: send.step, protection: send.switchChecked === 'true' ? 'premium' : 'decline', consent: send.optChecked };
+  const clickedAt = Date.now();
+  await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Request this booking').click());
+  await waitFor(page, () => [...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Sending request…'), null, 'the request in flight', 50);
+  const before = await page.evaluate(INFLIGHT_READ);
+  const clicked = await page.evaluate(() => {
+    const out = { switch: false, optIn: false, rental: false };
+    const sw = document.querySelector('[role=switch][aria-label="Exotiq Protect"]');
+    if (sw) { sw.click(); out.switch = true; }
+    const terms = [...document.querySelectorAll('label')].find((l) => l.textContent.replace(/\s+/g, ' ').trim() === 'I agree to the Rental Terms & Conditions.')?.querySelector('input');
+    const opt = [...document.querySelectorAll('label input.control-check')].find((i) => i !== terms);
+    if (opt) { opt.click(); out.optIn = true; }
+    const rental = document.querySelector('[data-money-line="rental"]');
+    if (rental) { (rental.tagName === 'BUTTON' ? rental : rental.querySelector('button') ?? rental).click(); out.rental = true; }
+    return out;
+  });
+  await sleep(250);
+  const after = await page.evaluate(INFLIGHT_READ);
+  // Let the answer and the fire-and-forget capture call land (the mock smoke just waits out its hold).
+  if (opts.holdMs) await sleep(Math.max(0, opts.holdMs - (Date.now() - clickedAt)));
+  while (Date.now() - clickedAt < (opts.holdMs ?? 0) + 5000 && ((timing.createSent && !timing.createAnswered) || (timing.createSent && received.captureConsent === null))) await sleep(100);
+  await ctx.close();
+  const measured = timing.createSent && timing.createAnswered;
+  return {
+    app: base,
+    stub: opts.stub ?? null,
+    captured: new Date().toISOString(),
+    delayMs: measured ? timing.createAnswered - timing.createSent : (opts.holdMs ?? 0),
+    delaySource: measured ? 'measured rent-create-booking latency' : opts.holdMs ? `--hold-navigation-ms ${opts.holdMs}: the /booking/ navigation aborted, the step held in flight (mock data mode: no function call, no capture call)` : 'none',
+    stillInFlightAfterClicks: after.buttonLabel === 'Sending request…',
+    atSend,
+    inFlight: {
+      ariaBusy: before.ariaBusy,
+      buttonLabel: before.buttonLabel,
+      step: after.step,
+      switch: { clicked: clicked.switch, disabled: before.switchDisabled, checkedBefore: before.switchChecked, checkedAfter: after.switchChecked },
+      optIn: { clicked: clicked.optIn, disabled: before.optDisabled, checkedBefore: before.optChecked, checkedAfter: after.optChecked },
+      rental: { clicked: clicked.rental, enabledButton: before.rentalEnabledButton, stepBefore: before.step, stepAfter: after.step },
+      terms: { disabled: before.termsDisabled },
+      tripFees: { disabled: before.tripFeesDisabled },
+      chromeBack: { disabled: before.backDisabled },
+    },
+    received,
+  };
+}
+
 function mergeProbe(file, surface, entry, meta) {
   const prev = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : { viewport: 390, surfaces: {} };
   prev.surfaces[surface] = { ...entry, ...meta };
@@ -382,8 +501,8 @@ async function main() {
   const evidence = arg('--evidence');
   const ref = arg('--ref', '');
   const only = arg('--only');
-  const usage = 'usage: PLAYWRIGHT_CORE=<path to playwright-core> node scripts/fee-matrix.mjs --phase fixtures|before|after|probe --base <url> --evidence <dir> [--ref <sha>] [--only A04,R-FX-T1S1P1] [--surfaces review,mock|payment,paid --payment-path <path> --paid-path <path>]';
-  if (!['fixtures', 'before', 'after', 'probe'].includes(phase) || !evidence) {
+  const usage = 'usage: PLAYWRIGHT_CORE=<path to playwright-core> node scripts/fee-matrix.mjs --phase fixtures|before|after|probe|inflight --base <url> --evidence <dir> [--ref <sha>] [--only A04,R-FX-T1S1P1] [--surfaces review,mock|payment,paid --payment-path <path> --paid-path <path>] [--book-path <path>] [--hold-navigation-ms 1500] [--stub <url>]';
+  if (!['fixtures', 'before', 'after', 'probe', 'inflight'].includes(phase) || !evidence) {
     console.error(usage);
     process.exit(2);
   }
@@ -398,6 +517,21 @@ async function main() {
   const dates = { start: isoDay(7), end: isoDay(10) };
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   try {
+    if (phase === 'inflight') {
+      const holdMs = arg('--hold-navigation-ms') ? Number(arg('--hold-navigation-ms')) : undefined;
+      const r = await inflightProbe(browser, base, { bookPath: arg('--book-path'), holdMs, stub: arg('--stub') }, dates);
+      fs.mkdirSync(evidence, { recursive: true });
+      fs.writeFileSync(path.join(evidence, 'AC21-inflight-probe.json'), JSON.stringify({ ...r, ref }, null, 1));
+      const f = r.inFlight;
+      console.log(`inflight: delayMs ${r.delayMs} (${r.delaySource}); at send step ${r.atSend.step}, protection ${r.atSend.protection}, consent ${r.atSend.consent}`);
+      console.log(`inflight: aria-busy ${f.ariaBusy}, button "${f.buttonLabel}", still in flight after the clicks: ${r.stillInFlightAfterClicks}`);
+      console.log(`inflight: switch disabled ${f.switch.disabled}, aria-checked ${f.switch.checkedBefore} -> ${f.switch.checkedAfter}`);
+      console.log(`inflight: opt-in disabled ${f.optIn.disabled}, checked ${f.optIn.checkedBefore} -> ${f.optIn.checkedAfter}`);
+      console.log(`inflight: rental enabled button ${f.rental.enabledButton}, step ${f.rental.stepBefore} -> ${f.rental.stepAfter}`);
+      console.log(`inflight: terms disabled ${f.terms.disabled}, Trip fees disabled ${f.tripFees.disabled}, chrome Back disabled ${f.chromeBack.disabled}`);
+      console.log(`inflight: received protection ${r.received.bookingProtection}, consent ${r.received.captureConsent}`);
+      return;
+    }
     if (phase === 'probe') {
       const surfaces = (arg('--surfaces', 'review,mock') ?? '').split(',').filter(Boolean);
       for (const surface of surfaces) {
