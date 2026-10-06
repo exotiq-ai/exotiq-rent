@@ -109,10 +109,10 @@ const WORD = /protect|coverage|waiver/gi;
 function censusHits(html: string): string[] {
   const hits: string[] = [];
   const visit = (el: El) => {
-    for (const [k, v] of Object.entries(el.attrs)) for (const m of v.matchAll(WORD)) hits.push(`@${k}: ${m[0]} in "${v}"`);
+    for (const [k, v] of Object.entries(el.attrs)) for (const m of Array.from(v.matchAll(WORD))) hits.push(`@${k}: ${m[0]} in "${v}"`);
     if (['script', 'style', 'template'].includes(el.tag)) return;
     for (const c of el.children) {
-      if (typeof c === 'string') { for (const m of c.matchAll(WORD)) hits.push(`text: ${m[0]} in "${norm(c).slice(0, 120)}"`); }
+      if (typeof c === 'string') { for (const m of Array.from(c.matchAll(WORD))) hits.push(`text: ${m[0]} in "${norm(c).slice(0, 120)}"`); }
       else visit(c);
     }
   };

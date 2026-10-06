@@ -222,10 +222,10 @@ const WORD = /protect|coverage|waiver/gi;
 function censusHits(html: string): string[] {
   const hits: string[] = [];
   const visit = (el: El) => {
-    for (const [k, v] of Object.entries(el.attrs)) for (const m of v.matchAll(WORD)) hits.push(`@${k}: ${m[0]} in "${v}"`);
+    for (const [k, v] of Object.entries(el.attrs)) for (const m of Array.from(v.matchAll(WORD))) hits.push(`@${k}: ${m[0]} in "${v}"`);
     if (['script', 'style', 'template'].includes(el.tag)) return;
     for (const c of el.children) {
-      if (typeof c === 'string') { for (const m of c.matchAll(WORD)) hits.push(`text: ${m[0]} in "${norm(c).slice(0, 120)}"`); }
+      if (typeof c === 'string') { for (const m of Array.from(c.matchAll(WORD))) hits.push(`text: ${m[0]} in "${norm(c).slice(0, 120)}"`); }
       else visit(c);
     }
   };
@@ -243,7 +243,9 @@ describe('MP-30 the flag flips both ways in one process', () => {
     if (!cancelNotice) problems.push('cancelNotice is not exported');
     const p0 = fixture('FX-T1S1P0');
     const p1cart = reviewCartOf(fixture('FX-T1S1P1'));
-    for (const [i, phase] of ([undefined, 'true', undefined] as const).entries()) {
+    const phases = [undefined, 'true', undefined] as const;
+    for (let i = 0; i < phases.length; i++) {
+      const phase = phases[i];
       const on = phase === 'true';
       const label = `phase ${i + 1} (${on ? 'on' : 'off'})`;
       env(phase);

@@ -140,7 +140,7 @@ function census(files: Record<string, string>) {
   const left = [...want];
   for (const k of hits.map(hitKey)) { const i = left.indexOf(k); if (i >= 0) left.splice(i, 1); else problems.push(`unlisted Protect literal: ${k}`); }
   for (const k of left) problems.push(`allowlisted literal not found: ${k}`);
-  for (const f of new Set([...Object.keys(PER_FILE), ...Object.keys(perFile)])) if ((perFile[f] ?? 0) !== (PER_FILE[f] ?? 0)) problems.push(`per-file count ${f}: ${perFile[f] ?? 0}, pinned ${PER_FILE[f] ?? 0}`);
+  for (const f of Array.from(new Set([...Object.keys(PER_FILE), ...Object.keys(perFile)]))) if ((perFile[f] ?? 0) !== (PER_FILE[f] ?? 0)) problems.push(`per-file count ${f}: ${perFile[f] ?? 0}, pinned ${PER_FILE[f] ?? 0}`);
   return { hits, perFile, problems };
 }
 const table = (perFile: Record<string, number>) => Object.entries(perFile).sort().map(([f, n]) => `  ${String(n).padStart(2)}  ${f}`).join('\n');
@@ -293,7 +293,7 @@ describe('MP-30 scope', () => {
     if (!BASE) return; // CI: the diff part needs MP30_BASE_REF, as MP-26's guards do
 
     const problems: string[] = [];
-    const changed = [...new Set([...lines(git('diff', '--name-only', BASE)), ...lines(git('ls-files', '--others', '--exclude-standard'))])];
+    const changed = Array.from(new Set([...lines(git('diff', '--name-only', BASE)), ...lines(git('ls-files', '--others', '--exclude-standard'))]));
     problems.push(...scopeProblems(changed));
     problems.push(...lockstepProblems(git('diff', '-U0', BASE, '--', 'tests/fees/fees.surfaces.test.tsx')));
     if (sliceFunction(stripComments(git('show', `${BASE}:${REVIEW}`)), 'ProtectSwitch') !== sliceFunction(stripComments(read(REVIEW)), 'ProtectSwitch')) problems.push('ProtectSwitch body differs from the base (comments aside)');

@@ -44,7 +44,7 @@ function switchGuardProblems(rel: string, raw: string): string[] {
     p.push(`${rel}:${src.slice(0, at).split('\n').length}: the Protect switch is named outside the flag check`);
   }
   if (ro >= 0 && /\.click\(/.test(src.slice(ro, roEnd))) p.push(`${rel}: INFLIGHT_READ clicks`);
-  for (const [i, line] of src.split('\n').entries()) {
+  for (const [i, line] of Array.from(src.split('\n').entries())) {
     if (/\bf\.switch\./.test(line) && !/\bf\.switch \?/.test(line)) p.push(`${rel}:${i + 1}: f.switch dereferenced without a null check`);
     if (/process\.env\.NEXT_PUBLIC_PROTECT_ENABLED/.test(line) && !/^\s+/.test(line)) p.push(`${rel}:${i + 1}: the flag is read at module top level`);
     if (/process\.env\.NEXT_PUBLIC_PROTECT_ENABLED(?! === 'true')/.test(line) || /process\.env\[/.test(line)) p.push(`${rel}:${i + 1}: not the literal flag check`);
