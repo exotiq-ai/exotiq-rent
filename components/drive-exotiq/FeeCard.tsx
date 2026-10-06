@@ -1,9 +1,9 @@
 'use client';
 
-import { useId, useState, type ReactNode } from 'react';
+import { useEffect, useId, useState, type ReactNode } from 'react';
 import { Info } from 'lucide-react';
 import { Money } from './BookingChrome';
-import type { FeeGroups, FeeLine } from './feeGroups';
+import { residualProblem, type FeeGroups, type FeeLine } from './feeGroups';
 
 /**
  * The one money card every booking surface uses (MP-26): the operator's charge,
@@ -37,6 +37,11 @@ export function TwoPartyBreakdown({
   const operatorId = `${id}operator`;
   const exotiqId = `${id}exotiq`;
   const detailId = `${id}trip-fees`;
+  // The card shows the charged subtotals whatever the lines say; a gap is reported, never hidden.
+  const problem = residualProblem(groups);
+  useEffect(() => {
+    if (problem && process.env.NODE_ENV !== 'production') console.warn(`[fees] ${problem}`);
+  }, [problem]);
 
   const row = (line: FeeLine, index: number) => {
     const spacing = index === 0 ? '' : line.key === 'processing' ? 'mt-1' : 'mt-3';

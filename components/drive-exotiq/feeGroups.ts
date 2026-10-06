@@ -49,6 +49,14 @@ export type FeeGroups = {
   components: { platformFeeCents: number; protectionTotalCents: number; stateFeeCents: number; processingFeeCents: number };
 };
 
+/** Development signal for a server shape that stops reconciling (the T-7 "unexplained remainder" class):
+ *  the card still shows the charged subtotals, so only the console tells anyone the lines do not add up. */
+export function residualProblem(groups: FeeGroups): string | null {
+  const side = (name: string, cents: number) => (cents === 0 ? [] : [`${name}: lines ${cents > 0 ? 'fall short of' : 'exceed'} the subtotal by ${Math.abs(cents)} cents`]);
+  const parts = [...side('operator', groups.operator.residualCents), ...side('Drive Exotiq', groups.exotiq.residualCents)];
+  return parts.length ? parts.join('; ') : null;
+}
+
 const dayCount = (days: number) => `${days} ${days === 1 ? 'day' : 'days'}`;
 const sum = (lines: { cents: number }[]) => lines.reduce((total, line) => total + line.cents, 0);
 
