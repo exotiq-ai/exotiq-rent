@@ -484,8 +484,10 @@ describe('MP-26 two-party money card on every surface', () => {
         }
       }
       // Two cards on one page get distinct ids.
-      const two = renderToStaticMarkup(<Fragment><TwoPartyBreakdown groups={f.foldFees(foldInputOf(fixture('FX-T1S1P1')))} /><TwoPartyBreakdown groups={f.foldFees(foldInputOf(fixture('FX-T0S0P0')))} /></Fragment>);
-      problems.push(...disclosureProblems('two cards', two, { open: false, percent: true, stateFee: -1 }).filter((x) => !x.includes('detail rows') && !x.includes('detail sums')));
+      const both = f.foldFees(foldInputOf(fixture('FX-T1S1P1')));
+      const two = renderToStaticMarkup(<Fragment><TwoPartyBreakdown groups={both} /><TwoPartyBreakdown groups={both} /></Fragment>);
+      problems.push(...disclosureProblems('two cards', two, { open: false, percent: true, stateFee: fixture('FX-T1S1P1').stateFeeCents, stateLabel: fixture('FX-T1S1P1').stateFeeLabel }));
+      if (byAttr(parseHtml(two), 'data-money', 'card').length !== 2) problems.push('two cards: not two cards');
       for (const t of hoverReveals(prepare(FEECARD, read(FEECARD)))) problems.push(`${FEECARD}: hover reveal ${t}`);
 
       // Planted: each broken disclosure is caught.
