@@ -144,13 +144,17 @@ export const ctaOutlineClassName =
   'motion-reduce:transition-none motion-reduce:active:scale-100';
 
 /**
- * The floating bar at the foot of a phone surface (MP-16, D8): the booking
- * flow footer, the vehicle page Book bar and the storefront Call bar share
- * everything here; each keeps its own bottom offset and visibility at the
- * call site. It is that surface's one elevated element.
+ * The pinned bar at the foot of a phone surface (MP-16, D8; in flow since MP-28):
+ * the booking flow footer, the vehicle page Book bar and the storefront Call bar
+ * share everything here, and each call site adds only its own visibility and the
+ * pinned-bar hook. The bar is the last child of the frame's column, after its
+ * scroller, so its panel IS the bottom of the frame: nothing exists beneath it,
+ * and the scroller ends at its top edge whatever the bar holds. The safe area is
+ * inside the bar's own bottom padding, never an outer offset. It is that
+ * surface's one elevated element.
  */
 export const stickyBarClassName =
-  'absolute left-0 right-0 z-10 border-t border-line bg-panel px-4 pb-4 pt-3 shadow-[0_-24px_42px_rgba(13,15,20,.96)]';
+  'relative z-10 shrink-0 border-t border-line bg-panel px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-24px_42px_rgba(13,15,20,.96)]';
 
 /** The one floating card on a surface that has no sticky bar there (vehicle aside from lg, the browse filters popover, the share card). Neutral, never gold. */
 export const elevatedClassName = 'shadow-[0_24px_60px_-20px_rgba(0,0,0,.8)]';

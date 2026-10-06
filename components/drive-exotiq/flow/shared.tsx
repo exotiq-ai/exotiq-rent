@@ -22,7 +22,7 @@ export function ScreenShell({ children, stickySafe = true }: { children: ReactNo
       // min-h-0 is load-bearing: without it this flex child grows to its
       // content instead of scrolling, pushing the "sticky" footer below the
       // fold on long steps (review/pay).
-      className={`min-h-0 flex-1 overflow-y-auto px-4 pt-2 [scrollbar-width:none] ${stickySafe ? 'pb-64' : 'pb-20'}`}
+      className={`min-h-0 flex-1 overflow-y-auto px-4 pt-2 [scrollbar-width:none] ${stickySafe ? 'pb-5' : 'pb-20'}`}
       style={{ fontFamily: 'var(--font-drive-inter), system-ui, sans-serif' }}
     >
       {children}
@@ -32,7 +32,7 @@ export function ScreenShell({ children, stickySafe = true }: { children: ReactNo
 
 export function Sticky({ children }: { children: ReactNode }) {
   return (
-    <div className={`${stickyBarClassName} bottom-4 md:bottom-5`}>
+    <div data-chrome="pinned-bar" className={stickyBarClassName}>
       <CookieControls />
       <div className="space-y-3">{children}</div>
     </div>
