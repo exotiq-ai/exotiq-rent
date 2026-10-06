@@ -15,6 +15,7 @@ import { formatRangeLabel, formatShortDate } from '@/domain/booking/dates';
 import { applyMarketplaceQuery, computeFacets, excludeBusy, filterListings } from '@/domain/booking/marketplaceCore';
 import { parseMarketplaceQuery, toMarketplaceSearchParams, type SearchParamsLike } from '@/domain/booking/marketplaceQuery';
 import { getFleetBusy, getPublicTeamStorefront } from '@/domain/booking/service';
+import { storefrontOpenGraph } from '@/domain/booking/seo';
 import type { MarketplaceListing, PublicTeamStorefront } from '@/domain/booking/publicContracts';
 
 type Props = { params: { operatorSlug: string }; searchParams?: SearchParamsLike };
@@ -36,6 +37,9 @@ export async function generateMetadata({ params, searchParams }: Props) {
     title: `${storefront.team.name} | Drive Exotiq`,
     description: `Book exotic rentals from ${storefront.team.name} in ${storefront.team.city}, ${storefront.team.state}.`,
     alternates: { canonical: `/${storefront.team.slug}` },
+    // A texted storefront link unfurls as this operator with the first car the page shows, never
+    // the root layout's title (a page-level openGraph replaces the root block: MP-18).
+    openGraph: storefrontOpenGraph(storefront.team, storefront.vehicles[0]?.heroImage),
     ...(filtered ? { robots: { index: false, follow: true } } : {}),
   };
 }

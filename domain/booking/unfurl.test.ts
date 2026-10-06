@@ -12,6 +12,7 @@ import { stripComments } from '../../tests/design/lib/scan.mjs';
 import { goldCount } from '../../tests/restraint/restraintScan';
 import { tone } from '../../components/browse/tokens';
 import { getMockPublicTeamStorefront, getMockPublicVehicleContext } from './mockService';
+import { formatMoney } from './totals';
 import * as seo from './seo';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
@@ -178,8 +179,7 @@ describe('MP-18 vehicle link preview (AC5)', () => {
     expect(og).toBeDefined();
     // Today's strings, unchanged.
     expect(og!.title).toBe(`${vehicle.name} | Drive Exotiq`);
-    const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(vehicle.dailyRateCents / 100);
-    expect(og!.description).toBe(`From ${money}/day. ${team.city}, ${team.state}.`);
+    expect(og!.description).toBe(`From ${formatMoney(vehicle.dailyRateCents)}/day. ${team.city}, ${team.state}.`);
     expect(og!.siteName).toBe('Drive Exotiq');
     expect(og!.type).toBe('website');
     expect(og!.images).toEqual([{ url: vehicle.heroImage }]);

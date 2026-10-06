@@ -7,6 +7,7 @@ import { getSiteMode } from '@/domain/booking/config';
 import { getPublicVehicleContext } from '@/domain/booking/service';
 import { parseDateWindow } from '@/domain/booking/marketplaceQuery';
 import { formatMoney } from '@/domain/booking/totals';
+import { vehicleOpenGraph } from '@/domain/booking/seo';
 
 type Props = { params: { operatorSlug: string; vehicleSlug: string }; searchParams?: Record<string, string | string[] | undefined> };
 
@@ -23,11 +24,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: `From ${formatMoney(vehicle.dailyRateCents)}/day. ${team.city}, ${team.state}. Book with Drive Exotiq.`,
     // Dated variants (?start&end from a grid) are the same page.
     alternates: { canonical: `/${team.slug}/${vehicle.slug}` },
-    openGraph: {
-      title: `${vehicle.name} | Drive Exotiq`,
-      description: `From ${formatMoney(vehicle.dailyRateCents)}/day. ${team.city}, ${team.state}.`,
-      images: vehicle.heroImage ? [vehicle.heroImage] : [],
-    },
+    // Never an empty images list: a car without a hero unfurls the floor card (MP-18).
+    openGraph: vehicleOpenGraph(team, vehicle),
   };
 }
 
