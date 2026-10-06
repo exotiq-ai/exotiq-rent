@@ -58,6 +58,7 @@ function StepIndicator({ step, total = 6, variant = 'bars' }: { step: number; to
 
 export function PhoneViewport({
   step,
+  stepTotal,
   children,
   onBack,
   stepStyle = 'bars',
@@ -68,6 +69,8 @@ export function PhoneViewport({
   desktopNav,
 }: {
   step: number;
+  /** How many steps the bars count (MP-26: the booking flow passes its own 3). Unset keeps the default 6. */
+  stepTotal?: number;
   children: ReactNode;
   onBack?: () => void;
   stepStyle?: StepStyle;
@@ -112,7 +115,7 @@ export function PhoneViewport({
       ? 'lg:mx-0 lg:h-[min(900px,calc(100dvh-5rem))] lg:rounded-2xl lg:border lg:border-line'
       : '';
 
-  const stepBar = <StepIndicator step={step} variant={stepStyle} />;
+  const stepBar = <StepIndicator step={step} total={stepTotal} variant={stepStyle} />;
 
   // MP-11: the ground + vignette as two utilities (see groundClassName) — the
   // old single background value compiled to an invalid background-color that
@@ -164,8 +167,8 @@ export function PhoneViewport({
   );
 }
 
-export function BookingChrome({ step, children, onBack, closeHref, rail }: { step: number; children: ReactNode; onBack?: () => void; closeHref?: string; rail?: ReactNode }) {
-  return <PhoneViewport step={step} onBack={onBack} closeHref={closeHref} layout="panel" rail={rail}>{children}</PhoneViewport>;
+export function BookingChrome({ step, stepTotal, children, onBack, closeHref, rail }: { step: number; stepTotal?: number; children: ReactNode; onBack?: () => void; closeHref?: string; rail?: ReactNode }) {
+  return <PhoneViewport step={step} stepTotal={stepTotal} onBack={onBack} closeHref={closeHref} layout="panel" rail={rail}>{children}</PhoneViewport>;
 }
 
 /**

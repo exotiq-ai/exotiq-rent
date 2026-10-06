@@ -7,6 +7,7 @@ import { caretAfterDigits, digitsBefore, displayFromIso, maskDob } from '@/domai
 import { PrimaryButton } from '../BookingChrome';
 import type { BookingCart, Driver } from '@/domain/booking/types';
 import { ScreenShell, StepHeader, Sticky } from './shared';
+import { stepEyebrow } from './steps';
 
 function ageOn(dobIso: string, onIso: string): number {
   const dob = new Date(`${dobIso}T00:00:00Z`);
@@ -62,7 +63,7 @@ export function DriverStep({ cart, setCart, next }: { cart: BookingCart; setCart
   return (
     <>
       <ScreenShell>
-        <StepHeader eyebrow="Step 03" title="Who's driving?" sub="Takes about a minute." />
+        <StepHeader eyebrow={stepEyebrow(2)} title="Who's driving?" sub="Takes about a minute." />
         <div className="rounded-xl border border-line bg-surface p-4">
           <label className="block">
             <span className={label}>Full name</span>

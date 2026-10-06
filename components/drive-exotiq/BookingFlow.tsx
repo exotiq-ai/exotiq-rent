@@ -146,7 +146,7 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
   );
 
   return (
-    <BookingChrome step={step + 1} onBack={back} closeHref={`/${cart.operator.slug}`} rail={rail}>
+    <BookingChrome step={step} stepTotal={FLOW_STEPS.length} onBack={back} closeHref={`/${cart.operator.slug}`} rail={rail}>
       {step === 1 && <DatesStep cart={cart} setCart={setCart} next={next} />}
       {step === 2 && <DriverStep cart={cart} setCart={setCart} next={next} />}
       {step === 3 && (
