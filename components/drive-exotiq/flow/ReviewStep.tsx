@@ -13,7 +13,6 @@ import { DepositDisclosure, QuoteNotice, ScreenShell, StepHeader, Sticky } from 
 import { requestButtonState, stepEyebrow, whileIdle } from './steps';
 import { renterCaptureUiEnabled } from '@/domain/renters/flags';
 import { CONSENT_TEXT } from '@/domain/renters/consentText';
-import { browseEnabled } from '@/domain/booking/config';
 // TODO(PROTECT_ENABLED): see domain/booking/protect.ts. The switch, the statement's "and protection", the summary and the cover paragraph are gated where they render.
 import { protectEnabled } from '@/domain/booking/protect';
 import { attemptContinue, termsMissing, TERMS_MESSAGE } from '@/domain/booking/driverValidation';
@@ -167,14 +166,12 @@ export function ReviewStep({
             aria-describedby={showTermsError ? 'review-terms-error' : undefined}
             className="control-check mt-0.5"
           />
-          {/* MP-18 AC7: a link only where /terms resolves (browseEnabled, as BrowseChrome's footer),
-              in a new tab because the cart lives only in memory; elsewhere the same words as text,
-              never a link to a 404. The new-tab hint sits outside the label so its text is unchanged. */}
-          <span>I agree to the {browseEnabled()
-            ? <a href="/terms" target="_blank" rel="noopener noreferrer" aria-describedby="review-terms-new-tab" className="text-ink underline decoration-faint underline-offset-2">Rental Terms &amp; Conditions</a>
-            : <span className="text-ink underline decoration-faint underline-offset-2">Rental Terms &amp; Conditions</span>}.</span>
+          {/* MP-33: /terms is public in every site mode, so these words always link to it. A new tab,
+              because the cart lives only in memory. The new-tab hint sits outside the label so its
+              text is unchanged. */}
+          <span>I agree to the <a href="/terms" target="_blank" rel="noopener noreferrer" aria-describedby="review-terms-new-tab" className="text-ink underline decoration-faint underline-offset-2">Rental Terms &amp; Conditions</a>.</span>
         </label>
-        {browseEnabled() && <span id="review-terms-new-tab" className="sr-only">(opens in a new tab)</span>}
+        <span id="review-terms-new-tab" className="sr-only">(opens in a new tab)</span>
         {showTermsError && <p id="review-terms-error" className="mt-2 px-1 text-body-sm leading-5 text-danger">{TERMS_MESSAGE}</p>}
         <p id="review-terms-status" role="status" aria-live="polite" className="sr-only">{showTermsError ? TERMS_MESSAGE : ''}</p>
         {/* MP-14: opt-in, unchecked, never required. Posted with the booking. */}
