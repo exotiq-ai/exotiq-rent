@@ -13,7 +13,7 @@ export const REPO = fileURLToPath(new URL('../../', import.meta.url));
 export const GOLDEN_DIR = fileURLToPath(new URL('./golden/', import.meta.url));
 export const BASE_JSON = join(GOLDEN_DIR, 'base.json');
 
-/** AC19's four, AC5's two, P6's two (AC8 "other callers keep six"). */
+/** AC19's four and AC5's two; MP-17 retired the two step-strip goldens. */
 export const GOLDEN_FILES = [
   'dates-step.html',
   'driver-step.html',
@@ -21,8 +21,6 @@ export const GOLDEN_FILES = [
   'panel-header-row.html',
   'protect-switch-on.html',
   'protect-switch-off.html',
-  'stepbar-default-6.html',
-  'stepbar-numbered.html',
 ] as const;
 export type GoldenFile = (typeof GOLDEN_FILES)[number];
 
@@ -62,27 +60,16 @@ export function cutDriver(html: string): string {
   return cutInner(html, [[eyebrowEl(root), '«eyebrow»'], [identitySentenceEl(root), '«identity-sentence»']]);
 }
 
-const STRIP = 'flex justify-center gap-1 px-4 pb-2 pt-0';
-export const stripEl = (root: El): El | undefined => elements(root).find((e) => e.tag === 'div' && classes(e).join(' ') === STRIP);
-export const numberedStripEl = (root: El): El | undefined => elements(root).find((e) => e.tag === 'div' && hasClass(e, 'flex', 'items-center', 'gap-3', 'px-6', 'pb-4', 'pt-1'));
+/** The flow's progress (MP-17): it sits where the step strip sat, right after the header row. */
+export const progressEl = (root: El): El | undefined => elements(root).find((e) => e.tag === 'nav' && e.attrs['data-chrome'] === 'progress');
 
-/** The panel frame's header row through the step strip, the strip replaced by a placeholder. */
+/** The panel frame's header row through the progress, the progress replaced by a placeholder. */
 export function panelHeaderRow(html: string): string {
   const root = parseHtml(html);
   const row = elements(root).find((e) => e.tag === 'div' && hasClass(e, 'grid', 'flex-shrink-0', 'grid-cols-[40px_1fr_40px]'));
-  const strip = stripEl(root);
-  if (!row || !strip) throw new Error('panel header row or step strip not found');
-  return `${html.slice(row.start, strip.start)}«step-strip»`;
-}
-export function barsStrip(html: string): string {
-  const el = stripEl(parseHtml(html));
-  if (!el) throw new Error('bars step strip not found');
-  return outer(html, el);
-}
-export function numberedStrip(html: string): string {
-  const el = numberedStripEl(parseHtml(html));
-  if (!el) throw new Error('numbered step strip not found');
-  return outer(html, el);
+  const progress = progressEl(root);
+  if (!row || !progress) throw new Error('panel header row or progress element not found');
+  return `${html.slice(row.start, progress.start)}«step-strip»`;
 }
 
 /** The Protect switch block: the hairline section that holds the role="switch" button, title, subtitle and all. */

@@ -33,11 +33,9 @@ import {
   GOLDEN_DIR,
   GOLDEN_FILES,
   type GoldenFile,
-  barsStrip,
   cutDates,
   cutDriver,
   git,
-  numberedStrip,
   panelHeaderRow,
   readGolden,
   sha256,
@@ -69,8 +67,8 @@ function ac19Renders(): Record<'dates-step.html' | 'driver-step.html' | 'sticky-
   };
 }
 
-/** Base-only renders for AC5 (the Protect switch block) and AC8 (the other callers' step strips). */
-function baseOnlyRenders(): Record<'protect-switch-on.html' | 'protect-switch-off.html' | 'stepbar-default-6.html' | 'stepbar-numbered.html', string> {
+/** Base-only renders for AC5 (the Protect switch block); MP-17 retired AC8's two step-strip goldens. */
+function baseOnlyRenders(): Record<'protect-switch-on.html' | 'protect-switch-off.html', string> {
   // Props go through a loose spread: the base ReviewStep takes `next`, the merged one does not.
   const Review = ReviewStep as unknown as ComponentType<Record<string, unknown>>;
   const review = (id: 'FX-T1S1P1' | 'FX-T1S1P0') => {
@@ -80,8 +78,6 @@ function baseOnlyRenders(): Record<'protect-switch-on.html' | 'protect-switch-of
   return {
     'protect-switch-on.html': switchBlock(review('FX-T1S1P1')),
     'protect-switch-off.html': switchBlock(review('FX-T1S1P0')),
-    'stepbar-default-6.html': barsStrip(renderToStaticMarkup(<PhoneViewport step={6} layout="panel"><p>x</p></PhoneViewport>)),
-    'stepbar-numbered.html': numberedStrip(renderToStaticMarkup(<PhoneViewport step={1} stepStyle="numbered" layout="page"><p>x</p></PhoneViewport>)),
   };
 }
 

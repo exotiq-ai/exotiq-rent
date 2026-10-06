@@ -8,6 +8,7 @@ import { SiteBar } from '@/components/browse/SiteBar';
 import { SavedLink } from '@/components/renters/SavedLink';
 import { browseEnabled } from '@/domain/booking/config';
 import { ctaClassName, eyebrowClassName, groundClassName, microLabelClassName, serifStyle, tone } from '@/components/browse/tokens';
+import { FLOW_STEPS } from './flow/steps';
 
 type StepStyle = 'bars' | 'numbered';
 
@@ -56,6 +57,32 @@ function StepIndicator({ step, total = 6, variant = 'bars' }: { step: number; to
   );
 }
 
+/**
+ * The booking flow's progress (MP-17): one named item per FLOW_STEPS entry, so the count and
+ * the names are the flow's own and cannot drift from the step eyebrows. Neutral by design
+ * (ink and line, no gold); the items shrink and their labels truncate, so the longest label
+ * fits a 320px frame. A step outside the flow marks no item current.
+ */
+function FlowProgress({ step }: { step: number }) {
+  const valid = Number.isInteger(step) && step >= 1 && step <= FLOW_STEPS.length;
+  return (
+    <nav data-chrome="progress" aria-label="Booking progress" className="px-4 pb-2 pt-1">
+      <ol className="flex items-center gap-2">
+        {FLOW_STEPS.map((s, index) => {
+          const n = index + 1;
+          const state = !valid || n > step ? 'upcoming' : n === step ? 'current' : 'done';
+          return (
+            <li key={s.key} data-state={state} aria-current={state === 'current' ? 'step' : undefined} className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <span aria-hidden="true" className={`h-[3px] w-full rounded-full ${state === 'upcoming' ? 'bg-line' : 'bg-ink'}`} />
+              <span className={`truncate ${microLabelClassName} ${state === 'current' ? 'text-ink' : state === 'done' ? 'text-muted' : 'text-faint'}`}>{s.label}</span>
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
+}
+
 export function PhoneViewport({
   step,
   stepTotal,
@@ -68,7 +95,8 @@ export function PhoneViewport({
   rail,
   desktopNav,
 }: {
-  step: number;
+  /** 'panel' only: the flow step the progress marks current. Without it no progress renders. */
+  step?: number;
   /** How many steps the bars count (MP-26: the booking flow passes its own 3). Unset keeps the default 6. */
   stepTotal?: number;
   children: ReactNode;
@@ -87,12 +115,12 @@ export function PhoneViewport({
 }) {
   const page = layout === 'page';
   const panel = layout === 'panel';
-  // 'page' condenses its phone chrome once the renter scrolls: the step bar
-  // folds away and the header row tightens, handing ~40px back to the fleet.
-  // The window never scrolls below lg — an inner section does — so the frame
-  // listens in the CAPTURE phase (scroll does not bubble) like CookieControls.
-  // The header sits outside the scroll container, so collapsing it never
-  // moves scrollTop and the threshold cannot oscillate.
+  // 'page' condenses its phone bar once the renter scrolls: the bar's padding
+  // tightens, handing a few pixels back to the fleet. The window never scrolls
+  // below lg — an inner section does — so the frame listens in the CAPTURE
+  // phase (scroll does not bubble) like CookieControls. The bar sits outside
+  // the scroll container, so tightening it never moves scrollTop and the
+  // threshold cannot oscillate.
   const frameRef = useRef<HTMLDivElement>(null);
   const [condensed, setCondensed] = useState(false);
   useEffect(() => {
@@ -115,7 +143,7 @@ export function PhoneViewport({
       ? 'lg:mx-0 lg:h-[min(900px,calc(100dvh-5rem))] lg:rounded-2xl lg:border lg:border-line'
       : '';
 
-  const stepBar = <StepIndicator step={step} total={stepTotal} variant={stepStyle} />;
+  const stepBar = <StepIndicator step={step ?? 0} total={stepTotal} variant={stepStyle} />;
 
   // MP-11: the ground + vignette as two utilities (see groundClassName) — the
   // old single background value compiled to an invalid background-color that
@@ -138,28 +166,37 @@ export function PhoneViewport({
             the "sticky" footer lands below the fold. Compact cookie controls
             are inside that footer, not above the frame. */}
         <div ref={frameRef} className={`relative mx-auto flex h-dvh w-full max-w-[480px] flex-col overflow-hidden bg-panel min-[481px]:border-x min-[481px]:border-line ${frameDesktop}`}>
-          <div className={`grid flex-shrink-0 grid-cols-[40px_1fr_40px] items-center px-4 transition-[padding] duration-300 motion-reduce:transition-none ${page && condensed ? 'pb-0.5 pt-[calc(env(safe-area-inset-top)+4px)]' : 'pb-1 pt-[calc(env(safe-area-inset-top)+10px)]'} ${page ? 'lg:hidden' : ''}`}>
-            <button type="button" onClick={onBack} disabled={!onBack} className="grid h-10 w-10 place-items-center rounded-lg text-muted transition hover:bg-surface hover:text-ink disabled:opacity-30" aria-label="Back">
-              <ArrowLeft size={20} />
-            </button>
-            <div className="flex items-center justify-center">
-              {/* The Drive Exotiq lockup at 22px sits at the same optical size the
-                  old 26px mark did inside the 40px header row (MP-12). */}
-              {/* No `priority`: this row is lg:hidden, and a preload for a 17KB
-                  logo competes with the hero's LCP preload on every load. */}
-              <Image src="/images/logos/drive-exotiq-lockup-transparent.png" alt="Drive Exotiq" width={110} height={22} style={{ height: 22, width: 'auto' }} className="opacity-95" />
-            </div>
-            <Link href={closeHref} className="grid h-10 w-10 place-items-center rounded-lg text-muted transition hover:bg-surface hover:text-ink" aria-label="Close booking flow">
-              <X size={20} />
-            </Link>
-          </div>
           {page
             ? (
-              <div aria-hidden={condensed} className={`overflow-hidden transition-[max-height,opacity] duration-300 motion-reduce:transition-none lg:hidden ${condensed ? 'max-h-0 opacity-0' : 'max-h-12 opacity-100'}`}>
-                {stepBar}
+              // Below lg the storefront and vehicle detail are pages, not booking
+              // steps: the lockup alone, linking home. No Back, no Close, no steps.
+              // No `priority`: the bar is lg:hidden, and a preload for a 17KB logo
+              // competes with the hero's LCP preload on every load.
+              <div data-chrome="mobile-bar" className={`flex flex-shrink-0 items-center justify-center px-4 transition-[padding] duration-300 motion-reduce:transition-none ${condensed ? 'pb-0.5 pt-[calc(env(safe-area-inset-top)+4px)]' : 'pb-1 pt-[calc(env(safe-area-inset-top)+10px)]'} lg:hidden`}>
+                <Link href={closeHref} className="flex h-10 items-center">
+                  <Image src="/images/logos/drive-exotiq-lockup-transparent.png" alt="Drive Exotiq" width={110} height={22} style={{ height: 22, width: 'auto' }} className="opacity-95" />
+                </Link>
               </div>
             )
-            : stepBar}
+            : (
+              <div className={`grid flex-shrink-0 grid-cols-[40px_1fr_40px] items-center px-4 transition-[padding] duration-300 motion-reduce:transition-none ${page && condensed ? 'pb-0.5 pt-[calc(env(safe-area-inset-top)+4px)]' : 'pb-1 pt-[calc(env(safe-area-inset-top)+10px)]'} ${page ? 'lg:hidden' : ''}`}>
+                <button type="button" onClick={onBack} disabled={!onBack} className="grid h-10 w-10 place-items-center rounded-lg text-muted transition hover:bg-surface hover:text-ink disabled:opacity-30" aria-label="Back">
+                  <ArrowLeft size={20} />
+                </button>
+                <div className="flex items-center justify-center">
+                  {/* The Drive Exotiq lockup at 22px sits at the same optical size the
+                      old 26px mark did inside the 40px header row (MP-12). */}
+                  {/* No `priority`: a preload for a 17KB logo competes with the
+                      hero's LCP preload on every load. */}
+                  <Image src="/images/logos/drive-exotiq-lockup-transparent.png" alt="Drive Exotiq" width={110} height={22} style={{ height: 22, width: 'auto' }} className="opacity-95" />
+                </div>
+                <Link href={closeHref} className="grid h-10 w-10 place-items-center rounded-lg text-muted transition hover:bg-surface hover:text-ink" aria-label="Close booking flow">
+                  <X size={20} />
+                </Link>
+              </div>
+            )}
+          {panel && step !== undefined && <FlowProgress step={step} />}
+          {!page && !panel && stepBar}
           <div className="flex min-h-0 flex-1 flex-col">{children}</div>
         </div>
       </div>

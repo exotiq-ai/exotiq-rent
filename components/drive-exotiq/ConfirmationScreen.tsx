@@ -36,7 +36,7 @@ export async function ConfirmationScreen({
   // D4: a booking ref without its access token shows existence + status only.
   if ('restricted' in lookup) {
     return (
-      <PhoneViewport step={6} className="font-[var(--font-drive-inter)]" layout="panel">
+      <PhoneViewport className="font-[var(--font-drive-inter)]" layout="panel">
         <section className="flex flex-1 flex-col items-center justify-center px-6 text-center">
           <div className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-muted"><LockKeyhole size={24} /></div>
           <HTitle className="mt-5 text-title">Booking {lookup.bookingRef}</HTitle>
@@ -90,7 +90,7 @@ export async function ConfirmationScreen({
   );
 
   return (
-    <PhoneViewport step={6} className="font-[var(--font-drive-inter)]" closeHref={`/${cart.operator.slug}`} layout="panel">
+    <PhoneViewport className="font-[var(--font-drive-inter)]" closeHref={`/${cart.operator.slug}`} layout="panel">
       <section className="flex-1 overflow-y-auto px-4 pb-8 pt-2 [scrollbar-width:none]">
         {returnNotice && <ReturnNotice {...returnNotice} />}
         <div className="relative overflow-hidden rounded-2xl border border-line bg-surface">
