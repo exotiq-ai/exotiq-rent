@@ -53,7 +53,7 @@ export function CancelBookingCard({
         <button type="button" onClick={() => setConfirming(true)} className="text-body-sm text-faint underline decoration-line underline-offset-4 transition hover:text-muted">
           Cancel this booking
         </button>
-        <p className="mt-1 text-label text-dim">
+        <p className="mt-1 text-label text-faint">
           {/* The date shown is the CANCEL-BY deadline (pickup − 72h) in the
               team's timezone — it used to print the pickup date itself, which
               read as three extra days of free cancellation (T-6). */}
