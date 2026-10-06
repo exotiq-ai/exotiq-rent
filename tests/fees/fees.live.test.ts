@@ -18,6 +18,18 @@
 //     happy labels:         'step3-quote-in-flight', 'step3-ready-terms-unticked', 'terms-ticked', 'after-toggle-in-flight', 'after-toggle-ready'
 //     quote-failure labels: 'quote-failed', 'retry-recovered'
 //   finalPath: the browser's final path with the token redacted, e.g. '/booking/BK-03460?t=REDACTED'
+//
+// AC21 (driver ruling on review S1, plus the ruling that the chrome Back freezes too): one more run
+// against the same stub, with rent-create-booking answering after delayMs, writes
+// .autodev/evidence/MP-26/AC21-inflight-probe.json (scripts/fee-matrix.mjs --phase inflight):
+//   { app, stub, captured, delayMs,
+//     atSend:   { step, protection: 'premium' | 'decline', consent },        read at the click on "Request this booking"
+//     inFlight: { ariaBusy, buttonLabel, step,                                read while rent-create-booking is pending
+//                 switch: { clicked, disabled, checkedBefore, checkedAfter },  aria-checked strings
+//                 optIn:  { clicked, disabled, checkedBefore, checkedAfter },  booleans
+//                 rental: { clicked, enabledButton, stepBefore, stepAfter },
+//                 terms: { disabled }, tripFees: { disabled }, chromeBack: { disabled } },
+//     received: { bookingProtection, captureConsent } }                     rent-create-booking body.protection, /api/renters/capture body.consent
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -116,6 +128,42 @@ function goodLog(): Log {
   return { runs: [happy, failure] };
 }
 
+// ---- AC21: the in-flight probe -------------------------------------------------------------------
+
+type Ctl = { clicked: boolean; disabled: boolean };
+export type InflightProbe = {
+  app?: string; stub?: string; captured?: string; delayMs: number;
+  atSend: { step: number; protection: 'premium' | 'decline'; consent: boolean };
+  inFlight: {
+    ariaBusy: string | null; buttonLabel: string | null; step: number;
+    switch: Ctl & { checkedBefore: string; checkedAfter: string };
+    optIn: Ctl & { checkedBefore: boolean; checkedAfter: boolean };
+    rental: { clicked: boolean; enabledButton: boolean; stepBefore: number; stepAfter: number };
+    terms: { disabled: boolean }; tripFees: { disabled: boolean }; chromeBack: { disabled: boolean };
+  };
+  received: { bookingProtection: string | null; captureConsent: boolean | null };
+};
+
+export function inflightProbeProblems(probe: InflightProbe): string[] {
+  void probe;
+  return [];
+}
+
+function goodInflight(): InflightProbe {
+  return {
+    app: 'http://127.0.0.1:3057', stub: 'http://127.0.0.1:54321', captured: '2026-10-06T00:00:00.000Z', delayMs: 1500,
+    atSend: { step: 3, protection: 'decline', consent: true },
+    inFlight: {
+      ariaBusy: 'true', buttonLabel: 'Sending request…', step: 3,
+      switch: { clicked: true, disabled: true, checkedBefore: 'false', checkedAfter: 'false' },
+      optIn: { clicked: true, disabled: true, checkedBefore: true, checkedAfter: true },
+      rental: { clicked: true, enabledButton: false, stepBefore: 3, stepAfter: 3 },
+      terms: { disabled: false }, tripFees: { disabled: false }, chromeBack: { disabled: true },
+    },
+    received: { bookingProtection: 'decline', captureConsent: true },
+  };
+}
+
 describe('MP-26 live-mode commit path (AC11)', () => {
   it('the live-stub run log shows one quote on entering step 3 and exactly one booking request', () => {
     expect(liveLogProblems(goodLog())).toEqual([]);
@@ -137,5 +185,24 @@ describe('MP-26 live-mode commit path (AC11)', () => {
     expect(planted((l) => { (happy(l).entries[7].body as { _options: { protection: string } })._options.protection = 'premium'; })).toContain('declined tier');
     expect(planted((l) => { (happy(l).entries[9].body as { protection: string }).protection = 'premium'; })).toContain('lacks the dates, the driver or the declined tier');
     if (EVIDENCE) expect(liveLogProblems(JSON.parse(readFileSync(join(EVIDENCE, 'AC11-live-stub-run.json'), 'utf8')) as Log)).toEqual([]);
+  });
+});
+
+describe('MP-26 in-flight freeze (AC21)', () => {
+  it('the in-flight probe shows frozen controls and an unchanged payload', () => {
+    expect(inflightProbeProblems(goodInflight())).toEqual([]);
+    const bad = (f: (p: InflightProbe) => void) => { const p = goodInflight(); f(p); return inflightProbeProblems(p).join(); };
+    expect(bad((p) => { p.inFlight.switch.checkedAfter = 'true'; p.received.bookingProtection = 'premium'; })).toContain('switch');
+    expect(bad((p) => { p.inFlight.optIn.checkedAfter = false; p.received.captureConsent = false; })).toContain('opt-in');
+    expect(bad((p) => { p.inFlight.rental.stepAfter = 1; })).toContain('step');
+    expect(bad((p) => { p.inFlight.switch.disabled = false; })).toContain('switch');
+    expect(bad((p) => { p.inFlight.ariaBusy = null; })).toContain('aria-busy');
+    expect(bad((p) => { p.received.bookingProtection = 'premium'; })).toContain('received');
+    expect(bad((p) => { p.atSend.protection = 'premium'; p.atSend.consent = false; p.received.bookingProtection = 'premium'; p.received.captureConsent = false; })).toContain('default');
+    expect(bad((p) => { p.inFlight.optIn.clicked = false; })).toContain('clicked');
+    expect(bad((p) => { p.delayMs = 0; })).toContain('delayMs');
+    expect(bad((p) => { p.inFlight.chromeBack.disabled = false; })).toContain('Back');
+    expect(bad((p) => { p.inFlight.terms.disabled = true; })).toContain('terms');
+    if (EVIDENCE) expect(inflightProbeProblems(JSON.parse(readFileSync(join(EVIDENCE, 'AC21-inflight-probe.json'), 'utf8')) as InflightProbe)).toEqual([]);
   });
 });

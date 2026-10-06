@@ -347,11 +347,13 @@ export function sourceRestraintProblems(rel: string, text: string): string[] {
 
 // ---- AC9: the merged step ------------------------------------------------------------------------
 
-const REMOVED = ['Proceed to payment', 'Total due today', 'Reserve your dates.', 'Review your details before payment.', 'Free cancellation up to 72 hours before pickup.'];
+// Amended AC9: the deposit tail no longer implies a payment today, and the statement descriptor is EXOTIQ RENT (no dot).
+const REMOVED = ['Proceed to payment', 'Total due today', 'Reserve your dates.', 'Review your details before payment.', 'Free cancellation up to 72 hours before pickup.', 'Separate from the total you pay Exotiq today.', 'EXOTIQ.RENT'];
 const stickyOf = (root: El) => elements(root).find((e) => ['absolute', 'left-0', 'right-0', 'z-10'].every((k) => classes(e).includes(k)));
 const findText = (root: El, tag: string, text: string) => elements(root).find((e) => e.tag === tag && norm(textOf(e)) === text);
 const PAYLINK = `${OPERATOR_NAME} reviews your request, then we email you a secure payment link. Your card is only charged when you pay from that link.`;
-const STATEMENT = `Two charges: ${OPERATOR_NAME}, and EXOTIQ.RENT for Trip fees and protection.`;
+const STATEMENT = `Two charges: ${OPERATOR_NAME}, and EXOTIQ RENT for Trip fees and protection.`;
+const DEPOSIT = `${OPERATOR_NAME} collects a refundable deposit at pickup. Amount and accepted methods vary by operator. Separate from your Exotiq total — collected by the operator at pickup.`;
 
 export function mergedOrderProblems(html: string): string[] {
   // One tree for every anchor: element positions are only comparable within one parse.
@@ -373,6 +375,7 @@ export function mergedOrderProblems(html: string): string[] {
     ['total "Total once approved"', byAttr(root, 'data-money', 'total').find((e) => norm(textOf(e)).startsWith('Total once approved'))],
     ['payment-link sentence', findText(root, 'p', PAYLINK)],
     ['deposit disclosure', elements(root).find((e) => e.tag === 'div' && norm(textOf(e)) === 'Damage deposit at pickup')],
+    ['deposit sentence', findText(root, 'p', DEPOSIT)],
     ['statement heading', elements(root).find((e) => e.tag === 'div' && norm(textOf(e)) === "What you'll see on your statement")],
     ['statement line', findText(root, 'p', STATEMENT)],
     ['Cancellation & coverage', findText(root, 'summary', 'Cancellation & coverage')],
@@ -393,6 +396,100 @@ export function mergedOrderProblems(html: string): string[] {
   if (golds.length !== 1) p.push(`${golds.length} text-gold figures on the step`);
   else if (!totalRow || !contains(totalRow, golds[0])) p.push('the gold figure is not the total');
   for (const s of REMOVED) if (norm(textOf(root)).includes(s)) p.push(`removed string on the step: ${s}`);
+  return p;
+}
+
+// ---- AC21: the merged step frozen while the request is in flight ----------------------------------
+
+const switchEl = (root: El) => elements(root).find((e) => e.tag === 'button' && e.attrs.role === 'switch' && e.attrs['aria-label'] === 'Exotiq Protect');
+const labelInput = (root: El, text: string) => {
+  const label = elements(root).find((e) => e.tag === 'label' && norm(textOf(e)) === text);
+  return { label, input: label ? elements(label).find((e) => e.tag === 'input') : undefined };
+};
+const screenShellOf = (root: El) => elements(root).find((e) => ['min-h-0', 'flex-1', 'overflow-y-auto'].every((k) => classes(e).includes(k)));
+
+/** AC21 markup: the idle step is the shipped step; the in-flight step has its payload controls frozen. */
+export function frozenStepProblems(idleHtml: string, flightHtml: string): string[] {
+  const p: string[] = [];
+  const idle = parseHtml(idleHtml);
+  const flight = parseHtml(flightHtml);
+  const golden = readGolden('protect-switch-on.html');
+  // 1. The switch: disabled in flight with the shipped bytes otherwise; the golden outright when idle.
+  const fSwitch = switchEl(flight);
+  if (!fSwitch || !('disabled' in fSwitch.attrs)) p.push('flight: the Protect switch is not disabled');
+  const fBlock = switchBlockEl(flight);
+  if (!fBlock || outer(flightHtml, fBlock).replace(' disabled=""', '') !== golden) p.push('flight: the switch block differs from the base golden beyond disabled');
+  const iSwitch = switchEl(idle);
+  if (!iSwitch || 'disabled' in iSwitch.attrs) p.push('idle: the Protect switch is disabled');
+  const iBlock = switchBlockEl(idle);
+  if (!iBlock || outer(idleHtml, iBlock) !== golden) p.push('idle: the switch block differs from the base golden');
+  // 2. The MP-14 opt-in: disabled in flight only.
+  const fOpt = labelInput(flight, CONSENT_TEXT.booking.text).input;
+  const iOpt = labelInput(idle, CONSENT_TEXT.booking.text).input;
+  if (!fOpt || !('disabled' in fOpt.attrs)) p.push('flight: the opt-in is not disabled');
+  if (!iOpt || 'disabled' in iOpt.attrs) p.push('idle: the opt-in is disabled or missing');
+  // 3. The Rental row: no enabled button in flight; the enabled button when idle.
+  const fRental = byAttr(flight, 'data-money-line', 'rental')[0];
+  if (!fRental || fRental.tag === 'button' || elements(fRental).some((e) => e.tag === 'button' && !('disabled' in e.attrs))) p.push('flight: the rental row is an enabled button');
+  const iRental = byAttr(idle, 'data-money-line', 'rental')[0];
+  if (!iRental || iRental.tag !== 'button' || 'disabled' in iRental.attrs) p.push('idle: the rental row is not the enabled button');
+  // 4. One aria-busy wrapper inside ScreenShell around the payload, not around the sticky footer.
+  const busy = elements(flight).filter((e) => e.attrs['aria-busy'] === 'true');
+  const shell = screenShellOf(flight);
+  const sticky = stickyOf(flight);
+  if (busy.length !== 1) p.push(`flight: ${busy.length} aria-busy="true" elements`);
+  else {
+    const [w] = busy;
+    const card = byAttr(flight, 'data-money', 'card')[0];
+    const terms = labelInput(flight, 'I agree to the Rental Terms & Conditions.').label;
+    const opt = labelInput(flight, CONSENT_TEXT.booking.text).label;
+    if (!shell || !contains(shell, w) || shell === w) p.push('flight: the aria-busy wrapper is not inside ScreenShell');
+    for (const [name, el] of [['card', card], ['switch', fBlock], ['opt-in', opt], ['terms', terms]] as const) if (!el || !contains(w, el)) p.push(`flight: the aria-busy wrapper does not contain the ${name}`);
+    if (sticky && contains(w, sticky)) p.push('flight: the aria-busy wrapper contains the sticky footer');
+  }
+  if (elements(idle).some((e) => e.attrs['aria-busy'] === 'true')) p.push('idle: aria-busy="true" present');
+  // 5. Not payload controls: terms and the Trip-fees disclosure stay operable; the button says so.
+  const fTerms = labelInput(flight, 'I agree to the Rental Terms & Conditions.').input;
+  if (!fTerms || 'disabled' in fTerms.attrs) p.push('flight: the terms checkbox is disabled');
+  const fTrip = byAttr(flight, 'data-money', 'trip-fees-toggle')[0];
+  if (!fTrip || 'disabled' in fTrip.attrs) p.push('flight: the Trip-fees toggle is disabled');
+  const fButtons = sticky ? elements(sticky).filter((e) => e.tag === 'button') : [];
+  const cta = fButtons[fButtons.length - 1];
+  if (!cta || norm(textOf(cta)) !== 'Sending request…' || !('disabled' in cta.attrs)) p.push('flight: the request button is not an inert "Sending request…"');
+  return p;
+}
+
+/** Remove every `whileIdle(requesting, …)` call (balanced parentheses) from a source text. */
+function withoutWhileIdle(text: string): string {
+  let out = text;
+  for (let at = out.indexOf('whileIdle(requesting,'); at >= 0; at = out.indexOf('whileIdle(requesting,')) {
+    let depth = 0;
+    let i = at + 'whileIdle'.length;
+    for (; i < out.length; i++) {
+      if (out[i] === '(') depth++;
+      else if (out[i] === ')' && --depth === 0) break;
+    }
+    out = out.slice(0, at) + out.slice(i + 1);
+  }
+  return out;
+}
+/** AC21 handlers: ReviewStep wires its three payload handlers only through whileIdle; Back is frozen in BookingFlow (driver ruling). */
+export function handlerGuardProblems(reviewSrc: string, flowSrc: string): string[] {
+  const p: string[] = [];
+  const start = reviewSrc.indexOf('export function ReviewStep(');
+  const end = reviewSrc.indexOf('function ProtectSwitch(');
+  if (start < 0 || end < 0) return ['ReviewStep or ProtectSwitch not found'];
+  const fn = reviewSrc.slice(start, end);
+  const bodyAt = fn.indexOf('}) {');
+  const body = fn.slice(bodyAt < 0 ? 0 : bodyAt + 4);
+  for (const call of ['whileIdle(requesting, onProtectionChange)', 'whileIdle(requesting, onMarketingConsentChange)', 'whileIdle(requesting, () => goTo(1))']) if (!body.includes(call)) p.push(`ReviewStep: missing ${call}`);
+  const rest = withoutWhileIdle(body);
+  // Allowed bare: the existence guard (`x && …`) and a JSX attribute name (`onProtectionChange={…}`); any value use is flagged.
+  for (const m of Array.from(rest.matchAll(/\b(onProtectionChange|onMarketingConsentChange)\b(?!\s*(?:&&|=))/g))) p.push(`ReviewStep: ${m[1]} used outside whileIdle`);
+  if (/\bgoTo\b/.test(rest)) p.push('ReviewStep: goTo used outside whileIdle');
+  if (!/onRentalClick=\{requesting \? undefined : /.test(body)) p.push('ReviewStep: onRentalClick is not "requesting ? undefined : …"');
+  if (!reviewSrc.slice(end).includes("onProtectionChange(protectionOn ? 'decline' : 'premium')")) p.push('ProtectSwitch: lost onProtectionChange(protectionOn ? \'decline\' : \'premium\') (AC5 pin)');
+  if (!flowSrc.includes('const back = step > 1 && !reserving ? () => setStep((value) => value - 1) : undefined;')) p.push('BookingFlow: the chrome Back is not frozen while reserving');
   return p;
 }
 
@@ -582,7 +679,71 @@ describe('MP-26 two-party money card on every surface', () => {
     if (!problems.length) {
       expect(mergedOrderProblems(html.replace('Total once approved', 'Total due today')).join()).toContain('Total once approved');
       expect(mergedOrderProblems(html.replace('<span class="text-gold"><span class="text-heading', '<span class="text-heading')).join()).toContain('text-gold');
+      // Amended AC9: the old deposit tail and the dotted descriptor are each caught (the statement span, not the card header).
+      const oldDeposit = mergedOrderProblems(html.replace('Separate from your Exotiq total — collected by the operator at pickup.', 'Separate from the total you pay Exotiq today.')).join();
+      expect(oldDeposit).toContain('deposit sentence');
+      expect(oldDeposit).toContain('Separate from the total you pay Exotiq today.');
+      const dotted = mergedOrderProblems(html.replace('and <span class="text-ink">EXOTIQ RENT</span>', 'and <span class="text-ink">EXOTIQ.RENT</span>')).join();
+      expect(dotted).toContain('statement line');
+      expect(dotted).toContain('EXOTIQ.RENT');
     }
+    expect(problems).toEqual([]);
+  });
+
+  it('the total row keeps a gap so its label never touches the figure', async () => {
+    // Review B1 (320px: "Total once approved" touched "$4,448.37"); driver ruling: the paid receipt's
+    // "Total paid" row gets the same gap. The payment link's "Total due" row already has it (control).
+    const problems: string[] = [];
+    const fx = fixture('FX-T1S1P1');
+    const rowOf = (html: string) => byAttr(parseHtml(html), 'data-money', 'total')[0];
+    for (const s of ['review', 'payment', 'paid'] as const) {
+      const row = rowOf(await render(s, fx));
+      if (!row || !classes(row).includes('gap-3')) problems.push(`${NAME[s]}: the total row "${row?.attrs.class}" has no gap-3`);
+    }
+    // Planted: the Review row without its gap is named.
+    const review = await render('review', fx);
+    const row = rowOf(review);
+    if (row && classes(row).includes('gap-3')) {
+      const planted = review.replace(outer(review, row).slice(0, row.innerStart - row.start), outer(review, row).slice(0, row.innerStart - row.start).replace(' gap-3', ''));
+      expect(classes(rowOf(planted)!)).not.toContain('gap-3');
+    }
+    expect(problems).toEqual([]);
+  });
+
+  it('the merged step freezes its controls while the request is in flight', async () => {
+    const problems: string[] = [];
+    const fx = fixture('FX-T1S1P1');
+    const idle = await render('review', fx);
+    const flight = await render('review', fx, { requesting: true });
+    problems.push(...frozenStepProblems(idle, flight));
+    // The handler helper: acts when idle, never while requesting.
+    let whileIdle: ((requesting: boolean, handler: (...args: number[]) => void) => (...args: number[]) => void) | undefined;
+    try { whileIdle = ((await import('@/components/drive-exotiq/flow/steps')) as unknown as { whileIdle?: typeof whileIdle }).whileIdle; } catch { whileIdle = undefined; }
+    if (!whileIdle) problems.push('steps.ts: no whileIdle');
+    else {
+      const calls: number[] = [];
+      whileIdle(false, (n) => calls.push(n))(1);
+      whileIdle(true, (n) => calls.push(n))(2);
+      if (JSON.stringify(calls) !== '[1]') problems.push(`whileIdle called ${JSON.stringify(calls)}, expected [1]`);
+    }
+    const reviewSrc = stripComments(read(REVIEW));
+    const flowSrc = stripComments(read('components/drive-exotiq/BookingFlow.tsx'));
+    problems.push(...handlerGuardProblems(reviewSrc, flowSrc));
+    if (EVIDENCE) {
+      mkdirSync(EVIDENCE, { recursive: true });
+      writeFileSync(join(EVIDENCE, 'AC21-inflight-markup.html'), `<!-- MP-26 AC21: react-dom/server markup of ReviewStep (Review & Request) with FX-T1S1P1 and requesting=true, from tests/fees/fees.surfaces.test.tsx -->\n${flight}\n`);
+    }
+    // Planted, always on: an idle step passed off as in flight, a changed switch class, a missing aria-busy, a raw handler.
+    const same = frozenStepProblems(idle, idle).join();
+    for (const k of ['Protect switch is not disabled', 'opt-in is not disabled', 'rental row is an enabled button', 'aria-busy']) expect(same).toContain(k);
+    expect(frozenStepProblems(idle, flight.replace('focus-visible:ring-offset-panel bg-gold', 'focus-visible:ring-offset-panel bg-gold/90')).join()).toContain('differs');
+    expect(frozenStepProblems(idle, flight.replace(' aria-busy="true"', '')).join()).toContain('aria-busy');
+    const synthetic = "export function ReviewStep({ goTo, onProtectionChange, onMarketingConsentChange, requesting }) {\n  const onProtect = onProtectionChange && whileIdle(requesting, onProtectionChange);\n  const onConsent = onMarketingConsentChange && whileIdle(requesting, onMarketingConsentChange);\n  const toDates = whileIdle(requesting, () => goTo(1));\n  return <TwoPartyBreakdown onRentalClick={requesting ? undefined : toDates} />;\n}\nfunction ProtectSwitch({ onProtectionChange, protectionOn }) { return onProtectionChange(protectionOn ? 'decline' : 'premium'); }";
+    const backGuard = 'const back = step > 1 && !reserving ? () => setStep((value) => value - 1) : undefined;';
+    expect(handlerGuardProblems(synthetic, backGuard)).toEqual([]);
+    expect(handlerGuardProblems(synthetic.replace('whileIdle(requesting, onProtectionChange)', 'onProtectionChange'), backGuard).join()).toContain('onProtectionChange');
+    expect(handlerGuardProblems(synthetic, 'const back = step > 1 ? () => setStep((value) => value - 1) : undefined;').join()).toContain('Back');
+    expect(handlerGuardProblems(synthetic.replace('onRentalClick={requesting ? undefined : toDates} />', 'onRentalClick={requesting ? undefined : toDates} between={<ProtectSwitch onProtectionChange={onProtectionChange} />} />'), backGuard).join()).toContain('onProtectionChange used outside whileIdle');
     expect(problems).toEqual([]);
   });
 
