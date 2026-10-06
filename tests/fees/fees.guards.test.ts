@@ -3,7 +3,7 @@
 // matchers they rely on are unit-checked on synthetic input in every run, so a gated test can never
 // pass by checking nothing.
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -112,18 +112,20 @@ describe('MP-26 guards (AC17, AC18)', () => {
     if (!BASE) return;
     const changed = changedSince(BASE);
     const problems = suiteSetProblems(changed);
-    const report: string[] = ['MP-26 AC18: lockstep amendments', `base: ${git('rev-parse', BASE).trim()}`, `head: ${git('rev-parse', 'HEAD').trim()}`, ''];
+    // The after-state is the working tree (as changedSince reads it), so an uncommitted edit cannot slip past.
+    const now = (file: string) => readFileSync(join(REPO, file), 'utf8');
+    const report: string[] = ['MP-26 AC18: lockstep amendments', `base: ${git('rev-parse', BASE).trim()}`, `head: ${git('rev-parse', 'HEAD').trim()} (working tree read)`, ''];
     const numstat = Object.fromEntries(lines(git('diff', '--numstat', BASE, '--', ...LOCKSTEP)).map((l) => { const [a, d, f] = l.split('\t'); return [f, { added: Number(a), removed: Number(d) }]; }));
     for (const file of LOCKSTEP) {
       const before = git('show', `${BASE}:${file}`);
-      const after = git('show', `HEAD:${file}`);
+      const after = now(file);
       problems.push(...amendmentProblems(file, before, after));
       const [cb, ca] = [ceilings(before), ceilings(after)];
       const moved = Object.keys({ ...cb, ...ca }).filter((k) => cb[k] !== ca[k]).map((k) => `${k} ${cb[k] ?? '-'} -> ${ca[k] ?? '-'}`);
       report.push(`${file}: +${numstat[file]?.added ?? 0} -${numstat[file]?.removed ?? 0}; it( ${itCount(before)} -> ${itCount(after)}${moved.length ? `; ceilings: ${moved.join(', ')}` : ''}`);
     }
     // The gold ceiling goes down by exactly one (44 -> 43).
-    const gold = ceilings(git('show', 'HEAD:tests/restraint/restraint.gold.test.ts')).GOLD_TOTAL_CEILING;
+    const gold = ceilings(now('tests/restraint/restraint.gold.test.ts')).GOLD_TOTAL_CEILING;
     const goldBase = ceilings(git('show', `${BASE}:tests/restraint/restraint.gold.test.ts`)).GOLD_TOTAL_CEILING;
     if (gold !== goldBase - 1 || gold !== 43) problems.push(`GOLD_TOTAL_CEILING ${goldBase} -> ${gold}, expected 44 -> 43`);
     const suiteFiles = changed.filter(inSuites);
