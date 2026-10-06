@@ -107,7 +107,7 @@ export function ReviewStep({
           between={onProtectionChange && <ProtectSwitch cart={cart} m={m} protectionOn={protectionOn} onProtectionChange={onProtectionChange} />}
         />
         <div className="mt-4 border-t border-line pt-4">
-          <div data-money="total" className="flex items-center justify-between"><span className="text-body text-muted">Total once approved</span><span className="text-gold"><Money cents={m.grandTotalCents} large /></span></div>
+          <div data-money="total" className="flex items-center justify-between gap-3"><span className="text-body text-muted">Total once approved</span><span className="text-gold"><Money cents={m.grandTotalCents} large /></span></div>
           <p className="mt-2 text-body-sm leading-5 text-muted">{cart.operator.name} reviews your request, then we email you a secure payment link. Your card is only charged when you pay from that link.</p>
         </div>
         {/* Unconditional: the deposit is the operator's to collect at pickup and

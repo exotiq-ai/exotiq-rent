@@ -196,7 +196,7 @@ export async function ConfirmationScreen({
               })}
               operatorNote={(live.operatorTaxCents ?? 0) > 0 ? `Statement shows ${cart.operator.name} — one charge including tax` : `Appears as ${cart.operator.name} on your statement`}
             />
-            <div data-money="total" className="mt-3 flex justify-between border-t border-line py-3 text-body font-medium"><span>Total paid</span><Money cents={live.totalCents + exotiqLegCents} /></div>
+            <div data-money="total" className="mt-3 flex justify-between gap-3 border-t border-line py-3 text-body font-medium"><span>Total paid</span><Money cents={live.totalCents + exotiqLegCents} /></div>
           </div>
         )}
         {live && !terminal && !live.paidAt && live.status !== 'pending_payment' && (
