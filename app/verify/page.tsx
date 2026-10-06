@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { IdentityVerificationCard } from '@/components/drive-exotiq/IdentityVerificationCard';
-import { driveFontClassName } from '@/components/drive-exotiq/fonts';
+import { PageFrame } from '@/components/browse/PageFrame';
 import { getSiteMode } from '@/domain/booking/config';
 import { getBookingConfirmation } from '@/domain/booking/service';
 import { formatRangeLabel } from '@/domain/booking/dates';
@@ -39,15 +39,18 @@ export default async function VerifyRoute({ searchParams }: Props) {
   // The email sends ?token=; accept ?t= too so a renter who hand-edits from a
   // confirmation link (/booking/REF?t=…) still lands somewhere that works.
   const token = (searchParams.token ?? searchParams.t)?.trim();
+  // The site bar's home before a booking resolves: no tenant is derivable yet, so the default
+  // storefront (as the Problem link below). Once it resolves, that operator's own storefront (T-8).
+  const defaultHome = `/${process.env.NEXT_PUBLIC_DEFAULT_TEAM_SLUG ?? 'exotiq'}`;
 
   if (!bookingRef || !token) {
     return (
-      <VerifyShell>
+      <PageFrame homeHref={defaultHome}>
         <Problem
           title="This link is incomplete"
           body="Open the “Verify your ID” link directly from your email — it carries the secure access code for your booking."
         />
-      </VerifyShell>
+      </PageFrame>
     );
   }
 
@@ -55,12 +58,12 @@ export default async function VerifyRoute({ searchParams }: Props) {
 
   if (!lookup) {
     return (
-      <VerifyShell>
+      <PageFrame homeHref={defaultHome}>
         <Problem
           title="We couldn't find that booking"
           body={`No booking matches ${bookingRef}. Check the link in your email, or reply to that email and the operator will help.`}
         />
-      </VerifyShell>
+      </PageFrame>
     );
   }
 
@@ -69,12 +72,12 @@ export default async function VerifyRoute({ searchParams }: Props) {
   // ref itself is real.
   if ('restricted' in lookup) {
     return (
-      <VerifyShell>
+      <PageFrame homeHref={defaultHome}>
         <Problem
           title="This verification link has expired"
           body="For your security these links are tied to a single booking. Reply to your booking email and the operator will send a fresh one."
         />
-      </VerifyShell>
+      </PageFrame>
     );
   }
 
@@ -82,7 +85,7 @@ export default async function VerifyRoute({ searchParams }: Props) {
   const dateLabel = live ? formatRangeLabel(live.startAt.slice(0, 10), live.endAt.slice(0, 10)) : undefined;
 
   return (
-    <VerifyShell>
+    <PageFrame homeHref={`/${lookup.team.slug}`}>
       <div className={`${microLabelClassName} text-faint`}>Booking {lookup.bookingRef}</div>
       <h1
         className="mt-3 text-heading leading-[1.1] tracking-[-0.01em] text-ink"
@@ -109,20 +112,7 @@ export default async function VerifyRoute({ searchParams }: Props) {
       >
         View full booking details
       </Link>
-    </VerifyShell>
-  );
-}
-
-function VerifyShell({ children }: { children: React.ReactNode }) {
-  return (
-    <div className={driveFontClassName}>
-      <main
-        className="mx-auto min-h-dvh w-full max-w-[430px] bg-panel px-5 py-10"
-        style={{ fontFamily: 'var(--font-drive-inter), system-ui, sans-serif' }}
-      >
-        {children}
-      </main>
-    </div>
+    </PageFrame>
   );
 }
 
