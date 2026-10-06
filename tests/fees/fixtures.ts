@@ -235,6 +235,26 @@ export function mockCart(protect: boolean): BookingCart {
 export const mockCase = (protect: boolean): Case =>
   makeCase({ id: `MOCK-P${protect ? 1 : 0}`, days: VEHICLE.minRentalDays, dailyRateCents: VEHICLE.dailyRateCents, taxPct: 0, stateDaily: 0, processingFeeCents: 0, protect });
 
+/** The fold input for a case as the Review surface supplies it (days, rate, percent, labels known). */
+export function foldInputOf(c: Case, known = true) {
+  return {
+    operatorName: OPERATOR_NAME,
+    operatorTotalCents: c.operatorTotalCents,
+    operatorTaxCents: c.taxCents,
+    operatorTaxLabel: c.taxCents > 0 ? TAX_LABEL : undefined,
+    operatorTaxRate: known && c.taxCents > 0 ? c.taxPct : undefined,
+    days: known ? c.days : undefined,
+    dailyRateCents: known ? c.dailyRateCents : undefined,
+    platformFeeCents: c.platformFeeCents,
+    platformFeePercent: known ? 10 : undefined,
+    protectionTotalCents: c.protectionTotalCents,
+    stateFeeCents: c.stateFeeCents,
+    stateFeeLabel: known ? c.stateFeeLabel : undefined,
+    processingFeeCents: c.processingFeeCents,
+    exotiqTotalCents: c.exotiqTotalCents,
+  };
+}
+
 // ---- expected rows -----------------------------------------------------------------------------
 
 export type Expected = {
