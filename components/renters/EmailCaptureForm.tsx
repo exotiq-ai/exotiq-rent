@@ -114,7 +114,7 @@ export function EmailCaptureForm({
           autoComplete="email"
           required
           placeholder={placeholder}
-          className="h-10 min-w-0 flex-1 rounded-lg border border-line bg-field px-3 text-body-lg text-ink outline-none transition placeholder:text-faint hover:border-line2 focus:border-gold/70 focus-visible:ring-2 focus-visible:ring-gold/60"
+          className="h-10 min-h-10 min-w-0 flex-1 rounded-lg border border-line bg-field px-3 text-body-lg text-ink outline-none transition placeholder:text-faint hover:border-line2 focus:border-gold/70 focus-visible:ring-2 focus-visible:ring-gold/60"
         />
         {/* Honeypot: hidden from people and named so contact autofill leaves it alone. */}
         <input name="hp_field" type="text" tabIndex={-1} autoComplete="off" aria-hidden className="absolute -left-[9999px] h-0 w-0 opacity-0" />
