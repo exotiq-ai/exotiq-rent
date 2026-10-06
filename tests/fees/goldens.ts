@@ -54,10 +54,36 @@ export const identitySentenceEl = (root: El): El | undefined => {
 
 /** DatesStep with its eyebrow cut. */
 export const cutDates = (html: string) => cutInner(html, [[eyebrowEl(parseHtml(html)), '«eyebrow»']]);
-/** DriverStep with its eyebrow and identity sentence cut. */
+/**
+ * Replace each element WHOLE (opening tag through closing tag, or the single tag of a void element)
+ * with a placeholder, ranges applied right to left. cutInner cannot do this for an <input/>: a void
+ * element has innerStart == innerEnd == end, so the label would land after the element, not in place of it.
+ */
+export function cutOuter(html: string, cuts: [El | undefined, string][]): string {
+  const found = cuts.map(([el, label]) => {
+    if (!el) throw new Error(`cut target missing: ${label}`);
+    return [el, label] as const;
+  });
+  let out = html;
+  for (const [el, label] of [...found].sort((a, b) => b[0].start - a[0].start)) out = out.slice(0, el.start) + label + out.slice(el.end);
+  return out;
+}
+
+/** DriverStep's Date of birth and Phone inputs, found by what they are (autocomplete, type), not by their hints or classes. */
+export const dobInputEl = (root: El): El | undefined => elements(root).find((e) => e.tag === 'input' && e.attrs.autoComplete === 'bday');
+export const phoneInputEl = (root: El): El | undefined => elements(root).find((e) => e.tag === 'input' && e.attrs.type === 'tel');
+
+/**
+ * DriverStep with its eyebrow and identity sentence cut (inner) and its Date of birth and Phone inputs
+ * cut whole (MP-24: their hints, classes and attributes are tests/clips/clips.hints.test.tsx's to pin,
+ * so a hint change no longer turns this golden red). The whole-element cuts run first and the markup is
+ * re-parsed, because the inner cuts' offsets are only valid for the markup they were read from.
+ */
 export function cutDriver(html: string): string {
   const root = parseHtml(html);
-  return cutInner(html, [[eyebrowEl(root), '«eyebrow»'], [identitySentenceEl(root), '«identity-sentence»']]);
+  const cutInputs = cutOuter(html, [[dobInputEl(root), '«dob-input»'], [phoneInputEl(root), '«phone-input»']]);
+  const again = parseHtml(cutInputs);
+  return cutInner(cutInputs, [[eyebrowEl(again), '«eyebrow»'], [identitySentenceEl(again), '«identity-sentence»']]);
 }
 
 /** The flow's progress (MP-17): it sits where the step strip sat, right after the header row. */
