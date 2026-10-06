@@ -55,7 +55,7 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
 
   return (
     <PhoneViewport className="font-[var(--font-drive-inter)]" closeHref={`/${operator.slug}`} layout="page" desktopNav={desktopNav}>
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-52 pt-1 [scrollbar-width:none] lg:overflow-visible lg:px-8 lg:pb-20 lg:pt-8">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-5 pt-1 [scrollbar-width:none] lg:overflow-visible lg:px-8 lg:pb-20 lg:pt-8">
         <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-x-12">
           <div className="min-w-0">
             <VehicleGallery
@@ -138,7 +138,7 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
           </aside>
         </div>
       </div>
-      <div className={`${stickyBarClassName} bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)+8px))] lg:hidden`}>
+      <div data-chrome="pinned-bar" className={`${stickyBarClassName} lg:hidden`}>
         {yourDates}
         <CookieControls viewport="mobile" />
         <div className="flex items-stretch gap-2">

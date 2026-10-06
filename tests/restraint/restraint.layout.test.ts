@@ -244,7 +244,7 @@ describe('MP-16 de-box and elevation (AC6-AC9)', () => {
 
     // The two shared recipes.
     if (recipes.elevatedClassName !== 'shadow-[0_24px_60px_-20px_rgba(0,0,0,.8)]') problems.push(`elevatedClassName: ${recipes.elevatedClassName}`);
-    problems.push(...missing('stickyBarClassName', recipes.stickyBarClassName ?? '', 'absolute left-0 right-0 z-10 border-t border-line bg-panel px-4 pb-4 pt-3', 'shadow-[0_-24px_42px_rgba(13,15,20,.96)]'));
+    problems.push(...missing('stickyBarClassName', recipes.stickyBarClassName ?? '', 'relative z-10 shrink-0 border-t border-line bg-panel px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3', 'shadow-[0_-24px_42px_rgba(13,15,20,.96)]'));
     for (const rel of renterFiles()) if (rel !== TOKENS && src(rel).includes('0_-24px_42px')) problems.push(`${rel}: a private copy of the sticky-bar shadow`);
 
     // The flow frame: no shadow, a hairline where it stops filling the viewport.
@@ -261,11 +261,11 @@ describe('MP-16 de-box and elevation (AC6-AC9)', () => {
 
     // The three sticky bars share the recipe and keep their CookieControls child.
     const sticky = sliceFunction(src(SHARED), 'Sticky');
-    problems.push(...missing('Sticky', sticky, '${stickyBarClassName} bottom-4 md:bottom-5', '<CookieControls />'));
+    problems.push(...missing('Sticky', sticky, 'data-chrome="pinned-bar" className={stickyBarClassName}', '<CookieControls />'));
     for (const [rel, child] of [[VEP, '<CookieControls viewport="mobile" />'], [SF, '<CookieControls viewport="mobile" />']] as const) {
       const bar = lits(rel, '${stickyBarClassName}');
       if (bar.length !== 1) problems.push(`${rel}: sticky bar literal count ${bar.length}`);
-      for (const s of bar) problems.push(...missing(`${rel} sticky bar`, s, 'bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)+8px))]', 'lg:hidden'));
+      for (const s of bar) problems.push(...missing(`${rel} sticky bar`, s, 'lg:hidden'));
       if (bar.length) problems.push(...missing(`${rel} sticky bar child`, between(src(rel), '${stickyBarClassName}', '</div>'), child));
     }
 
