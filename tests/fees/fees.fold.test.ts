@@ -6,6 +6,10 @@
 import { describe, expect, it } from 'vitest';
 import { formatMoney } from '@/domain/booking/totals';
 import { type Case, OPERATOR_NAME, STATE_LABEL, expected, fixtures, foldInputOf as inputOf, grid } from './fixtures';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { stripComments } from '../design/lib/scan.mjs';
+import { REPO } from './goldens';
 
 type Fold = typeof import('@/components/drive-exotiq/feeGroups');
 async function fold(): Promise<Fold | null> {
@@ -109,6 +113,40 @@ describe('MP-26 display fold (AC1)', () => {
     const zeroProtect = foldFees({ ...inputOf(fixtures()[6]) });
     expect(zeroProtect.exotiq.lines.some((l) => l.key === 'protect')).toBe(false);
 
+    expect(problems).toEqual([]);
+  });
+});
+
+describe('MP-26 residual warning (review S2)', () => {
+  it('a non-reconciling fold is flagged for development and never shown silently', async () => {
+    const f = await fold();
+    const residualProblem = (f as unknown as { residualProblem?: (g: ReturnType<Fold['foldFees']>) => string | null } | null)?.residualProblem;
+    expect(residualProblem, 'feeGroups.ts exports residualProblem').toBeTypeOf('function');
+    const problems: string[] = [];
+    // Reconciling input is never flagged: the fixtures and every 36th grid case (60).
+    for (const c of [...fixtures(), ...grid().filter((_, i) => i % 36 === 0)]) {
+      const got = residualProblem!(f!.foldFees(inputOf(c)));
+      if (got !== null) problems.push(`${c.id}: ${got}`);
+    }
+    // A charged Exotiq total one cent above its lines, an operator subtotal one cent below its lines, both.
+    const base = fixtures()[7];
+    const short = f!.foldFees({ ...inputOf(base), exotiqTotalCents: base.exotiqTotalCents + 1 });
+    expect(residualProblem!(short)).toBe('Drive Exotiq: lines fall short of the subtotal by 1 cents');
+    const good = f!.foldFees(inputOf(base));
+    const over = { ...good, operator: { ...good.operator, subtotalCents: good.operator.subtotalCents - 1, residualCents: -1 } };
+    expect(residualProblem!(over)).toBe('operator: lines exceed the subtotal by 1 cents');
+    expect(residualProblem!({ ...short, operator: over.operator })).toBe('operator: lines exceed the subtotal by 1 cents; Drive Exotiq: lines fall short of the subtotal by 1 cents');
+    // The card warns in development only, once per message, after render (never on the server).
+    const card = stripComments(readFileSync(join(REPO, 'components/drive-exotiq/FeeCard.tsx'), 'utf8'));
+    const body = card.slice(card.indexOf('export function TwoPartyBreakdown('));
+    if (!/residualProblem\(groups\)/.test(body)) problems.push('FeeCard: TwoPartyBreakdown does not call residualProblem(groups)');
+    const effect = /useEffect\(\(\) => \{([\s\S]*?)\}, \[problem\]\);/.exec(body)?.[1] ?? '';
+    if (!effect.includes('console.warn(') || !effect.includes("process.env.NODE_ENV !== 'production'")) problems.push('FeeCard: console.warn is not inside a useEffect behind NODE_ENV !== production');
+    const walk = (dir: string): string[] => readdirSync(join(REPO, dir), { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(`${dir}/${e.name}`) : /\.tsx?$/.test(e.name) ? [`${dir}/${e.name}`] : []));
+    for (const rel of walk('components/drive-exotiq')) {
+      const n = (stripComments(readFileSync(join(REPO, rel), 'utf8')).match(/\bconsole\./g) ?? []).length;
+      if (n !== (rel === 'components/drive-exotiq/FeeCard.tsx' ? 1 : 0)) problems.push(`${rel}: ${n} console call(s)`);
+    }
     expect(problems).toEqual([]);
   });
 });
