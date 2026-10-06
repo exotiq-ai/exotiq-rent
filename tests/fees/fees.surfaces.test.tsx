@@ -356,7 +356,7 @@ export function sourceRestraintProblems(rel: string, text: string): string[] {
 
 // Amended AC9: the deposit tail no longer implies a payment today, and the statement descriptor is EXOTIQ RENT (no dot).
 const REMOVED = ['Proceed to payment', 'Total due today', 'Reserve your dates.', 'Review your details before payment.', 'Free cancellation up to 72 hours before pickup.', 'Separate from the total you pay Exotiq today.', 'EXOTIQ.RENT'];
-const stickyOf = (root: El) => elements(root).find((e) => ['absolute', 'left-0', 'right-0', 'z-10'].every((k) => classes(e).includes(k)));
+const stickyOf = (root: El) => byAttr(root, 'data-chrome', 'pinned-bar')[0];
 const findText = (root: El, tag: string, text: string) => elements(root).find((e) => e.tag === tag && norm(textOf(e)) === text);
 const PAYLINK = `${OPERATOR_NAME} reviews your request, then we email you a secure payment link. Your card is only charged when you pay from that link.`;
 const STATEMENT = `Two charges: ${OPERATOR_NAME}, and EXOTIQ RENT for Trip fees and protection.`;
