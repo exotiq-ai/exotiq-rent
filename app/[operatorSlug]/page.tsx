@@ -9,6 +9,7 @@ import { HTitle, Money, PhoneViewport } from '@/components/drive-exotiq/BookingC
 import { FilterBar } from '@/components/browse/FilterBar';
 import { EmptyState } from '@/components/browse/EmptyState';
 import { ListingGrid } from '@/components/browse/ListingGrid';
+import { PhotoShimmer } from '@/components/browse/photoPlaceholder';
 import { eyebrowClassName, microLabelClassName, stickyBarClassName, stickyBelowBarClassName } from '@/components/browse/tokens';
 import { browseEnabled, getSiteMode } from '@/domain/booking/config';
 import { formatRangeLabel, formatShortDate } from '@/domain/booking/dates';
@@ -187,7 +188,12 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
                   third element competing in a block that should hold one. If partner
                   status needs disclosing it belongs in copy, not a gold pill over a car. */}
               <div className="relative -mx-4 mt-[-8px] aspect-[3/2] overflow-hidden bg-surface lg:mx-0 lg:mt-0 lg:aspect-[21/9] lg:rounded-2xl">
-                {heroVehicle.heroImage && <Image src={heroVehicle.heroImage} alt={heroVehicle.name} fill priority sizes="(min-width: 1024px) 840px, 480px" className="object-cover object-[50%_52%]" />}
+                {heroVehicle.heroImage && (
+                  <>
+                    <PhotoShimmer />
+                    <Image src={heroVehicle.heroImage} alt={heroVehicle.name} fill priority sizes="(min-width: 1024px) 840px, 480px" className="object-cover object-[50%_52%]" />
+                  </>
+                )}
               </div>
               <div className="mt-4 lg:mt-6">
                 <HTitle className="text-title lg:text-display lg:leading-[1.12]">{team.name}</HTitle>
