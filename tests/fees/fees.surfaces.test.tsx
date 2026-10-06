@@ -620,7 +620,7 @@ describe('MP-26 two-party money card on every surface', () => {
     const good = await render('payment', fx);
     if (!problems.length) {
       expect(disclosureProblems('p', good.replace('Platform fee', 'Platform fee 10%'), { open: false, percent: false, stateFee: fx.stateFeeCents }).join()).toContain('percent');
-      expect(structureProblems('p', good.replace('Trip fees</button>', 'Protection &amp; fees</button>'), fx).join()).toContain('Protection');
+      expect(structureProblems('p', good.replace('>Trip fees<svg', '>Protection &amp; fees<svg'), fx).join()).toContain('Protection');
       expect(parityProblems('p', good.replace('$4,448.37', '$4,407'), fx, 'payment').join()).toContain('total');
     }
     expect(problems).toEqual([]);
@@ -662,7 +662,7 @@ describe('MP-26 two-party money card on every surface', () => {
       const root = parseHtml(good.replace(`Statement shows ${OPERATOR_NAME} — one charge including tax`, ''));
       const op = byAttr(root, 'data-money', 'group-operator')[0];
       expect(elements(op).some((e) => norm(textOf(e)) === `Statement shows ${OPERATOR_NAME} — one charge including tax`)).toBe(false);
-      expect(parityProblems('p', good.replace('$4,448.37', moneyText(fx.operatorTotalCents + fx.platformFeeCents + fx.protectionTotalCents)), fx, 'paid').join()).toContain('total');
+      expect(parityProblems('p', good.replace('<span>Total paid</span><span class="tabular-nums">$4,448.37', `<span>Total paid</span><span class="tabular-nums">${moneyText(fx.operatorTotalCents + fx.platformFeeCents + fx.protectionTotalCents)}`), fx, 'paid').join()).toContain('total');
       const mock = await render('mock', mockCase(true));
       expect(norm(textOf(parseHtml(mock.replace('10% of the rental', ''))))).not.toContain('10% of the rental');
     }
