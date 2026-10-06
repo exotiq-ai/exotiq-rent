@@ -16,8 +16,9 @@ import { containerClassName, eyebrowClassName, groundClassName, serifStyle } fro
  * that only links to things that exist. Layout ported from the cyan mockup's
  * nav/footer; rendered in the booking flow's gold editorial language.
  *
- * Privacy is public regardless of the browse launch flag. Terms remains
- * browse-gated; the header must not send booking-only hosts to a missing grid.
+ * Privacy and Terms are public regardless of the browse launch flag; the home
+ * link and the saved link follow it, so the header never sends booking-only
+ * hosts to a missing grid.
  */
 export function BrowseChrome({ children, view = 'browse_view', footerSignup = true }: { children: ReactNode; /** Funnel event fired on mount; null for pages that are not a funnel step (legal). */ view?: FunnelEvent | null; /** Off on the confirm/unsubscribe pages: no opt-in prompt inside an opt-out flow. */ footerSignup?: boolean }) {
   return (
@@ -48,7 +49,7 @@ export function BrowseChrome({ children, view = 'browse_view', footerSignup = tr
           </div>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
             <span>Every car is rented from one accountable operator.</span>
-            {browseEnabled() && <Link href="/terms" className="transition hover:text-ink">Terms</Link>}
+            <Link href="/terms" className="transition hover:text-ink">Terms</Link>
             <Link href="/privacy" className="transition hover:text-ink">Privacy</Link>
             <a href="mailto:hello@exotiq.ai?subject=Listing%20my%20fleet%20on%20Drive%20Exotiq" className="text-ink underline decoration-faint underline-offset-4 transition hover:decoration-ink">Operators — list your fleet</a>
           </div>

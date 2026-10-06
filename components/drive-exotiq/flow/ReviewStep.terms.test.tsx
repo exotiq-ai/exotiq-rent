@@ -1,7 +1,7 @@
 // MP-18 AC7 and AC10 on the Review & Request step.
-// AC7: the words "Rental Terms & Conditions" link to /terms in a new tab ONLY where /terms resolves
-// (browseEnabled(), BrowseChrome's footer pattern); elsewhere today's plain text, never a link to a
-// 404. The "(opens in a new tab)" hint sits OUTSIDE the label text (driver errata #2: the fee-matrix
+// AC7 (amended by MP-33, driver ruling DD1): the words "Rental Terms & Conditions" link to /terms in a
+// new tab on EVERY host, browse on or off, because /terms is public in every site mode. The
+// "(opens in a new tab)" hint sits OUTSIDE the label text (driver errata #2: the fee-matrix
 // harness and fees.surfaces find the checkbox by the exact label text).
 // AC10 (driver errata #2: the renamed "Request this booking" button): soft-disabled with an
 // always-mounted polite region while the ONLY blocker is the unticked box; the real `disabled`
@@ -55,19 +55,33 @@ describe('MP-18 Terms link (AC7)', () => {
     expect(elements(root).filter((e) => e.tag === 'a' && e.attrs.href === '/terms')).toHaveLength(1);
   });
 
-  it('terms label is plain text when legal pages are not published', () => {
+  it('terms label is the same new tab link on every host, browse on or off', () => {
     for (const env of [{ NEXT_PUBLIC_SITE_MODE: 'booking', NEXT_PUBLIC_MARKETPLACE_BROWSE: '' }, { NEXT_PUBLIC_SITE_MODE: 'marketplace', NEXT_PUBLIC_MARKETPLACE_BROWSE: 'on' }]) {
       vi.unstubAllEnvs();
       for (const [k, v] of Object.entries(env)) vi.stubEnv(k, v);
+      const where = JSON.stringify(env);
       const root = render();
       const label = termsLabel(root);
-      expect(label, JSON.stringify(env)).toBeDefined();
-      expect(elements(label!).filter((e) => e.tag === 'a'), JSON.stringify(env)).toEqual([]);
-      expect(elements(root).filter((e) => e.attrs.href === '/terms'), JSON.stringify(env)).toEqual([]);
-      expect(norm(textOf(root))).not.toContain('opens in a new tab');
-      // Today's styled words, unchanged.
-      const span = elements(label!).find((e) => e.tag === 'span' && norm(textOf(e)) === 'Rental Terms & Conditions');
-      expect(span?.attrs.class).toBe('text-ink underline decoration-faint underline-offset-2');
+      expect(label, `no label reading exactly "${LABEL}" ${where}`).toBeDefined();
+      const anchors = elements(label!).filter((e) => e.tag === 'a');
+      expect(anchors, where).toHaveLength(1);
+      const [a] = anchors;
+      expect(a.attrs.href, where).toBe('/terms');
+      expect(a.attrs.target, where).toBe('_blank');
+      expect(a.attrs.rel, where).toBe('noopener noreferrer');
+      expect(a.attrs.class, where).toBe('text-ink underline decoration-faint underline-offset-2');
+      expect(norm(textOf(a)), where).toBe('Rental Terms & Conditions');
+      // The new-tab hint: visually hidden, referenced by the link, and outside the label's text.
+      const hint = byId(root, a.attrs['aria-describedby'] ?? '');
+      expect(hint, `the link has no aria-describedby hint ${where}`).toBeDefined();
+      expect(a.attrs['aria-describedby'], where).toBe('review-terms-new-tab');
+      expect(norm(textOf(hint!)), where).toBe('(opens in a new tab)');
+      expect(hint!.attrs.class?.split(/\s+/), where).toContain('sr-only');
+      for (let n: El | null = hint!; n; n = n.parent) expect(n, where).not.toBe(label);
+      // The old plain-text span is gone; the link is the only anchor to /terms on the step.
+      expect(elements(label!).filter((e) => e.tag === 'span' && norm(textOf(e)) === 'Rental Terms & Conditions'), where).toEqual([]);
+      expect(elements(root).filter((e) => e.tag === 'a' && e.attrs.href === '/terms'), where).toHaveLength(1);
+      expect(checkbox(root), where).toBeDefined();
     }
   });
 });
