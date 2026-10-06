@@ -7,6 +7,7 @@ import { createBookingCart, createRenterBooking } from '@/domain/booking/service
 import { getDataMode } from '@/domain/booking/config';
 import { track } from '@/components/analytics/posthog';
 import { loadQuote, quoteKey, quotingEnabled, QuoteUnavailableError, type QuoteState } from '@/domain/booking/quote';
+import { defaultProtection } from '@/domain/booking/protect';
 import { addDays } from '@/domain/booking/dates';
 import { daysBetween } from '@/domain/booking/marketplaceQuery';
 import { localTodayIso, rangeIsBookable } from '@/domain/booking/availability';
@@ -23,11 +24,11 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
   const [step, setStep] = useState(1);
   const [cart, setCart] = useState<BookingCart>(() => {
     const base = createBookingCart({ operator, vehicle });
-    // Protection is mandatory Premium and extras are gone (both steps removed).
-    // Pinned here rather than in the removed steps so the cart is correct from
-    // the first render in BOTH modes — mock included, which no longer has a
-    // ProtectStep to set it. rent-create-booking validates the tier and 400s on
-    // anything outside premium/standard/decline, so this must always be set.
+    // TODO(PROTECT_ENABLED): see domain/booking/protect.ts. The tier follows the build's flag:
+    // declined while Protect is off, today's premium when it is on. Extras are gone (both steps
+    // removed). Pinned here so the cart is correct from the first render in BOTH modes, mock
+    // included. The tier is always sent: both backend endpoints treat an omitted tier as
+    // premium (rent-create-booking 400s only on an unknown value), so "no selection" would buy it.
     // Dates carried from a grid filter (MP-10 / T-13) seed the dates step; a
     // window shorter than the car's minimum stay is stretched to it. The
     // seed then passes the SAME bookability rule the calendar applies (not
@@ -41,7 +42,7 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
         }
       : undefined;
     const seeded = stretched && rangeIsBookable(vehicle, stretched.start, stretched.end, localTodayIso()) ? stretched : base.dates;
-    const base5 = recomputeBookingCart({ ...base, dates: seeded, protection: 'premium', extras: [] });
+    const base5 = recomputeBookingCart({ ...base, dates: seeded, protection: defaultProtection(), extras: [] });
     if (getDataMode() !== 'supabase') return base5;
     // Live mode additionally starts the driver form empty — the base cart
     // carries a demo identity that is only correct for mock and /preview.
