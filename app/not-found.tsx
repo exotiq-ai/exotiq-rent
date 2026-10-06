@@ -3,17 +3,12 @@ import { CarFront } from 'lucide-react';
 import { HTitle } from '@/components/drive-exotiq/BookingChrome';
 import { PageFrame } from '@/components/browse/PageFrame';
 import { ctaClassName } from '@/components/browse/tokens';
-import { getSiteMode } from '@/domain/booking/config';
+import { homeLink } from '@/domain/booking/config';
 
 export default function NotFound() {
-  // Booking mode: land on the default tenant's storefront via the same env the
-  // root redirect uses. The old hardcoded '/desert-exotic-rentals' was the MOCK
-  // tenant's slug — a live 404 whose only CTA looped straight back to itself
-  // (T-8, verified live). "Continue browsing", not "Browse the fleet": with
-  // multiple operators there is no single fleet to promise.
-  const home = getSiteMode() === 'marketplace'
-    ? { href: '/', label: 'Back to Drive Exotiq' }
-    : { href: `/${process.env.NEXT_PUBLIC_DEFAULT_TEAM_SLUG ?? 'exotiq'}`, label: 'Continue browsing' };
+  // Tenant-neutral home (T-8): the old hardcoded mock tenant slug made a live 404 whose only CTA
+  // looped back to itself. The rule lives in homeLink(), shared with the error boundary (MP-18).
+  const home = homeLink();
   return (
     <PageFrame homeHref={home.href}>
       <section className="flex flex-1 flex-col items-center justify-center px-6 text-center">

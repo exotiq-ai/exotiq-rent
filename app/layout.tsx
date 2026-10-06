@@ -55,6 +55,7 @@ export const viewport: Viewport = {
   // Paints the in-app browser frame and Android toolbar in the site's dark
   // ground instead of default white, so the page doesn't sit in a white frame.
   themeColor: isMarketplace ? "#0B0B0F" : tone.ground,
+  colorScheme: "dark",
 };
 
 export default function RootLayout({

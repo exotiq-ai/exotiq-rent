@@ -54,6 +54,18 @@ const config: Config = {
         mont: ['"Montserrat"', 'sans-serif'],
         /* LEGACY:end */
       },
+      // The content-photo loading shimmer (MP-18, components/browse/photoPlaceholder.tsx): a soft
+      // band sweeping under the photo. Bounded: 7 runs of 1.6s (11.2s) and then still, so a photo
+      // that never arrives does not shimmer forever. No fill mode: it ends on the neutral frame.
+      keyframes: {
+        photoShimmer: {
+          "0%": { backgroundPosition: "100% 0" },
+          "100%": { backgroundPosition: "0% 0" },
+        },
+      },
+      animation: {
+        "photo-shimmer": "photoShimmer 1.6s ease-in-out 7",
+      },
     },
   },
   plugins: [],

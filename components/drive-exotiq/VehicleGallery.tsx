@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { MapPin } from 'lucide-react';
 import { HTitle, Money } from './BookingChrome';
 import { eyebrowClassName, tone } from '@/components/browse/tokens';
+import { PhotoShimmer } from '@/components/browse/photoPlaceholder';
 
 /**
  * Vehicle hero + tappable gallery. Tapping a thumbnail promotes it into the
@@ -60,7 +61,7 @@ export function VehicleGallery({
           frame — including the lower body and wheels the old gradient ate. */}
       <div className="relative -mx-4 mt-[-4px] aspect-[4/3] overflow-hidden bg-surface lg:mx-0 lg:mt-0 lg:aspect-[16/10] lg:rounded-2xl">
         {hero
-          ? <Image src={hero} alt={vehicleName} fill sizes="(min-width: 1024px) 800px, 480px" priority className="object-cover object-[50%_52%]" onError={() => markFailed(hero)} />
+          ? <><PhotoShimmer /><Image src={hero} alt={vehicleName} fill sizes="(min-width: 1024px) 800px, 480px" priority className="object-cover object-[50%_52%]" onError={() => markFailed(hero)} /></>
           : <div className="absolute inset-0 bg-gradient-to-br from-surface2 to-panel" />}
       </div>
 
@@ -80,6 +81,7 @@ export function VehicleGallery({
                   border: active ? `1.5px solid ${tone.ink}` : `1px solid ${tone.line}`,
                 }}
               >
+                <PhotoShimmer />
                 <Image src={photo} alt={`${shortName} photo ${index + 1}`} fill sizes="(min-width: 1024px) 160px, 128px" className="object-cover" onError={() => markFailed(photo)} />
               </button>
             );

@@ -5,6 +5,7 @@ import { Money } from '@/components/drive-exotiq/BookingChrome';
 import type { MarketplaceListing } from '@/domain/booking/publicContracts';
 import { storefrontProvenance } from '@/domain/booking/provenance';
 import { SaveButton } from '@/components/renters/SaveButton';
+import { PhotoShimmer } from './photoPlaceholder';
 import { cardShellClassName, microLabelClassName, photoClassName, photoFrameClassName, priceClassName, priceUnitClassName, serifStyle } from './tokens';
 
 export type ListingCardContext = 'marketplace' | 'storefront';
@@ -50,7 +51,10 @@ export function ListingCard({
       <Link href={href} className="flex h-full flex-col focus-visible:outline-none">
         <div className={photoFrameClassName}>
           {vehicle.heroImage ? (
-            <Image src={vehicle.heroImage} alt={vehicle.name} fill priority={priority} sizes={sizes} className={photoClassName} />
+            <>
+              <PhotoShimmer />
+              <Image src={vehicle.heroImage} alt={vehicle.name} fill priority={priority} sizes={sizes} className={photoClassName} />
+            </>
           ) : (
             <ListingPhotoPlaceholder />
           )}

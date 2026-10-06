@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { LockKeyhole } from 'lucide-react';
 import { Money, PrimaryButton } from '../BookingChrome';
 import { TwoPartyBreakdown } from '../FeeCard';
@@ -13,6 +13,8 @@ import { DepositDisclosure, QuoteNotice, ScreenShell, StepHeader, Sticky } from 
 import { requestButtonState, stepEyebrow, whileIdle } from './steps';
 import { renterCaptureUiEnabled } from '@/domain/renters/flags';
 import { CONSENT_TEXT } from '@/domain/renters/consentText';
+import { browseEnabled } from '@/domain/booking/config';
+import { attemptContinue, termsMissing, TERMS_MESSAGE } from '@/domain/booking/driverValidation';
 
 type ProtectChoice = Extract<ProtectionTier, 'premium' | 'decline'>;
 
@@ -60,6 +62,14 @@ export function ReviewStep({
   // is only the fallback for mock mode, which has no backend to quote against.
   const m = quote ?? cart.totals;
   const [termsAccepted, setTermsAccepted] = useState(false);
+  // MP-18 AC10: when the unticked box is the ONLY thing between the renter and the request, the
+  // button stays tappable (aria-disabled) and explains itself; it stays truly disabled while a
+  // request is in flight and on the blocked branch below (states the renter cannot fix).
+  const [termsAttempted, setTermsAttempted] = useState(false);
+  const termsInput = useRef<HTMLInputElement>(null);
+  const termsGap = termsMissing(termsAccepted);
+  const showTermsError = termsAttempted && termsGap.length > 0;
+  const termsOnly = !requesting && termsGap.length > 0;
   const protectionOn = cart.protection !== 'decline';
   const button = requestButtonState({ blocked: Boolean(blocked), pending: Boolean(quotePending), termsAccepted, requesting });
   // A request in flight freezes the payload controls: reserve posts the cart as it was at the
@@ -146,13 +156,25 @@ export function ReviewStep({
         </details>
         <label className="mt-4 flex gap-3 border-t border-line pt-4 text-body-sm leading-5 text-ink">
           <input
+            ref={termsInput}
+            id="review-terms"
             type="checkbox"
             checked={termsAccepted}
             onChange={(event) => setTermsAccepted(event.target.checked)}
+            aria-invalid={showTermsError ? true : undefined}
+            aria-describedby={showTermsError ? 'review-terms-error' : undefined}
             className="control-check mt-0.5"
           />
-          <span>I agree to the <span className="text-ink underline decoration-faint underline-offset-2">Rental Terms &amp; Conditions</span>.</span>
+          {/* MP-18 AC7: a link only where /terms resolves (browseEnabled, as BrowseChrome's footer),
+              in a new tab because the cart lives only in memory; elsewhere the same words as text,
+              never a link to a 404. The new-tab hint sits outside the label so its text is unchanged. */}
+          <span>I agree to the {browseEnabled()
+            ? <a href="/terms" target="_blank" rel="noopener noreferrer" aria-describedby="review-terms-new-tab" className="text-ink underline decoration-faint underline-offset-2">Rental Terms &amp; Conditions</a>
+            : <span className="text-ink underline decoration-faint underline-offset-2">Rental Terms &amp; Conditions</span>}.</span>
         </label>
+        {browseEnabled() && <span id="review-terms-new-tab" className="sr-only">(opens in a new tab)</span>}
+        {showTermsError && <p id="review-terms-error" className="mt-2 px-1 text-body-sm leading-5 text-danger">{TERMS_MESSAGE}</p>}
+        <p id="review-terms-status" role="status" aria-live="polite" className="sr-only">{showTermsError ? TERMS_MESSAGE : ''}</p>
         {/* MP-14: opt-in, unchecked, never required. Posted with the booking. */}
         {onConsent && renterCaptureUiEnabled() && (
           <label className="mt-3 flex gap-3 px-1 text-body-sm leading-5 text-muted">
@@ -166,7 +188,16 @@ export function ReviewStep({
         {requestError && <p className="rounded-xl border border-danger/45 bg-danger/10 p-3 text-center text-body-sm leading-5 text-ink">{requestError}</p>}
         {/* The button sends a request, not a payment: nothing is charged until
             the renter pays from the link the operator's approval sends. */}
-        <PrimaryButton onClick={onRequest} disabled={button.inert}>{button.label}</PrimaryButton>
+        <PrimaryButton
+          onClick={() => attemptContinue(termsGap, onRequest, () => {
+            setTermsAttempted(true);
+            termsInput.current?.focus();
+          })}
+          disabled={button.inert && !termsOnly}
+          softDisabled={termsOnly}
+        >
+          {button.label}
+        </PrimaryButton>
       </Sticky>
     </>
   );
