@@ -13,8 +13,8 @@ import { contrast } from './restraintScan';
 const palette = tone as unknown as Record<string, string>;
 const EVIDENCE = process.env.RESTRAINT_EVIDENCE_DIR ?? '';
 
-/** The spec's Screenshot matrix: 15 states at both viewports, 2 desktop-only hover states. */
-const SPEC_STATES = ['S01', 'S02', 'S03', 'S04', 'S05', 'S05b', 'S06', 'S06b', 'S07', 'S08', 'S09', 'S10', 'S11', 'S12', 'S13'];
+/** The spec's Screenshot matrix: 14 states at both viewports, 2 desktop-only hover states (MP-26 removed S07, the deleted Pay step). */
+const SPEC_STATES = ['S01', 'S02', 'S03', 'S04', 'S05', 'S05b', 'S06', 'S06b', 'S08', 'S09', 'S10', 'S11', 'S12', 'S13'];
 const SPEC_HOVER = ['S14', 'S15'];
 /** LD8 extras for states mock mode cannot otherwise show (both viewports). */
 // X5 (attempt 2, B1): the Dates step with no saved consent, so the cookie row renders nothing.
@@ -35,8 +35,8 @@ export function matrixProblems(states: State[], hover: State[], extras: State[],
   const dupes = names.filter((n, i) => names.indexOf(n) !== i);
   if (dupes.length) problems.push(`duplicate cells ${dupes.join(',')}`);
   const spec = cells.filter((c) => !EXTRAS.includes(c.state));
-  if (spec.length !== 32) problems.push(`${spec.length} spec cells, expected 32 (15 x 2 + 2)`);
-  if (cells.length !== 32 + EXTRAS.length * 2) problems.push(`${cells.length} cells, expected ${32 + EXTRAS.length * 2}`);
+  if (spec.length !== 30) problems.push(`${spec.length} spec cells, expected 30 (14 x 2 + 2)`);
+  if (cells.length !== 30 + EXTRAS.length * 2) problems.push(`${cells.length} cells, expected ${30 + EXTRAS.length * 2}`);
   return problems;
 }
 

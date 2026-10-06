@@ -351,13 +351,14 @@ const PAYLINK = `${OPERATOR_NAME} reviews your request, then we email you a secu
 const STATEMENT = `Two charges: ${OPERATOR_NAME}, and EXOTIQ.RENT for Trip fees and protection.`;
 
 export function mergedOrderProblems(html: string): string[] {
-  const root = parseHtml(html);
+  // One tree for every anchor: element positions are only comparable within one parse.
+  const r = readCard(html, 'merged');
+  const root = r.root;
   const p: string[] = [];
   const header = elements(root).find((e) => e.tag === 'div' && classes(e).join(' ') === 'mb-4');
   const hEls = header ? header.children.filter((x): x is El => typeof x !== 'string') : [];
   const sticky = stickyOf(root);
   const buttons = sticky ? elements(sticky).filter((e) => e.tag === 'button') : [];
-  const r = readCard(html, 'merged');
   const anchors: [string, El | undefined][] = [
     ['eyebrow "Step 3 of 3"', hEls[0] && norm(textOf(hEls[0])) === 'Step 3 of 3' ? hEls[0] : undefined],
     ['h1 "Here\'s the breakdown."', hEls[1] && hEls[1].tag === 'h1' && norm(textOf(hEls[1])) === "Here's the breakdown." ? hEls[1] : undefined],

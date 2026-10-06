@@ -1,19 +1,30 @@
 'use client';
 
 import { useState } from 'react';
+import { LockKeyhole } from 'lucide-react';
 import { Money, PrimaryButton } from '../BookingChrome';
+import { TwoPartyBreakdown } from '../FeeCard';
+import { foldFees } from '../feeGroups';
 import { formatRangeLabel } from '@/domain/booking/dates';
 import { formatMoney } from '@/domain/booking/totals';
-import type { BookingCart, ProtectionTier } from '@/domain/booking/types';
+import type { BookingCart, BookingTotals, ProtectionTier } from '@/domain/booking/types';
 import type { PublicQuote } from '@/domain/booking/publicContracts';
-import { Breakdown, DepositDisclosure, QuoteNotice, ScreenShell, StepHeader, Sticky } from './shared';
+import { DepositDisclosure, QuoteNotice, ScreenShell, StepHeader, Sticky } from './shared';
+import { requestButtonState, stepEyebrow } from './steps';
 import { renterCaptureUiEnabled } from '@/domain/renters/flags';
 import { CONSENT_TEXT } from '@/domain/renters/consentText';
 
+type ProtectChoice = Extract<ProtectionTier, 'premium' | 'decline'>;
+
+/**
+ * Review & Request (MP-26): the flow's last step and its one money moment.
+ * Nothing is charged here. The renter sees who charges what, chooses Protect,
+ * accepts the terms and sends the request; the operator approves it, and
+ * payment happens later from the emailed payment link.
+ */
 export function ReviewStep({
   cart,
   goTo,
-  next,
   quote,
   quotePending,
   quoteError,
@@ -21,10 +32,12 @@ export function ReviewStep({
   blocked,
   onProtectionChange,
   onMarketingConsentChange,
+  onRequest,
+  requesting = false,
+  requestError,
 }: {
   cart: BookingCart;
   goTo: (step: number) => void;
-  next: () => void;
   /** Server figures; when present these are what the renter is agreeing to. */
   quote?: PublicQuote | null;
   quotePending?: boolean;
@@ -32,105 +45,81 @@ export function ReviewStep({
   onRetryQuote?: () => void;
   /** MP-14: present when the host runs renter capture; the line renders only then. */
   onMarketingConsentChange?: (checked: boolean) => void;
-  /** True when live pricing is unconfirmed — the renter must not advance. */
+  /** True when live pricing is unconfirmed — the renter must not request. */
   blocked?: boolean;
   /** T-12: premium is the default; the renter may toggle to declined while
    * the protect-plan T&C are finalized. Only these two tiers are offered. */
-  onProtectionChange?: (tier: Extract<ProtectionTier, 'premium' | 'decline'>) => void;
+  onProtectionChange?: (tier: ProtectChoice) => void;
+  /** Sends the booking request (BookingFlow's reserve). */
+  onRequest: () => void;
+  requesting?: boolean;
+  requestError?: string;
 }) {
   const dateLabel = formatRangeLabel(cart.dates.start, cart.dates.end);
   // Money comes from the server quote whenever we have one; the client engine
   // is only the fallback for mock mode, which has no backend to quote against.
   const m = quote ?? cart.totals;
-  const days = quote ? quote.rentalDays : cart.totals.days;
-  const platformPercent = Math.round(m.platformFeeRate * 100);
   const [termsAccepted, setTermsAccepted] = useState(false);
-
-  // Only the rental row is navigable now. The extras and protection rows used
-  // to link to goTo(3)/goTo(4); with those steps deleted those indices are
-  // Review and Pay, so tapping "protection" would have jumped the renter
-  // FORWARD to payment. Extras can no longer be non-zero either.
-  const operatorRows: [string, string, number, (() => void)?][] = [
-    ['Rental', `${days} × ${formatMoney(quote ? quote.dailyRateCents : cart.vehicle.dailyRateCents)}`, m.rentalSubtotalCents, () => goTo(1)],
-  ];
-  // Server-named tax line (2026-08-17): "Tax · 7.5% — charged by {operator}".
-  // Older quote shapes carry no label/rate and keep the generic copy.
-  if (m.operatorTaxesCents > 0) {
-    operatorRows.push([
-      quote?.operatorTaxLabel ?? 'Taxes & fees',
-      quote?.operatorTaxRate != null ? `${quote.operatorTaxRate}% · charged by ${cart.operator.name}` : 'Operator tax estimate',
-      m.operatorTaxesCents,
-    ]);
-  }
-
-  // Every component of exotiqTotalCents must be itemised. The server added
-  // processing and state fees into that total, and rendering only the first two
-  // rows left $264 of a $1,842 section unexplained — visible in production.
-  // These come straight off the quote; mock mode has neither and shows neither.
   const protectionOn = cart.protection !== 'decline';
-  const exotiqRows: [string, string, number, (() => void)?][] = [
-    ['Trip Fees', `${platformPercent}% of the rental`, m.platformFeeCents],
-  ];
-  // T-12: protection is a choice now — a $0 "Protection" row under a declined
-  // toggle reads as a glitch, so the row exists only when protection does.
-  if (protectionOn) exotiqRows.push(['Exotiq Protect', `Premium · ${days} days`, m.protectionTotalCents]);
-  if (quote?.stateFeeCents) exotiqRows.push([quote.stateFeeLabel ?? 'State rental fee', `${days} days`, quote.stateFeeCents]);
-  if (quote?.processingFeeCents) exotiqRows.push(['Processing fees', 'Card processing', quote.processingFeeCents]);
+  const button = requestButtonState({ blocked: Boolean(blocked), pending: Boolean(quotePending), termsAccepted, requesting });
 
   if (blocked) {
     return (
       <>
         <ScreenShell>
-          <StepHeader eyebrow="Step 04" title="Here's the breakdown." sub="Review your details before payment." />
+          <StepHeader eyebrow={stepEyebrow(3)} title="Here's the breakdown." sub="Nothing is charged yet." />
           <QuoteNotice pending={quotePending} message={quoteError} onRetry={onRetryQuote} />
         </ScreenShell>
-        <Sticky><PrimaryButton onClick={next} disabled>{quotePending ? 'Getting final pricing…' : 'Proceed to payment'}</PrimaryButton></Sticky>
+        <Sticky><PrimaryButton onClick={onRequest} disabled={button.inert}>{button.label}</PrimaryButton></Sticky>
       </>
     );
   }
 
+  // Every component of exotiqTotalCents is shown: the server adds processing and
+  // state fees into that total, and an unexplained remainder was once visible in
+  // production. They come straight off the quote; mock mode has neither.
+  const groups = foldFees({
+    operatorName: cart.operator.name,
+    operatorTotalCents: m.operatorTotalCents,
+    operatorTaxCents: m.operatorTaxesCents,
+    operatorTaxLabel: quote?.operatorTaxLabel,
+    operatorTaxRate: quote?.operatorTaxRate,
+    days: quote ? quote.rentalDays : cart.totals.days,
+    dailyRateCents: quote ? quote.dailyRateCents : cart.vehicle.dailyRateCents,
+    platformFeeCents: m.platformFeeCents,
+    platformFeePercent: Math.round(m.platformFeeRate * 100),
+    protectionTotalCents: m.protectionTotalCents,
+    stateFeeCents: quote?.stateFeeCents ?? 0,
+    stateFeeLabel: quote?.stateFeeLabel,
+    processingFeeCents: quote?.processingFeeCents ?? 0,
+    exotiqTotalCents: m.exotiqTotalCents,
+  });
+
   return (
     <>
       <ScreenShell>
-        <StepHeader eyebrow="Step 04" title="Here's the breakdown." />
+        <StepHeader eyebrow={stepEyebrow(3)} title="Here's the breakdown." sub="Nothing is charged yet." />
         <div className="grid grid-cols-3 gap-2 border-t border-line pt-3 text-center text-label"><div><span className="block text-faint">Dates</span>{dateLabel}</div><div><span className="block text-faint">Pickup</span>{cart.pickupTime}</div><div><span className="block text-faint">Location</span>{cart.operator.city}</div></div>
-        <Breakdown title="Operator" note={`Charge from ${cart.operator.name}`} rows={operatorRows} total={m.operatorTotalCents} />
-        {/* T-12: Exotiq Protect is premium-by-default with a single decline
-            toggle (no tier menu). Toggling recomputes the cart; quoteKey
-            includes the tier, so the flow blocks on a fresh server quote
-            before the renter can commit either way. */}
-        {onProtectionChange && (
-          <div className="mt-4 border-t border-line pt-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="text-body font-medium text-ink">Exotiq Protect</div>
-                <p className="mt-1 text-body-sm leading-5 text-muted">
-                  {protectionOn
-                    ? // Rate from the same source as the charged row (m), not the
-                      // client constant — review note: constant drift would make
-                      // this subtitle contradict the row it sits above.
-                      `Premium coverage · ${formatMoney(m.protectionDailyRateCents)}/day`
-                    : `Declined — you're responsible for damage under ${cart.operator.name}'s rental agreement.`}
-                </p>
-              </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={protectionOn}
-                aria-label="Exotiq Protect"
-                onClick={() => onProtectionChange(protectionOn ? 'decline' : 'premium')}
-                className={`relative h-7 w-12 shrink-0 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-panel ${protectionOn ? 'bg-gold' : 'bg-line'}`}
-              >
-                <span className={`absolute top-1 h-5 w-5 rounded-full bg-ink shadow-[0_1px_2px_rgba(0,0,0,.4)] transition-all ${protectionOn ? 'left-6' : 'left-1'}`} />
-              </button>
-            </div>
-          </div>
-        )}
-        <Breakdown title="Exotiq.Rent" note="Charged separately by EXOTIQ.RENT" rows={exotiqRows} total={m.exotiqTotalCents} />
-        <div className="mt-4 border-t border-line pt-4"><div className="flex items-center justify-between"><span className="text-body text-muted">Total due today</span><span className="text-gold"><Money cents={m.grandTotalCents} large /></span></div></div>
+        {/* Only the Rental row is navigable: it returns to the dates step. */}
+        <TwoPartyBreakdown
+          groups={groups}
+          onRentalClick={() => goTo(1)}
+          between={onProtectionChange && <ProtectSwitch cart={cart} m={m} protectionOn={protectionOn} onProtectionChange={onProtectionChange} />}
+        />
+        <div className="mt-4 border-t border-line pt-4">
+          <div data-money="total" className="flex items-center justify-between"><span className="text-body text-muted">Total once approved</span><span className="text-gold"><Money cents={m.grandTotalCents} large /></span></div>
+          <p className="mt-2 text-body-sm leading-5 text-muted">{cart.operator.name} reviews your request, then we email you a secure payment link. Your card is only charged when you pay from that link.</p>
+        </div>
         {/* Unconditional: the deposit is the operator's to collect at pickup and
             Exotiq quotes no amount, so there is no value to gate on. */}
         <DepositDisclosure operatorName={cart.operator.name} />
+        <div className="mt-4 flex items-start gap-3 border-t border-line pt-4">
+          <LockKeyhole size={16} className="mt-0.5 shrink-0 text-muted" />
+          <div>
+            <div className="text-body font-medium">What you&apos;ll see on your statement</div>
+            <p className="mt-1 text-body-sm leading-5 text-muted">Two charges: {cart.operator.name}, and <span className="text-ink">EXOTIQ.RENT</span> for Trip fees and protection.</p>
+          </div>
+        </div>
         {/* One collapsed policy affordance, not three. Cancellation terms and
             what protection covers were separate blocks competing for the same
             attention; neither is read at this moment, both must be available. */}
@@ -166,8 +155,59 @@ export function ReviewStep({
           </label>
         )}
       </ScreenShell>
-      <Sticky><PrimaryButton onClick={next} disabled={!termsAccepted}>Proceed to payment</PrimaryButton></Sticky>
+      <Sticky>
+        {requestError && <p className="rounded-xl border border-danger/45 bg-danger/10 p-3 text-center text-body-sm leading-5 text-ink">{requestError}</p>}
+        {/* The button sends a request, not a payment: nothing is charged until
+            the renter pays from the link the operator's approval sends. */}
+        <PrimaryButton onClick={onRequest} disabled={button.inert}>{button.label}</PrimaryButton>
+      </Sticky>
     </>
   );
 }
 
+/**
+ * T-12: Exotiq Protect is premium-by-default with a single decline toggle (no
+ * tier menu). Toggling recomputes the cart; quoteKey includes the tier, so the
+ * flow blocks on a fresh server quote before the renter can commit either way.
+ * The shipped switch, markup and copy unchanged (MP-26 compares it with the
+ * base); it sits between the operator's charge and Drive Exotiq's.
+ */
+function ProtectSwitch({
+  cart,
+  m,
+  protectionOn,
+  onProtectionChange,
+}: {
+  cart: BookingCart;
+  m: PublicQuote | BookingTotals;
+  protectionOn: boolean;
+  onProtectionChange: (tier: ProtectChoice) => void;
+}) {
+  return (
+    <div className="mt-4 border-t border-line pt-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-body font-medium text-ink">Exotiq Protect</div>
+          <p className="mt-1 text-body-sm leading-5 text-muted">
+            {protectionOn
+              ? // Rate from the same source as the charged row (m), not the
+                // client constant — review note: constant drift would make
+                // this subtitle contradict the row it sits above.
+                `Premium coverage · ${formatMoney(m.protectionDailyRateCents)}/day`
+              : `Declined — you're responsible for damage under ${cart.operator.name}'s rental agreement.`}
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={protectionOn}
+          aria-label="Exotiq Protect"
+          onClick={() => onProtectionChange(protectionOn ? 'decline' : 'premium')}
+          className={`relative h-7 w-12 shrink-0 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-panel ${protectionOn ? 'bg-gold' : 'bg-line'}`}
+        >
+          <span className={`absolute top-1 h-5 w-5 rounded-full bg-ink shadow-[0_1px_2px_rgba(0,0,0,.4)] transition-all ${protectionOn ? 'left-6' : 'left-1'}`} />
+        </button>
+      </div>
+    </div>
+  );
+}

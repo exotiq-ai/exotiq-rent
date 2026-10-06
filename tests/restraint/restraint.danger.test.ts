@@ -11,7 +11,7 @@ const palette = tone as unknown as Record<string, string>;
 const src = (rel: string): string => prepare(rel, read(rel));
 
 const DRIVER = 'components/drive-exotiq/flow/DriverStep.tsx';
-const PAY = 'components/drive-exotiq/flow/PayStep.tsx';
+const REVIEW = 'components/drive-exotiq/flow/ReviewStep.tsx';
 const SHARED = 'components/drive-exotiq/flow/shared.tsx';
 const IDV = 'components/drive-exotiq/IdentityVerificationCard.tsx';
 const PAYCARD = 'components/drive-exotiq/PaymentCard.tsx';
@@ -31,7 +31,8 @@ type Row = { label: string; text: () => string; must: string[]; mustNot?: RegExp
 
 const ERROR_ROWS: Row[] = [
   { label: 'DriverStep invalid field, DOB error, under-age banner', text: () => src(DRIVER), must: ['aria-[invalid=true]:border-danger/70', "'mt-2 text-body-sm leading-5 text-danger'", 'border-danger/45 bg-danger/10'], mustNot: [WARN] },
-  { label: 'PayStep payError', text: () => src(PAY), must: ['border-danger/45 bg-danger/10'], mustNot: [WARN] },
+  // MP-26: the request button and its error banner moved from the deleted PayStep into the merged Review & Request step.
+  { label: 'ReviewStep payError', text: () => src(REVIEW), must: ['border-danger/45 bg-danger/10'], mustNot: [WARN] },
   { label: 'QuoteNotice failure banner, title, retry', text: () => sliceFunction(src(SHARED), 'QuoteNotice'), must: ['border-danger/45 bg-danger/10', 'text-danger', 'rounded-lg border border-danger/45'], mustNot: [WARN] },
   { label: 'EmailCaptureForm error line', text: () => src(EMAIL), must: ["'text-danger'"], mustNot: [WARN] },
   { label: 'IdentityVerificationCard requires_input (danger) and manual_review (warn)', text: () => src(IDV), must: ["status === 'requires_input'", 'border-danger/45 bg-danger/10', 'border-warn/45 bg-warn/10', 'text-danger', 'text-warn', 'rounded-lg border border-danger/45'] },

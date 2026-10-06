@@ -45,7 +45,8 @@ const SHARED = 'components/drive-exotiq/flow/shared.tsx';
 const DATES = 'components/drive-exotiq/flow/DatesStep.tsx';
 const DRIVER = 'components/drive-exotiq/flow/DriverStep.tsx';
 const REVIEW = 'components/drive-exotiq/flow/ReviewStep.tsx';
-const PAY = 'components/drive-exotiq/flow/PayStep.tsx';
+const FEE = 'components/drive-exotiq/FeeCard.tsx';
+const FEEGROUPS = 'components/drive-exotiq/feeGroups.ts';
 const CARD = 'components/browse/ListingCard.tsx';
 const FILTERBAR = 'components/browse/FilterBar.tsx';
 const FILTERFORM = 'components/browse/FilterForm.tsx';
@@ -69,6 +70,10 @@ const lits = (rel: string, needle: string): string[] => literals(src(rel)).filte
  * itself (MOMENT). Its class name matches the spec's own pattern (the gold-sheen utility, the
  * same name the table counts twice in globals.css), and AC13(b) requires the element exactly
  * once. So the floor is the spec's 43 plus that one: total ceiling 44 (build finding, handoff).
+ *
+ * MP-26: PayStep is deleted and its one gold figure became the merged Review & Request step's
+ * single total, which ReviewStep's row of 3 (switch ON fill, switch focus ring, total) already
+ * counts. The ceiling comes down by that one: 43.
  */
 export const GOLD_BUDGET: Record<string, number> = {
   [TOKENS]: 9,
@@ -79,7 +84,6 @@ export const GOLD_BUDGET: Record<string, number> = {
   [DRIVER]: 2,
   [EMAIL]: 2,
   [SHARED]: 1,
-  [PAY]: 1,
   [PAYCARD]: 1,
   [VEP]: 1,
   [GALLERY]: 1,
@@ -89,7 +93,7 @@ export const GOLD_UNTOUCHED: Record<string, number> = {
   'app/share/[operatorSlug]/[vehicleSlug]/opengraph-image.tsx': 4,
   'app/preview/page.tsx': 4,
 };
-export const GOLD_TOTAL_CEILING = 44;
+export const GOLD_TOTAL_CEILING = 43;
 
 /** Budget findings for a census map: unlisted files, files over their row, untouched files moved, the total. */
 export function goldBudgetProblems(byFile: Record<string, number>): string[] {
@@ -125,7 +129,7 @@ const ICONS: [string, string, string][] = [
   [BROWSE, 'SlidersHorizontal', 'text-muted'],
   [SF, 'FileCheck2', 'text-muted'],
   [SF, 'ShieldCheck', 'text-muted'],
-  [PAY, 'LockKeyhole', 'text-muted'],
+  [REVIEW, 'LockKeyhole', 'text-muted'],
   [DRIVER, 'IdCard', 'text-muted'],
   [IDV, 'BadgeCheck', 'text-ink'],
   [IDV, 'ShieldCheck', 'text-muted'],
@@ -173,7 +177,7 @@ describe('MP-16 gold is punctuation (AC1-AC5)', () => {
     const planted = goldBudgetProblems({ ...GOLD_BUDGET, ...GOLD_UNTOUCHED, 'components/x/Planted.tsx': 2, [TOKENS]: 10 });
     expect(planted).toContain('components/x/Planted.tsx: 2 gold reference(s), file is not in the budget (must be 0)');
     expect(planted).toContain(`${TOKENS}: 10 gold reference(s), ceiling 9`);
-    expect(planted).toContain('total: 47 gold references, ceiling 44');
+    expect(planted).toContain('total: 46 gold references, ceiling 43');
     // The sheen element is the one reference ConfirmationScreen keeps (AC13b), and nothing else there is gold.
     expect(goldCount(prepare(CONF, read(CONF)).replace(/\banimate-gold-sheen\b/, ''))).toBe(0);
 
@@ -376,11 +380,10 @@ describe('MP-16 gold is punctuation (AC1-AC5)', () => {
     }
     if (!/<span className="text-gold">From <Money cents=\{dailyRateCents\} \/>\/day<\/span>/.test(src(GALLERY))) problems.push('VehicleGallery: the price span is not text-gold');
 
-    // The four headline totals: gold figure, neutral frame.
+    // The headline totals: gold figure, neutral frame (MP-26: Review & Request carries the flow's one total).
     const frames: [string, string, RegExp][] = [
       ['RunningTotalCard', sliceFunction(src(SHARED), 'RunningTotalCard'), /<span className="text-gold"><Money cents=\{amountCents\} large \/><\/span>/],
-      ['ReviewStep Total due today', around(src(REVIEW), 'Total due today', 260), /className="text-gold"><Money cents=\{m\.grandTotalCents\} large \/>/],
-      ['PayStep Total once approved', around(src(PAY), 'Total once approved', 260), /className="[^"]*text-gold[^"]*"><Money cents=\{m\.grandTotalCents\} large \/>/],
+      ['ReviewStep Total once approved', around(src(REVIEW), 'Total once approved', 260), /className="text-gold"><Money cents=\{m\.grandTotalCents\} large \/>/],
       ['PaymentCard Total due', around(src(PAYCARD), '<span>Total due</span>', 200), /<span className="text-gold"><Money cents=\{rentalCents \+ exotiqCents\} large \/><\/span>/],
     ];
     for (const [label, text, figure] of frames) {
@@ -390,7 +393,7 @@ describe('MP-16 gold is punctuation (AC1-AC5)', () => {
     problems.push(...present('RunningTotalCard', sliceFunction(src(SHARED), 'RunningTotalCard'), 'accent'));
 
     // Line items, subtotals, receipts, the rail rate and the D5 stat figures stay ink.
-    if (goldCount(sliceFunction(src(SHARED), 'Breakdown'))) problems.push('Breakdown carries gold');
+    for (const rel of [FEE, FEEGROUPS]) if (goldCount(src(rel))) problems.push(`${rel} (the two-party money card) carries gold`);
     if (goldCount(src(CONF).replace(/\banimate-gold-sheen\b/, ''))) problems.push('ConfirmationScreen (receipt rows, totals) carries gold beyond the sheen');
     const rail = between(src(FLOW), 'Daily rate', '</div>');
     if (goldCount(rail) || !rail.includes('text-ink')) problems.push('BookingFlow rail Daily rate is not ink');

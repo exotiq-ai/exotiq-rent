@@ -43,7 +43,8 @@ const SHARED = 'components/drive-exotiq/flow/shared.tsx';
 const DATES = 'components/drive-exotiq/flow/DatesStep.tsx';
 const DRIVER = 'components/drive-exotiq/flow/DriverStep.tsx';
 const REVIEW = 'components/drive-exotiq/flow/ReviewStep.tsx';
-const PAY = 'components/drive-exotiq/flow/PayStep.tsx';
+// MP-26: PayStep is deleted; the two-party money card is FeeCard's TwoPartyBreakdown (unlisted: 0 boxes).
+const FEE = 'components/drive-exotiq/FeeCard.tsx';
 const CARD = 'components/browse/ListingCard.tsx';
 const FILTERBAR = 'components/browse/FilterBar.tsx';
 const LEGAL = 'components/browse/LegalPage.tsx';
@@ -59,7 +60,6 @@ export const BOX_BUDGET: Record<string, number> = {
   [SF]: 2,
   [VEP]: 4,
   [REVIEW]: 0,
-  [PAY]: 0,
   [SHARED]: 1,
   [CONF]: 2,
   [IDV]: 2,
@@ -183,12 +183,11 @@ describe('MP-16 de-box and elevation (AC6-AC9)', () => {
     // Each flattened body separates its sections with a hairline.
     const hair = (label: string, text: string) => (/border-[ty] border-line|divide-line/.test(text) ? [] : [`${label}: no hairline`]);
     const shared = src(SHARED);
-    for (const name of ['RunningTotalCard', 'Breakdown']) {
-      const body = sliceFunction(shared, name);
+    for (const [name, body] of [['RunningTotalCard', sliceFunction(shared, 'RunningTotalCard')], ['TwoPartyBreakdown', sliceFunction(src(FEE), 'TwoPartyBreakdown')]] as const) {
       problems.push(...hair(name, body));
       if (literals(body).some(isBox)) problems.push(`${name}: still boxed`);
     }
-    for (const rel of [REVIEW, PAY]) problems.push(...hair(rel, src(rel)));
+    for (const rel of [REVIEW, FEE]) problems.push(...hair(rel, src(rel)));
     // Summary grids take a top rule only: the hairline section that follows supplies the one
     // below (a border-y there drew a double rule 16px apart, seen in the S06 and S08 captures).
     const review = src(REVIEW);
@@ -208,8 +207,8 @@ describe('MP-16 de-box and elevation (AC6-AC9)', () => {
     problems.push(...hair('DriverStep verification row', verification), ...present('DriverStep', driver, '>Verification<'));
     if (literals(verification).some(isBox)) problems.push('DriverStep verification row: still boxed');
 
-    // No tinted icon tile is left in Driver, Pay or Confirmation.
-    for (const rel of [DRIVER, PAY, CONF]) {
+    // No tinted icon tile is left in Driver or Confirmation.
+    for (const rel of [DRIVER, CONF]) {
       problems.push(...present(rel, src(rel), 'bg-gold/10'));
       for (const s of literals(src(rel))) if (/(^|\s)h-10 w-10(\s|$)/.test(s) && /rounded-lg/.test(s)) problems.push(`${rel}: icon tile "${s}"`);
     }

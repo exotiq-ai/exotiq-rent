@@ -34,7 +34,7 @@ export const VIEWPORTS = {
 const VEH = '/desert-exotic-rentals/mclaren-750s-spider';
 const BOOK = `${VEH}/book?start={start}&end={end}`;
 
-/** The spec's 15 states, captured at both viewports. `steps` advances the booking flow; `setup` stages a state. */
+/** The spec's states, captured at both viewports (14 since MP-26 merged Pay into Review & Request). `steps` advances the booking flow; `setup` stages a state. */
 export const STATES = [
   { id: 'S01', label: 'storefront', route: '/desert-exotic-rentals' },
   { id: 'S02', label: 'storefront filtered (selected chip, status line)', route: '/desert-exotic-rentals?make=Ferrari&start={start}&end={end}' },
@@ -42,9 +42,8 @@ export const STATES = [
   { id: 'S04', label: 'flow: Dates', route: BOOK },
   { id: 'S05', label: 'flow: Driver', route: BOOK, steps: 1 },
   { id: 'S05b', label: 'flow: Driver, invalid date of birth (danger border and error text)', route: BOOK, steps: 1, setup: 'dob-invalid', reveal: '#dob-error' },
-  { id: 'S06', label: 'flow: Review, Protect on', route: BOOK, steps: 2 },
-  { id: 'S06b', label: 'flow: Review, Protect off', route: BOOK, steps: 2, setup: 'protect-off' },
-  { id: 'S07', label: 'flow: Pay', route: BOOK, steps: 3 },
+  { id: 'S06', label: 'flow: Review & Request, Protect on', route: BOOK, steps: 2 },
+  { id: 'S06b', label: 'flow: Review & Request, Protect off', route: BOOK, steps: 2, setup: 'protect-off' },
   { id: 'S08', label: 'confirmation', route: '/booking/BK-100001' },
   { id: 'S09', label: 'browse, filtered', route: '/browse?make=Ferrari' },
   { id: 'S10', label: 'browse, empty', route: '/browse?make=Nonexistent' },
@@ -164,20 +163,12 @@ async function waitFor(page, predicate, arg, what, tries = 60) {
   throw new Error(`timed out waiting for ${what}`);
 }
 
-/** MP-15's step model: Continue x2, then the terms box and Proceed to payment. */
+/** MP-26's step model: Continue x2 reaches Review & Request, the last step. */
 async function advance(page, steps) {
   for (let s = 1; s <= steps; s++) {
     const prev = await h1Text(page);
-    if (s === 3) {
-      await waitFor(page, () => Boolean(document.querySelector('input.control-check')), null, 'the terms checkbox');
-      await page.evaluate(() => document.querySelector('input.control-check').click());
-      await sleep(200);
-      await waitFor(page, () => [...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Proceed to payment' && !b.disabled), null, 'Proceed to payment');
-      await clickText(page, 'Proceed to payment');
-    } else {
-      await waitFor(page, () => [...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Continue' && !b.disabled && b.offsetParent !== null), null, 'Continue');
-      await clickText(page, 'Continue');
-    }
+    await waitFor(page, () => [...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Continue' && !b.disabled && b.offsetParent !== null), null, 'Continue');
+    await clickText(page, 'Continue');
     await waitFor(page, (p) => [...document.querySelectorAll('h1')].map((h) => h.textContent.trim()).join('|') !== p, prev, `step ${s}`);
     await sleep(400);
   }
@@ -350,7 +341,7 @@ async function main() {
       return { state: c.state, viewport: c.viewport, label: c.label, route: c.route, before: rel.before, after: rel.after, bytes: { before: fs.statSync(abs.before).size, after: fs.statSync(abs.after).size }, sha256: sha, differs: sha.before !== sha.after, hairlinePairs: { before: probe(beforeRun), after: probe(run) } };
     });
     const manifest = {
-      spec: 'MP-16 AC14 screenshot matrix (15 states x 2 viewports + 2 desktop hover states = 32 spec cells; LD8 extras X1-X4 and the attempt-2 no-consent cell X5, at both viewports)',
+      spec: 'MP-16 AC14 screenshot matrix (14 states x 2 viewports + 2 desktop hover states = 30 spec cells since MP-26 removed S07 Pay; LD8 extras X1-X4 and the attempt-2 no-consent cell X5, at both viewports)',
       before: { base: beforeRun.base, ref: beforeRun.ref, captured: beforeRun.captured, dates: beforeRun.dates },
       after: { base, ref, captured: run.captured, dates },
       viewports: VIEWPORTS,

@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { CheckCircle2, FileText } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import { HTitle, Money } from '../BookingChrome';
 import { microLabelClassName, stickyBarClassName } from '@/components/browse/tokens';
 import { CookieControls } from '@/components/analytics/CookieControls';
@@ -140,43 +140,6 @@ export function DepositDisclosure({ operatorName }: { operatorName: string }) {
         {operatorName} collects a refundable deposit at pickup. Amount and accepted methods
         vary by operator. Separate from the total you pay Exotiq today.
       </p>
-    </div>
-  );
-}
-
-export function Breakdown({
-  title,
-  note,
-  rows,
-  total,
-}: {
-  title: string;
-  note: string;
-  rows: [string, string, number, (() => void)?][];
-  total: number;
-}) {
-  return (
-    <div className="mt-4 border-t border-line pt-4">
-      <div className="mb-3 flex justify-between">
-        <div>
-          <div className="text-body font-medium">{title}</div>
-          <div className="mt-1 text-label text-faint">{note}</div>
-        </div>
-        <FileText size={16} className="text-faint" />
-      </div>
-      {rows.map(([label, detail, amount, action]) => (
-        <button key={label} type="button" onClick={action} className="flex w-full justify-between border-t border-line py-3 text-left text-body">
-          <span>
-            <span className="block">{label}</span>
-            <span className="text-label text-muted">{detail}</span>
-          </span>
-          <Money cents={amount} />
-        </button>
-      ))}
-      <div className="flex justify-between border-t border-line pt-3 text-body font-medium">
-        <span>Total</span>
-        <Money cents={total} />
-      </div>
     </div>
   );
 }
