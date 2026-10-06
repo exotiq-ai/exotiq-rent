@@ -14,6 +14,8 @@ import { requestButtonState, stepEyebrow, whileIdle } from './steps';
 import { renterCaptureUiEnabled } from '@/domain/renters/flags';
 import { CONSENT_TEXT } from '@/domain/renters/consentText';
 import { browseEnabled } from '@/domain/booking/config';
+// TODO(PROTECT_ENABLED): see domain/booking/protect.ts. The switch, the statement's "and protection", the summary and the cover paragraph are gated where they render.
+import { protectEnabled } from '@/domain/booking/protect';
 import { attemptContinue, termsMissing, TERMS_MESSAGE } from '@/domain/booking/driverValidation';
 
 type ProtectChoice = Extract<ProtectionTier, 'premium' | 'decline'>;
@@ -120,7 +122,7 @@ export function ReviewStep({
         <TwoPartyBreakdown
           groups={groups}
           onRentalClick={requesting ? undefined : toDates}
-          between={onProtect && <ProtectSwitch cart={cart} m={m} protectionOn={protectionOn} onProtectionChange={onProtect} disabled={requesting} />}
+          between={protectEnabled() && onProtect && <ProtectSwitch cart={cart} m={m} protectionOn={protectionOn} onProtectionChange={onProtect} disabled={requesting} />}
         />
         <div className="mt-4 border-t border-line pt-4">
           <div data-money="total" className="flex items-center justify-between gap-3"><span className="text-body text-muted">Total once approved</span><span className="text-gold"><Money cents={m.grandTotalCents} large /></span></div>
@@ -133,14 +135,14 @@ export function ReviewStep({
           <LockKeyhole size={16} className="mt-0.5 shrink-0 text-muted" />
           <div>
             <div className="text-body font-medium">What you&apos;ll see on your statement</div>
-            <p className="mt-1 text-body-sm leading-5 text-muted">Two charges: {cart.operator.name}, and <span className="text-ink">EXOTIQ RENT</span> for Trip fees and protection.</p>
+            <p className="mt-1 text-body-sm leading-5 text-muted">Two charges: {cart.operator.name}, and <span className="text-ink">EXOTIQ RENT</span> for Trip fees{protectEnabled() && ' and protection'}.</p>
           </div>
         </div>
         {/* One collapsed policy affordance, not three. Cancellation terms and
             what protection covers were separate blocks competing for the same
             attention; neither is read at this moment, both must be available. */}
         <details className="mt-4 border-t border-line pt-4 text-body text-ink">
-          <summary className="cursor-pointer font-medium">Cancellation &amp; coverage</summary>
+          <summary className="cursor-pointer font-medium">{protectEnabled() ? 'Cancellation & coverage' : 'Cancellation policy'}</summary>
           {/* T-6: this mirrors the platform-enforced rule (and the derived
               cancellation_policy text snapshotted on every booking) — the old
               copy claimed post-72h refunds "follow the operator's policy",
@@ -150,7 +152,7 @@ export function ReviewStep({
               finalized — the old "$0 deductible / $250K liability / roadside"
               line asserted terms no document backs. Neutral, true, and gone
               entirely when protection is declined. */}
-          {protectionOn && (
+          {protectEnabled() && protectionOn && (
             <p className="mt-3 text-body-sm leading-5 text-muted">Exotiq Protect covers damage to the vehicle during your rental period. Full coverage terms are provided before pickup.</p>
           )}
         </details>
@@ -209,6 +211,8 @@ export function ReviewStep({
  * flow blocks on a fresh server quote before the renter can commit either way.
  * The shipped switch, markup and copy unchanged (MP-26 compares it with the
  * base); it sits between the operator's charge and Drive Exotiq's.
+ * TODO(PROTECT_ENABLED): see domain/booking/protect.ts. Rendered only while the flag is on (the
+ * `between=` gate in ReviewStep); MP-31 replaces it to meet the re-enable requirements there.
  */
 function ProtectSwitch({
   cart,

@@ -10,6 +10,7 @@ import {
   type RpcBookingByRefRow,
 } from './rpcClient';
 import type { BookingCart } from './types';
+import { protectionForRequest } from './protect';
 import type { BookingLookupResult, CreateBookingResult, PublicTeamStorefront, PublicVehicleContext } from './publicContracts';
 
 /**
@@ -104,7 +105,8 @@ export async function createSupabaseRenterBooking(cart: BookingCart): Promise<Cr
     start_date: cart.dates.start,
     end_date: cart.dates.end,
     pickup_time: cart.pickupTime,
-    protection: cart.protection,
+    // TODO(PROTECT_ENABLED): see domain/booking/protect.ts: an explicit 'decline' while off, never omitted (a missing tier is premium).
+    protection: protectionForRequest(cart.protection),
     driver: {
       name: cart.driver.name,
       email: cart.driver.email ?? '',

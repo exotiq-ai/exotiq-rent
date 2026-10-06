@@ -12,6 +12,7 @@ import { ListingGrid } from '@/components/browse/ListingGrid';
 import { PhotoShimmer } from '@/components/browse/photoPlaceholder';
 import { eyebrowClassName, microLabelClassName, stickyBarClassName, stickyBelowBarClassName } from '@/components/browse/tokens';
 import { browseEnabled, getSiteMode } from '@/domain/booking/config';
+import { protectEnabled } from '@/domain/booking/protect';
 import { formatRangeLabel, formatShortDate } from '@/domain/booking/dates';
 import { applyMarketplaceQuery, computeFacets, excludeBusy, filterListings } from '@/domain/booking/marketplaceCore';
 import { parseMarketplaceQuery, toMarketplaceSearchParams, type SearchParamsLike } from '@/domain/booking/marketplaceQuery';
@@ -49,10 +50,11 @@ export async function generateMetadata({ params, searchParams }: Props) {
 // (hidden from lg) and in the desktop aside (hidden below lg) — so the mobile
 // DOM order stays exactly what shipped while desktop gets a real two-column
 // layout. Text only, no images, so the duplication costs nothing measurable.
+// TODO(PROTECT_ENABLED): see domain/booking/protect.ts. The About fallback and the Why item name Protect only while the flag is on.
 function AboutCard({ team, count, minRate, minDays, className = '' }: { team: Team; count: number; minRate: number; minDays: number; className?: string }) {
   return (
     <div className={`border-t border-line pt-4 ${className}`}>
-      <p className="text-body-sm leading-5 text-muted">{team.about ?? 'A concierge-approved fleet with mobile-first booking, verified drivers, transparent rental charges, and optional Exotiq Protect shown separately.'}</p>
+      <p className="text-body-sm leading-5 text-muted">{team.about ?? (protectEnabled() ? 'A concierge-approved fleet with mobile-first booking, verified drivers, transparent rental charges, and optional Exotiq Protect shown separately.' : 'A concierge-approved fleet with mobile-first booking, verified drivers, and transparent rental charges.')}</p>
       {/* Big figure over a small label — set at the same 11px as its caption,
           a tile read as two lines of caption (MP-11). Figures alone on the
           17px line: a "From " prefix wrapped inside a 69px phone tile, so the
@@ -87,7 +89,7 @@ function WhyCard({ className = '' }: { className?: string }) {
   return (
     <div className={`border-t border-line pt-4 ${className}`}>
       <div className="mb-3 flex items-center gap-2 text-body font-medium text-ink"><ShieldCheck size={16} className="text-muted" />Why renters book here</div>
-      {['Operator-owned rental charge stays clear.', 'Exotiq Protect is shown separately.', 'Documents are verified before pickup.', 'Concierge handoff details are coordinated before arrival.'].map((item) => <div key={item} className="border-t border-line py-3 text-body text-muted">{item}</div>)}
+      {['Operator-owned rental charge stays clear.', ...(protectEnabled() ? ['Exotiq Protect is shown separately.'] : []), 'Documents are verified before pickup.', 'Concierge handoff details are coordinated before arrival.'].map((item) => <div key={item} className="border-t border-line py-3 text-body text-muted">{item}</div>)}
     </div>
   );
 }

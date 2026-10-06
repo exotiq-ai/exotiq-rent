@@ -100,6 +100,7 @@ beforeAll(() => {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date(NOW_ISO));
   vi.stubEnv('NEXT_PUBLIC_EXOTIQ_RENT_DATA_MODE', 'mock');
+  vi.stubEnv('NEXT_PUBLIC_PROTECT_ENABLED', 'true');
 });
 beforeEach(() => {
   vi.stubEnv('NEXT_PUBLIC_RENTER_CAPTURE', 'on');

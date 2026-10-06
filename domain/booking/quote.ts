@@ -1,6 +1,7 @@
 import { getDataMode } from './config';
 import { adaptQuote } from './adapters';
 import { fetchVehicleQuote } from './rpcClient';
+import { protectEnabled, protectionForRequest } from './protect';
 import type { PublicQuote } from './publicContracts';
 import type { BookingCart } from './types';
 
@@ -70,7 +71,7 @@ export async function loadQuote(cart: BookingCart): Promise<PublicQuote> {
       cart.vehicle.slug,
       cart.dates.start,
       cart.dates.end,
-      { protection: cart.protection },
+      { protection: protectionForRequest(cart.protection) },
     );
   } catch {
     throw new QuoteUnavailableError("We couldn't confirm final pricing. Check your connection and try again.");
@@ -78,5 +79,12 @@ export async function loadQuote(cart: BookingCart): Promise<PublicQuote> {
   if (!row) {
     throw new QuoteUnavailableError('Those dates are no longer available for this vehicle.');
   }
-  return adaptQuote(row);
+  const quote = adaptQuote(row);
+  // TODO(PROTECT_ENABLED): see domain/booking/protect.ts. While Protect is off a quote that still
+  // charges it is refused, so the request stays blocked behind the retry notice. Keyed on the
+  // total only: the total is what is charged; a residual daily rate with a 0 total never blocks.
+  if (!protectEnabled() && quote.protectionTotalCents > 0) {
+    throw new QuoteUnavailableError("We couldn't confirm final pricing. Please try again.");
+  }
+  return quote;
 }

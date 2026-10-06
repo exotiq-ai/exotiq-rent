@@ -1,6 +1,7 @@
 import type { BookingCart, ExtraSelection, Operator, PickupLocation, Vehicle } from './types';
 import { addDays, isoDate } from './dates';
 import { calculateBookingTotals } from './totals';
+import { defaultProtection } from './protect';
 
 export const mockOperators: Operator[] = [
   {
@@ -338,7 +339,8 @@ export function createInitialCart(overrides: { operator?: Operator; vehicle?: Ve
   const now = new Date();
   const start = isoDate(now.getFullYear(), now.getMonth() + 1, now.getDate());
   const dates = { start, end: addDays(start, vehicle.minRentalDays || 3) };
-  const protection = 'premium' as const;
+  // TODO(PROTECT_ENABLED): see domain/booking/protect.ts (the mock cart starts declined while Protect is off).
+  const protection = defaultProtection();
 
   return {
     operator,
