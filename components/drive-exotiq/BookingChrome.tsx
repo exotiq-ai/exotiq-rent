@@ -7,55 +7,22 @@ import Image from 'next/image';
 import { SiteBar } from '@/components/browse/SiteBar';
 import { SavedLink } from '@/components/renters/SavedLink';
 import { browseEnabled } from '@/domain/booking/config';
-import { ctaClassName, eyebrowClassName, groundClassName, microLabelClassName, serifStyle, tone } from '@/components/browse/tokens';
+import { ctaClassName, eyebrowClassName, groundClassName, microLabelClassName, serifStyle } from '@/components/browse/tokens';
 import { FLOW_STEPS } from './flow/steps';
 
-type StepStyle = 'bars' | 'numbered';
-
 /**
- * How the frame behaves from `lg` (1024px) up. Below `lg` every layout is the
- * phone frame exactly as it shipped before M7d — the mobile DOM and classes
- * are unchanged, so mobile is pixel-identical.
+ * How the frame behaves. Below `lg` (1024px) both layouts are the 480px phone
+ * frame; from `lg` up:
  *
- * - 'phone': the 480px cage at every width. Default; not-found and restricted
- *   views keep it.
- * - 'page':  storefront and vehicle detail. The cage opens into a 1200px page:
- *   the phone header row and step bar hide, a quiet site bar takes over, and
- *   the page owns its desktop grid.
+ * - 'page':  storefront and vehicle detail, which are pages, not booking steps.
+ *   Below lg a lockup-only bar links home; from lg the frame opens into a 1200px
+ *   page, the site bar takes over, and the page owns its desktop grid.
  * - 'panel': booking flow and confirmation. The cage stays 480px — every step
  *   component renders unchanged — centered as a rounded panel, with an optional
- *   summary rail beside it.
+ *   summary rail beside it. Only the flow passes a `step`, which renders the
+ *   named progress; the confirmation passes none.
  */
-export type FrameLayout = 'phone' | 'page' | 'panel';
-
-// 6, not 8: Extras and Protect were removed from the flow. `total` and `labels`
-// must stay the same length or the bar fills to a fraction the renter is not on
-// and the label lookup runs off the end.
-function StepIndicator({ step, total = 6, variant = 'bars' }: { step: number; total?: number; variant?: StepStyle }) {
-  if (variant === 'numbered') {
-    const pct = `${Math.max(0, Math.min(1, step / total)) * 100}%`;
-    const labels = ['Vehicle', 'Dates', 'Driver', 'Review', 'Pay', 'Done'];
-
-    return (
-      <div className={`flex items-center gap-3 px-6 pb-4 pt-1 ${eyebrowClassName} text-faint`}>
-        <div className="tabular-nums"><b className="font-semibold text-ink">{String(step).padStart(2, '0')}</b><span> / {String(total).padStart(2, '0')}</span></div>
-        <div className="relative h-px flex-1 overflow-hidden rounded bg-line">
-          <span className="absolute inset-y-0 left-0 bg-muted" style={{ width: pct }} />
-        </div>
-        <div className={`${microLabelClassName}`}>{labels[step - 1]}</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex justify-center gap-1 px-4 pb-2 pt-0">
-      {Array.from({ length: total }).map((_, index) => {
-        const current = index + 1;
-        return <span key={current} className="h-[3px] w-8 rounded-full" style={{ backgroundColor: current <= step ? tone.ink : tone.line }} />;
-      })}
-    </div>
-  );
-}
+export type FrameLayout = 'page' | 'panel';
 
 /**
  * The booking flow's progress (MP-17): one named item per FLOW_STEPS entry, so the count and
@@ -85,29 +52,24 @@ function FlowProgress({ step }: { step: number }) {
 
 export function PhoneViewport({
   step,
-  stepTotal,
   children,
   onBack,
-  stepStyle = 'bars',
   className = '',
   closeHref = '/',
-  layout = 'phone',
+  layout,
   rail,
   desktopNav,
 }: {
   /** 'panel' only: the flow step the progress marks current. Without it no progress renders. */
   step?: number;
-  /** How many steps the bars count (MP-26: the booking flow passes its own 3). Unset keeps the default 6. */
-  stepTotal?: number;
   children: ReactNode;
   onBack?: () => void;
-  stepStyle?: StepStyle;
   className?: string;
   /** Where the X lands. `/` 307s to the DEFAULT tenant's storefront, which for
    * a third-party operator's renter is a different business — callers with an
    * operator in scope must pass that operator's storefront instead (T-8). */
   closeHref?: string;
-  layout?: FrameLayout;
+  layout: FrameLayout;
   /** 'panel' only: summary column shown beside the panel from `lg` up. */
   rail?: ReactNode;
   /** 'page' only: right-hand links in the desktop site bar. */
@@ -142,8 +104,6 @@ export function PhoneViewport({
     : panel
       ? 'lg:mx-0 lg:h-[min(900px,calc(100dvh-5rem))] lg:rounded-2xl lg:border lg:border-line'
       : '';
-
-  const stepBar = <StepIndicator step={step ?? 0} total={stepTotal} variant={stepStyle} />;
 
   // MP-11: the ground + vignette as two utilities (see groundClassName) — the
   // old single background value compiled to an invalid background-color that
@@ -196,7 +156,6 @@ export function PhoneViewport({
               </div>
             )}
           {panel && step !== undefined && <FlowProgress step={step} />}
-          {!page && !panel && stepBar}
           <div className="flex min-h-0 flex-1 flex-col">{children}</div>
         </div>
       </div>
@@ -204,8 +163,8 @@ export function PhoneViewport({
   );
 }
 
-export function BookingChrome({ step, stepTotal, children, onBack, closeHref, rail }: { step: number; stepTotal?: number; children: ReactNode; onBack?: () => void; closeHref?: string; rail?: ReactNode }) {
-  return <PhoneViewport step={step} stepTotal={stepTotal} onBack={onBack} closeHref={closeHref} layout="panel" rail={rail}>{children}</PhoneViewport>;
+export function BookingChrome({ step, children, onBack, closeHref, rail }: { step: number; children: ReactNode; onBack?: () => void; closeHref?: string; rail?: ReactNode }) {
+  return <PhoneViewport step={step} onBack={onBack} closeHref={closeHref} layout="panel" rail={rail}>{children}</PhoneViewport>;
 }
 
 /**

@@ -216,14 +216,10 @@ describe('MP-16 gold is punctuation (AC1-AC5)', () => {
     const tiles = statTileCount();
     if (tiles !== 0) problems.push(`(c) ${tiles} stat tile(s) left (${STAT_TILE})`);
 
-    // (d) StepIndicator: numbered numeral ink, fill muted over a line track; bars ink/line.
-    const step = sliceFunction(src(CHROME), 'StepIndicator');
-    const numbered = between(step, "variant === 'numbered'", 'Array.from(');
-    const bars = step.slice(step.indexOf('Array.from('));
-    if (goldCount(numbered)) problems.push('(d) StepIndicator numbered branch carries gold');
-    problems.push(...missing('(d) StepIndicator numbered', numbered, 'font-semibold text-ink', 'bg-muted', 'bg-line'));
-    if (goldCount(bars)) problems.push('(d) StepIndicator bars carry gold');
-    problems.push(...missing('(d) StepIndicator bars', bars, 'tone.ink', 'tone.line'));
+    // (d) FlowProgress (MP-17): the flow's named three-step progress is neutral: ink and line, never gold.
+    const progress = sliceFunction(src(CHROME), 'FlowProgress');
+    if (goldCount(progress)) problems.push('(d) FlowProgress carries gold');
+    problems.push(...missing('(d) FlowProgress', progress, 'bg-ink', 'bg-line'));
 
     // (e) icons in the Icon list, and the circle wrappers of icons with no class of their own.
     for (const [rel, tag, expected] of ICONS) problems.push(...iconProblems(`(e) ${rel}`, src(rel), tag, expected));
