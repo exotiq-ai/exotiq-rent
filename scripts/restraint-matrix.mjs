@@ -194,10 +194,19 @@ async function setup(page, name) {
     await page.evaluate(() => [...document.querySelectorAll('p')].find((p) => /requires drivers to be \d+\+/.test(p.textContent)).setAttribute('data-under-age', ''));
   }
   if (name === 'protect-off') {
-    await waitFor(page, () => Boolean(document.querySelector('[role=switch][aria-label="Exotiq Protect"]')), null, 'the Protect switch');
-    await page.evaluate(() => document.querySelector('[role=switch][aria-label="Exotiq Protect"]').click());
-    await waitFor(page, () => document.querySelector('[role=switch][aria-label="Exotiq Protect"]')?.getAttribute('aria-checked') === 'false', null, 'Protect off');
-    await sleep(800);
+    // TODO(PROTECT_ENABLED): see domain/booking/protect.ts. This script's env must be the build's.
+    if (process.env.NEXT_PUBLIC_PROTECT_ENABLED === 'true') {
+      await waitFor(page, () => Boolean(document.querySelector('[role=switch][aria-label="Exotiq Protect"]')), null, 'the Protect switch');
+      await page.evaluate(() => document.querySelector('[role=switch][aria-label="Exotiq Protect"]').click());
+      await waitFor(page, () => document.querySelector('[role=switch][aria-label="Exotiq Protect"]')?.getAttribute('aria-checked') === 'false', null, 'Protect off');
+      await sleep(800);
+    } else {
+      // Flag off: the state is the default (declined) one, and the switch must not exist.
+      await waitFor(page, () => Boolean(document.querySelector('[data-money="card"]')), null, 'the money card');
+      if (await page.evaluate(() => Boolean(document.querySelector('[role=switch][aria-label="Exotiq Protect"]')))) {
+        throw new Error('protect-off: the Protect switch is present, but NEXT_PUBLIC_PROTECT_ENABLED is not "true" here; run the script with the build\'s flag');
+      }
+    }
   }
   if (name === 'verify-identity') {
     await waitFor(page, () => [...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Verify identity'), null, 'Verify identity');

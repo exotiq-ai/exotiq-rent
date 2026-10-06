@@ -162,10 +162,19 @@ async function advance(page, steps) {
 
 async function setup(page, name) {
   if (name === 'protect-off') {
-    await waitFor(page, () => Boolean(document.querySelector('[role=switch][aria-label="Exotiq Protect"]')), null, 'the Protect switch');
-    await page.evaluate(() => document.querySelector('[role=switch][aria-label="Exotiq Protect"]').click());
-    await waitFor(page, () => document.querySelector('[role=switch][aria-label="Exotiq Protect"]')?.getAttribute('aria-checked') === 'false', null, 'Protect off');
-    await sleep(600);
+    // TODO(PROTECT_ENABLED): see domain/booking/protect.ts. This script's env must be the build's.
+    if (process.env.NEXT_PUBLIC_PROTECT_ENABLED === 'true') {
+      await waitFor(page, () => Boolean(document.querySelector('[role=switch][aria-label="Exotiq Protect"]')), null, 'the Protect switch');
+      await page.evaluate(() => document.querySelector('[role=switch][aria-label="Exotiq Protect"]').click());
+      await waitFor(page, () => document.querySelector('[role=switch][aria-label="Exotiq Protect"]')?.getAttribute('aria-checked') === 'false', null, 'Protect off');
+      await sleep(600);
+    } else {
+      // Flag off: the state is the default (declined) one, and the switch must not exist.
+      await waitFor(page, () => Boolean(document.querySelector('[data-money="card"]')), null, 'the money card');
+      if (await page.evaluate(() => Boolean(document.querySelector('[role=switch][aria-label="Exotiq Protect"]')))) {
+        throw new Error('protect-off: the Protect switch is present, but NEXT_PUBLIC_PROTECT_ENABLED is not "true" here; run the script with the build\'s flag');
+      }
+    }
   }
   if (name === 'open-trip-fees') {
     await waitFor(page, () => Boolean(document.querySelector('[data-money="trip-fees-toggle"]')), null, 'the Trip-fees toggle');
@@ -405,6 +414,8 @@ const INFLIGHT_READ = () => {
 };
 
 async function inflightProbe(browser, base, opts, dates) {
+  // TODO(PROTECT_ENABLED): see domain/booking/protect.ts. Off: no switch to decline or click, and the request must carry 'decline' anyway.
+  const protectOn = process.env.NEXT_PUBLIC_PROTECT_ENABLED === 'true';
   const ctx = await newContext(browser, VIEWPORTS['390']);
   const page = await ctx.newPage();
   const received = { bookingProtection: null, captureConsent: null };
@@ -431,9 +442,11 @@ async function inflightProbe(browser, base, opts, dates) {
   const ready = () => waitFor(page, () => [...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Request this booking') && Boolean(document.querySelector('[data-money="card"]')), null, 'the merged step with its card', 150);
   await ready();
   // Non-default choices first, so a dropped or reversed click would show in the payload.
-  await page.evaluate(() => document.querySelector('[role=switch][aria-label="Exotiq Protect"]').click());
-  await waitFor(page, () => document.querySelector('[role=switch][aria-label="Exotiq Protect"]')?.getAttribute('aria-checked') === 'false', null, 'Protect declined', 150);
-  await ready();
+  if (protectOn) {
+    await page.evaluate(() => document.querySelector('[role=switch][aria-label="Exotiq Protect"]').click());
+    await waitFor(page, () => document.querySelector('[role=switch][aria-label="Exotiq Protect"]')?.getAttribute('aria-checked') === 'false', null, 'Protect declined', 150);
+    await ready();
+  }
   await page.evaluate(() => {
     const terms = [...document.querySelectorAll('label')].find((l) => l.textContent.replace(/\s+/g, ' ').trim() === 'I agree to the Rental Terms & Conditions.')?.querySelector('input');
     if (terms && !terms.checked) terms.click();
@@ -447,17 +460,19 @@ async function inflightProbe(browser, base, opts, dates) {
   await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Request this booking').click());
   await waitFor(page, () => [...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Sending request…'), null, 'the request in flight', 50);
   const before = await page.evaluate(INFLIGHT_READ);
-  const clicked = await page.evaluate(() => {
+  const clicked = await page.evaluate((protectOn) => {
     const out = { switch: false, optIn: false, rental: false };
-    const sw = document.querySelector('[role=switch][aria-label="Exotiq Protect"]');
-    if (sw) { sw.click(); out.switch = true; }
+    if (protectOn) {
+      const sw = document.querySelector('[role=switch][aria-label="Exotiq Protect"]');
+      if (sw) { sw.click(); out.switch = true; }
+    }
     const terms = [...document.querySelectorAll('label')].find((l) => l.textContent.replace(/\s+/g, ' ').trim() === 'I agree to the Rental Terms & Conditions.')?.querySelector('input');
     const opt = [...document.querySelectorAll('label input.control-check')].find((i) => i !== terms);
     if (opt) { opt.click(); out.optIn = true; }
     const rental = document.querySelector('[data-money-line="rental"]');
     if (rental) { (rental.tagName === 'BUTTON' ? rental : rental.querySelector('button') ?? rental).click(); out.rental = true; }
     return out;
-  });
+  }, protectOn);
   await sleep(250);
   const after = await page.evaluate(INFLIGHT_READ);
   // Let the answer and the fire-and-forget capture call land (the mock smoke just waits out its hold).
@@ -477,7 +492,7 @@ async function inflightProbe(browser, base, opts, dates) {
       ariaBusy: before.ariaBusy,
       buttonLabel: before.buttonLabel,
       step: after.step,
-      switch: { clicked: clicked.switch, disabled: before.switchDisabled, checkedBefore: before.switchChecked, checkedAfter: after.switchChecked },
+      switch: protectOn ? { clicked: clicked.switch, disabled: before.switchDisabled, checkedBefore: before.switchChecked, checkedAfter: after.switchChecked } : null,
       optIn: { clicked: clicked.optIn, disabled: before.optDisabled, checkedBefore: before.optChecked, checkedAfter: after.optChecked },
       rental: { clicked: clicked.rental, enabledButton: before.rentalEnabledButton, stepBefore: before.step, stepAfter: after.step },
       terms: { disabled: before.termsDisabled },
@@ -525,11 +540,15 @@ async function main() {
       const f = r.inFlight;
       console.log(`inflight: delayMs ${r.delayMs} (${r.delaySource}); at send step ${r.atSend.step}, protection ${r.atSend.protection}, consent ${r.atSend.consent}`);
       console.log(`inflight: aria-busy ${f.ariaBusy}, button "${f.buttonLabel}", still in flight after the clicks: ${r.stillInFlightAfterClicks}`);
-      console.log(`inflight: switch disabled ${f.switch.disabled}, aria-checked ${f.switch.checkedBefore} -> ${f.switch.checkedAfter}`);
+      console.log(f.switch ? `inflight: switch disabled ${f.switch.disabled}, aria-checked ${f.switch.checkedBefore} -> ${f.switch.checkedAfter}` : 'inflight: no Protect switch (flag off)');
       console.log(`inflight: opt-in disabled ${f.optIn.disabled}, checked ${f.optIn.checkedBefore} -> ${f.optIn.checkedAfter}`);
       console.log(`inflight: rental enabled button ${f.rental.enabledButton}, step ${f.rental.stepBefore} -> ${f.rental.stepAfter}`);
       console.log(`inflight: terms disabled ${f.terms.disabled}, Trip fees disabled ${f.tripFees.disabled}, chrome Back disabled ${f.chromeBack.disabled}`);
       console.log(`inflight: received protection ${r.received.bookingProtection}, consent ${r.received.captureConsent}`);
+      if (f.switch === null && !holdMs && r.received.bookingProtection !== 'decline') {
+        console.error(`inflight: flag off, but rent-create-booking received protection ${JSON.stringify(r.received.bookingProtection)} (want "decline")`);
+        process.exitCode = 1;
+      }
       return;
     }
     if (phase === 'probe') {
