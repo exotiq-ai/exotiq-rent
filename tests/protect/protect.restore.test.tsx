@@ -1,4 +1,4 @@
-// MP-30 AC14 (and, later, AC15): with NEXT_PUBLIC_PROTECT_ENABLED 'true', every Protect surface is
+// MP-30 AC14 and AC15: with NEXT_PUBLIC_PROTECT_ENABLED 'true', every Protect surface is
 // byte-equal to the base. The goldens are recorded from the branch base (3676b26) BEFORE any source
 // edit, by the MP30_RECORD recorder below, and committed alone as the branch's first commit; the
 // AC14 test re-checks that provenance from git history. Red on the base by design only where the
@@ -45,9 +45,13 @@ import { PaymentCard } from '@/components/drive-exotiq/PaymentCard';
 import { ReviewStep } from '@/components/drive-exotiq/flow/ReviewStep';
 import { createInitialCart } from '@/domain/booking/mockData';
 import type { PublicBookingConfirmation } from '@/domain/booking/publicContracts';
+import { loadQuote } from '@/domain/booking/quote';
+import type { RpcQuoteRow } from '@/domain/booking/rpcClient';
+import { createSupabaseRenterBooking } from '@/domain/booking/supabaseService';
+import type { BookingCart } from '@/domain/booking/types';
 import { stripComments } from '../design/lib/scan.mjs';
 import { between, literals, sliceFunction } from '../restraint/restraintScan';
-import { ACCESS_TOKEN, BOOKING_REF, type Case, NOW_ISO, OPERATOR, VEHICLE, confirmationOf, fixture, paymentPropsOf, quoteOf, reviewCartOf } from '../fees/fixtures';
+import { ACCESS_TOKEN, BOOKING_REF, type Case, type El, NOW_ISO, OPERATOR, VEHICLE, confirmationOf, fixture, norm, parseHtml, paymentPropsOf, quoteOf, reviewCartOf } from '../fees/fixtures';
 
 const REPO = fileURLToPath(new URL('../../', import.meta.url));
 const read = (rel: string) => readFileSync(join(REPO, rel), 'utf8');
@@ -182,6 +186,88 @@ describe('MP-30 restoration goldens (recorded from the base)', () => {
     const g = golden('review-FX-T1S1P1.html');
     expect(byteProblems('planted', g.replace('bg-gold', 'bg-gold/90'), g), 'a one-byte change is caught').toHaveLength(1);
 
+    expect(problems).toEqual([]);
+  });
+});
+
+// ---- AC15: the in-process flip (copies of protect.wire's request harness and protect.surfaces' census) ----
+
+const SUPA = { NEXT_PUBLIC_EXOTIQ_RENT_DATA_MODE: 'supabase', NEXT_PUBLIC_SUPABASE_URL: 'https://stub.supabase.test', NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon-test-key' };
+function rowOf(c: Case, over: Partial<RpcQuoteRow> = {}): RpcQuoteRow {
+  return {
+    currency: 'usd', rental_days: c.days, daily_rate_cents: c.dailyRateCents, rental_subtotal_cents: c.rentalCents, deposit_cents: 0,
+    operator_total_cents: c.operatorTotalCents, platform_fee_percent: 10, platform_fee_cents: c.platformFeeCents,
+    protection_tier: c.protect ? 'premium' : 'decline', protection_daily_cents: c.protectionDailyRateCents, protection_total_cents: c.protectionTotalCents,
+    processing_fee_cents: c.processingFeeCents, operator_tax_rate: c.taxCents > 0 ? c.taxPct : undefined, operator_tax_label: c.taxLabel, operator_tax_cents: c.taxCents,
+    state_fee_cents: c.stateFeeCents, state_fee_label: c.stateFeeLabel, exotiq_total_cents: c.exotiqTotalCents, grand_total_cents: c.grandTotalCents, ...over,
+  };
+}
+/** Both request bodies for one cart, exactly as fetch received them (JSON strings). */
+async function requestBodies(cart: BookingCart, flag: string | undefined, row: RpcQuoteRow = rowOf(fixture('FX-T1S1P0'))) {
+  env(flag, SUPA);
+  const sent: { url: string; body: string }[] = [];
+  vi.stubGlobal('fetch', vi.fn(async (url: string | URL, init?: RequestInit) => {
+    sent.push({ url: String(url), body: String(init?.body ?? '') });
+    const payload = String(url).includes('/rest/v1/rpc/public_vehicle_quote') ? [row] : { booking_ref: 'BK-90001', confirmation_token: 'tok-BK-90001', status: 'requested', identity_verified: false };
+    return new Response(JSON.stringify(payload), { status: 200, headers: { 'content-type': 'application/json' } });
+  }));
+  try {
+    await loadQuote(cart).catch(() => undefined);
+    await createSupabaseRenterBooking(cart);
+  } finally { vi.unstubAllGlobals(); }
+  return { quote: sent.find((s) => s.url.includes('/rest/v1/rpc/public_vehicle_quote'))?.body, create: sent.find((s) => s.url.includes('/functions/v1/rent-create-booking'))?.body };
+}
+const WORD = /protect|coverage|waiver/gi;
+/** AC9: every match in the text and the attribute values; script, style and template contents skipped (their attributes still read). */
+function censusHits(html: string): string[] {
+  const hits: string[] = [];
+  const visit = (el: El) => {
+    for (const [k, v] of Object.entries(el.attrs)) for (const m of v.matchAll(WORD)) hits.push(`@${k}: ${m[0]} in "${v}"`);
+    if (['script', 'style', 'template'].includes(el.tag)) return;
+    for (const c of el.children) {
+      if (typeof c === 'string') { for (const m of c.matchAll(WORD)) hits.push(`text: ${m[0]} in "${norm(c).slice(0, 120)}"`); }
+      else visit(c);
+    }
+  };
+  visit(parseHtml(html));
+  return hits;
+}
+
+describe('MP-30 the flag flips both ways in one process', () => {
+  it('flipping the flag inside one process brings every Protect surface back and takes it away', async () => {
+    const flag = await import('@/domain/booking/protect').catch(() => null);
+    expect(flag, 'domain/booking/protect.ts is missing').not.toBeNull();
+    if (!flag) return;
+    const { cancelNotice } = (await import('@/components/drive-exotiq/CancelBookingCard')) as { cancelNotice?: (a: { free: boolean; paid: boolean; protection: boolean }) => string };
+    const problems: string[] = [];
+    if (!cancelNotice) problems.push('cancelNotice is not exported');
+    const p0 = fixture('FX-T1S1P0');
+    const p1cart = reviewCartOf(fixture('FX-T1S1P1'));
+    for (const [i, phase] of ([undefined, 'true', undefined] as const).entries()) {
+      const on = phase === 'true';
+      const label = `phase ${i + 1} (${on ? 'on' : 'off'})`;
+      env(phase);
+      const surfaces: [string, string, string | null][] = [
+        ['review FX-T1S1P0', review(p0), 'review-FX-T1S1P0.html'],
+        ['review mock', review(null), 'review-mock-no-quote.html'],
+        ['payment FX-T1S1P0', payment(p0), 'payment-FX-T1S1P0.html'],
+        ['requested FX-T1S1P0', await confirmation('requested', p0), null],
+        ['mock confirmation', await confirmation('mock'), 'mock-confirmation.html'],
+        ['storefront (about)', await storefront(true), 'storefront-about.html'],
+        ['storefront (no about)', await storefront(false), 'storefront-no-about.html'],
+      ];
+      for (const [name, html, g] of surfaces) {
+        const hits = censusHits(html);
+        if (!on && hits.length) problems.push(`${label} ${name}: ${hits.length} Protect word(s), first ${hits[0]}`);
+        if (on && !hits.length) problems.push(`${label} ${name}: no Protect word with the flag on`);
+        if (on && g && html !== golden(g)) problems.push(`${label} ${name}: differs from the base golden ${g}`);
+      }
+      const bodies = await requestBodies(p1cart, phase);
+      const tier = on ? 'premium' : 'decline';
+      if (!bodies.quote?.includes(`"protection":"${tier}"`)) problems.push(`${label} quote body: ${bodies.quote}`);
+      if (!bodies.create?.includes(`"protection":"${tier}"`)) problems.push(`${label} create body: ${bodies.create}`);
+      if (cancelNotice && /protection/.test(cancelNotice({ free: false, paid: true, protection: flag.protectEnabled() })) !== on) problems.push(`${label}: the forfeit sentence ${on ? 'drops' : 'names'} protection`);
+    }
     expect(problems).toEqual([]);
   });
 });
