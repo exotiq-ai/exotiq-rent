@@ -108,7 +108,7 @@ export function DriverStep({
                 type="text"
                 inputMode="numeric"
                 autoComplete="bday"
-                placeholder="MM / DD / YYYY"
+                placeholder="MM/DD/YYYY"
                 value={dobText}
                 onChange={(event) => {
                   const raw = event.target.value;
@@ -129,7 +129,7 @@ export function DriverStep({
             </label>
             <label className="block">
               <span className={label}>Phone</span>
-              <input ref={phoneInput} type="tel" value={cart.driver.phone} onChange={(event) => setDriver({ phone: event.target.value })} placeholder="+1 (555) 555-0100" autoComplete="tel" aria-invalid={msgs.phone ? true : undefined} aria-describedby={msgs.phone ? 'driver-phone-error' : undefined} className={fieldClass} />
+              <input ref={phoneInput} type="tel" value={cart.driver.phone} onChange={(event) => setDriver({ phone: event.target.value })} placeholder="555-555-0100" autoComplete="tel" aria-invalid={msgs.phone ? true : undefined} aria-describedby={msgs.phone ? 'driver-phone-error' : undefined} className={fieldClass} />
             </label>
             {msgs.phone && <p id="driver-phone-error" className="col-start-2 text-body-sm leading-5 text-danger">{msgs.phone}</p>}
           </div>
