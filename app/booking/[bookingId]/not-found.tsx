@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { LockKeyhole } from 'lucide-react';
 import { HTitle, PhoneViewport } from '@/components/drive-exotiq/BookingChrome';
 import { driveFontClassName } from '@/components/drive-exotiq/fonts';
+import { ctaClassName } from '@/components/browse/tokens';
 
 export const metadata: Metadata = {
   title: 'Booking link required | Drive Exotiq',
@@ -24,7 +25,7 @@ export default function BookingNotFound() {
     <div className={driveFontClassName}>
       <PhoneViewport step={6} className="font-[var(--font-drive-inter)]">
         <section className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-          <div className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-gold">
+          <div className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-muted">
             <LockKeyhole size={24} />
           </div>
           <HTitle className="mt-5 text-title">This booking needs its secure link.</HTitle>
@@ -37,7 +38,7 @@ export default function BookingNotFound() {
             Can&apos;t find the email? Reply to your booking confirmation or call your operator and
             they&apos;ll resend it.
           </p>
-          <Link href={`/${process.env.NEXT_PUBLIC_DEFAULT_TEAM_SLUG ?? 'exotiq'}`} className="mt-6 rounded-xl bg-gold px-6 py-3.5 text-body font-semibold text-goldInk">
+          <Link href={`/${process.env.NEXT_PUBLIC_DEFAULT_TEAM_SLUG ?? 'exotiq'}`} className={`mt-6 rounded-xl px-6 py-3.5 text-body font-semibold ${ctaClassName}`}>
             Continue browsing
           </Link>
         </section>

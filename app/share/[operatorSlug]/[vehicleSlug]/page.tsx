@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { driveFontClassName } from '@/components/drive-exotiq/fonts';
 import { getSiteMode } from '@/domain/booking/config';
 import { getPublicVehicleContext } from '@/domain/booking/service';
-import { eyebrowClassName, microLabelClassName, serifStyle } from '@/components/browse/tokens';
+import { ctaClassName, elevatedClassName, eyebrowClassName, microLabelClassName, serifStyle } from '@/components/browse/tokens';
 
 /**
  * Public share card — hype only, by design. No booking ref, dates, or money
@@ -44,16 +44,16 @@ export default async function SharePage({ params }: Props) {
   return (
     <main className={`${driveFontClassName} min-h-dvh bg-shareGround font-[var(--font-drive-inter)] text-ink`}>
       <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col px-5 pb-10 pt-8">
-        <div className={`text-center ${eyebrowClassName} text-gold`}>Drive Exotiq</div>
-        <div className="relative mt-6 overflow-hidden rounded-2xl border border-gold/40 shadow-[0_0_0_1px_rgba(200,166,100,0.15),0_24px_60px_rgba(0,0,0,0.55)]">
+        <div className={`text-center ${eyebrowClassName} text-faint`}>Drive Exotiq</div>
+        <div className={`relative mt-6 overflow-hidden rounded-2xl border border-line ${elevatedClassName}`}>
           <div className="relative h-[300px]">
             {/* A photo-less vehicle must degrade, not throw — <Image src=""> crashes the route. */}
             {vehicle.heroImage
               ? <Image src={vehicle.heroImage} alt={vehicle.name} fill sizes="480px" priority className="object-cover" />
               : <div className="absolute inset-0 bg-gradient-to-br from-surface2 to-panel" />}
             <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-shareGround" />
-            <div className={`absolute left-4 top-4 rounded-full bg-shareGround/70 px-3 py-1.5 ${microLabelClassName} text-gold backdrop-blur`}>
-              <span className="mr-2 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-gold align-middle" />
+            <div className={`absolute left-4 top-4 rounded-full bg-shareGround/70 px-3 py-1.5 ${microLabelClassName} text-ink backdrop-blur`}>
+              <span className="mr-2 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-ink align-middle" />
               Reserved
             </div>
           </div>
@@ -63,7 +63,7 @@ export default async function SharePage({ params }: Props) {
           </div>
         </div>
         <div className="mt-8 flex flex-col gap-3">
-          <Link href={`/${params.operatorSlug}/${params.vehicleSlug}`} className="w-full rounded-xl bg-gold px-5 py-4 text-center text-body font-semibold text-goldInk">
+          <Link href={`/${params.operatorSlug}/${params.vehicleSlug}`} className={`w-full rounded-xl px-5 py-4 text-center text-body font-semibold ${ctaClassName}`}>
             See this car
           </Link>
           <Link href={`/${params.operatorSlug}`} className="w-full rounded-xl border border-line px-5 py-4 text-center text-body font-semibold text-ink">

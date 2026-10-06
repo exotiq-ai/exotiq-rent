@@ -181,8 +181,8 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
                 {inRange && !isStart && !isEnd && <span className="absolute inset-y-[5px] left-0 right-0 bg-gold/10" />}
                 {isStart && !isEnd && <span className="absolute inset-y-[5px] left-1/2 right-0 bg-gold/10" />}
                 {isEnd && !isStart && <span className="absolute inset-y-[5px] left-0 right-1/2 bg-gold/10" />}
-                {(isStart || isEnd) && <span className="absolute left-1/2 top-1/2 h-[34px] w-[34px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold shadow-[0_0_0_1px_var(--tone-gold),0_0_14px_rgba(200,166,100,.30)]" />}
-                {!inRange && !blocked && isMinHint && <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 translate-y-[15px] rounded-full bg-gold/60" />}
+                {(isStart || isEnd) && <span className="absolute left-1/2 top-1/2 h-[34px] w-[34px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold" />}
+                {!inRange && !blocked && isMinHint && <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 translate-y-[15px] rounded-full bg-faint" />}
                 <span className={`absolute inset-0 grid place-items-center tabular-nums${isStart || isEnd ? ' font-semibold text-goldInk' : inRange ? ' text-ink' : ''}${blocked ? ' line-through decoration-dim2' : ''}`}>{day}</span>
               </button>
             );
@@ -202,12 +202,12 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
         </div>
         <label className={`mt-5 block ${eyebrowClassName} text-faint`}>Pickup time</label>
         {/* Still a native select (iOS wheel, screen-reader semantics), wearing
-            the Driver step's field recipe with a gold chevron (MP-11). */}
+            the Driver step's field recipe with a muted chevron (MP-11; muted since MP-16). */}
         <span className="relative mt-2 block">
           <select value={cart.pickupTime} onChange={(event) => setCart(recomputeBookingCart({ ...cart, pickupTime: event.target.value }))} className="w-full appearance-none rounded-lg border border-line bg-field py-3 pl-4 pr-10 text-body-lg text-ink outline-none transition hover:border-line2 focus:border-gold/70 focus-visible:ring-2 focus-visible:ring-gold/60 [color-scheme:dark]" aria-label="Pickup time">
             {PICKUP_TIMES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
-          <ChevronDown size={16} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-gold" aria-hidden />
+          <ChevronDown size={16} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-muted" aria-hidden />
         </span>
       </ScreenShell>
       <Sticky>

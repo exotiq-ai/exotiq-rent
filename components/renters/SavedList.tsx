@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { Heart, X } from 'lucide-react';
 import { track } from '@/components/analytics/posthog';
-import { serifStyle } from '@/components/browse/tokens';
+import { ctaClassName, serifStyle } from '@/components/browse/tokens';
 import { EmailCaptureForm } from './EmailCaptureForm';
 import { readSaved, useSaved } from './savedStore';
 
@@ -39,10 +39,10 @@ export function SavedList() {
       <div className="flex flex-col items-center rounded-2xl border border-dashed border-line px-6 py-16 text-center">
         {status}
         {heading}
-        <div className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-gold"><Heart size={24} /></div>
+        <div className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-muted"><Heart size={24} /></div>
         <h2 className="mt-5 text-title text-ink" style={serifStyle}>Nothing saved yet.</h2>
         <p className="mt-3 max-w-md text-body leading-6 text-muted">Tap the heart on any car and it lands here. Saved cars live only in this browser; e-mail yourself the list to keep it anywhere else.</p>
-        <Link href="/browse" className="mt-6 rounded-xl bg-gold px-6 py-3.5 text-body font-semibold text-goldInk">Browse the fleet</Link>
+        <Link href="/browse" className={`mt-6 rounded-xl px-6 py-3.5 text-body font-semibold ${ctaClassName}`}>Browse the fleet</Link>
       </div>
     );
   }
@@ -54,10 +54,10 @@ export function SavedList() {
         {saved.map((car) => (
           <li key={`${car.team_slug}/${car.vehicle_slug}`} className="flex items-center gap-4 p-4">
             <div className="min-w-0 flex-1">
-              <Link href={car.href} className="block truncate text-title-sm text-ink transition hover:text-gold" style={serifStyle}>{car.name}</Link>
+              <Link href={car.href} className="block truncate text-title-sm text-ink" style={serifStyle}>{car.name}</Link>
               <div className="mt-0.5 text-label text-muted">{car.priceCents !== undefined ? `${dollars(car.priceCents)} per day · ` : ''}{car.team_name ?? car.team_slug.replace(/-/g, ' ')}</div>
             </div>
-            <button type="button" data-saved-remove onClick={() => onRemove(car, saved.indexOf(car))} aria-label={`Remove ${car.name}`} className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-line text-faint transition hover:border-gold/45 hover:text-ink"><X size={14} /></button>
+            <button type="button" data-saved-remove onClick={() => onRemove(car, saved.indexOf(car))} aria-label={`Remove ${car.name}`} className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-line text-faint transition hover:border-faint hover:text-ink"><X size={14} /></button>
           </li>
         ))}
       </ul>

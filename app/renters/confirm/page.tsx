@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { BrowseChrome } from '@/components/browse/BrowseChrome';
-import { containerClassName, displaySerifStyle, eyebrowClassName } from '@/components/browse/tokens';
+import { containerClassName, ctaClassName, displaySerifStyle, eyebrowClassName } from '@/components/browse/tokens';
 import { renterCaptureUiEnabled } from '@/domain/renters/flags';
 import { renterCaptureEnabled } from '@/domain/renters/config';
 import { describeScope, pendingScopeForToken } from '@/domain/renters/capture';
@@ -30,7 +30,7 @@ export default async function ConfirmPage({ searchParams }: { searchParams?: { t
         {valid && (
           <form method="post" action="/api/renters/confirm" className="mt-8">
             <input type="hidden" name="token" value={token} />
-            <button type="submit" className="rounded-xl bg-gold px-6 py-3.5 text-body font-semibold text-goldInk transition hover:brightness-105">{scope?.has('consent') ? CONSENT_TEXT.confirm.button : 'Confirm my e-mail'}</button>
+            <button type="submit" className={`rounded-xl px-6 py-3.5 text-body font-semibold ${ctaClassName}`}>{scope?.has('consent') ? CONSENT_TEXT.confirm.button : 'Confirm my e-mail'}</button>
           </form>
         )}
       </section>

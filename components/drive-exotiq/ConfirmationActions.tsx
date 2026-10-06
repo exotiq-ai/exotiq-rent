@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { CalendarPlus, Check, Share2 } from 'lucide-react';
+import { ctaOutlineClassName } from '@/components/browse/tokens';
 
 /**
  * Share + calendar actions on the confirmation page.
@@ -95,12 +96,12 @@ export function ConfirmationActions({
 
   return (
     <>
-      <button type="button" onClick={share} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gold px-5 py-4 text-body font-semibold text-goldInk transition active:scale-[0.99]">
+      <button type="button" onClick={share} className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-5 py-4 text-body font-semibold ${ctaOutlineClassName}`}>
         {copied ? <Check size={16} /> : <Share2 size={16} />}
         {copied ? 'Link copied' : 'Share your Exotiq'}
       </button>
-      <button type="button" onClick={addToCalendar} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-line px-5 py-4 text-body font-semibold text-ink transition active:scale-[0.99]">
-        <CalendarPlus size={16} className="text-gold" />
+      <button type="button" onClick={addToCalendar} className={`mt-3 flex w-full items-center justify-center gap-2 rounded-xl px-5 py-4 text-body font-semibold ${ctaOutlineClassName}`}>
+        <CalendarPlus size={16} className="text-muted" />
         Add to calendar
       </button>
     </>

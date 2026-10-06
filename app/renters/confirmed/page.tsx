@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { BrowseChrome } from '@/components/browse/BrowseChrome';
-import { containerClassName, displaySerifStyle, eyebrowClassName } from '@/components/browse/tokens';
+import { containerClassName, ctaClassName, displaySerifStyle, eyebrowClassName } from '@/components/browse/tokens';
 import { browseEnabled } from '@/domain/booking/config';
 import { renterCaptureUiEnabled } from '@/domain/renters/flags';
 
@@ -30,7 +30,7 @@ export default function ConfirmedPage({ searchParams }: { searchParams?: { state
         <p className={`${eyebrowClassName} text-faint`}>Drive Exotiq</p>
         <h1 className="mt-3 text-display leading-[1.05] text-ink sm:text-display-lg sm:leading-[1.05]" style={displaySerifStyle}>{copy.title}</h1>
         <p className="mt-5 max-w-xl text-body leading-7 text-muted">{copy.body}{sentList ? ' Your saved cars are on their way to your inbox.' : ''}{raw === 'ok' && searchParams?.alerts === '1' ? ' Your availability alert is on: we check every morning and e-mail you once when the dates open up.' : ''}</p>
-        {browseEnabled() && <Link href="/browse" className="mt-8 inline-block rounded-xl bg-gold px-6 py-3.5 text-body font-semibold text-goldInk">Browse the fleet</Link>}
+        {browseEnabled() && <Link href="/browse" className={`mt-8 inline-block rounded-xl px-6 py-3.5 text-body font-semibold ${ctaClassName}`}>Browse the fleet</Link>}
       </section>
     </BrowseChrome>
   );

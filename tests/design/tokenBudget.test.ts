@@ -46,8 +46,6 @@ describe('MP-15 grep budget', () => {
     const chrome = read('components/drive-exotiq/BookingChrome.tsx');
     const primary = stripComments(exportedFunction(chrome, 'PrimaryButton'));
     if (Array.from(primary.matchAll(HEX)).length) problems.push('BookingChrome PrimaryButton: string hex in its style');
-    if (!/backgroundColor:\s*tone\.gold\b/.test(primary)) problems.push('BookingChrome PrimaryButton: backgroundColor is not tone.gold');
-    if (!/color:\s*tone\.goldInk\b/.test(primary)) problems.push('BookingChrome PrimaryButton: color is not tone.goldInk');
 
     const og = stripComments(read('app/share/[operatorSlug]/[vehicleSlug]/opengraph-image.tsx'));
     const ogHex = Array.from(og.matchAll(HEX)).map((m) => m[0]);

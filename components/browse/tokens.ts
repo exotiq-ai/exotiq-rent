@@ -24,6 +24,7 @@ export const tone = {
   goldInk: '#1A1308',
   verified: '#6EC1E4',
   warn: '#FFB84D',
+  danger: '#F87171',
   goldWash: '#14130F',
   shareGround: '#0B0D12',
   dim: '#3D4250',
@@ -86,7 +87,7 @@ export const groundClassName =
  */
 export const cardShellClassName =
   'relative overflow-hidden rounded-2xl border border-line bg-surface transition-[transform,border-color,box-shadow] duration-300 ease-out ' +
-  'hover:-translate-y-1 hover:border-gold/45 hover:shadow-[0_18px_40px_-18px_rgba(0,0,0,.75),0_10px_30px_-16px_rgba(200,166,100,.22)] ' +
+  'hover:-translate-y-1 hover:border-line2 hover:shadow-[0_18px_40px_-18px_rgba(0,0,0,.75)] ' +
   'has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-gold/70 has-[a:focus-visible]:ring-offset-2 has-[a:focus-visible]:ring-offset-ground ' +
   'motion-reduce:transition-none motion-reduce:hover:translate-y-0';
 
@@ -117,8 +118,42 @@ export const selectClassName = `${fieldClassName} appearance-none pr-9`;
  * whatever the wrapper. Wrap with a CalendarDays icon at left-2.5.
  */
 export const datePillClassName =
-  'relative h-8 rounded-full border border-line2 bg-field pl-7 pr-2.5 text-body-lg leading-none text-ink outline-none transition hover:border-gold/40 focus-visible:ring-2 focus-visible:ring-gold/60 [color-scheme:dark] ' +
+  'relative h-8 rounded-full border border-line2 bg-field pl-7 pr-2.5 text-body-lg leading-none text-ink outline-none transition hover:border-faint focus-visible:ring-2 focus-visible:ring-gold/60 [color-scheme:dark] ' +
   '[&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-y-0 [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-7 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0';
+
+/**
+ * The gold primary action (MP-16, D7): one recipe for every gold-filled button
+ * and link, so each gets the same states. A slight lighten under the pointer,
+ * a slight compress and darken on press, both still while the control is
+ * disabled or marked aria-disabled (anchors never match the enabled state, so
+ * the states are neutralised instead), and no compress under reduced motion.
+ * Hover only applies where hover exists (the config's hoverOnlyWhenSupported).
+ * Call sites keep their own size, radius and width.
+ */
+export const ctaClassName =
+  'bg-gold text-goldInk transition hover:brightness-110 active:scale-[0.98] active:brightness-95 ' +
+  'disabled:hover:brightness-100 disabled:active:scale-100 disabled:active:brightness-100 ' +
+  'aria-disabled:hover:brightness-100 aria-disabled:active:scale-100 aria-disabled:active:brightness-100 ' +
+  'motion-reduce:transition-none motion-reduce:active:scale-100';
+
+/** The quiet secondary beside a gold action (D3): ink on a line2 hairline, the same press, the same guards. */
+export const ctaOutlineClassName =
+  'border border-line2 text-ink transition hover:border-faint hover:bg-surface2 active:scale-[0.98] ' +
+  'disabled:hover:border-line2 disabled:hover:bg-transparent disabled:active:scale-100 ' +
+  'aria-disabled:hover:border-line2 aria-disabled:hover:bg-transparent aria-disabled:active:scale-100 ' +
+  'motion-reduce:transition-none motion-reduce:active:scale-100';
+
+/**
+ * The floating bar at the foot of a phone surface (MP-16, D8): the booking
+ * flow footer, the vehicle page Book bar and the storefront Call bar share
+ * everything here; each keeps its own bottom offset and visibility at the
+ * call site. It is that surface's one elevated element.
+ */
+export const stickyBarClassName =
+  'absolute left-0 right-0 z-10 border-t border-line bg-panel px-4 pb-4 pt-3 shadow-[0_-24px_42px_rgba(13,15,20,.96)]';
+
+/** The one floating card on a surface that has no sticky bar there (vehicle aside from lg, the browse filters popover, the share card). Neutral, never gold. */
+export const elevatedClassName = 'shadow-[0_24px_60px_-20px_rgba(0,0,0,.8)]';
 
 /** The daily rate on a card: one figure recipe for browse and storefront, unit beside it at a colour that still reads (5:1). */
 export const priceClassName = 'shrink-0 text-title-sm font-medium leading-none text-gold';

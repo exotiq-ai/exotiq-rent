@@ -93,14 +93,14 @@ export function ReviewStep({
     <>
       <ScreenShell>
         <StepHeader eyebrow="Step 04" title="Here's the breakdown." />
-        <div className="grid grid-cols-3 gap-2 rounded-xl border border-line bg-surface p-3 text-center text-label"><div><span className="block text-faint">Dates</span>{dateLabel}</div><div><span className="block text-faint">Pickup</span>{cart.pickupTime}</div><div><span className="block text-faint">Location</span>{cart.operator.city}</div></div>
+        <div className="grid grid-cols-3 gap-2 border-t border-line pt-3 text-center text-label"><div><span className="block text-faint">Dates</span>{dateLabel}</div><div><span className="block text-faint">Pickup</span>{cart.pickupTime}</div><div><span className="block text-faint">Location</span>{cart.operator.city}</div></div>
         <Breakdown title="Operator" note={`Charge from ${cart.operator.name}`} rows={operatorRows} total={m.operatorTotalCents} />
         {/* T-12: Exotiq Protect is premium-by-default with a single decline
             toggle (no tier menu). Toggling recomputes the cart; quoteKey
             includes the tier, so the flow blocks on a fresh server quote
             before the renter can commit either way. */}
         {onProtectionChange && (
-          <div className="mt-4 rounded-xl border border-line bg-surface p-4">
+          <div className="mt-4 border-t border-line pt-4">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="text-body font-medium text-ink">Exotiq Protect</div>
@@ -119,7 +119,7 @@ export function ReviewStep({
                 aria-checked={protectionOn}
                 aria-label="Exotiq Protect"
                 onClick={() => onProtectionChange(protectionOn ? 'decline' : 'premium')}
-                className={`relative h-7 w-12 shrink-0 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${protectionOn ? 'bg-gold' : 'bg-line'}`}
+                className={`relative h-7 w-12 shrink-0 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-panel ${protectionOn ? 'bg-gold' : 'bg-line'}`}
               >
                 <span className={`absolute top-1 h-5 w-5 rounded-full bg-ink shadow-[0_1px_2px_rgba(0,0,0,.4)] transition-all ${protectionOn ? 'left-6' : 'left-1'}`} />
               </button>
@@ -127,14 +127,14 @@ export function ReviewStep({
           </div>
         )}
         <Breakdown title="Exotiq.Rent" note="Charged separately by EXOTIQ.RENT" rows={exotiqRows} total={m.exotiqTotalCents} />
-        <div className="mt-4 rounded-xl border border-gold bg-goldWash p-4"><div className="flex items-center justify-between"><span className="text-body text-muted">Total due today</span><Money cents={m.grandTotalCents} large /></div></div>
+        <div className="mt-4 border-t border-line pt-4"><div className="flex items-center justify-between"><span className="text-body text-muted">Total due today</span><span className="text-gold"><Money cents={m.grandTotalCents} large /></span></div></div>
         {/* Unconditional: the deposit is the operator's to collect at pickup and
             Exotiq quotes no amount, so there is no value to gate on. */}
         <DepositDisclosure operatorName={cart.operator.name} />
         {/* One collapsed policy affordance, not three. Cancellation terms and
             what protection covers were separate blocks competing for the same
             attention; neither is read at this moment, both must be available. */}
-        <details className="mt-4 rounded-xl border border-line bg-surface p-4 text-body text-ink">
+        <details className="mt-4 border-t border-line pt-4 text-body text-ink">
           <summary className="cursor-pointer font-medium">Cancellation &amp; coverage</summary>
           {/* T-6: this mirrors the platform-enforced rule (and the derived
               cancellation_policy text snapshotted on every booking) — the old
@@ -149,14 +149,14 @@ export function ReviewStep({
             <p className="mt-3 text-body-sm leading-5 text-muted">Exotiq Protect covers damage to the vehicle during your rental period. Full coverage terms are provided before pickup.</p>
           )}
         </details>
-        <label className="mt-4 flex gap-3 rounded-xl border border-line bg-surface p-4 text-body-sm leading-5 text-ink">
+        <label className="mt-4 flex gap-3 border-t border-line pt-4 text-body-sm leading-5 text-ink">
           <input
             type="checkbox"
             checked={termsAccepted}
             onChange={(event) => setTermsAccepted(event.target.checked)}
             className="control-check mt-0.5"
           />
-          <span>I agree to the <span className="text-gold underline underline-offset-2">Rental Terms &amp; Conditions</span>.</span>
+          <span>I agree to the <span className="text-ink underline decoration-faint underline-offset-2">Rental Terms &amp; Conditions</span>.</span>
         </label>
         {/* MP-14: opt-in, unchecked, never required. Posted with the booking. */}
         {onMarketingConsentChange && renterCaptureUiEnabled() && (

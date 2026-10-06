@@ -50,7 +50,7 @@ export function BrowseChrome({ children, view = 'browse_view', footerSignup = tr
             <span>Every car is rented from one accountable operator.</span>
             {browseEnabled() && <Link href="/terms" className="transition hover:text-ink">Terms</Link>}
             <Link href="/privacy" className="transition hover:text-ink">Privacy</Link>
-            <a href="mailto:hello@exotiq.ai?subject=Listing%20my%20fleet%20on%20Drive%20Exotiq" className="text-gold underline decoration-gold/40 underline-offset-4 transition hover:decoration-gold">Operators — list your fleet</a>
+            <a href="mailto:hello@exotiq.ai?subject=Listing%20my%20fleet%20on%20Drive%20Exotiq" className="text-ink underline decoration-faint underline-offset-4 transition hover:decoration-ink">Operators — list your fleet</a>
           </div>
         </div>
       </footer>

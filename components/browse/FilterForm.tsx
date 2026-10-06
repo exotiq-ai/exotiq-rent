@@ -8,7 +8,7 @@ import type { MarketplaceFacets, MarketplaceQuery } from '@/domain/booking/publi
 import { MARKETPLACE_SORTS, PRICE_BANDS, daysBetween } from '@/domain/booking/marketplaceQuery';
 import { addDays } from '@/domain/booking/dates';
 import { localTodayIso } from '@/domain/booking/availability';
-import { datePillClassName, microLabelClassName, selectClassName } from './tokens';
+import { ctaOutlineClassName, datePillClassName, microLabelClassName, selectClassName } from './tokens';
 
 /** The control that navigated, so its successor can take focus after the keyed remount (same document, no storage). */
 let pendingFocusId: string | null = null;
@@ -37,7 +37,7 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
   const router = useRouter();
   const form = useRef<HTMLFormElement>(null);
   // MP-12: a chip flipped and then nothing happened for the RPC round-trip.
-  // The push runs in a transition so the form knows it is pending: a gold
+  // The push runs in a transition so the form knows it is pending: an ink
   // hairline at the top and dimmed controls until the new grid commits.
   const [isPending, startTransition] = useTransition();
   // The form remounts (keyed on the query) when a change commits, which drops
@@ -117,7 +117,7 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
   return (
     <form ref={form} method="get" action="/browse" onSubmit={onSubmit} onChange={navigate} className="group relative space-y-7" aria-busy={isPending} data-pending={isPending ? '' : undefined}>
       {/* Always mounted, opacity-toggled, so the rail never jumps. */}
-      <span aria-hidden className={`pointer-events-none absolute -top-2 left-0 h-px w-full bg-gold transition-opacity motion-reduce:animate-none ${isPending ? 'animate-pulse opacity-100' : 'opacity-0'}`} />
+      <span aria-hidden className={`pointer-events-none absolute -top-2 left-0 h-px w-full bg-ink transition-opacity motion-reduce:animate-none ${isPending ? 'animate-pulse opacity-100' : 'opacity-0'}`} />
       <p role="status" className="sr-only">{isPending ? 'Updating results…' : ''}</p>
       <fieldset>
         <legend className={section}>Dates</legend>
@@ -127,14 +127,14 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
           <label className="block">
             <span className="block text-micro text-faint">Pickup</span>
             <span className="relative mt-1 flex items-center">
-              <CalendarDays size={14} className="pointer-events-none absolute left-2.5 text-gold" aria-hidden />
+              <CalendarDays size={14} className="pointer-events-none absolute left-2.5 text-muted" aria-hidden />
               <input type="date" name="start" min={today} max={addDays(today, 180)} defaultValue={query.start ?? ''} aria-describedby={`${idPrefix}-dates-hint`} className={`${datePillClassName} w-full min-w-0`} />
             </span>
           </label>
           <label className="block">
             <span className="block text-micro text-faint">Drop-off</span>
             <span className="relative mt-1 flex items-center">
-              <CalendarDays size={14} className="pointer-events-none absolute left-2.5 text-gold" aria-hidden />
+              <CalendarDays size={14} className="pointer-events-none absolute left-2.5 text-muted" aria-hidden />
               <input type="date" name="end" min={query.start ? addDays(query.start, 1) : addDays(today, 1)} max={addDays(today, 181)} defaultValue={query.end ?? ''} aria-describedby={`${idPrefix}-dates-hint`} className={`${datePillClassName} w-full min-w-0`} />
             </span>
           </label>
@@ -150,7 +150,7 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
               <option key={s} value={s}>{SORT_LABELS[s]}</option>
             ))}
           </select>
-          <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gold" aria-hidden />
+          <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted" aria-hidden />
         </span>
       </div>
 
@@ -213,7 +213,7 @@ export function FilterForm({ facets, query, idPrefix = 'f' }: { facets: Marketpl
 
       <div className="flex items-center justify-between gap-3 border-t border-line pt-5">
         <Link href="/browse" className="text-body-sm text-faint underline decoration-line underline-offset-4 transition hover:text-muted">Clear all</Link>
-        <button type="submit" className="rounded-lg border border-gold/40 px-4 py-2 text-body-sm font-semibold text-gold transition hover:bg-gold/10">Show results</button>
+        <button type="submit" className={`rounded-lg px-4 py-2 text-body-sm font-semibold ${ctaOutlineClassName}`}>Show results</button>
       </div>
     </form>
   );

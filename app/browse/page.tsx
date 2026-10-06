@@ -6,7 +6,7 @@ import { BrowseChrome } from '@/components/browse/BrowseChrome';
 import { EmptyState } from '@/components/browse/EmptyState';
 import { FilterForm } from '@/components/browse/FilterForm';
 import { ListingGrid } from '@/components/browse/ListingGrid';
-import { containerClassName, displaySerifStyle, eyebrowClassName, stickyBelowBarClassName } from '@/components/browse/tokens';
+import { containerClassName, displaySerifStyle, elevatedClassName, eyebrowClassName, stickyBelowBarClassName } from '@/components/browse/tokens';
 import { browseEnabled } from '@/domain/booking/config';
 import { formatRangeLabel, formatShortDate } from '@/domain/booking/dates';
 import { parseMarketplaceQuery, toMarketplaceSearchParams, type SearchParamsLike } from '@/domain/booking/marketplaceQuery';
@@ -98,24 +98,24 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
           <div className="mb-5 flex items-center justify-between gap-4">
             <div className={`${eyebrowClassName} text-faint`} aria-live="polite">
               {page.totalCount} {page.totalCount === 1 ? 'car' : 'cars'}
-              {activeFilters > 0 && <span className="ml-2 text-gold">· {activeFilters} {activeFilters === 1 ? 'filter' : 'filters'}</span>}
+              {activeFilters > 0 && <span className="ml-2 text-ink">· {activeFilters} {activeFilters === 1 ? 'filter' : 'filters'}</span>}
             </div>
             <details className="relative lg:hidden">
               <summary className="flex cursor-pointer list-none items-center gap-2 rounded-lg border border-line bg-surface px-3.5 py-2 text-body-sm font-semibold text-ink [&::-webkit-details-marker]:hidden">
-                <SlidersHorizontal size={14} className="text-gold" /> Filters &amp; sort
+                <SlidersHorizontal size={14} className="text-muted" /> Filters &amp; sort
               </summary>
-              <div className="absolute right-0 z-30 mt-2 w-[min(92vw,22rem)] rounded-2xl border border-line bg-panel p-5 shadow-[0_24px_60px_-20px_rgba(0,0,0,.8)]">
+              <div className={`absolute right-0 z-30 mt-2 w-[min(92vw,22rem)] rounded-2xl border border-line bg-panel p-5 ${elevatedClassName}`}>
                 <FilterForm key={filterKey} facets={facets} query={query} idPrefix="sheet" />
               </div>
             </details>
           </div>
 
-          {/* A successful check is a status line, not an alert: gold dot, no box.
+          {/* A successful check is a status line, not an alert: faint dot, no box.
               The failed check keeps the amber box (MP-11). */}
           {availability && (
             availability.checked ? (
               <p className="mb-4 flex items-center gap-2.5 text-body-sm text-muted">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold" aria-hidden />
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-faint" aria-hidden />
                 <span>Showing cars available <span className="text-ink" aria-label={`${formatShortDate(availability.start)} to ${formatShortDate(availability.end)}`}>{formatRangeLabel(availability.start, availability.end)}</span>. We&apos;ll confirm your exact dates when you book.</span>
               </p>
             ) : (
@@ -129,13 +129,13 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
           {(hasPrev || hasNext) && (
             <nav className="mt-10 flex items-center justify-between text-body-sm" aria-label="Pagination">
               {hasPrev ? (
-                <Link href={pageLink(Math.max(0, query.offset - query.limit))} className="rounded-lg border border-line px-4 py-2 text-ink transition hover:border-gold/45">← Previous</Link>
+                <Link href={pageLink(Math.max(0, query.offset - query.limit))} className="rounded-lg border border-line px-4 py-2 text-ink transition hover:border-line2">← Previous</Link>
               ) : <span />}
               <span className="text-faint tabular-nums">
                 {query.offset + 1}–{Math.min(query.offset + query.limit, page.totalCount)} of {page.totalCount}
               </span>
               {hasNext ? (
-                <Link href={pageLink(query.offset + query.limit)} className="rounded-lg border border-line px-4 py-2 text-ink transition hover:border-gold/45">Next →</Link>
+                <Link href={pageLink(query.offset + query.limit)} className="rounded-lg border border-line px-4 py-2 text-ink transition hover:border-line2">Next →</Link>
               ) : <span />}
             </nav>
           )}

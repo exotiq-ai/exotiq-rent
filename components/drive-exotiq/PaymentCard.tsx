@@ -7,9 +7,13 @@ import { Money } from './BookingChrome';
 import { paymentCountdownLabel, paymentWindowState } from '@/domain/booking/payment';
 import { postRenterCheckout } from '@/domain/booking/rpcClient';
 import { getBookingConfirmation } from '@/domain/booking/service';
+import { ctaClassName } from '@/components/browse/tokens';
 
 const CONFIRM_POLL_MS = 3000;
 const CONFIRM_POLL_MAX = 40; // ~2 minutes of webhook grace
+
+/** A note under the card: a heads-up (warn) or a failure that blocks the renter (danger). */
+type Notice = { kind: 'warn' | 'danger'; text: string };
 
 /**
  * M6b: the pay surface on the confirmation page for approved
@@ -50,7 +54,7 @@ export function PaymentCard({
   const router = useRouter();
   const [starting, setStarting] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
-  const [notice, setNotice] = useState<string | undefined>();
+  const [notice, setNotice] = useState<Notice | undefined>();
   const [nowMs, setNowMs] = useState(() => Date.now());
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -74,7 +78,7 @@ export function PaymentCard({
       if (polls > CONFIRM_POLL_MAX) {
         if (pollTimer.current) clearInterval(pollTimer.current);
         pollTimer.current = null;
-        setNotice('Payment received — confirmation is taking a little longer than usual. Your payment is safe; reopen your booking link in a minute to see the receipt.');
+        setNotice({ kind: 'warn', text: 'Payment received — confirmation is taking a little longer than usual. Your payment is safe; reopen your booking link in a minute to see the receipt.' });
         return;
       }
       try {
@@ -103,7 +107,7 @@ export function PaymentCard({
       setFinalizing(true);
       startConfirmPoll();
     } else if (params.get('payment') === 'cancelled') {
-      setNotice('Payment was not completed — your reservation is still held. Pick up where you left off below.');
+      setNotice({ kind: 'warn', text: 'Payment was not completed — your reservation is still held. Pick up where you left off below.' });
     }
     return () => {
       clearInterval(tick);
@@ -129,7 +133,7 @@ export function PaymentCard({
         setFinalizing(true);
         startConfirmPoll();
       } else {
-        setNotice(err instanceof Error ? err.message : 'Payment could not be started — please try again.');
+        setNotice({ kind: 'danger', text: err instanceof Error ? err.message : 'Payment could not be started — please try again.' });
       }
       setStarting(false);
     }
@@ -137,24 +141,22 @@ export function PaymentCard({
 
   if (finalizing) {
     return (
-      <div className="mt-4 rounded-xl border border-gold bg-goldWash p-4 shadow-[0_0_0_1px_var(--tone-gold),0_0_24px_rgba(200,166,100,.10)]">
+      <div className="mt-4 rounded-xl border border-line bg-surface p-4">
         <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gold/10 text-gold">
-            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-gold" />
-          </div>
+          <span className="inline-block h-2 w-2 shrink-0 animate-pulse rounded-full bg-ink" />
           <div>
             <div className="text-body font-medium text-ink">Payment received — finalizing</div>
             <p className="mt-1 text-body-sm leading-5 text-muted">Confirming your booking now. This usually takes a few seconds.</p>
           </div>
         </div>
-        {notice && <p className="mt-3 text-body-sm leading-5 text-muted">{notice}</p>}
+        {notice && <p className="mt-3 text-body-sm leading-5 text-muted">{notice.text}</p>}
       </div>
     );
   }
 
   if (windowState === 'expired') {
     return (
-      <div className="mt-4 rounded-xl border border-warn/45 bg-warn/10 p-4">
+      <div className="mt-4 rounded-xl border border-danger/45 bg-danger/10 p-4">
         <div className="text-body font-medium text-ink">Payment window closed</div>
         <p className="mt-1 text-body-sm leading-5 text-muted">The 48-hour payment window for this booking has passed and the dates may have been released. Contact {operatorName} or book again.</p>
       </div>
@@ -162,13 +164,13 @@ export function PaymentCard({
   }
 
   return (
-    <div className="mt-4 rounded-xl border border-gold bg-goldWash p-4 shadow-[0_0_0_1px_var(--tone-gold),0_0_24px_rgba(200,166,100,.10)]">
+    <div className="mt-4 rounded-xl border border-line bg-surface p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-body font-medium text-ink">Approved — complete payment</div>
           <p className="mt-1 text-body-sm leading-5 text-muted">{operatorName} approved your booking. Pay to lock it in.</p>
         </div>
-        <span className={`flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-label ${windowState === 'urgent' ? 'bg-warn/15 text-warn' : 'bg-gold/10 text-gold'}`}>
+        <span className={`flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-label ${windowState === 'urgent' ? 'bg-warn/15 text-warn' : 'bg-surface2 text-ink'}`}>
           <Clock3 size={14} />
           {paymentCountdownLabel(dueAtIso, nowMs)}
         </span>
@@ -179,19 +181,19 @@ export function PaymentCard({
           <div className="flex justify-between gap-3"><span className="text-muted">{operatorTaxLabel ?? 'Tax'} — {operatorName}</span><Money cents={operatorTaxCents} /></div>
         )}
         <div className="flex justify-between gap-3"><span className="text-muted">Protection &amp; fees</span><Money cents={exotiqCents} /></div>
-        <div className="flex justify-between gap-3 border-t border-line pt-2 font-medium text-ink"><span>Total due</span><Money cents={rentalCents + exotiqCents} large /></div>
+        <div className="flex justify-between gap-3 border-t border-line pt-2 font-medium text-ink"><span>Total due</span><span className="text-gold"><Money cents={rentalCents + exotiqCents} large /></span></div>
       </div>
       <p className="mt-2 text-body-sm leading-5 text-faint">Two charges on your statement: the operator&apos;s rental, and an EXOTIQ RENT charge covering Trip Fees, protection, the state rental fee and card processing. One card entry.</p>
       <button
         type="button"
         onClick={pay}
         disabled={starting}
-        className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gold px-5 py-4 text-body font-semibold text-goldInk transition active:scale-[0.99] disabled:opacity-60"
+        className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-5 py-4 text-body font-semibold disabled:opacity-60 ${ctaClassName}`}
       >
         <CreditCard size={16} />
         {starting ? 'Opening secure checkout…' : 'Complete payment'}
       </button>
-      {notice && <p className="mt-3 rounded-xl border border-warn/45 bg-warn/10 p-3 text-body-sm leading-5 text-ink">{notice}</p>}
+      {notice && <p className={`mt-3 rounded-xl border p-3 text-body-sm leading-5 text-ink ${notice.kind === 'danger' ? 'border-danger/45 bg-danger/10' : 'border-warn/45 bg-warn/10'}`}>{notice.text}</p>}
     </div>
   );
 }

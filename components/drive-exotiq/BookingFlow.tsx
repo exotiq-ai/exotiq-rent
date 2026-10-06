@@ -133,7 +133,7 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
         {vehicle.heroImage && <Image src={vehicle.heroImage} alt={vehicle.name} fill sizes="320px" className="object-cover" />}
       </div>
       <div className="p-5">
-        <div className={`${eyebrowClassName} text-gold`}>{operator.name}</div>
+        <div className={`${eyebrowClassName} text-faint`}>{operator.name}</div>
         <h2 className="mt-2 text-title leading-[1.15] text-ink" style={serifStyle}>{vehicle.name}</h2>
         <p className="mt-1 text-label text-muted">{operator.city}, {operator.state}</p>
         <dl className="mt-4 space-y-2 border-t border-line pt-4 text-body-sm">

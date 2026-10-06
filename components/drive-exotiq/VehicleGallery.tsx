@@ -8,7 +8,7 @@ import { eyebrowClassName, tone } from '@/components/browse/tokens';
 
 /**
  * Vehicle hero + tappable gallery. Tapping a thumbnail promotes it into the
- * hero slot; the active thumbnail is ringed in gold.
+ * hero slot; the active thumbnail is ringed in ink (gold is kept for price).
  *
  * Auction-catalogue order: image → thumbnails → title block. Nothing sits on the
  * photo.
@@ -77,8 +77,7 @@ export function VehicleGallery({
                 aria-label={`Show ${shortName} photo ${index + 1}`}
                 className="relative h-20 w-32 shrink-0 overflow-hidden rounded-lg transition lg:h-24 lg:w-40"
                 style={{
-                  border: active ? `1.5px solid ${tone.gold}` : `1px solid ${tone.line}`,
-                  boxShadow: active ? `0 0 0 1px ${tone.gold}, 0 0 14px rgba(200,166,100,.20)` : 'none',
+                  border: active ? `1.5px solid ${tone.ink}` : `1px solid ${tone.line}`,
                 }}
               >
                 <Image src={photo} alt={`${shortName} photo ${index + 1}`} fill sizes="(min-width: 1024px) 160px, 128px" className="object-cover" onError={() => markFailed(photo)} />
@@ -93,9 +92,9 @@ export function VehicleGallery({
           photo, so contrast is a property of the design rather than a property of
           whichever image a tenant uploaded. */}
       <div className="mt-4">
-        <div className={`${eyebrowClassName} text-gold`}>{operatorName} · From <Money cents={dailyRateCents} />/day</div>
+        <div className={`${eyebrowClassName} text-faint`}>{operatorName} · <span className="text-gold">From <Money cents={dailyRateCents} />/day</span></div>
         <HTitle className="mt-2 max-lg:text-heading max-lg:leading-[1.12] lg:text-display lg:leading-[1.12]">{vehicleName}</HTitle>
-        <p className="mt-2 flex items-center gap-2 text-body-sm text-muted"><MapPin size={14} className="text-gold" />{city}, {state} · Concierge-approved rental</p>
+        <p className="mt-2 flex items-center gap-2 text-body-sm text-muted"><MapPin size={14} className="text-muted" />{city}, {state} · Concierge-approved rental</p>
       </div>
     </>
   );

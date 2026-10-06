@@ -8,7 +8,7 @@ import { Money, PhoneViewport } from './BookingChrome';
 import { VehicleGallery } from './VehicleGallery';
 import { SaveButton } from '@/components/renters/SaveButton';
 import { CookieControls } from '@/components/analytics/CookieControls';
-import { eyebrowClassName, stickyBelowBarClassName } from '@/components/browse/tokens';
+import { ctaClassName, elevatedClassName, eyebrowClassName, stickyBarClassName, stickyBelowBarClassName } from '@/components/browse/tokens';
 
 export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { operatorSlug: string; vehicleSlug: string; dates?: { start: string; end: string } }) {
   const teamSlug = operatorSlug;
@@ -75,7 +75,7 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
                 <div key={spec.label} className="rounded-xl border border-line bg-surface p-[14px]">
                   <div className={`${eyebrowClassName} text-faint`}>{spec.label}</div>
                   <div className="mt-2 flex items-baseline gap-1 text-ink">
-                    <spec.icon className="mr-1 text-gold" size={16} />
+                    <spec.icon className="mr-1 text-muted" size={16} />
                     <span className="text-title font-medium leading-none tracking-[-0.02em] tabular-nums">{spec.value.split(' ')[0]}</span>
                     <span className="text-label text-muted">{spec.value.split(' ').slice(1).join(' ')}</span>
                   </div>
@@ -85,18 +85,18 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
             )}
 
             {/* Phone only — from lg the same facts live in the booking aside. */}
-            <div className="mt-4 rounded-xl border border-line bg-surface p-4 lg:hidden">
-              <h2 className="mb-3 flex items-center gap-2 text-body font-medium"><CalendarDays size={16} className="text-gold" />Booking preview</h2>
-              <div className="grid grid-cols-3 gap-2 text-center text-label">
-                <div className="rounded-lg bg-surface2 p-3"><div className="text-body font-medium leading-none tabular-nums text-gold min-[360px]:text-title-sm min-[360px]:leading-none"><Money cents={vehicle.dailyRateCents} /></div><div className="mt-1.5 text-faint">Per day</div></div>
-                <div className="rounded-lg bg-surface2 p-3"><div className="text-body font-medium leading-none tabular-nums text-gold min-[360px]:text-title-sm min-[360px]:leading-none">{vehicle.minRentalDays}<span className="text-label font-normal text-faint"> {vehicle.minRentalDays === 1 ? 'day' : 'days'}</span></div><div className="mt-1.5 text-faint">Minimum</div></div>
-                <div className="rounded-lg bg-surface2 p-3"><div className="text-body font-medium leading-none text-gold min-[360px]:text-title-sm min-[360px]:leading-none">Verified</div><div className="mt-1.5 text-faint">Drivers</div></div>
+            <div className="mt-4 border-t border-line pt-4 lg:hidden">
+              <h2 className="mb-3 flex items-center gap-2 text-body font-medium"><CalendarDays size={16} className="text-muted" />Booking preview</h2>
+              <div className="grid grid-cols-3 divide-x divide-line text-center text-label">
+                <div className="px-1"><div className="text-body font-medium leading-none tabular-nums text-ink min-[360px]:text-title-sm min-[360px]:leading-none"><Money cents={vehicle.dailyRateCents} /></div><div className="mt-1.5 text-faint">Per day</div></div>
+                <div className="px-1"><div className="text-body font-medium leading-none tabular-nums text-ink min-[360px]:text-title-sm min-[360px]:leading-none">{vehicle.minRentalDays}<span className="text-label font-normal text-faint"> {vehicle.minRentalDays === 1 ? 'day' : 'days'}</span></div><div className="mt-1.5 text-faint">Minimum</div></div>
+                <div className="px-1"><div className="text-body font-medium leading-none text-ink min-[360px]:text-title-sm min-[360px]:leading-none">Verified</div><div className="mt-1.5 text-faint">Drivers</div></div>
               </div>
               <p className="mt-3 text-body-sm leading-5 text-muted">{vehicle.footnote}. Final availability is confirmed at the booking step.</p>
             </div>
 
             <div className="mt-4 rounded-xl border border-line bg-surface p-4">
-              <h2 className="mb-3 flex items-center gap-2 text-body font-medium"><MapPin size={16} className="text-gold" />Pickup</h2>
+              <h2 className="mb-3 flex items-center gap-2 text-body font-medium"><MapPin size={16} className="text-muted" />Pickup</h2>
               {/* The venue name only renders when it is real. Live reads have none, and
                   a fabricated one repeated the operator and the word "pickup". */}
               {vehicle.pickupLocation.name && <div className="text-body text-ink">{vehicle.pickupLocation.name}</div>}
@@ -105,18 +105,18 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
             </div>
 
             <div className="mt-4 rounded-xl border border-line bg-surface p-4">
-              <h2 className="mb-3 flex items-center gap-2 text-body font-medium"><ShieldCheck size={16} className="text-gold" />How it works</h2>
+              <h2 className="mb-3 flex items-center gap-2 text-body font-medium"><ShieldCheck size={16} className="text-muted" />How it works</h2>
               {/* Was: "Verify driver and insurance documents" (insurance verification is
                   not built) and "before single Stripe Checkout" (there are two charges,
                   and payment comes AFTER the operator approves — not at booking). */}
-              {['Choose your dates and pickup time.', `${operator.name} reviews your request.`, 'We email your payment link once approved.', 'Verify your identity — about two minutes.'].map((item, index) => <div key={item} className="flex gap-3 border-t border-line py-3 text-body text-muted"><span className="text-gold">0{index + 1}</span>{item}</div>)}
+              {['Choose your dates and pickup time.', `${operator.name} reviews your request.`, 'We email your payment link once approved.', 'Verify your identity — about two minutes.'].map((item, index) => <div key={item} className="flex gap-3 border-t border-line py-3 text-body text-muted"><span className="text-faint">0{index + 1}</span>{item}</div>)}
             </div>
           </div>
 
           {/* Desktop booking card: the phone's bottom bar and "Booking preview"
               tiles, as one sticky column beside the gallery. */}
           <aside className={`hidden lg:block ${stickyBelowBarClassName}`}>
-            <div className="rounded-2xl border border-line bg-surface p-6">
+            <div className={`rounded-2xl border border-line bg-surface p-6 ${elevatedClassName}`}>
               <div className={`${eyebrowClassName} text-faint`}>{operator.name}</div>
               <div className="mt-3 flex items-baseline gap-2 text-gold">
                 <Money cents={vehicle.dailyRateCents} large />
@@ -131,19 +131,19 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
               <CookieControls viewport="desktop" className="border-t border-line" />
               <div className="flex items-stretch gap-2">
                 <SaveButton car={saveCar} variant="pill" className="shrink-0" />
-                <Link href={bookHref} className="block min-w-0 flex-1 rounded-xl bg-gold px-5 py-4 text-center text-body font-medium text-goldInk shadow-[0_14px_34px_rgba(200,166,100,.20)] transition hover:brightness-105">{dates ? 'Book these dates' : 'Select dates'}</Link>
+                <Link href={bookHref} className={`block min-w-0 flex-1 rounded-xl px-5 py-4 text-center text-body font-medium ${ctaClassName}`}>{dates ? 'Book these dates' : 'Select dates'}</Link>
               </div>
               <p className="mt-4 text-body-sm leading-5 text-faint">{vehicle.footnote}. Final availability is confirmed at the booking step.</p>
             </div>
           </aside>
         </div>
       </div>
-      <div className="absolute bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)+8px))] left-0 right-0 z-10 border-t border-line bg-panel px-4 pb-4 pt-3 shadow-[0_-24px_42px_rgba(13,15,20,.96)] lg:hidden">
+      <div className={`${stickyBarClassName} bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)+8px))] lg:hidden`}>
         {yourDates}
         <CookieControls viewport="mobile" />
         <div className="flex items-stretch gap-2">
           <SaveButton car={saveCar} variant="pill" className="shrink-0" />
-          <Link href={bookHref} className="block min-w-0 flex-1 rounded-xl bg-gold px-5 py-4 text-center text-body font-medium text-goldInk shadow-[0_14px_34px_rgba(200,166,100,.20)]">{dates ? 'Book these dates' : 'Select dates'}</Link>
+          <Link href={bookHref} className={`block min-w-0 flex-1 rounded-xl px-5 py-4 text-center text-body font-medium ${ctaClassName}`}>{dates ? 'Book these dates' : 'Select dates'}</Link>
         </div>
       </div>
     </PhoneViewport>

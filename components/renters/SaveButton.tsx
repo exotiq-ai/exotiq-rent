@@ -9,7 +9,8 @@ import { useSaved, type SavedCar } from './savedStore';
 /**
  * The heart (MP-14). A real button that never lives inside the card's link:
  * the card wraps both, so a tap on the heart saves and a tap anywhere else
- * opens the car. Gold when saved, with the mockup's bounce.
+ * opens the car. An ink fill when saved, with the mockup's bounce; over a photo the
+ * unsaved outline is ink too, on the same translucent pill as the card's chips (3:1 over white).
  */
 export function SaveButton({ car, className = '', size = 16, variant = 'icon' }: { car: Omit<SavedCar, 'savedAt'>; className?: string; size?: number; /** `pill` adds a Save/Saved label — for the vehicle page beside the book button. */ variant?: 'icon' | 'pill' }) {
   const { has, toggle, ready } = useSaved();
@@ -25,7 +26,7 @@ export function SaveButton({ car, className = '', size = 16, variant = 'icon' }:
       track('favourite_added', { team: car.team_slug, vehicle: car.vehicle_slug });
     }
   };
-  const heart = <Heart size={size} strokeWidth={1.75} className={`${saved ? 'fill-gold text-gold' : ''} ${bounce ? 'animate-heart-bounce' : ''}`} onAnimationEnd={() => setBounce(false)} aria-hidden />;
+  const heart = <Heart size={size} strokeWidth={1.75} className={`${saved ? 'fill-ink text-ink' : variant === 'pill' ? 'text-muted' : 'text-ink'} ${bounce ? 'animate-heart-bounce' : ''}`} onAnimationEnd={() => setBounce(false)} aria-hidden />;
   if (variant === 'pill') {
     return (
       <button
@@ -33,7 +34,7 @@ export function SaveButton({ car, className = '', size = 16, variant = 'icon' }:
         onClick={onClick}
         aria-pressed={saved}
         aria-label={`Save ${car.name}`}
-        className={`inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-surface px-4 py-3 text-body-sm font-medium text-ink transition hover:border-gold/45 active:scale-[0.98] ${className}`}
+        className={`inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-surface px-4 py-3 text-body-sm font-medium text-ink transition hover:border-line2 active:scale-[0.98] ${className}`}
       >
         {heart}
         {saved ? 'Saved' : 'Save'}
@@ -47,7 +48,7 @@ export function SaveButton({ car, className = '', size = 16, variant = 'icon' }:
       aria-pressed={saved}
       aria-label={`Save ${car.name}`}
       title={saved ? 'Saved' : 'Save this car'}
-      className={`grid h-9 w-9 place-items-center rounded-full border border-gold/25 bg-panel/70 text-ink backdrop-blur transition hover:border-gold/60 hover:text-gold active:scale-95 ${className}`}
+      className={`grid h-9 w-9 place-items-center rounded-full border border-line2 bg-panel/70 text-ink backdrop-blur transition hover:border-faint active:scale-95 ${className}`}
     >
       {heart}
     </button>

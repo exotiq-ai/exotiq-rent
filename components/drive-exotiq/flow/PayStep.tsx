@@ -58,13 +58,13 @@ export function PayStep({
             copy has to say that plainly — "Final payment / due today" read as a
             charge that never happened. */}
         <StepHeader eyebrow="Step 05" title="Reserve your dates." sub="Nothing is charged yet." />
-        <div className="rounded-xl border border-gold bg-goldWash p-4 shadow-[0_0_0_1px_var(--tone-gold),0_0_24px_rgba(200,166,100,.10)]">
+        <div className="border-t border-line pt-4">
           <div className={`${eyebrowClassName} text-faint`}>Total once approved</div>
-          <div className="mt-2"><Money cents={m.grandTotalCents} large /></div>
+          <div className="mt-2 text-gold"><Money cents={m.grandTotalCents} large /></div>
           <p className="mt-2 text-body-sm leading-5 text-muted">{cart.operator.name} reviews your request, then we email you a secure payment link. Your card is only charged when you pay from that link.</p>
         </div>
 
-        <div className="mt-4 rounded-xl border border-line bg-surface p-4 text-body">
+        <div className="mt-4 border-t border-line pt-4 text-body">
           {/* Tax rides INSIDE the operator charge (T-11) — itemised so the
               operator row plus the tax row sum to what the statement shows. */}
           {m.operatorTaxesCents > 0 ? (
@@ -122,20 +122,18 @@ export function PayStep({
             Exotiq quotes no amount, so there is no value to gate on. */}
         <DepositDisclosure operatorName={cart.operator.name} />
 
-        <div className="mt-4 rounded-xl border border-line bg-surface p-4">
-          <div className="flex items-start gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-gold/10 text-gold"><LockKeyhole size={16} /></div>
-            <div>
-              <div className="text-body font-medium">What you&apos;ll see on your statement</div>
-              <p className="mt-1 text-body-sm leading-5 text-muted">Two charges: {cart.operator.name}, and <span className="text-ink">EXOTIQ.RENT</span> for Trip Fees and protection.</p>
-            </div>
+        <div className="mt-4 flex items-start gap-3 border-t border-line pt-4">
+          <LockKeyhole size={16} className="mt-0.5 shrink-0 text-muted" />
+          <div>
+            <div className="text-body font-medium">What you&apos;ll see on your statement</div>
+            <p className="mt-1 text-body-sm leading-5 text-muted">Two charges: {cart.operator.name}, and <span className="text-ink">EXOTIQ.RENT</span> for Trip Fees and protection.</p>
           </div>
         </div>
 
         <p className="mt-4 text-center text-body-sm text-muted">Free cancellation up to 72 hours before pickup.</p>
       </ScreenShell>
       <Sticky>
-        {payError && <p className="rounded-xl border border-warn/45 bg-warn/10 p-3 text-center text-body-sm leading-5 text-ink">{payError}</p>}
+        {payError && <p className="rounded-xl border border-danger/45 bg-danger/10 p-3 text-center text-body-sm leading-5 text-ink">{payError}</p>}
         {/* "Reserve for $X" implied an immediate charge of $X. It requests the
             booking; payment is a later, separate step. */}
         <PrimaryButton onClick={onPay} disabled={paying}>{paying ? 'Sending request…' : 'Request this booking'}</PrimaryButton>

@@ -8,7 +8,7 @@ import type { MarketplaceFacets, MarketplaceQuery } from '@/domain/booking/publi
 import { MARKETPLACE_SORTS, PRICE_BANDS, daysBetween } from '@/domain/booking/marketplaceQuery';
 import { addDays } from '@/domain/booking/dates';
 import { localTodayIso } from '@/domain/booking/availability';
-import { datePillClassName, microLabelClassName } from './tokens';
+import { ctaOutlineClassName, datePillClassName, microLabelClassName } from './tokens';
 
 /** The control that navigated, so its successor can take focus after the keyed remount (same document, no storage). */
 let pendingFocusId: string | null = null;
@@ -44,7 +44,7 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
   const router = useRouter();
   const form = useRef<HTMLFormElement>(null);
   // MP-12: a chip flipped and then nothing happened for the RPC round-trip.
-  // The push runs in a transition so the form knows it is pending: a gold
+  // The push runs in a transition so the form knows it is pending: an ink
   // hairline at the top and dimmed controls until the new grid commits.
   const [isPending, startTransition] = useTransition();
   // The form remounts (keyed on the query) when a change commits, which drops
@@ -130,14 +130,14 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
   const label = `mr-1 ${microLabelClassName} text-faint`;
   const chip = 'relative cursor-pointer group-data-[pending]:opacity-75 group-data-[pending]:cursor-progress transition-opacity';
   const face =
-    'inline-flex select-none items-center gap-1.5 rounded-full border border-line2 bg-field px-3 py-1.5 text-body-sm text-muted transition active:scale-[0.97] active:bg-gold/15 ' +
-    'peer-checked:border-gold/70 peer-checked:bg-gold/10 peer-checked:font-semibold peer-checked:text-ink peer-focus-visible:ring-2 peer-focus-visible:ring-gold/60 hover:border-gold/40 hover:text-ink';
+    'inline-flex select-none items-center gap-1.5 rounded-full border border-line2 bg-field px-3 py-1.5 text-body-sm text-muted transition active:scale-[0.97] active:bg-surface2 ' +
+    'peer-checked:border-ink peer-checked:bg-surface2 peer-checked:font-semibold peer-checked:text-ink peer-focus-visible:ring-2 peer-focus-visible:ring-gold/60 hover:border-faint hover:text-ink';
   const count = 'text-micro tabular-nums text-faint';
 
   return (
     <form ref={form} method="get" action={action} onSubmit={onSubmit} onChange={navigate} className="group relative space-y-2.5" aria-busy={isPending} data-pending={isPending ? '' : undefined} aria-label="Filter the fleet">
       {/* Always mounted, opacity-toggled, so the rail never jumps. */}
-      <span aria-hidden className={`pointer-events-none absolute -top-2 left-0 h-px w-full bg-gold transition-opacity motion-reduce:animate-none ${isPending ? 'animate-pulse opacity-100' : 'opacity-0'}`} />
+      <span aria-hidden className={`pointer-events-none absolute -top-2 left-0 h-px w-full bg-ink transition-opacity motion-reduce:animate-none ${isPending ? 'animate-pulse opacity-100' : 'opacity-0'}`} />
       <p role="status" className="sr-only">{isPending ? 'Updating results…' : ''}</p>
       <div className={row} role="group" aria-labelledby={`${idPrefix}-dates-label`}>
         <span id={`${idPrefix}-dates-label`} className={`${label} basis-full sm:basis-auto`}>Dates</span>
@@ -145,13 +145,13 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
         <span className="flex flex-nowrap items-center gap-2">
           <label className="sr-only" htmlFor={`${idPrefix}-start`}>Pickup date</label>
           <span className="relative inline-flex items-center">
-            <CalendarDays size={14} className="pointer-events-none absolute left-2.5 text-gold" aria-hidden />
+            <CalendarDays size={14} className="pointer-events-none absolute left-2.5 text-muted" aria-hidden />
             <input id={`${idPrefix}-start`} type="date" name="start" min={today} max={addDays(today, 180)} defaultValue={query.start ?? ''} aria-describedby={`${idPrefix}-dates-hint`} className={`${datePillClassName} min-w-[8.5rem]`} />
           </span>
           <span className="text-label text-faint">to</span>
           <label className="sr-only" htmlFor={`${idPrefix}-end`}>Drop-off date</label>
           <span className="relative inline-flex items-center">
-            <CalendarDays size={14} className="pointer-events-none absolute left-2.5 text-gold" aria-hidden />
+            <CalendarDays size={14} className="pointer-events-none absolute left-2.5 text-muted" aria-hidden />
             <input id={`${idPrefix}-end`} type="date" name="end" min={query.start ? addDays(query.start, 1) : addDays(today, 1)} max={addDays(today, 181)} defaultValue={query.end ?? ''} aria-describedby={`${idPrefix}-dates-hint`} className={`${datePillClassName} min-w-[8.5rem]`} />
           </span>
         </span>
@@ -169,11 +169,11 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
         onClick={() => { pendingFiltersOpen = !moreOpen; setMoreOpen(!moreOpen); }}
         aria-expanded={moreOpen}
         aria-controls={`${idPrefix}-more-filters`}
-        className="flex w-fit cursor-pointer items-center gap-2 rounded-full border border-line2 bg-surface px-3.5 py-2 text-body-sm font-semibold text-ink transition hover:border-gold/40 active:scale-[0.97] lg:hidden"
+        className="flex w-fit cursor-pointer items-center gap-2 rounded-full border border-line2 bg-surface px-3.5 py-2 text-body-sm font-semibold text-ink transition hover:border-faint active:scale-[0.97] lg:hidden"
       >
-        <SlidersHorizontal size={14} className="text-gold" aria-hidden />
+        <SlidersHorizontal size={14} className="text-muted" aria-hidden />
         Filters &amp; sort
-        {chipActive > 0 && <span className="rounded-full bg-gold/15 px-1.5 py-0.5 text-micro font-semibold tabular-nums text-gold">{chipActive}</span>}
+        {chipActive > 0 && <span className="rounded-full bg-surface2 px-1.5 py-0.5 text-micro font-semibold tabular-nums text-ink">{chipActive}</span>}
       </button>
       <div id={`${idPrefix}-more-filters`} className={`space-y-2.5 rounded-xl border border-line bg-panel/60 p-3 lg:block lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 ${moreOpen ? 'block' : 'hidden'}`}>
       <div className={row} role="group" aria-labelledby={`${idPrefix}-sort-label`}>
@@ -228,7 +228,7 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
           </Link>
         )}
         <noscript>
-          <button type="submit" className="rounded-full border border-gold/40 px-3 py-1.5 text-body-sm font-semibold text-gold">Apply</button>
+          <button type="submit" className={`rounded-full px-3 py-1.5 text-body-sm font-semibold ${ctaOutlineClassName}`}>Apply</button>
         </noscript>
       </div>
       </div>

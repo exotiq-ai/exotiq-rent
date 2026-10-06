@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { SiteBar } from '@/components/browse/SiteBar';
 import { SavedLink } from '@/components/renters/SavedLink';
 import { browseEnabled } from '@/domain/booking/config';
-import { eyebrowClassName, groundClassName, microLabelClassName, serifStyle, tone } from '@/components/browse/tokens';
+import { ctaClassName, eyebrowClassName, groundClassName, microLabelClassName, serifStyle, tone } from '@/components/browse/tokens';
 
 type StepStyle = 'bars' | 'numbered';
 
@@ -37,9 +37,9 @@ function StepIndicator({ step, total = 6, variant = 'bars' }: { step: number; to
 
     return (
       <div className={`flex items-center gap-3 px-6 pb-4 pt-1 ${eyebrowClassName} text-faint`}>
-        <div className="tabular-nums"><b className="font-semibold text-gold">{String(step).padStart(2, '0')}</b><span> / {String(total).padStart(2, '0')}</span></div>
+        <div className="tabular-nums"><b className="font-semibold text-ink">{String(step).padStart(2, '0')}</b><span> / {String(total).padStart(2, '0')}</span></div>
         <div className="relative h-px flex-1 overflow-hidden rounded bg-line">
-          <span className="absolute inset-y-0 left-0 bg-gold" style={{ width: pct }} />
+          <span className="absolute inset-y-0 left-0 bg-muted" style={{ width: pct }} />
         </div>
         <div className={`${microLabelClassName}`}>{labels[step - 1]}</div>
       </div>
@@ -50,7 +50,7 @@ function StepIndicator({ step, total = 6, variant = 'bars' }: { step: number; to
     <div className="flex justify-center gap-1 px-4 pb-2 pt-0">
       {Array.from({ length: total }).map((_, index) => {
         const current = index + 1;
-        return <span key={current} className="h-[3px] w-8 rounded-full" style={{ backgroundColor: current <= step ? tone.gold : tone.line }} />;
+        return <span key={current} className="h-[3px] w-8 rounded-full" style={{ backgroundColor: current <= step ? tone.ink : tone.line }} />;
       })}
     </div>
   );
@@ -102,8 +102,12 @@ export function PhoneViewport({
     frame.addEventListener('scroll', onScroll, { capture: true, passive: true });
     return () => frame.removeEventListener('scroll', onScroll, { capture: true });
   }, [page]);
+  // The frame carries no shadow (MP-16: the sticky bar or aside card is each
+  // surface's one elevated element). From 481px, where the 480px cage stops
+  // filling the viewport, a side hairline frames it; 'page' cancels it from lg,
+  // where the frame opens into the transparent 1200px page.
   const frameDesktop = page
-    ? 'lg:h-auto lg:max-w-[1200px] lg:overflow-visible lg:bg-transparent lg:shadow-none'
+    ? 'lg:h-auto lg:max-w-[1200px] lg:overflow-visible lg:border-0 lg:bg-transparent'
     : panel
       ? 'lg:mx-0 lg:h-[min(900px,calc(100dvh-5rem))] lg:rounded-2xl lg:border lg:border-line'
       : '';
@@ -130,7 +134,7 @@ export function PhoneViewport({
             scroll internally — with min-h alone the frame grows to content and
             the "sticky" footer lands below the fold. Compact cookie controls
             are inside that footer, not above the frame. */}
-        <div ref={frameRef} className={`relative mx-auto flex h-dvh w-full max-w-[480px] flex-col overflow-hidden bg-panel shadow-[0_40px_90px_-20px_rgba(0,0,0,.72),0_18px_42px_-18px_rgba(200,166,100,.18)] ${frameDesktop}`}>
+        <div ref={frameRef} className={`relative mx-auto flex h-dvh w-full max-w-[480px] flex-col overflow-hidden bg-panel min-[481px]:border-x min-[481px]:border-line ${frameDesktop}`}>
           <div className={`grid flex-shrink-0 grid-cols-[40px_1fr_40px] items-center px-4 transition-[padding] duration-300 motion-reduce:transition-none ${page && condensed ? 'pb-0.5 pt-[calc(env(safe-area-inset-top)+4px)]' : 'pb-1 pt-[calc(env(safe-area-inset-top)+10px)]'} ${page ? 'lg:hidden' : ''}`}>
             <button type="button" onClick={onBack} disabled={!onBack} className="grid h-10 w-10 place-items-center rounded-lg text-muted transition hover:bg-surface hover:text-ink disabled:opacity-30" aria-label="Back">
               <ArrowLeft size={20} />
@@ -188,8 +192,7 @@ export function PrimaryButton({ children, onClick, disabled = false }: { childre
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="w-full rounded-xl px-5 py-4 text-body font-semibold transition disabled:cursor-not-allowed disabled:opacity-45"
-      style={{ backgroundColor: tone.gold, color: tone.goldInk }}
+      className={`w-full rounded-xl px-5 py-4 text-body font-semibold disabled:cursor-not-allowed disabled:opacity-45 ${ctaClassName}`}
     >
       {children}
     </button>

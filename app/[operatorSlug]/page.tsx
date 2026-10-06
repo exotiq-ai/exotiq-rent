@@ -9,7 +9,7 @@ import { HTitle, Money, PhoneViewport } from '@/components/drive-exotiq/BookingC
 import { FilterBar } from '@/components/browse/FilterBar';
 import { EmptyState } from '@/components/browse/EmptyState';
 import { ListingGrid } from '@/components/browse/ListingGrid';
-import { eyebrowClassName, microLabelClassName, stickyBelowBarClassName } from '@/components/browse/tokens';
+import { eyebrowClassName, microLabelClassName, stickyBarClassName, stickyBelowBarClassName } from '@/components/browse/tokens';
 import { browseEnabled, getSiteMode } from '@/domain/booking/config';
 import { formatRangeLabel, formatShortDate } from '@/domain/booking/dates';
 import { applyMarketplaceQuery, computeFacets, excludeBusy, filterListings } from '@/domain/booking/marketplaceCore';
@@ -46,16 +46,16 @@ export async function generateMetadata({ params, searchParams }: Props) {
 // layout. Text only, no images, so the duplication costs nothing measurable.
 function AboutCard({ team, count, minRate, minDays, className = '' }: { team: Team; count: number; minRate: number; minDays: number; className?: string }) {
   return (
-    <div className={`rounded-xl border border-line bg-surface p-4 ${className}`}>
+    <div className={`border-t border-line pt-4 ${className}`}>
       <p className="text-body-sm leading-5 text-muted">{team.about ?? 'A concierge-approved fleet with mobile-first booking, verified drivers, transparent rental charges, and optional Exotiq Protect shown separately.'}</p>
       {/* Big figure over a small label — set at the same 11px as its caption,
           a tile read as two lines of caption (MP-11). Figures alone on the
           17px line: a "From " prefix wrapped inside a 69px phone tile, so the
           caption carries the qualifier. Five-figure rates step down to 15px. */}
-      <div className="mt-4 grid grid-cols-3 gap-2 text-center text-label">
-        <div className="rounded-lg bg-surface2 p-3"><div className="text-body font-medium leading-none tabular-nums text-gold min-[360px]:text-title-sm min-[360px]:leading-none">{count}</div><div className="mt-1.5 text-faint">Cars</div></div>
-        <div className="rounded-lg bg-surface2 p-3"><div className={`font-medium leading-none tabular-nums text-gold ${minRate >= 1_000_000 ? 'text-body-sm min-[360px]:text-body min-[360px]:leading-none' : 'text-body min-[360px]:text-title-sm min-[360px]:leading-none'}`}><Money cents={minRate} /></div><div className="mt-1.5 text-faint">Lowest rate</div></div>
-        <div className="rounded-lg bg-surface2 p-3"><div className="text-body font-medium leading-none tabular-nums text-gold min-[360px]:text-title-sm min-[360px]:leading-none">{minDays}+<span className="text-label font-normal text-faint"> {minDays === 1 ? 'day' : 'days'}</span></div><div className="mt-1.5 text-faint">Minimum</div></div>
+      <div className="mt-4 grid grid-cols-3 divide-x divide-line text-center text-label">
+        <div className="px-1"><div className="text-body font-medium leading-none tabular-nums text-ink min-[360px]:text-title-sm min-[360px]:leading-none">{count}</div><div className="mt-1.5 text-faint">Cars</div></div>
+        <div className="px-1"><div className={`font-medium leading-none tabular-nums text-ink ${minRate >= 1_000_000 ? 'text-body-sm min-[360px]:text-body min-[360px]:leading-none' : 'text-body min-[360px]:text-title-sm min-[360px]:leading-none'}`}><Money cents={minRate} /></div><div className="mt-1.5 text-faint">Lowest rate</div></div>
+        <div className="px-1"><div className="text-body font-medium leading-none tabular-nums text-ink min-[360px]:text-title-sm min-[360px]:leading-none">{minDays}+<span className="text-label font-normal text-faint"> {minDays === 1 ? 'day' : 'days'}</span></div><div className="mt-1.5 text-faint">Minimum</div></div>
       </div>
     </div>
   );
@@ -63,8 +63,8 @@ function AboutCard({ team, count, minRate, minDays, className = '' }: { team: Te
 
 function PolicyCard({ rows, className = '' }: { rows: PolicyRow[]; className?: string }) {
   return (
-    <div className={`rounded-xl border border-line bg-surface p-4 ${className}`}>
-      <div className="mb-3 flex items-center gap-2 text-body font-medium"><FileCheck2 size={16} className="text-gold" />Rental policies</div>
+    <div className={`border-t border-line pt-4 ${className}`}>
+      <div className="mb-3 flex items-center gap-2 text-body font-medium text-ink"><FileCheck2 size={16} className="text-muted" />Rental policies</div>
       {rows.map((row) => (
         <div key={row.label} className="flex items-start gap-3 border-t border-line py-3">
           <row.icon size={16} className="mt-0.5 shrink-0 text-faint" />
@@ -80,8 +80,8 @@ function PolicyCard({ rows, className = '' }: { rows: PolicyRow[]; className?: s
 
 function WhyCard({ className = '' }: { className?: string }) {
   return (
-    <div className={`rounded-xl border border-line bg-surface p-4 ${className}`}>
-      <div className="mb-3 flex items-center gap-2 text-body font-medium"><ShieldCheck size={16} className="text-gold" />Why renters book here</div>
+    <div className={`border-t border-line pt-4 ${className}`}>
+      <div className="mb-3 flex items-center gap-2 text-body font-medium text-ink"><ShieldCheck size={16} className="text-muted" />Why renters book here</div>
       {['Operator-owned rental charge stays clear.', 'Exotiq Protect is shown separately.', 'Documents are verified before pickup.', 'Concierge handoff details are coordinated before arrival.'].map((item) => <div key={item} className="border-t border-line py-3 text-body text-muted">{item}</div>)}
     </div>
   );
@@ -89,7 +89,7 @@ function WhyCard({ className = '' }: { className?: string }) {
 
 function CallLink({ team }: { team: Team }) {
   return (
-    <a href={`tel:${team.phone}`} className="flex w-full items-center justify-center gap-2 rounded-xl border border-gold/35 bg-surface px-5 py-4 text-body font-semibold text-ink"><Phone size={16} />Call {team.name}</a>
+    <a href={`tel:${team.phone}`} className="flex w-full items-center justify-center gap-2 rounded-xl border border-line2 bg-surface px-5 py-4 text-body font-semibold text-ink"><Phone size={16} />Call {team.name}</a>
   );
 }
 
@@ -111,11 +111,11 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
         <TrackView event="storefront_view" properties={{ team: team.slug }} />
         <PhoneViewport step={1} stepStyle="numbered" className="font-[var(--font-drive-inter)]" closeHref={`/${team.slug}`} layout="page" desktopNav={desktopNav}>
           <section className="flex flex-1 flex-col items-center justify-center px-6 text-center lg:py-32">
-            <div className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-gold"><CarFront size={24} /></div>
+            <div className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-muted"><CarFront size={24} /></div>
             <HTitle className="mt-5 text-title">{team.name}</HTitle>
             <p className="mt-3 text-body leading-6 text-muted">No vehicles are listed right now. The fleet is being refreshed — check back soon{hasPhone ? ' or call to ask about upcoming availability' : ''}.</p>
             {hasPhone && (
-              <a href={`tel:${team.phone}`} className="mt-6 flex items-center gap-2 rounded-xl border border-gold/35 bg-surface px-5 py-3 text-body font-semibold text-ink"><Phone size={16} />Call {team.name}</a>
+              <a href={`tel:${team.phone}`} className="mt-6 flex items-center gap-2 rounded-xl border border-line2 bg-surface px-5 py-3 text-body font-semibold text-ink"><Phone size={16} />Call {team.name}</a>
             )}
           </section>
         </PhoneViewport>
@@ -199,7 +199,7 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
               {availability && (
                 availability.checked ? (
                   <p className="mt-4 flex items-center gap-2.5 px-1 text-body-sm text-muted">
-                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold" aria-hidden />
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-faint" aria-hidden />
                     <span>Showing cars available <span className="text-ink" aria-label={`${formatShortDate(availability.start)} to ${formatShortDate(availability.end)}`}>{formatRangeLabel(availability.start, availability.end)}</span>. We&apos;ll confirm your exact dates when you book.</span>
                   </p>
                 ) : (
@@ -251,7 +251,7 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
           </div>
         </section>
         {hasPhone && (
-          <div className="absolute bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)+8px))] left-0 right-0 z-10 border-t border-line bg-panel px-4 pb-4 pt-3 shadow-[0_-24px_42px_rgba(13,15,20,.96)] lg:hidden">
+          <div className={`${stickyBarClassName} bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)+8px))] lg:hidden`}>
             <CookieControls viewport="mobile" />
             <CallLink team={team} />
           </div>

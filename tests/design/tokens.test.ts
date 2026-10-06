@@ -15,7 +15,7 @@ const tone = tokens.tone as Record<string, string>;
 const EXPECTED_TONE: Record<string, string> = {
   ground: '#06070A', panel: '#0D0F14', surface: '#161922', surface2: '#1E2230', field: '#10131A',
   line: '#2A2E3A', line2: '#3A3F4D', ink: '#F0F2F5', muted: '#9BA1B0', faint: '#848A9A',
-  gold: '#C8A664', goldInk: '#1A1308', verified: '#6EC1E4', warn: '#FFB84D',
+  gold: '#C8A664', goldInk: '#1A1308', verified: '#6EC1E4', warn: '#FFB84D', danger: '#F87171',
   goldWash: '#14130F', shareGround: '#0B0D12', dim: '#3D4250', dim2: '#5C6272', inkSoft: '#D7DAE0',
 };
 // AC13 lets these four referenced legacy colours live in a commented LEGACY group.
@@ -42,7 +42,7 @@ describe('MP-15 token sources', () => {
   it('tone holds the 14 contract tokens and the 5 residual tokens at their baseline values', () => {
     const actual = Object.fromEntries(Object.entries(tone).map(([key, value]) => [key, String(value).toUpperCase()]));
     expect(actual).toEqual(EXPECTED_TONE);
-    expect(Object.keys(tone)).not.toContain('danger');
+    expect(Object.keys(tone)).toContain('danger');
   });
 
   it('tailwind theme colors are the tone palette, imported not retyped, and compile to the same CSS as their bracket-hex twins', async () => {

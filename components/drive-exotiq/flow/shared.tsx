@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { CheckCircle2, FileText } from 'lucide-react';
 import { HTitle, Money } from '../BookingChrome';
-import { microLabelClassName } from '@/components/browse/tokens';
+import { microLabelClassName, stickyBarClassName } from '@/components/browse/tokens';
 import { CookieControls } from '@/components/analytics/CookieControls';
 
 export function StepHeader({ eyebrow, title, sub }: { eyebrow: string; title: string; sub?: string }) {
@@ -32,32 +32,36 @@ export function ScreenShell({ children, stickySafe = true }: { children: ReactNo
 
 export function Sticky({ children }: { children: ReactNode }) {
   return (
-    <div className="absolute bottom-4 left-0 right-0 z-10 border-t border-line bg-panel px-4 pb-4 pt-3 shadow-[0_-24px_42px_rgba(13,15,20,.96)] md:bottom-5">
+    <div className={`${stickyBarClassName} bottom-4 md:bottom-5`}>
       <CookieControls />
       <div className="space-y-3">{children}</div>
     </div>
   );
 }
 
+/**
+ * The running total in the Dates bar: a hairline row, the gold on the figure, not the frame
+ * (MP-16, D2). Its rule separates it from the cookie row above. When that row renders nothing
+ * (before hydration, or no row on this host) the wrapper it sits in becomes the bar's first
+ * child, and the rule and its padding drop so the bar's own border is the only line.
+ */
 export function RunningTotalCard({
   label,
   detail,
   amountCents,
-  accent = true,
 }: {
   label: string;
   detail?: string;
   amountCents: number;
-  accent?: boolean;
 }) {
   return (
-    <div className={`rounded-xl border p-3 ${accent ? 'border-gold bg-goldWash shadow-[0_0_0_1px_var(--tone-gold),0_0_24px_rgba(200,166,100,.10)]' : 'border-line bg-surface'}`}>
+    <div className="border-t border-line pt-3 [:first-child>&]:border-t-0 [:first-child>&]:pt-0">
       <div className="flex items-baseline justify-between gap-3">
         <div className="min-w-0">
           <div className="truncate text-body-sm font-medium text-ink">{label}</div>
           {detail && <div className="mt-1 text-label text-muted">{detail}</div>}
         </div>
-        <Money cents={amountCents} large />
+        <span className="text-gold"><Money cents={amountCents} large /></span>
       </div>
     </div>
   );
@@ -95,11 +99,11 @@ export function QuoteNotice({
     );
   }
   return (
-    <div className="mt-4 rounded-xl border border-warn/45 bg-warn/10 p-4">
-      <div className="text-body font-medium text-warn">We couldn&apos;t confirm final pricing</div>
+    <div className="mt-4 rounded-xl border border-danger/45 bg-danger/10 p-4">
+      <div className="text-body font-medium text-danger">We couldn&apos;t confirm final pricing</div>
       <p className="mt-1 text-body-sm leading-5 text-ink">{message ?? 'Please try again in a moment.'}</p>
       {onRetry && (
-        <button type="button" onClick={onRetry} className="mt-3 rounded-lg border border-warn/45 px-4 py-2 text-body-sm font-semibold text-ink">
+        <button type="button" onClick={onRetry} className="mt-3 rounded-lg border border-danger/45 px-4 py-2 text-body-sm font-semibold text-ink">
           Try again
         </button>
       )}
@@ -152,11 +156,11 @@ export function Breakdown({
   total: number;
 }) {
   return (
-    <div className="mt-4 rounded-xl border border-line bg-surface p-4">
+    <div className="mt-4 border-t border-line pt-4">
       <div className="mb-3 flex justify-between">
         <div>
           <div className="text-body font-medium">{title}</div>
-          <div className="mt-1 text-label text-gold">{note}</div>
+          <div className="mt-1 text-label text-faint">{note}</div>
         </div>
         <FileText size={16} className="text-faint" />
       </div>
@@ -178,5 +182,5 @@ export function Breakdown({
 }
 
 export function VerifiedPill() {
-  return <CheckCircle2 size={20} className="text-gold" />;
+  return <CheckCircle2 size={20} className="text-verified" />;
 }

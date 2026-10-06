@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { BrowseChrome } from '@/components/browse/BrowseChrome';
-import { containerClassName, displaySerifStyle, eyebrowClassName } from '@/components/browse/tokens';
+import { containerClassName, ctaOutlineClassName, displaySerifStyle, eyebrowClassName } from '@/components/browse/tokens';
 import { renterCaptureUiEnabled } from '@/domain/renters/flags';
 
 export const metadata: Metadata = { title: 'Unsubscribe | Drive Exotiq', robots: { index: false, follow: false } };
@@ -25,7 +25,7 @@ export default function UnsubscribePage({ searchParams }: { searchParams?: { r?:
           <form method="post" action="/api/renters/unsubscribe" className="mt-8">
             <input type="hidden" name="r" value={r} />
             <input type="hidden" name="token" value={token} />
-            <button type="submit" className="rounded-xl border border-gold/40 px-6 py-3.5 text-body font-semibold text-gold transition hover:bg-gold/10">Unsubscribe</button>
+            <button type="submit" className={`rounded-xl px-6 py-3.5 text-body font-semibold ${ctaOutlineClassName}`}>Unsubscribe</button>
           </form>
         )}
       </section>

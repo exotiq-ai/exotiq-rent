@@ -6,6 +6,7 @@ import { CONSENT_TEXT } from '@/domain/renters/consentText';
 import { renterCaptureUiEnabled } from '@/domain/renters/flags';
 import type { CaptureSource } from '@/domain/renters/validate';
 import type { SavedCar } from './savedStore';
+import { ctaClassName, ctaOutlineClassName } from '@/components/browse/tokens';
 
 type Status = { kind: 'idle' } | { kind: 'sending' } | { kind: 'done'; status: string } | { kind: 'error'; message: string };
 
@@ -117,7 +118,7 @@ export function EmailCaptureForm({
         />
         {/* Honeypot: hidden from people and named so contact autofill leaves it alone. */}
         <input name="hp_field" type="text" tabIndex={-1} autoComplete="off" aria-hidden className="absolute -left-[9999px] h-0 w-0 opacity-0" />
-        <button type="submit" aria-disabled={sending} className="h-10 shrink-0 rounded-lg bg-gold px-4 text-body-sm font-semibold text-goldInk transition hover:brightness-105 aria-disabled:cursor-progress aria-disabled:opacity-60">
+        <button type="submit" aria-disabled={sending} className={`h-10 shrink-0 rounded-lg px-4 text-body-sm font-semibold aria-disabled:cursor-progress aria-disabled:opacity-60 ${compact ? ctaOutlineClassName : ctaClassName}`}>
           {sending ? 'Sending…' : done ? 'Send again' : cta}
         </button>
       </div>
@@ -133,9 +134,9 @@ export function EmailCaptureForm({
         tabIndex={-1}
         role={status.kind === 'error' ? 'alert' : 'status'}
         aria-live="polite"
-        className={`mt-2 flex items-start gap-2.5 text-body-sm leading-5 outline-none ${status.kind === 'error' ? 'text-warn' : 'text-muted'} ${status.kind === 'idle' || sending ? 'sr-only' : ''}`}
+        className={`mt-2 flex items-start gap-2.5 text-body-sm leading-5 outline-none ${status.kind === 'error' ? 'text-danger' : 'text-muted'} ${status.kind === 'idle' || sending ? 'sr-only' : ''}`}
       >
-        {done && <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" aria-hidden />}
+        {done && <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-faint" aria-hidden />}
         {done ? DONE_COPY[status.status] ?? DONE_COPY.sent : status.kind === 'error' ? status.message : ''}
       </p>
     </form>

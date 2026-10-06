@@ -22,6 +22,7 @@
   --tone-gold-ink: #1A1308;
   --tone-verified: #6EC1E4;
   --tone-warn: #FFB84D;
+  --tone-danger: #F87171;
   --tone-gold-wash: #14130F;
   --tone-share-ground: #0B0D12;
   --tone-dim: #3D4250;
@@ -273,7 +274,7 @@
 /* Drawn checkbox and radio for the gold surfaces (MP-11). The native box was
    the OS control tinted by accent-color: a different size, radius and tick
    per browser, and a white tick on gold at ~2.3:1. This is the chip's
-   border/fill with a dark #1A1308 tick (~8:1 on gold). Keyboard focus comes
+   border/fill with a dark #1A1308 tick (~16:1 on the ink fill). Keyboard focus comes
    from the global ring above; forced-colors restores the native control so
    the tick never vanishes in Windows High Contrast. */
 @layer components {
@@ -281,10 +282,11 @@
   .control-radio {
     /* Resting border at #848A9A/80 (~4:1 on both grounds): a 1px #3A3F4D
        line was 1.7:1, invisible to low vision until hover (WCAG 1.4.11).
-       `checked:hover` keeps a selected box solid gold — Tailwind sorts
+       `checked:hover` keeps a selected box solid ink — Tailwind sorts
        `hover:` after `checked:`, so without it a selected box dimmed under
-       the pointer. */
-    @apply h-4 w-4 shrink-0 cursor-pointer appearance-none border border-faint/80 bg-field bg-center bg-no-repeat transition hover:border-gold/60 checked:border-gold checked:bg-gold checked:hover:border-gold;
+       the pointer. Selected is ink, not gold (MP-16, D4): the #1A1308 tick
+       reads ~16:1 on it. */
+    @apply h-4 w-4 shrink-0 cursor-pointer appearance-none border border-faint/80 bg-field bg-center bg-no-repeat transition hover:border-faint checked:border-ink checked:bg-ink checked:hover:border-ink;
   }
   .control-check {
     @apply rounded;
