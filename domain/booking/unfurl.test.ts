@@ -6,7 +6,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-// @ts-expect-error internal path, pinned to next 14.2.x (the resolver Next itself runs on page metadata)
+// Internal path, pinned to next 14.2.x: the resolver Next itself runs on page metadata.
 import { resolveOpenGraph } from 'next/dist/lib/metadata/resolvers/resolve-opengraph';
 import { stripComments } from '../../tests/design/lib/scan.mjs';
 import { goldCount } from '../../tests/restraint/restraintScan';
@@ -192,9 +192,10 @@ describe('MP-18 vehicle link preview (AC5)', () => {
 
   it('relative mock hero resolves to an absolute url through metadataBase', async () => {
     const ctx = await getMockPublicVehicleContext('desert-exotic-rentals', 'mclaren-750s-spider');
-    const og = resolveOpenGraph(api.vehicleOpenGraph?.(ctx!.team, ctx!.vehicle), new URL('https://book.example'), { pathname: '/', isStandaloneMode: false }, null);
+    const resolve = (og: unknown) => resolveOpenGraph(og as never, new URL('https://book.example'), { pathname: '/', trailingSlash: false, isStandaloneMode: false }, null) as unknown as { images: { url: URL | string; width?: number; height?: number; alt?: string }[] };
+    const og = resolve(api.vehicleOpenGraph?.(ctx!.team, ctx!.vehicle));
     expect(String(og.images[0].url)).toBe(`https://book.example${ctx!.vehicle.heroImage}`);
-    const floor = resolveOpenGraph(api.vehicleOpenGraph?.(ctx!.team, { ...ctx!.vehicle, heroImage: '' }), new URL('https://book.example'), { pathname: '/', isStandaloneMode: false }, null);
+    const floor = resolve(api.vehicleOpenGraph?.(ctx!.team, { ...ctx!.vehicle, heroImage: '' }));
     expect(String(floor.images[0].url)).toBe('https://book.example/opengraph-image');
     expect([floor.images[0].width, floor.images[0].height, floor.images[0].alt]).toEqual([1200, 630, 'Drive Exotiq']);
   });

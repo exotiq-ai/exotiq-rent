@@ -5,14 +5,13 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { stripComments } from '../../tests/design/lib/scan.mjs';
 
 type Field = 'name' | 'dob' | 'phone' | 'email';
 type Missing<F extends string = string> = { field: F; message: string };
 type Driver = { name: string; dob: string; phone: string; email?: string };
-/** Guarded, so a missing module fails each test for its own reason instead of the whole file. */
-const v = (await import('./driverValidation').catch(() => ({}))) as unknown as {
+type Api = {
   TERMS_MESSAGE?: string;
   driverMissing?: (d: Driver) => Missing<Field>[];
   termsMissing?: (accepted: boolean) => Missing<'terms'>[];
@@ -21,6 +20,11 @@ const v = (await import('./driverValidation').catch(() => ({}))) as unknown as {
   fieldMessages?: (missing: readonly Missing<Field>[], attempted: boolean) => Partial<Record<Field, string>>;
   missingSummary?: (missing: readonly Missing<Field>[], ageMessage?: string | null) => string;
 };
+/** Loaded guarded, so a missing module fails each test for its own reason instead of the whole file. */
+let v: Api = {};
+beforeAll(async () => {
+  v = (await import('./driverValidation').catch(() => ({}))) as unknown as Api;
+});
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const read = (rel: string) => stripComments(readFileSync(join(ROOT, rel), 'utf8'));
@@ -77,7 +81,8 @@ describe('MP-18 driver and terms validation (AC8)', () => {
 
   it('attemptContinue never calls next while anything is missing', () => {
     expect(v.attemptContinue).toBeTypeOf('function');
-    for (const missing of [v.driverMissing!({ name: '', dob: '', phone: '', email: '' }), v.driverMissing!({ ...COMPLETE, phone: '1' }), v.termsMissing!(false)]) {
+    const lists: (readonly Missing[])[] = [v.driverMissing!({ name: '', dob: '', phone: '', email: '' }), v.driverMissing!({ ...COMPLETE, phone: '1' }), v.termsMissing!(false)];
+    for (const missing of lists) {
       const next = vi.fn();
       const onBlocked = vi.fn();
       v.attemptContinue!(missing, next, onBlocked);
@@ -89,7 +94,8 @@ describe('MP-18 driver and terms validation (AC8)', () => {
 
   it('attemptContinue calls next exactly once when complete', () => {
     expect(v.attemptContinue).toBeTypeOf('function');
-    for (const missing of [v.driverMissing!(COMPLETE), v.termsMissing!(true)]) {
+    const lists: (readonly Missing[])[] = [v.driverMissing!(COMPLETE), v.termsMissing!(true)];
+    for (const missing of lists) {
       const next = vi.fn();
       const onBlocked = vi.fn();
       v.attemptContinue!(missing, next, onBlocked);
