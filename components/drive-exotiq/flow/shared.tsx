@@ -138,7 +138,7 @@ export function DepositDisclosure({ operatorName }: { operatorName: string }) {
       <div className="text-ink">Damage deposit at pickup</div>
       <p className="mt-2 text-body-sm leading-5 text-faint">
         {operatorName} collects a refundable deposit at pickup. Amount and accepted methods
-        vary by operator. Separate from the total you pay Exotiq today.
+        vary by operator. Separate from your Exotiq total — collected by the operator at pickup.
       </p>
     </div>
   );

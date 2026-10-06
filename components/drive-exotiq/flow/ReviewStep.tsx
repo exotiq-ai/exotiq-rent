@@ -123,7 +123,7 @@ export function ReviewStep({
           <LockKeyhole size={16} className="mt-0.5 shrink-0 text-muted" />
           <div>
             <div className="text-body font-medium">What you&apos;ll see on your statement</div>
-            <p className="mt-1 text-body-sm leading-5 text-muted">Two charges: {cart.operator.name}, and <span className="text-ink">EXOTIQ.RENT</span> for Trip fees and protection.</p>
+            <p className="mt-1 text-body-sm leading-5 text-muted">Two charges: {cart.operator.name}, and <span className="text-ink">EXOTIQ RENT</span> for Trip fees and protection.</p>
           </div>
         </div>
         {/* One collapsed policy affordance, not three. Cancellation terms and

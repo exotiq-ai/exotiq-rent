@@ -229,7 +229,14 @@ export function structureProblems(label: string, html: string, c: Case, operator
   for (const v of exAmounts) if (opAmounts.includes(v)) p.push(`${label}: Drive Exotiq amount ${v} inside the operator group`);
   if (norm(textOf(r.op)).includes('Exotiq Protect')) p.push(`${label}: Exotiq Protect inside the operator group`);
   const text = norm(textOf(r.root));
-  for (const old of OLD_STRINGS) if (text.includes(old) || html.includes(old)) p.push(`${label}: old string "${old}"`);
+  // "Exotiq total" was a row LABEL (PayStep's subtotal row, the mock block's); the amended AC9 deposit
+  // sentence says "your Exotiq total" in prose, so that one is matched as a label: an element whose
+  // whole text it is. Every other old string is matched anywhere.
+  for (const old of OLD_STRINGS) {
+    if (old === 'Exotiq total') {
+      if (elements(r.root).some((e) => norm(textOf(e)) === old)) p.push(`${label}: old label "${old}"`);
+    } else if (text.includes(old) || html.includes(old)) p.push(`${label}: old string "${old}"`);
+  }
   return p;
 }
 
@@ -561,6 +568,7 @@ describe('MP-26 two-party money card on every surface', () => {
       expect(structureProblems('p', good.replace(/(data-money="group-operator"[^>]*?)aria-labelledby="[^"]*"/, '$1'), fx).join() + structureProblems('p', good.replace(/aria-labelledby="([^"]*)"([^>]*data-money="group-operator")/, '$2'), fx).join()).toContain('no label');
       expect(structureProblems('p', good.replace('data-money-line="rental"', 'data-money-line="operator-tax"'), fx).join()).toContain('operator rows');
       expect(structureProblems('p', good.replace('Drive Exotiq', 'Exotiq.Rent'), fx).join()).toContain('Exotiq.Rent');
+      expect(structureProblems('p', good.replace('<span>Subtotal</span>', '<span>Exotiq total</span>'), fx).join()).toContain('old label "Exotiq total"');
     }
     expect(problems).toEqual([]);
   });
