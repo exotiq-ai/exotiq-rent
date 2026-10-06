@@ -27,10 +27,11 @@ describe('tracking page integration boundaries', () => {
     expect(privacy).not.toContain('This host runs no analytics or advertising trackers.');
   });
 
-  it('does not let the legal page link to unavailable browse and terms pages', () => {
+  it('links the legal page to terms on every host and to browse only where browse exists', () => {
     const chrome = source('components/browse/BrowseChrome.tsx');
     expect(chrome).toContain('homeHref={browseEnabled() ?');
-    expect(chrome).toContain('{browseEnabled() && <Link href="/terms"');
+    expect(chrome).toContain('<Link href="/terms"');
+    expect(chrome).not.toContain('browseEnabled() && <Link href="/terms"');
   });
 
   it('adds storefront funnel coverage to populated and empty storefronts', () => {
