@@ -109,7 +109,7 @@ export async function VehicleEntryPage({ operatorSlug, vehicleSlug, dates }: { o
               {/* Was: "Verify driver and insurance documents" (insurance verification is
                   not built) and "before single Stripe Checkout" (there are two charges,
                   and payment comes AFTER the operator approves — not at booking). */}
-              {['Choose your dates and pickup time.', `${operator.name} reviews your request.`, 'We email your payment link once approved.', 'Verify your identity — about two minutes.'].map((item, index) => <div key={item} className="flex gap-3 border-t border-line py-3 text-body text-muted"><span className="text-faint">0{index + 1}</span>{item}</div>)}
+              {['Choose your dates and pickup time.', `${operator.name} reviews your request.`, 'Verify your identity — about two minutes.', 'We email your payment link once approved.'].map((item, index) => <div key={item} className="flex gap-3 border-t border-line py-3 text-body text-muted"><span className="text-faint">0{index + 1}</span>{item}</div>)}
             </div>
           </div>
 
