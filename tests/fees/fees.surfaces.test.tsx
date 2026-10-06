@@ -30,6 +30,7 @@ vi.mock('@/domain/booking/service', async (importOriginal) => {
   };
 });
 
+import { BookingChrome } from '@/components/drive-exotiq/BookingChrome';
 import { ConfirmationScreen } from '@/components/drive-exotiq/ConfirmationScreen';
 import { PaymentCard } from '@/components/drive-exotiq/PaymentCard';
 import { ReviewStep } from '@/components/drive-exotiq/flow/ReviewStep';
@@ -75,8 +76,10 @@ import {
   textOf,
 } from './fixtures';
 import { REPO, readGolden, switchBlock, switchBlockEl } from './goldens';
+import { FIXTURE_STATES } from '../../scripts/fee-matrix.mjs';
 
 const EVIDENCE = process.env.MP26_EVIDENCE_DIR ?? '';
+const CSS = process.env.MP26_CSS ?? '';
 const BASE = process.env.MP26_BASE_REF ?? '';
 const noop = () => {};
 const read = (rel: string) => readFileSync(join(REPO, rel), 'utf8');
@@ -667,6 +670,43 @@ describe('MP-26 two-party money card on every surface', () => {
       expect(norm(textOf(parseHtml(mock.replace('10% of the rental', ''))))).not.toContain('10% of the rental');
     }
     expect(problems).toEqual([]);
+  });
+
+  it.skipIf(!EVIDENCE || !CSS)('writes the fixture pages for the screenshot matrix (MP26_EVIDENCE_DIR, MP26_CSS)', async () => {
+    // Each page is the real component output inside the real panel frame, with the production
+    // build's compiled CSS inlined. scripts/fee-matrix.mjs serves it from the build's own origin
+    // (so /_next assets, fonts and images resolve) and swaps data-mp26-font for the build's
+    // next/font class. Only the frame's height is released, so one screenshot covers the step.
+    const css = readFileSync(CSS, 'utf8');
+    const dir = join(EVIDENCE, 'fixtures');
+    mkdirSync(dir, { recursive: true });
+    const page = (title: string, markup: string) => `<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>MP-26 ${title}</title>\n<style>${css}</style>\n<style>/* MP-26 fixture page only: the h-dvh frame grows to its content */ div[class~="h-dvh"]{height:auto!important;min-height:100vh}</style>\n</head><body class="font-sans"><div data-mp26-font="">${markup}</div></body></html>\n`;
+    const written: string[] = [];
+    for (const state of FIXTURE_STATES as { id: string; surface: 'review' | 'payment' | 'paid'; fixture: string; open?: boolean }[]) {
+      const c = fixture(state.fixture as Parameters<typeof fixture>[0]);
+      let markup: string;
+      if (state.surface === 'review') {
+        markup = renderToStaticMarkup(<BookingChrome step={3} stepTotal={3} closeHref={`/${OPERATOR.slug}`}><Review cart={reviewCartOf(c)} goTo={noop} onRequest={noop} quote={quoteOf(c)} onProtectionChange={noop} onMarketingConsentChange={noop} /></BookingChrome>);
+        if (state.open) {
+          // The detail open, as defaultOpen renders it: aria-expanded true and the region not hidden.
+          const root = parseHtml(markup);
+          const toggle = byAttr(root, 'data-money', 'trip-fees-toggle')[0];
+          const region = byAttr(root, 'data-money', 'trip-fees-detail')[0];
+          const openRegion = markup.slice(region.start, region.innerStart).replace(' hidden=""', '');
+          const openToggle = markup.slice(toggle.start, toggle.innerStart).replace('aria-expanded="false"', 'aria-expanded="true"');
+          markup = markup.slice(0, toggle.start) + openToggle + markup.slice(toggle.innerStart, region.start) + openRegion + markup.slice(region.innerStart);
+          expect(disclosureProblems('open page', markup, { open: true, percent: true, stateFee: c.stateFeeCents, stateLabel: c.stateFeeLabel })).toEqual([]);
+        }
+      } else {
+        svc.confirmation = confirmationOf(c, state.surface);
+        svc.cart = null;
+        markup = renderToStaticMarkup(await ConfirmationScreen({ bookingRef: BOOKING_REF, accessToken: ACCESS_TOKEN }));
+      }
+      expect(byAttr(parseHtml(markup), 'data-money', 'card')).toHaveLength(1);
+      writeFileSync(join(dir, `${state.id}.html`), page(state.id, markup));
+      written.push(state.id);
+    }
+    expect(written).toHaveLength(FIXTURE_STATES.length);
   });
 
   it('the MP-14 opt-in keeps its wording and unchecked default on the merged step', async () => {
