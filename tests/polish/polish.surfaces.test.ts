@@ -23,6 +23,7 @@ import { DatesStep } from '@/components/drive-exotiq/flow/DatesStep';
 import { DriverStep } from '@/components/drive-exotiq/flow/DriverStep';
 import { ReviewStep } from '@/components/drive-exotiq/flow/ReviewStep';
 import { COMMIT_STEP, FLOW_STEPS, stepEyebrow } from '@/components/drive-exotiq/flow/steps';
+import * as tokens from '@/components/browse/tokens';
 import { createInitialCart } from '@/domain/booking/mockData';
 import config from '../../tailwind.config';
 import { compileWith, stripComments } from '../design/lib/scan.mjs';
@@ -30,7 +31,7 @@ import { NOW_ISO, OPERATOR, VEHICLE, byAttr, elements, fixture, norm, parseHtml,
 import { renterFiles } from '../restraint/restraintScan';
 import {
   CSS, DATES, FLOW, GOLDEN, OVERSCROLL, PROJECT, SF, SHARED, SITEBAR, STEPS, VEP, type Census, baseCensus, captureTokens, census, censusProblems,
-  cookieMounts, fence, frozenProblems, guardedSelection, lockstepCopy, lockstepProblems, projectionSource, read, scrollerLiteral, sha,
+  PROTECT_RESTORE, cookieMounts, fence, frozenProblems, guardedSelection, lockstepCopy, lockstepProblems, projectionSource, protectLockstepProblems, read, scrollerLiteral, sha,
 } from './polishBase';
 
 const noop = () => {};
@@ -134,6 +135,11 @@ describe('MP-25 surfaces', () => {
     const planted = lockstepProblems(lockstepCopy, (rel) => (rel === 'tests/fees/fees.flow.test.ts' ? `${read(rel)}\n// planted` : read(rel)));
     if (!planted.some((p) => p.startsWith('tests/fees/fees.flow.test.ts'))) problems.push('planted: an extra edit in fees.flow.test.ts is not seen');
     problems.push(...lockstepProblems(lockstepCopy, read));
+    // Driver errata #3: MP-30's restoration goldens and the restore test's calendar cut, hunk for hunk.
+    const recipe = String((tokens as Record<string, unknown>).glassBarClassName ?? '');
+    const plantedProtect = protectLockstepProblems((rel) => (rel === PROTECT_RESTORE ? `${read(rel)}\n// planted` : read(rel)), recipe);
+    if (!plantedProtect.some((p) => p.startsWith(PROTECT_RESTORE))) problems.push('planted: an extra edit in protect.restore.test.tsx is not seen');
+    problems.push(...protectLockstepProblems(read, recipe));
     expect(problems).toEqual([]);
   });
 });

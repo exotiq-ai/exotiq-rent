@@ -676,7 +676,7 @@ async function ac13(browser) {
   await context.close();
   if (REF) {
     const files = execFileSync('git', ['diff', '--name-only', `${REF}...HEAD`], { encoding: 'utf8' }).split('\n').filter(Boolean);
-    const allowed = /^(components\/drive-exotiq\/flow\/(DatesStep\.tsx|monthPager\.ts|shared\.tsx|steps\.ts)|components\/drive-exotiq\/VehicleEntryPage\.tsx|app\/\[operatorSlug\]\/page\.tsx|components\/browse\/(tokens\.ts|SiteBar\.tsx)|app\/globals\.css|scripts\/polish-probe\.mjs|tests\/polish\/.+|tests\/fees\/(goldens\.ts|fees\.flow\.test\.ts|fees\.golden\.test\.tsx|golden\/(dates-step\.html|driver-step\.html|base\.json))|tests\/chrome\/chrome\.frame\.test\.tsx|tests\/bars\/.+)$/;
+    const allowed = /^(components\/drive-exotiq\/flow\/(DatesStep\.tsx|monthPager\.ts|shared\.tsx|steps\.ts)|components\/drive-exotiq\/VehicleEntryPage\.tsx|app\/\[operatorSlug\]\/page\.tsx|components\/browse\/(tokens\.ts|SiteBar\.tsx)|app\/globals\.css|scripts\/polish-probe\.mjs|tests\/polish\/.+|tests\/fees\/(goldens\.ts|fees\.flow\.test\.ts|fees\.golden\.test\.tsx|golden\/(dates-step\.html|driver-step\.html|base\.json))|tests\/chrome\/chrome\.frame\.test\.tsx|tests\/bars\/.+|tests\/protect\/protect\.restore\.test\.tsx|tests\/protect\/golden\/(base\.json|review-FX-T1S1P1\.html|review-FX-T1S1P0\.html|review-FX-T1S1P1-requesting\.html|review-mock-no-quote\.html|storefront-about\.html|storefront-no-about\.html|bookingflow-first-render\.html))$/;
     out.scope = { ref: REF, files, outside: files.filter((f) => !allowed.test(f)) };
     if (out.scope.outside.length) problems.push(`diff outside the allowed set: ${out.scope.outside.join(', ')}`);
   }

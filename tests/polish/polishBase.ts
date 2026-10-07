@@ -256,7 +256,7 @@ export const PROJECT: Record<string, (s: string) => string> = {
 };
 export const projectionSource = (key: string): string => (key.startsWith('DatesStep.') ? DATES : key);
 export function frozenProblems(base: CensusFile, reader: (rel: string) => string): string[] {
-  return Object.entries(base.frozen).flatMap(([rel, hash]) => (!existsSync(join(REPO, rel)) ? [`${rel} is gone`] : sha(reader(rel)) !== hash ? [`${rel} changed`] : []));
+  return Object.entries(base.frozen).filter(([rel]) => !PROTECT_LOCKSTEP.includes(rel)).flatMap(([rel, hash]) => (!existsSync(join(REPO, rel)) ? [`${rel} is gone`] : sha(reader(rel)) !== hash ? [`${rel} changed`] : []));
 }
 /** The class literal of a phone scroller (the one literal holding the contiguous scroll run). */
 export const scrollerLiteral = (rel: string): string => literals(stripComments(read(rel))).find((s) => s.includes('min-h-0 flex-1 overflow-y-auto')) ?? '';
@@ -298,6 +298,50 @@ export const withFirstClass = (html: string, cls: string): string => html.replac
 export const SHELL_SUFFIX = ` ${OVERSCROLL} animate-step-in`;
 const swap = (h: Hunk, from: string, to: string): boolean => h.removed.length === 1 && h.added.length === 1 && h.removed[0].includes(from) && h.added[0] === h.removed[0].replace(from, to);
 const FLOW_IMPORT = "import { FLOW_STEPS } from '@/components/drive-exotiq/flow/steps';";
+// ---- driver errata #3: MP-30's restoration goldens join the lockstep ----------------------------
+/** The tests/protect files errata #3 admits: seven goldens, their base.json, and the restore test's calendar cut. */
+export const PROTECT_REVIEW = ['review-FX-T1S1P1.html', 'review-FX-T1S1P0.html', 'review-FX-T1S1P1-requesting.html', 'review-mock-no-quote.html'];
+export const PROTECT_STOREFRONT = ['storefront-about.html', 'storefront-no-about.html'];
+export const PROTECT_FLOW = 'bookingflow-first-render.html';
+const PG = 'tests/protect/golden/';
+export const PROTECT_RESTORE = 'tests/protect/protect.restore.test.tsx';
+export const PROTECT_LOCKSTEP = [...[...PROTECT_REVIEW, ...PROTECT_STOREFRONT, PROTECT_FLOW, 'base.json'].map((n) => PG + n), PROTECT_RESTORE];
+/** A file's text at the recorded branch base (errata #3 postdates the T0 byte copies; git holds the base exactly). */
+export const atBase = (rel: string): string => execFileSync('git', ['show', `${baseCensus().cutFrom}:${rel}`], { cwd: REPO, encoding: 'utf8' });
+const SHELL_BASE = 'min-h-0 flex-1 overflow-y-auto px-4 pt-2 [scrollbar-width:none] pb-5';
+const replaceOnce = (s: string, from: string, to: string): string => (s.split(from).length === 2 ? s.replace(from, to) : `${s}\n«${from} not found exactly once»`);
+/** The one glass recipe as SiteBar renders it (read from tokens.ts by the caller, so this file imports no recipe). */
+export function protectExpected(rel: string, base: string, recipe: string): string {
+  const name = rel.slice(PG.length);
+  const shell = (h: string) => replaceOnce(h, `<div class="${SHELL_BASE}"`, `<div class="${SHELL_BASE}${SHELL_SUFFIX}"`);
+  if (PROTECT_REVIEW.includes(name)) return shell(base);
+  if (PROTECT_STOREFRONT.includes(name)) {
+    const bar = replaceOnce(base, 'class="sticky top-0 z-40 border-b border-line/70 bg-ground/85 backdrop-blur-md ', `class="sticky top-0 z-40 border-b ${recipe} `);
+    return replaceOnce(bar, 'overflow-y-auto px-4 pt-2 [scrollbar-width:none] pb-5 lg:overflow-visible', `overflow-y-auto px-4 pt-2 [scrollbar-width:none] ${OVERSCROLL} pb-5 lg:overflow-visible`);
+  }
+  if (name === PROTECT_FLOW) return cutCalendarBytes(replaceOnce(shell(base), '>Review &amp; Request</span>', '>Review</span>'));
+  return base;
+}
+/** Errata #3: the protect goldens equal their base bytes with exactly the polish substitutions; base.json moves only their hashes; the restore test gains the calendar cut and nothing else. */
+export function protectLockstepProblems(cur: (rel: string) => string, recipe: string): string[] {
+  const p: string[] = [];
+  for (const rel of PROTECT_LOCKSTEP.filter((r) => r.endsWith('.html'))) if (cur(rel) !== protectExpected(rel, atBase(rel), recipe)) p.push(`${rel} differs from its base golden beyond the polish substitutions`);
+  const b0 = JSON.parse(atBase(`${PG}base.json`));
+  const b1 = JSON.parse(cur(`${PG}base.json`));
+  for (const rel of PROTECT_LOCKSTEP.filter((r) => r.endsWith('.html'))) {
+    const n = rel.slice(PG.length);
+    if (b1.files[n] !== sha(cur(rel))) p.push(`${PG}base.json does not hold ${n}'s hash`);
+    delete b0.files[n];
+    delete b1.files[n];
+  }
+  if (JSON.stringify(b0) !== JSON.stringify(b1)) p.push(`${PG}base.json changed beyond the seven hashes`);
+  const hs = hunks(atBase(PROTECT_RESTORE), cur(PROTECT_RESTORE));
+  const imp = hs.some((h) => h.removed.length === 0 && h.added.length === 1 && h.added[0] === "import { calendarRange } from '../fees/goldens';");
+  const cut = hs.some((h) => h.removed.length === 1 && h.removed[0].startsWith('const flow = () => renderToStaticMarkup(') && h.added.length === 2 && h.added[0].startsWith('/**') && h.added[1].startsWith('const flow = () => ') && h.added[1].includes('calendarRange(parseHtml(') && h.added[1].includes('«calendar»'));
+  if (hs.length !== 2 || !imp || !cut) p.push(`${PROTECT_RESTORE}: ${JSON.stringify(hs)}`);
+  return p;
+}
+
 /** AC14: the lockstep files differ from their base copies by the named amendments and nothing else. */
 export function lockstepProblems(copy: (rel: string) => string, cur: (rel: string) => string): string[] {
   const p: string[] = [];
