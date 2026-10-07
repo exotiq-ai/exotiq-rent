@@ -41,7 +41,7 @@ describe('actual calendar and review availability controls',()=>{
     const next=vi.fn();await mount(<DatesStep cart={cart(known)} setCart={()=>{}} next={next}/>);
     expect(button('Continue').disabled).toBe(false);await act(async()=>button('Continue').click());expect(next).toHaveBeenCalledOnce();
     const blocked=cart(known);blocked.vehicle.unavailableRanges=[{start:blocked.dates.start,end:blocked.dates.end}];
-    await act(async()=>root!.render(<DatesStep cart={blocked} setCart={()=>{}} next={next}/>));expect(button('Continue').disabled).toBe(true);
+    await act(async()=>root!.render(<DatesStep cart={blocked} setCart={()=>{}} next={next}/>));expect(button('Continue').disabled).toBe(true);expect(host.querySelector('[data-taken]')).not.toBeNull();
   });
   it('blocks a ready quote and captured request callback on UNKNOWN regardless of accepted terms',async()=>{
     const request=vi.fn();await mount(<ReviewStep cart={cart(unknown)} goTo={()=>{}} onRequest={request} blocked={false} authorityBlocking={true} onRetryAvailability={()=>{}}/>);

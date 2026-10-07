@@ -6,7 +6,7 @@ import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PrimaryButton } from '../BookingChrome';
 import { countRentalDays, formatMoney } from '@/domain/booking/totals';
 import type { BookingCart } from '@/domain/booking/types';
-import { hasKnownAvailability } from '@/domain/booking/types';
+import { hasKnownAvailability, currentAvailabilityAuthority } from '@/domain/booking/types';
 import { rangeIsBookable, localTodayIso } from '@/domain/booking/availability';
 import {
   addDays,
@@ -72,7 +72,9 @@ export function DatesStep({ cart, setCart, next, onRetryAvailability, availabili
   const endIso = cart.dates.end;
 
   const checked = hasKnownAvailability(cart.vehicle, startIso, endIso);
-  const isVerified = (iso: string) => hasKnownAvailability(cart.vehicle, iso, iso);
+  const authority = currentAvailabilityAuthority(cart.vehicle.availabilityAuthority);
+  const validCheckedWindow = authority.status === 'KNOWN' && hasKnownAvailability(cart.vehicle, authority.windowStart, authority.windowEnd);
+  const isVerified = (iso: string) => validCheckedWindow && authority.status === 'KNOWN' && iso >= authority.windowStart && iso <= authority.windowEnd;
   const isBlocked = (iso: string) =>
     iso < todayIso || (isVerified(iso) && (cart.vehicle.unavailableRanges ?? []).some((range) => range.start <= iso && iso <= range.end));
   const hasBlockedDays = checked && (cart.vehicle.unavailableRanges ?? []).length > 0;
@@ -333,6 +335,10 @@ export function DatesStep({ cart, setCart, next, onRetryAvailability, availabili
         {(!checked || availabilityPending) && <div role="status" aria-live="polite" className="mt-4 rounded-xl border border-line bg-surface p-4 text-body-sm">
           <p>{availabilityPending ? 'Checking availability…' : 'Availability has not been confirmed for these dates. Check before continuing.'}</p>
           {onRetryAvailability && <button type="button" className="mt-2 underline" disabled={availabilityPending} onClick={onRetryAvailability}>Check availability</button>}
+        </div>}
+        {checked && !availabilityPending && rangeCrossesBlocked(startIso, endIso) && <div role="status" aria-live="polite" className="mt-4 rounded-xl border border-line bg-surface p-4 text-body-sm">
+          <p>These dates are unavailable. Choose different dates or check again.</p>
+          {onRetryAvailability && <button type="button" className="mt-2 underline" onClick={onRetryAvailability}>Check availability</button>}
         </div>}
         <div className="mt-4 flex items-center justify-between px-1">
           <button type="button" onClick={() => page(-1)} disabled={!canGoPrev} className="grid h-8 w-8 place-items-center rounded-lg text-muted transition hover:bg-surface hover:text-ink disabled:opacity-30 duration-100 active:scale-[0.96] motion-reduce:active:scale-100" aria-label="Previous month"><ChevronLeft size={16} /></button>

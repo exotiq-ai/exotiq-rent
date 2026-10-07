@@ -255,10 +255,10 @@ describe('MP-26 flow: three steps (AC7, AC8, AC10, AC12)', () => {
     for (const pin of [
       'const quoteBlocking = quotingEnabled() && !quote;',
       'onProtectionChange={(tier) => setCart(recomputeBookingCart({ ...cart, protection: tier }))}',
-      'if (reserving) return;',
-      'if (!shouldRequestQuote({ step, enabled: quotingEnabled(), state: quoteState, currentKey })) return;',
+      'if (requestInFlight.current || !canProceed() || (quotingEnabled() && !latest.current.quote)) return;',
+      'if (authorityBlocking || !shouldRequestQuote({ step, enabled: quotingEnabled(), state: quoteState, currentKey })) return;',
       'void refreshQuote();',
-      '}, [step, currentKey, quoteState, refreshQuote]);',
+      '}, [step, currentKey, quoteState, refreshQuote, authorityBlocking]);',
     ]) if (!flow.includes(pin)) problems.push(`BookingFlow: missing ${pin}`);
     if (/step\s*<\s*[34]\b/.test(flow)) problems.push('BookingFlow: a literal quote threshold remains (use shouldRequestQuote)');
 
