@@ -430,8 +430,8 @@ async function ac5(browser) {
   if ((await animsSince(page, t0)).some((a) => a.name === 'stepIn')) problems.push('typing in Driver replays the entry');
   await entry('Back to Dates', () => page.evaluate(() => document.querySelector('[aria-label="Back"]').click()));
   await advance(page, 2);
-  // No replay on the Protect flip. MP-30 turned Protect off by flag (NEXT_PUBLIC_PROTECT_ENABLED), so in a
-  // default build the switch does not render and there is nothing to flip: recorded, never passed silently.
+  // No replay on the Protect flip. MP-30 turned Protect off by its build flag, so in a default build the
+  // switch does not render and there is nothing to flip: recorded, never passed silently.
   const hasSwitch = await page.evaluate(() => Boolean(document.querySelector('button[role="switch"][aria-label="Exotiq Protect"]')));
   if (hasSwitch) {
     t0 = await now(page);
