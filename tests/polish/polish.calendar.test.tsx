@@ -27,12 +27,12 @@ import { NOW_ISO, OPERATOR, VEHICLE, type El, byAttr, classes, elements, parseHt
 import { goldCount, literals, prepare, renterFiles } from '../restraint/restraintScan';
 import {
   CSS, DATES, GOLDEN, MONTHS, PAGER, type DaySem, activeByFile, animations, baseCensus, census, copyName, daySemantics, fence,
-  frozenPaths, git, guardedSelection, keyframes, loadPager, lockstepPaths, ms, projections, read, readGolden, sha,
+  frozenPaths, git, guardedSelection, matchesSelection, keyframes, loadPager, lockstepPaths, ms, projections, read, readGolden, sha,
 } from './polishBase';
 
 const noop = () => {};
 const cartAt = (month?: string) => {
-  const cart = createInitialCart({ operator: OPERATOR, vehicle: VEHICLE });
+  const cart = createInitialCart({ operator: OPERATOR, vehicle: { ...VEHICLE, availabilityAuthority: { status: 'KNOWN', checkedAt: NOW_ISO, windowStart: '2026-01-01', windowEnd: '2027-12-31' } } });
   return month ? recomputeBookingCart({ ...cart, dates: { start: `${month}-10`, end: `${month}-13` } }) : cart;
 };
 const render = (month?: string) => renderToStaticMarkup(createElement(DatesStep, { cart: cartAt(month), setCart: noop, next: noop }));
@@ -189,8 +189,8 @@ describe('MP-25 calendar', () => {
     const problems: string[] = [];
     const now = read(DATES);
     const want = readFileSync(join(GOLDEN, 'selection-code.base.txt'), 'utf8').trimEnd();
-    if (guardedSelection(now.replace('iso <= startIso) {', 'iso < startIso) {')) === want) problems.push('planted: an edit to selectDay is not seen');
-    if (guardedSelection(now) !== want) problems.push('the guarded selection code differs from the base');
+    if (matchesSelection(now.replace('iso <= startIso) {', 'iso < startIso) {'), want)) problems.push('planted: an edit to selectDay is not seen');
+    if (!matchesSelection(now,want)) problems.push('the guarded selection code differs from the base');
     const recorded = readGolden<{ semantics: Record<string, Record<string, DaySem[]>> }>('calendar-days.base.json').semantics;
     const got = allSemantics();
     for (const variant of Object.keys(recorded)) {

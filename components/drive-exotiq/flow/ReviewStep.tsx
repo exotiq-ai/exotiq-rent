@@ -98,7 +98,7 @@ export function ReviewStep({
       <>
         <ScreenShell>
           <StepHeader eyebrow={stepEyebrow(3)} title="Here's the breakdown." sub="Nothing is charged yet." />
-          {availabilityBlocked ? <div role="status" aria-live="polite" className="mt-4 rounded-xl border border-line bg-surface p-4 text-body-sm">
+          {availabilityBlocked ? <div role="status" aria-live="polite" className="mt-4 text-body-sm text-muted">
             <p>{availabilityPending ? 'Checking availability…' : 'Availability must be confirmed for these dates before requesting.'}</p>
             <button type="button" className="mt-2 mr-4 underline" onClick={toDates} disabled={requesting}>Change dates</button>
             {onRetryAvailability && <button type="button" className="mt-2 underline" onClick={onRetryAvailability} disabled={availabilityPending || requesting}>Check availability</button>}

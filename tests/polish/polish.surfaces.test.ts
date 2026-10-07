@@ -31,7 +31,7 @@ import { NOW_ISO, OPERATOR, VEHICLE, byAttr, elements, fixture, norm, parseHtml,
 import { renterFiles } from '../restraint/restraintScan';
 import {
   CSS, DATES, FLOW, GOLDEN, OVERSCROLL, PROJECT, SF, SHARED, SITEBAR, STEPS, VEP, type Census, baseCensus, captureTokens, census, censusProblems,
-  PROTECT_RESTORE, cookieMounts, fence, frozenProblems, guardedSelection, lockstepCopy, lockstepProblems, projectionSource, protectLockstepProblems, read, scrollerLiteral, sha,
+  PROTECT_RESTORE, expectedProjectionHash, matchesSelection, cookieMounts, fence, frozenProblems, guardedSelection, lockstepCopy, lockstepProblems, projectionSource, protectLockstepProblems, read, scrollerLiteral, sha,
 } from './polishBase';
 
 const noop = () => {};
@@ -117,8 +117,8 @@ describe('MP-25 surfaces', () => {
     if (!frozenProblems(base, (rel) => (rel === FLOW ? `${read(rel)} ` : read(rel))).length) problems.push('planted: an edit to BookingFlow is not seen');
     if (captureTokens(OVERSCROLL).length || !captureTokens('contain-paint lg:will-change-transform').length) problems.push('the capture-token scan is not anchored (locate finding 8)');
     problems.push(...frozenProblems(base, read));
-    for (const [key, project] of Object.entries(PROJECT)) if (sha(project(read(projectionSource(key)))) !== base.projections[key]) problems.push(`${key} changed outside what MP-25 may change`);
-    if (guardedSelection(read(DATES)) !== readFileSync(join(GOLDEN, 'selection-code.base.txt'), 'utf8').trimEnd()) problems.push('the guarded selection code changed');
+    for (const [key, project] of Object.entries(PROJECT)) if (sha(project(read(projectionSource(key)))) !== expectedProjectionHash(base,key)) problems.push(`${key} changed outside what MP-25 may change`);
+    if (!matchesSelection(read(DATES), readFileSync(join(GOLDEN, 'selection-code.base.txt'), 'utf8').trimEnd())) problems.push('the guarded selection code changed');
     if (JSON.stringify(cookieMounts()) !== JSON.stringify(base.mounts)) problems.push(`the cookie mounts changed: ${cookieMounts().join(' | ')}`);
     // The vehicle and storefront scrollers are ancestors of a cookie row: what MP-25 adds there captures nothing.
     for (const rel of [VEP, SF]) {
