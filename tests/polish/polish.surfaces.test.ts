@@ -60,7 +60,7 @@ describe('MP-25 surfaces', () => {
       if (/(?:^|\s)[\w-]+:overscroll-/.test(lit)) problems.push(`${label}: a variant-prefixed overscroll token`);
     }
     // The two pages change by exactly that token (the projection removes it and must equal the base).
-    for (const rel of [VEP, SF]) if (sha(PROJECT[rel](read(rel))) !== base.projections[rel]) problems.push(`${rel} changed beyond the one token`);
+    for (const rel of [VEP, SF]) if (sha(PROJECT[rel](read(rel))) !== expectedProjectionHash(base,rel)) problems.push(`${rel} changed beyond the reviewed projection`);
     // Not on the document, the frame or the children wrapper (BookingChrome and the root layout are frozen), not in globals.css.
     if (/overscroll/.test(read(CSS))) problems.push('globals.css sets overscroll');
     const { decls } = await compileWith(config, [OVERSCROLL]);

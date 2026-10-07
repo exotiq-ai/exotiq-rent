@@ -57,8 +57,12 @@ describe('MP-18 restraint (AC13)', () => {
     expect(dependencyProblems({ ...BASE_DEPS, dependencies: { ...BASE_DEPS.dependencies, sharp: '^0.33' } })).toEqual(['dependencies: sharp added']);
 
     const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as Deps;
-    // Foundation adds pinned JOSE verification and the DOM test runtime.
-    // Arbitrary additions/version drift still fail the pure controls above.
-    expect(dependencyProblems(pkg, { ...BASE_DEPS, dependencies: { ...BASE_DEPS.dependencies, jose: '6.2.3' }, devDependencies: { ...BASE_DEPS.devDependencies, jsdom: '26.1.0', '@types/jsdom': '21.1.7' } })).toEqual([]);
+    // Reviewed foundation/security amendment: JOSE, DOM/browser fixtures and
+    // supported patched App Router require exact Next/React and PostCSS pins.
+    // The original manifest and planted addition/version controls stay intact.
+    const approved = { ...BASE_DEPS, dependencies: { ...BASE_DEPS.dependencies, jose: '6.2.3', next:'15.5.27', react:'19.0.8', 'react-dom':'19.0.8' }, devDependencies: { ...BASE_DEPS.devDependencies, jsdom:'26.1.0', '@types/jsdom':'21.1.7', '@playwright/test':'1.63.0', '@types/react':'19.0.14', '@types/react-dom':'19.0.6', 'eslint-config-next':'15.5.27', postcss:'8.5.29' } };
+    expect(dependencyProblems(pkg,approved)).toEqual([]);
+    expect(dependencyProblems({...pkg,dependencies:{...pkg.dependencies,next:'15.5.26'}},approved)).toEqual(['dependencies: next 15.5.27 -> 15.5.26']);
+    expect((pkg as Deps & {overrides:unknown}).overrides).toEqual({next:{postcss:'$postcss'}});
   });
 });

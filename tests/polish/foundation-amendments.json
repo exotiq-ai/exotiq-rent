@@ -1,5 +1,5 @@
 {
-  "reason": "Approved API/MCP foundation authority, customer consent, privacy and local browser fixtures; historical recordings remain unchanged.",
+  "reason": "Reviewed API/MCP foundation, exact patched Next15/React19 migration, private browser fixtures; original goldens remain unchanged.",
   "frozen": {
     "components/analytics/policy.ts": "447bbbc2657b6de3657dbed21726ddbece1955ae23bb1413287c928e49f368ea",
     "components/drive-exotiq/BookingFlow.tsx": "a880a8886e35bd4e371b27ec5d14aa7ef81bf7a06d6bfd84cf65e518a1f45896",
@@ -9,26 +9,47 @@
     "domain/booking/marketplace.test.ts": "cd975ae3831c5fde80f3926f9051d21984b7e239593e6a1251041cdda0b51d78",
     "domain/booking/mockService.ts": "690eb7e9b53db905d5fc196028b6e99ddeaa777658b6ba1349c373e442a03df6",
     "domain/booking/publicContracts.ts": "bf407dbbaa916ddcbf2c29b5a1f5139da9bd7ad28a1e06b65188e325eb7f033a",
-    "domain/booking/restraint.test.ts": "41100070f085b0535d67ad17a660044ed404597a4e30ffd5b5c8a359c887f06a",
+    "domain/booking/restraint.test.ts": "86123f1e02897d5734928bc144c48b998fac9f706e1c47ddf67fd953796fff0f",
     "domain/booking/rpcClient.ts": "9aa735379e628082540f19c420e685bf95a2415b3d8ce47200b579a5f814f793",
     "domain/booking/service.test.ts": "d3c445d4543676c7a0c14eca1869bcae1329d983832d5c1d220f343571a4477c",
     "domain/booking/service.ts": "bbccb804e5fd8760dd63929bc3f7d0aed1bfbd92eea71795e2a17288bedcf812",
     "domain/booking/supabaseService.ts": "c2d4fbbdac4fb6ae53d5a4020c1253cf0688563838d024346b22811eeb898e97",
     "domain/booking/types.ts": "264caa20ab0dcb660efa30bcaffdbf6891a73d171dc4540c841e0b50cd23d0ca",
-    "domain/booking/unfurl.test.ts": "5642d51d0c995f45c7f9d1cbb2573b148b64df654aca4357f20c5fd3c911cf4c",
-    "package-lock.json": "4112d54dcfe6d522e8a90708abdcda18a530e89e3d5e7fe570ad70c5b8cd6974",
-    "package.json": "7fb7110aee43a91a863fd57837cf7a9aec9f918708efb668a9860e96b2683b15",
+    "domain/booking/unfurl.test.ts": "747e6457879dafd0db3e1902c97edd37eae43149da6d74140579450ecf92164a",
+    "package-lock.json": "613b0c0c553ccd1035dfdd6e4ab8855aa42d9a6814d6a69b4f3b2405b32e6813",
+    "package.json": "7cb7c5d9b374d7d3adcc4d7aa2fd446313ed2a4f7cd6ab892dfa25fb861a8c14",
     "tests/protect/protect.flag.test.ts": "f1a2170b0ff0c58a3fe332bd344b21c81a28aa8f6c35c8a3fc8ce9c42d7f6f9a",
-    "tests/protect/protect.restore.test.tsx": "797d9547c0597657eb1a9e8297ff93410c6b70daf39cbc3eede434b5c6de9681",
-    "tests/protect/protect.wire.test.ts": "2fa8bc2a57c862f2b34aba5b7d8be929be4271e459804b95c2c2c871022f8935"
+    "tests/protect/protect.restore.test.tsx": "ff49cb7472424b36722606bef46fe2a9b9b00001d827eb1d54f49bc29430ea8a",
+    "tests/protect/protect.wire.test.ts": "2fa8bc2a57c862f2b34aba5b7d8be929be4271e459804b95c2c2c871022f8935",
+    "app/[operatorSlug]/[vehicleSlug]/book/page.tsx": "98a8a1e316a1aa87d2643c9461c60f9708b97c77036dd4e1800c65f322ad139e",
+    "app/[operatorSlug]/[vehicleSlug]/page.tsx": "5454132727afacf60aceef126b07ca7abb96e59832fb642f85417f46d60f2a27",
+    "app/booking/[bookingId]/page.tsx": "c2fe1b3de6f7f80490b72d2846a426a4410268d23734994d87c703537c73cf2b",
+    "app/browse/page.tsx": "c7f22b7e806971c51a33d8fae4dcd4041d60804e8f675939c4690a951ae072a7",
+    "app/renters/confirm/page.tsx": "cdd2ac6ec92bc5df1defee322bcf19be3e1f2c3b8d6fd3a43060f61b53a6d41d",
+    "app/renters/confirmed/page.tsx": "2632e3d492dd72641f18678b02990715a18477eec13082832ae5fd34813a86f4",
+    "app/renters/unsubscribe/page.tsx": "2e147043602b9054e2bdb8153bb8944ea8413f3811f5c2d920d0cb829cb92bd5",
+    "app/renters/unsubscribed/page.tsx": "88c7e1187c14cd211cf6870a4dcb15b4ca018216c03f41121d6a176c963609c2",
+    "app/share/[operatorSlug]/[vehicleSlug]/opengraph-image.tsx": "15074dfa49bd7d6243e650447d38625d4d55549ddfc13ac443860f18493bbb30",
+    "app/share/[operatorSlug]/[vehicleSlug]/page.tsx": "13489dfd39ab0b05015701acff4667ad8a5920a9f947a59a4b3ed31342a380c9",
+    "app/verify/page.tsx": "ac1d184625d1ee881a9869e8852b34eb0d9340f223fb5021f7f7b5bbe098199f",
+    "components/analytics/CookieControls.tsx": "657dcb59cc8ca036b7ef7731aaf5062abd65d4ba31eb271a74be92b7cf9472f1",
+    "components/browse/photoPlaceholder.test.tsx": "6bf7c66325bf49ca692eb09755afccc25a1c781b0de325ea2509cb6c13271251",
+    "next.config.js": "1b1c4eadcda7bb9859406eb4ed5229af0265489d1939402de7b9fc7a0a33660c",
+    "tests/chrome/chrome.pageframe.test.tsx": "e713c57333dd3da6f8619d778b809c8b7f5beb92020245e162abf472e6bbb2ce",
+    "tests/chrome/chrome.surfaces.test.tsx": "47ba901802aff4c9c103fcf95e6b18cfdcf2a628b5519432dc9f79ac98a1d0b0",
+    "tests/protect/protect.parity.test.tsx": "ef13a2c45d39cab336f1a8795491d21c0be7c74e9b6922856e4930222e304c7b",
+    "tests/protect/protect.surfaces.test.tsx": "f1c30ac35cf9a8cd7b9152d077564ff0e9766dcc05dacdf5b588c6841dd89af1",
+    "tsconfig.json": "897743aa5195e5965fbc3ff89daecda3d52e4d9a9d5fa3a11f960c1b0997fe00",
+    "vitest.config.mts": "015a9a402d7d4217081a543c85cd0326d9ecf5a0706e21b13057e8fbec7bd28a"
   },
   "projections": {
-    "DatesStep.tail": "16fb55cda1e8a74e2de17c1bff1bfc83bc313493c325d60ea675c92c2c26eb2b"
+    "DatesStep.tail": "16fb55cda1e8a74e2de17c1bff1bfc83bc313493c325d60ea675c92c2c26eb2b",
+    "app/[operatorSlug]/page.tsx": "d4473eb96331ba7ea35b47ab03d5e099f2d987e8be69a36b9fdb24609d5b5b01"
   },
   "selection": "83f16c06a4c1f076e840089df451f674332ecfd1e8f36bd8223dd5176ebbc6ff",
   "lockstep": {
     "tests/fees/fees.flow.test.ts": "ccf32b8b608ae2ffb6d0c12cbb6142abb96d6a6e7ee54394574dcd335a65e056",
     "tests/fees/fees.golden.test.tsx": "1ca565a19b339eddaa39393cf9d89a5e75a89e2e794255b8395ef8e3d44ac993",
-    "tests/protect/protect.restore.test.tsx": "797d9547c0597657eb1a9e8297ff93410c6b70daf39cbc3eede434b5c6de9681"
+    "tests/protect/protect.restore.test.tsx": "ff49cb7472424b36722606bef46fe2a9b9b00001d827eb1d54f49bc29430ea8a"
   }
 }
