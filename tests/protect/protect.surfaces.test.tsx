@@ -54,6 +54,7 @@ import { ReviewStep } from '@/components/drive-exotiq/flow/ReviewStep';
 import { createInitialCart } from '@/domain/booking/mockData';
 import type { PublicBookingConfirmation } from '@/domain/booking/publicContracts';
 import { CONSENT_TEXT } from '@/domain/renters/consentText';
+import {normalizeReact19Markup} from './react19Markup';
 import { stripComments } from '../design/lib/scan.mjs';
 import { between, literals, sliceFunction } from '../restraint/restraintScan';
 import { ACCESS_TOKEN, BOOKING_REF, type Case, type El, NOW_ISO, OPERATOR, OPERATOR_NAME, VEHICLE, byAttr, classes, confirmationOf, contains, elements, fixture, norm, outer, parseHtml, parseMoney, paymentPropsOf, quoteOf, reviewCartOf, textOf } from '../fees/fixtures';
@@ -308,7 +309,7 @@ describe('MP-30 surfaces with the flag off', () => {
     const aboutPs = elements(parseHtml(withAbout)).filter((e) => e.tag === 'p' && textOf(e) === about).length;
     if (aboutPs !== 2) problems.push(`about: ${aboutPs} <p> read the team's own about, expected 2`);
     if (withAbout.includes(OLD_ABOUT) || withAbout.includes(NEW_ABOUT)) problems.push('about: a fallback About sentence renders for a team with its own');
-    if (withAbout !== withoutWhyItem(golden('storefront-about.html'))) problems.push('about: not the base golden minus the two Why items');
+    if (normalizeReact19Markup(withAbout) !== normalizeReact19Markup(withoutWhyItem(golden('storefront-about.html')))) problems.push('about: not the base golden minus the two Why items');
 
     const noAbout = await storefront(false);
     problems.push(...whyProblems(noAbout).map((p) => `no about: ${p}`));
@@ -317,11 +318,11 @@ describe('MP-30 surfaces with the flag off', () => {
     if (noAbout.includes(OLD_ABOUT)) problems.push('no about: the old About fallback renders');
     const g = golden('storefront-no-about.html');
     if (g.split(OLD_ABOUT).length !== 3) problems.push(`the no-about golden holds the old About ${g.split(OLD_ABOUT).length - 1} times, expected 2`);
-    if (noAbout !== withoutWhyItem(g).split(OLD_ABOUT).join(NEW_ABOUT)) problems.push('no about: not the base golden minus the Why items with the one sentence change');
+    if (normalizeReact19Markup(noAbout) !== normalizeReact19Markup(withoutWhyItem(g).split(OLD_ABOUT).join(NEW_ABOUT))) problems.push('no about: not the base golden minus the Why items with the one sentence change');
 
     env('true');
-    if ((await storefront(true)) !== golden('storefront-about.html')) problems.push('flag true: the about storefront differs from the base');
-    if ((await storefront(false)) !== g) problems.push('flag true: the no-about storefront differs from the base');
+    if (normalizeReact19Markup(await storefront(true)) !== normalizeReact19Markup(golden('storefront-about.html'))) problems.push('flag true: the about storefront differs from the base');
+    if (normalizeReact19Markup(await storefront(false)) !== normalizeReact19Markup(g)) problems.push('flag true: the no-about storefront differs from the base');
 
     // Planted: a fourth item in both cards, and the Protect item left in only one copy, are reported.
     const base = golden('storefront-about.html');

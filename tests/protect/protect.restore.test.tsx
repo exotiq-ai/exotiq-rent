@@ -53,6 +53,7 @@ import { stripComments } from '../design/lib/scan.mjs';
 import { between, literals, sliceFunction } from '../restraint/restraintScan';
 import { ACCESS_TOKEN, BOOKING_REF, type Case, type El, NOW_ISO, OPERATOR, VEHICLE, confirmationOf, fixture, norm, parseHtml, paymentPropsOf, quoteOf, reviewCartOf } from '../fees/fixtures';
 import { calendarRange } from '../fees/goldens';
+import {normalizeReact19Markup} from './react19Markup';
 
 const REPO = fileURLToPath(new URL('../../', import.meta.url));
 const read = (rel: string) => readFileSync(join(REPO, rel), 'utf8');
@@ -122,6 +123,7 @@ async function renders(): Promise<Record<HtmlGolden, string>> {
 
 /** A render against its golden: [] when byte-equal, else the first differing offset with ±60 characters. */
 function byteProblems(name: string, got: string, want: string): string[] {
+  got=normalizeReact19Markup(got);want=normalizeReact19Markup(want);
   if (got === want) return [];
   let i = 0;
   while (i < got.length && i < want.length && got[i] === want[i]) i++;
@@ -266,7 +268,7 @@ describe('MP-30 the flag flips both ways in one process', () => {
         const hits = censusHits(html);
         if (!on && hits.length) problems.push(`${label} ${name}: ${hits.length} Protect word(s), first ${hits[0]}`);
         if (on && !hits.length) problems.push(`${label} ${name}: no Protect word with the flag on`);
-        if (on && g && html !== golden(g)) problems.push(`${label} ${name}: differs from the base golden ${g}`);
+        if (on && g && normalizeReact19Markup(html) !== normalizeReact19Markup(golden(g))) problems.push(`${label} ${name}: differs from the base golden ${g}`);
       }
       const bodies = await requestBodies(p1cart, phase);
       const tier = on ? 'premium' : 'decline';

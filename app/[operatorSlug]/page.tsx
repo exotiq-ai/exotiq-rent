@@ -195,7 +195,7 @@ export default async function TeamStorefrontRoute({ params: pendingParams, searc
                 {heroVehicle.heroImage && (
                   <>
                     <PhotoShimmer />
-                    <Image src={heroVehicle.heroImage} alt={heroVehicle.name} fill priority sizes="(min-width: 1024px) 840px, 480px" className="object-cover object-[50%_52%]" />
+                    <Image src={heroVehicle.heroImage} alt={heroVehicle.name} fill priority fetchPriority="high" sizes="(min-width: 1024px) 840px, 480px" className="object-cover object-[50%_52%]" />
                   </>
                 )}
               </div>

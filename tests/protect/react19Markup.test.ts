@@ -29,6 +29,14 @@ describe('narrow React19 SSR serialization comparison',()=>{
  it('does not silently deduplicate attributes or normalize unrelated element attribute order',()=>{
   for(const [a,b] of [['<img src="/a" src="/b"/>','<img src="/b" src="/a"/>'],['<div id="x" class="y"></div>','<div class="y" id="x"></div>']])expect(normalizeReact19Markup(a)).not.toBe(normalizeReact19Markup(b));
  });
+ it('preserves boolean attributes and refuses to normalize malformed or single-quoted attribute text',()=>{
+  expect(normalizeReact19Markup('<input name="a" disabled="" type="date"/>')).toContain('disabled=""');
+  for(const html of ["<input name='a' type='date'/>",'<input name="a" =broken/>'])expect(normalizeReact19Markup(html)).toBe(html);
+ });
+ it('leaves scripts, templates, textareas and comments byte-exact and cannot match a phantom image there',()=>{
+  for(const html of [`<script>const x='${current}';</script>`,`<template>${current}</template>`,`<textarea>${current}</textarea>`,`<!--${current}-->`])expect(normalizeReact19Markup(html)).toBe(html);
+  expect(normalizeReact19Markup(preload+`<script>const x='${current.slice(preload.length)}';</script>`)).toContain(preload);
+ });
  it('accepts actual Next15/React19 priority image markup only when explicit high priority is preserved',()=>{
   const html=renderToStaticMarkup(createElement(Image,{src:'/hero.png',alt:'Hero',fill:true,sizes:'480px',priority:true,fetchPriority:'high'}));
   expect(html).toMatch(/<link rel="preload"/);expect(html).toMatch(/<img[^>]*fetchPriority="high"/);
