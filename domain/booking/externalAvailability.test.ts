@@ -82,6 +82,7 @@ describe('Supabase availability context and shared facade',()=>{
   it('assigns known fixtures only in explicit mock mode; never uses mocks to recover a live failure',async()=>{
     rpc.mode='mock';const context=await getMockPublicVehicleContext('desert-exotic-rentals','mclaren-750s-spider');
     expect(context?.availabilityAuthority.status).toBe('KNOWN');expect(context?.vehicle.availabilityAuthority).toBe(context?.availabilityAuthority);
+    expect(createBookingCart({operator:context!.team,vehicle:context!.vehicle}).vehicle.availabilityAuthority).toBe(context?.availabilityAuthority);
     const cart=createBookingCart();expect(cart.vehicle.availabilityAuthority?.status).toBe('KNOWN');
     await expect(createRenterBooking(cart)).resolves.toMatchObject({bookingRef:'BK-01001'});expect(rpc.create).not.toHaveBeenCalled();
     rpc.mode='supabase';const live=createBookingCart();expect(live.vehicle.availabilityAuthority?.status).toBe('UNKNOWN');

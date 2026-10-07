@@ -9,7 +9,10 @@ import {
   postCreateBooking,
   type RpcBookingByRefRow,
 } from './rpcClient';
-import type { BookingCart } from './types';
+import type { AvailabilityAuthority, AvailabilityWindow, BookingCart } from './types';
+import { hasKnownAvailability, validAvailabilityDate } from './types';
+import { addDays } from './dates';
+import { rangeIsBookable } from './availability';
 import { protectionForRequest } from './protect';
 import type { BookingLookupResult, CreateBookingResult, PublicTeamStorefront, PublicVehicleContext } from './publicContracts';
 
@@ -26,7 +29,9 @@ function synthesizeContextFromRow(row: RpcBookingByRefRow): PublicVehicleContext
   const teamSlug = row.team_slug ?? '';
   const vehicleSlug = row.vehicle_slug ?? '';
   const vehicleName = row.vehicle_name ?? 'Your vehicle';
+  const availabilityAuthority: AvailabilityAuthority = { status: 'UNKNOWN', reason: 'not_checked', retryAfterSeconds: 30 };
   return {
+    availabilityAuthority,
     team: {
       id: '', slug: teamSlug, name: row.team_name ?? 'Your operator',
       city: '', state: '',
@@ -43,6 +48,7 @@ function synthesizeContextFromRow(row: RpcBookingByRefRow): PublicVehicleContext
       dailyRateCents: 0, minRentalDays: 1, securityDepositCents: 0,
       photos: [], heroImage: '', footnote: '',
       pickupLocation: { name: '', address: '', city: '', state: '' },
+      availabilityAuthority,
     },
   };
 }
@@ -55,10 +61,28 @@ function synthesizeContextFromRow(row: RpcBookingByRefRow): PublicVehicleContext
 
 const AVAILABILITY_WINDOW_DAYS = 180;
 
-function availabilityWindow(): { start: string; end: string } {
-  const start = new Date();
-  const end = new Date(start.getTime() + AVAILABILITY_WINDOW_DAYS * 24 * 60 * 60 * 1000);
-  return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
+function availabilityWindow(timezone = 'UTC'): AvailabilityWindow {
+  const fields = Object.fromEntries(new Intl.DateTimeFormat('en', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date()).map(({type,value})=>[type,value]));
+  const start = `${fields.year}-${fields.month}-${fields.day}`;
+  return { start, end: addDays(start, AVAILABILITY_WINDOW_DAYS) };
+}
+
+async function bounded<T>(promise: Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([promise,new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(new Error('Read timed out')),5000);})]);
+  } finally { if(timer !== undefined) clearTimeout(timer); }
+}
+
+async function checkedAvailability(teamSlug: string, vehicleSlug: string, window: AvailabilityWindow): Promise<{ authority: AvailabilityAuthority; ranges?: ReturnType<typeof adaptBusyRanges> }> {
+  const checkedAt = new Date().toISOString();
+  let rows: Awaited<ReturnType<typeof fetchVehicleAvailability>>;
+  try { rows = await bounded(fetchVehicleAvailability(teamSlug,vehicleSlug,window.start,window.end)); }
+  catch { return { authority: { status: 'UNKNOWN', reason: 'upstream_unavailable', retryAfterSeconds: 30 } }; }
+  try {
+    const ranges = adaptBusyRanges(rows);
+    return { ranges, authority: { status: 'KNOWN', checkedAt, windowStart: window.start, windowEnd: window.end } };
+  } catch { return { authority: { status: 'UNKNOWN', reason: 'invalid_response', retryAfterSeconds: 30 } }; }
 }
 
 export async function getSupabaseTeamStorefront(teamSlug: string): Promise<PublicTeamStorefront | null> {
@@ -74,31 +98,54 @@ export async function getSupabaseTeamStorefront(teamSlug: string): Promise<Publi
   return { team, vehicles: listable.map((row) => adaptFleetVehicle(row, team)) };
 }
 
-export async function getSupabaseVehicleContext(teamSlug: string, vehicleSlug: string): Promise<PublicVehicleContext | null> {
+export async function getSupabaseVehicleContext(teamSlug: string, vehicleSlug: string, requestedWindow?: AvailabilityWindow): Promise<PublicVehicleContext | null> {
   const [teamRow, vehicleRow] = await Promise.all([fetchPublicTeam(teamSlug), fetchPublicVehicle(teamSlug, vehicleSlug)]);
   if (!teamRow) return null;
   const team = adaptTeam(teamRow);
   if (!vehicleRow) return null;
 
-  const window = availabilityWindow();
-  // Media and availability are enhancements — fetch in parallel and degrade
-  // to RPC photo URLs / an open calendar rather than failing the page.
+  let window: AvailabilityWindow | undefined;
+  try { window = requestedWindow ?? availabilityWindow(team.timezone); } catch { /* Invalid tenant timezone cannot establish authority. */ }
+  const validWindow = window && validAvailabilityDate(window.start) && validAvailabilityDate(window.end) && window.end >= window.start &&
+    (Date.parse(window.end)-Date.parse(window.start))/86400000 <= 365;
+  // Media may degrade independently; failed availability stays UNKNOWN and
+  // prevents a new request without taking down public metadata or galleries.
   // When the row already carries stable public photo URLs, skip the signing
   // call entirely: it is an uncacheable edge-function round trip on the TTFB
   // path, and the adapter prefers the public URLs anyway.
   const hasStablePhotos = (vehicleRow.photos ?? []).some((photo) => photo.url?.includes('/storage/v1/object/public/'));
-  const [media, busyRows] = await Promise.all([
+  const [media, availability] = await Promise.all([
     hasStablePhotos
       ? Promise.resolve({ photos: [], expiresIn: 0 })
-      : fetchSignedVehicleMedia(teamSlug, vehicleSlug).catch(() => ({ photos: [], expiresIn: 0 })),
-    fetchVehicleAvailability(teamSlug, vehicleSlug, window.start, window.end).catch(() => []),
+      : bounded(fetchSignedVehicleMedia(teamSlug, vehicleSlug)).catch(() => ({ photos: [], expiresIn: 0 })),
+    validWindow ? checkedAvailability(teamSlug,vehicleSlug,window!) : Promise.resolve({ authority: { status: 'UNKNOWN', reason: 'invalid_response', retryAfterSeconds: 30 } as AvailabilityAuthority, ranges: undefined }),
   ]);
 
   const vehicle = adaptVehicleDetail(vehicleRow, team, media);
-  return { team, vehicle: { ...vehicle, unavailableRanges: adaptBusyRanges(busyRows) } };
+  return { team, availabilityAuthority: availability.authority, vehicle: { ...vehicle, availabilityAuthority: availability.authority, ...(availability.ranges ? { unavailableRanges: availability.ranges } : {}) } };
+}
+
+export class AvailabilityUnavailableError extends Error {
+  readonly code: 'availability_unknown' | 'dates_unavailable';
+  readonly retryAfterSeconds = 30;
+  constructor(code: 'availability_unknown' | 'dates_unavailable') {
+    super(code === 'availability_unknown' ? "We couldn't confirm availability for these dates. Please refresh availability and try again." : 'These dates are unavailable. Please choose another range.');
+    this.name = 'AvailabilityUnavailableError'; this.code = code;
+  }
+}
+
+/** UI evidence is only a fail-safe preflight; it is not authorization or a hold.
+ * Server quote/consent and the universal database guard remain final authority.
+ */
+export function requireLiveBookingAvailability(cart: BookingCart): void {
+  if (!hasKnownAvailability(cart.vehicle,cart.dates.start,cart.dates.end)) throw new AvailabilityUnavailableError('availability_unknown');
+  let today: string;
+  try { today = availabilityWindow(cart.operator.timezone).start; } catch { throw new AvailabilityUnavailableError('availability_unknown'); }
+  if (!rangeIsBookable(cart.vehicle,cart.dates.start,cart.dates.end,today)) throw new AvailabilityUnavailableError('dates_unavailable');
 }
 
 export async function createSupabaseRenterBooking(cart: BookingCart): Promise<CreateBookingResult> {
+  requireLiveBookingAvailability(cart);
   const response = await postCreateBooking({
     team_slug: cart.operator.slug,
     vehicle_slug: cart.vehicle.slug,

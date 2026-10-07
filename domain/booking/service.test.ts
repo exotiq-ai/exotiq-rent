@@ -21,6 +21,8 @@ describe('booking service facade mock mode', () => {
     const wrongTeam = await getPublicVehicleContext('mile-high-exotics', 'mclaren-750s-spider');
 
     expect(desertVehicle?.vehicle.shortName).toBe('McLaren 750S');
+    expect(desertVehicle?.availabilityAuthority.status).toBe('KNOWN');
+    expect(desertVehicle?.vehicle.availabilityAuthority).toBe(desertVehicle?.availabilityAuthority);
     expect(wrongTeam).toBeNull();
   });
 
