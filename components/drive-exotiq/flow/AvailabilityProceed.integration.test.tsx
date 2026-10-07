@@ -76,7 +76,7 @@ describe('mounted storefront plus actual context/cart/create facade', () => {
     await act(async () => day.click()); expect(button('Continue').disabled).toBe(true);
     wire.availability.mockRejectedValueOnce(Error('private upstream failure'));
     await invoke('Check availability'); expect(button('Continue').disabled).toBe(true); expect(host.textContent).not.toContain('private upstream');
-    expect(wire.availability).toHaveBeenLastCalledWith(team.slug, raw.vehicle_slug, '2030-01-10', '2030-01-12');
+    expect(wire.availability).toHaveBeenLastCalledWith(team.slug, raw.vehicle_slug, '2030-01-10', '2030-01-12', expect.any(AbortSignal));
     wire.availability.mockResolvedValueOnce([{ busy_start: '2030-01-10', busy_end: '2030-01-12' }]);
     await invoke('Check availability'); expect(button('Continue').disabled).toBe(true);
     wire.availability.mockResolvedValueOnce([]); await invoke('Check availability'); expect(button('Continue').disabled).toBe(false);

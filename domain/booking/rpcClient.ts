@@ -135,11 +135,12 @@ function headers(): Record<string, string> {
   };
 }
 
-async function rpc<T>(name: string, args: Record<string, unknown>, options: { noStore?: boolean } = {}): Promise<T> {
+async function rpc<T>(name: string, args: Record<string, unknown>, options: { noStore?: boolean; signal?: AbortSignal } = {}): Promise<T> {
   const response = await fetch(`${getSupabaseUrl()}/rest/v1/rpc/${name}`, {
     method: 'POST',
     headers: headers(),
     body: JSON.stringify(args),
+    signal: options.signal,
     // Availability is booking-sensitive; catalog reads revalidate on a short
     // cycle so operator edits show up without redeploys.
     ...(options.noStore ? { cache: 'no-store' as const } : { next: { revalidate: 300 } }),
@@ -150,8 +151,8 @@ async function rpc<T>(name: string, args: Record<string, unknown>, options: { no
   return response.json() as Promise<T>;
 }
 
-export async function fetchPublicTeam(teamSlug: string): Promise<RpcTeamRow | null> {
-  const rows = await rpc<RpcTeamRow[]>('public_team_by_slug', { _team_slug: teamSlug });
+export async function fetchPublicTeam(teamSlug: string, signal?: AbortSignal): Promise<RpcTeamRow | null> {
+  const rows = await rpc<RpcTeamRow[]>('public_team_by_slug', { _team_slug: teamSlug }, { signal });
   return rows[0] ?? null;
 }
 
@@ -185,11 +186,11 @@ export async function fetchMarketplaceFleet(): Promise<RpcMarketplaceFleetRow[]>
   return rpc<RpcMarketplaceFleetRow[]>('public_marketplace_fleet', {});
 }
 
-export async function fetchPublicVehicle(teamSlug: string, vehicleSlug: string): Promise<RpcVehicleDetailRow | null> {
+export async function fetchPublicVehicle(teamSlug: string, vehicleSlug: string, signal?: AbortSignal): Promise<RpcVehicleDetailRow | null> {
   const rows = await rpc<RpcVehicleDetailRow[]>('public_vehicle_by_slug', {
     _team_slug: teamSlug,
     _vehicle_slug: vehicleSlug,
-  });
+  }, { signal });
   return rows[0] ?? null;
 }
 
@@ -198,11 +199,12 @@ export async function fetchVehicleAvailability(
   vehicleSlug: string,
   rangeStart: string,
   rangeEnd: string,
+  signal?: AbortSignal,
 ): Promise<RpcBusyRangeRow[]> {
   return rpc<RpcBusyRangeRow[]>(
     'public_vehicle_availability',
     { _team_slug: teamSlug, _vehicle_slug: vehicleSlug, _range_start: rangeStart, _range_end: rangeEnd },
-    { noStore: true },
+    { noStore: true, signal },
   );
 }
 
@@ -354,10 +356,11 @@ export async function postRenterCancel(
   return body as { status: string; refunded: boolean };
 }
 
-export async function fetchSignedVehicleMedia(teamSlug: string, vehicleSlug: string): Promise<SignedMediaResponse> {
+export async function fetchSignedVehicleMedia(teamSlug: string, vehicleSlug: string, signal?: AbortSignal): Promise<SignedMediaResponse> {
   const url = `${getFunctionsBaseUrl()}/rent-public-media?team=${encodeURIComponent(teamSlug)}&vehicle=${encodeURIComponent(vehicleSlug)}`;
   const response = await fetch(url, {
     headers: headers(),
+    signal,
     // Never cache this response: it contains 1-hour bearer-token URLs, and any
     // cache that outlives the token serves dead images. `revalidate: 300` was
     // not enough — Netlify's durable data cache served one build-time result

@@ -65,7 +65,7 @@ describe('Supabase availability context and shared facade',()=>{
   it('permits an explicit newly checked window outside the default horizon and validates that window',async()=>{
     const context=await getBookingStartContext(team.slug,vehicle.vehicle_slug,{start:'2031-01-01',end:'2031-01-03'});
     expect(context?.availabilityAuthority).toMatchObject({status:'KNOWN',windowStart:'2031-01-01',windowEnd:'2031-01-03'});
-    expect(rpc.availability).toHaveBeenCalledWith(team.slug,vehicle.vehicle_slug,'2031-01-01','2031-01-03');
+    expect(rpc.availability).toHaveBeenCalledWith(team.slug,vehicle.vehicle_slug,'2031-01-01','2031-01-03',expect.any(AbortSignal));
     rpc.availability.mockClear();
     const invalid=await getPublicVehicleContext(team.slug,vehicle.vehicle_slug,{start:'2031-02-30',end:'2031-03-03'});
     expect(invalid?.availabilityAuthority.status).toBe('UNKNOWN');expect(rpc.availability).not.toHaveBeenCalled();

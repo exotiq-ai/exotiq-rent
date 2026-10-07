@@ -6,6 +6,20 @@ const row = { team_slug: 'transport-test', team_name: 'Synthetic', vehicle_slug:
 beforeEach(() => { vi.useFakeTimers(); signals.length = 0; });
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
 describe('actual context transport timeout', () => {
+  it.each(['public_team_by_slug', 'public_vehicle_by_slug'])('bounds and aborts a hung %s context lookup too', async (hung) => {
+    vi.stubGlobal('fetch', vi.fn((url: string, init: RequestInit) => {
+      if (url.endsWith(`/${hung}`)) {
+        const signal = init.signal!; signals.push(signal);
+        return new Promise((_, reject) => { signal?.addEventListener('abort', () => reject(new DOMException('Cancelled', 'AbortError')), { once: true }); });
+      }
+      return Promise.resolve(new Response(JSON.stringify(url.endsWith('/public_team_by_slug') ? [{ slug: 'transport-test', name: 'Synthetic', timezone: 'UTC' }] : [row])));
+    }));
+    let settled = false;
+    const pending = getSupabaseVehicleContext('transport-test', 'car').then(() => { settled = true; }, () => { settled = true; });
+    await vi.advanceTimersByTimeAsync(5001);
+    expect(settled).toBe(true); expect(signals[0]?.aborted).toBe(true);
+    await pending; expect(vi.getTimerCount()).toBe(0);
+  });
   it('aborts fetch for hung availability and signing, returning UNKNOWN without fallback ranges', async () => {
     vi.stubGlobal('fetch', vi.fn((url: string, init: RequestInit) => {
       if (url.endsWith('/public_team_by_slug')) return Promise.resolve(new Response(JSON.stringify([{ slug: 'transport-test', name: 'Synthetic', timezone: 'UTC' }])));

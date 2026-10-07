@@ -67,17 +67,18 @@ function availabilityWindow(timezone = 'UTC'): AvailabilityWindow {
   return { start, end: addDays(start, AVAILABILITY_WINDOW_DAYS) };
 }
 
-async function bounded<T>(promise: Promise<T>): Promise<T> {
+async function bounded<T>(read: (signal: AbortSignal) => Promise<T>): Promise<T> {
+  const controller = new AbortController();
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    return await Promise.race([promise,new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(new Error('Read timed out')),5000);})]);
+    return await Promise.race([read(controller.signal),new Promise<never>((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(new Error('Read timed out'));},5000);})]);
   } finally { if(timer !== undefined) clearTimeout(timer); }
 }
 
 async function checkedAvailability(teamSlug: string, vehicleSlug: string, window: AvailabilityWindow): Promise<{ authority: AvailabilityAuthority; ranges?: ReturnType<typeof adaptBusyRanges> }> {
   const checkedAt = new Date().toISOString();
   let rows: Awaited<ReturnType<typeof fetchVehicleAvailability>>;
-  try { rows = await bounded(fetchVehicleAvailability(teamSlug,vehicleSlug,window.start,window.end)); }
+  try { rows = await bounded((signal) => fetchVehicleAvailability(teamSlug,vehicleSlug,window.start,window.end,signal)); }
   catch { return { authority: { status: 'UNKNOWN', reason: 'upstream_unavailable', retryAfterSeconds: 30 } }; }
   try {
     const ranges = adaptBusyRanges(rows);
@@ -99,7 +100,7 @@ export async function getSupabaseTeamStorefront(teamSlug: string): Promise<Publi
 }
 
 export async function getSupabaseVehicleContext(teamSlug: string, vehicleSlug: string, requestedWindow?: AvailabilityWindow): Promise<PublicVehicleContext | null> {
-  const [teamRow, vehicleRow] = await Promise.all([fetchPublicTeam(teamSlug), fetchPublicVehicle(teamSlug, vehicleSlug)]);
+  const [teamRow, vehicleRow] = await Promise.all([bounded((signal) => fetchPublicTeam(teamSlug,signal)), bounded((signal) => fetchPublicVehicle(teamSlug, vehicleSlug,signal))]);
   if (!teamRow) return null;
   const team = adaptTeam(teamRow);
   if (!vehicleRow) return null;
@@ -117,7 +118,7 @@ export async function getSupabaseVehicleContext(teamSlug: string, vehicleSlug: s
   const [media, availability] = await Promise.all([
     hasStablePhotos
       ? Promise.resolve({ photos: [], expiresIn: 0 })
-      : bounded(fetchSignedVehicleMedia(teamSlug, vehicleSlug)).catch(() => ({ photos: [], expiresIn: 0 })),
+      : bounded((signal) => fetchSignedVehicleMedia(teamSlug, vehicleSlug,signal)).catch(() => ({ photos: [], expiresIn: 0 })),
     validWindow ? checkedAvailability(teamSlug,vehicleSlug,window!) : Promise.resolve({ authority: { status: 'UNKNOWN', reason: 'invalid_response', retryAfterSeconds: 30 } as AvailabilityAuthority, ranges: undefined }),
   ]);
 
