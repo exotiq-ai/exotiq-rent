@@ -20,6 +20,16 @@ describe('hosted customer OIDC bridge',()=>{
   const cookie=await sealCookie(key,'session',{accessToken:'synthetic-access'},now.getTime()+1000);expect(cookie).not.toContain('synthetic-access');expect(await openCookie(key,'session',cookie,now.getTime())).toEqual({accessToken:'synthetic-access'});
   await expect(openCookie(key,'transaction',cookie,now.getTime())).rejects.toThrow();await expect(openCookie(key,'session',cookie,now.getTime()+1001)).rejects.toThrow();await expect(openCookie(key,'session',cookie.slice(0,-3)+'bad',now.getTime())).rejects.toThrow();
  });
+ it.each(['wrong_nonce','wrong_id_audience','wrong_access_audience','different_subject','expired_id','foreign_signature'])('denies real signed OAuth response mismatch: %s',async(fault)=>{
+  const {privateKey,publicKey}=await generateKeyPair('ES256');const foreign=await generateKeyPair('ES256');let tx:any;const second=now.getTime()/1000;
+  const client=createHostedAuth(cfg,{now:()=>now,keyResolver:async()=>publicKey,fetch:async()=>{
+   const id=await new SignJWT({nonce:fault==='wrong_nonce'?'wrong':tx.nonce,auth_time:second}).setProtectedHeader({alg:'ES256'}).setIssuer(cfg.issuer).setSubject('renter').setAudience(fault==='wrong_id_audience'?'other-client':cfg.clientId).setIssuedAt(second-10).setExpirationTime(fault==='expired_id'?second-1:second+300).sign(fault==='foreign_signature'?foreign.privateKey:privateKey);
+   const access=await new SignJWT({client_id:cfg.clientId,jti:'test-token',scope:'quotes:create rental_requests:read'}).setProtectedHeader({alg:'ES256',typ:'at+jwt'}).setIssuer(cfg.issuer).setSubject(fault==='different_subject'?'other-renter':'renter').setAudience(fault==='wrong_access_audience'?'https://other.example.invalid':cfg.resource).setIssuedAt(second).setNotBefore(second).setExpirationTime(second+300).sign(privateKey);
+   return new Response(JSON.stringify({id_token:id,access_token:access,token_type:'Bearer'}),{headers:{'content-type':'application/json'}});
+  }});
+  const login=await client.beginLogin(returnTo);tx=await openCookie(key,'transaction',login.cookie,now.getTime());
+  await expect(client.completeLogin(new URL(cfg.frontendOrigin+'/api/agent/auth/callback?code=test&state='+tx.state+'&iss='+encodeURIComponent(cfg.issuer)),login.cookie)).rejects.toThrow('Customer authorization unavailable');
+ });
  it('verifies actual signed ID/access tokens and binds issuer, subject, nonce, audience and client',async()=>{
   const {privateKey,publicKey}=await generateKeyPair('ES256');let tx:any;
   const client=createHostedAuth(cfg,{now:()=>now,keyResolver:async()=>publicKey,fetch:async(_url,init)=>{
