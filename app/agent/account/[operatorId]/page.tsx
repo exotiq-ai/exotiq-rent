@@ -1,9 +1,10 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { use, useEffect, useRef, useState } from 'react';
 import { customerSignInPath, readCustomerSession } from '@/domain/booking/externalConsent';
 import { ownedUuid, type CustomerSession } from '@/domain/booking/externalContracts';
 import { linkOperatorCustomer } from '@/domain/booking/externalGrantRecovery';
-export default function AccountPage({ params }: { params: { operatorId: string } }) {
+export default function AccountPage({ params: pendingParams }: { params: Promise<{ operatorId: string }> }) {
+  const params = use(pendingParams);
   const [session, setSession] = useState<CustomerSession | null>(null), [loading, setLoading] = useState(true), [pending, setPending] = useState(false), [linked, setLinked] = useState(false), [error, setError] = useState('');
   const [name, setName] = useState(''), [phone, setPhone] = useState('');
   const [, tick] = useState(0);

@@ -1,10 +1,11 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { use, useEffect, useRef, useState } from 'react';
 import { customerSignInPath, readCustomerSession } from '@/domain/booking/externalConsent';
 import { ownedUuid, type CustomerSession } from '@/domain/booking/externalContracts';
 import { canRecoverGrant, readGrantReview, recoverGrant, revokeGrant, type GrantReview } from '@/domain/booking/externalGrantRecovery';
 const scopeLabels = { 'rental_requests:read': 'Read this existing rental request’s status', 'checkout:handoff': 'Open customer-hosted checkout for this rental' };
-export default function RecoveryPage({ params }: { params: { renewalId: string } }) {
+export default function RecoveryPage({ params: pendingParams }: { params: Promise<{ renewalId: string }> }) {
+  const params = use(pendingParams);
   const [session, setSession] = useState<CustomerSession | null>(null), [review, setReview] = useState<GrantReview | null>(null);
   const [loading, setLoading] = useState(true), [pending, setPending] = useState(false), [error, setError] = useState(''), [revoked, setRevoked] = useState(false);
   const [reload, setReload] = useState(0), [, tick] = useState(0); const lock = useRef(false), generation = useRef(0);

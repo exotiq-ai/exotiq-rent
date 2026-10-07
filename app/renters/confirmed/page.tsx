@@ -17,7 +17,8 @@ const COPY: Record<string, { title: string; body: string }> = {
 };
 
 /** Landing page for the confirmation link (MP-14). */
-export default function ConfirmedPage({ searchParams }: { searchParams?: { state?: string; sent?: string; marketing?: string; alerts?: string } }) {
+export default async function ConfirmedPage({ searchParams: pendingSearch }: { searchParams?: Promise<{ state?: string; sent?: string; marketing?: string; alerts?: string }> }) {
+  const searchParams = await pendingSearch;
   if (!renterCaptureUiEnabled()) notFound();
   // Only the route's own redirect says ok; a typed or stripped URL reads as invalid.
   const raw = searchParams?.state ?? 'invalid';

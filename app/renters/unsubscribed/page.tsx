@@ -14,7 +14,8 @@ const COPY: Record<string, { title: string; body: string }> = {
 };
 
 /** Landing page for the unsubscribe link (MP-14). */
-export default function UnsubscribedPage({ searchParams }: { searchParams?: { state?: string } }) {
+export default async function UnsubscribedPage({ searchParams: pendingSearch }: { searchParams?: Promise<{ state?: string }> }) {
+  const searchParams = await pendingSearch;
   if (!renterCaptureUiEnabled()) notFound();
   const state = searchParams?.state ?? 'invalid';
   const copy = Object.prototype.hasOwnProperty.call(COPY, state) ? COPY[state] : COPY.invalid;

@@ -86,7 +86,7 @@ async function confirmation(kind: 'paid' | 'requested' | 'mock', c?: Case): Prom
 }
 async function storefront(withAbout: boolean): Promise<string> {
   svc.dropAbout = !withAbout;
-  return renderToStaticMarkup(await TeamStorefrontRoute({ params: { operatorSlug: OPERATOR.slug }, searchParams: {} }));
+  return renderToStaticMarkup(await TeamStorefrontRoute({ params: Promise.resolve({ operatorSlug: OPERATOR.slug }), searchParams: Promise.resolve({}) }));
 }
 /** BookingFlow's first render, its Dates calendar cut to «calendar» as the fee goldens cut it (MP-25 errata #3: tests/polish pins the pager). */
 const flow = () => ((h: string, c = calendarRange(parseHtml(h))) => (c ? `${h.slice(0, c.start)}«calendar»${h.slice(c.end)}` : h))(renderToStaticMarkup(createElement(BookingFlow, { operator: OPERATOR, vehicle: VEHICLE })));

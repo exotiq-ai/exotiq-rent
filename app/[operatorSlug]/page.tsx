@@ -20,11 +20,12 @@ import { getFleetBusy, getPublicTeamStorefront } from '@/domain/booking/service'
 import { storefrontOpenGraph } from '@/domain/booking/seo';
 import type { MarketplaceListing, PublicTeamStorefront } from '@/domain/booking/publicContracts';
 
-type Props = { params: { operatorSlug: string }; searchParams?: SearchParamsLike };
+type Props = { params: Promise<{ operatorSlug: string }>; searchParams?: Promise<SearchParamsLike> };
 type Team = PublicTeamStorefront['team'];
 type PolicyRow = { icon: LucideIcon; label: string; value: string };
 
-export async function generateMetadata({ params, searchParams }: Props) {
+export async function generateMetadata({ params: pendingParams, searchParams: pendingSearch }: Props) {
+  const params = await pendingParams, searchParams = await pendingSearch;
   // Marketplace-mode deploys (exotiq.rent) do not route the booking flow.
   if (getSiteMode() === 'marketplace') notFound();
   const teamSlug = params.operatorSlug;
@@ -100,7 +101,8 @@ function CallLink({ team }: { team: Team }) {
   );
 }
 
-export default async function TeamStorefrontRoute({ params, searchParams }: Props) {
+export default async function TeamStorefrontRoute({ params: pendingParams, searchParams: pendingSearch }: Props) {
+  const params = await pendingParams, searchParams = await pendingSearch;
   const teamSlug = params.operatorSlug;
   const storefront = await getPublicTeamStorefront(teamSlug);
   if (!storefront) notFound();

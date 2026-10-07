@@ -10,7 +10,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const TOKEN = /^[A-Za-z0-9_-]{40,48}$/;
 
 /** The page the unsubscribe link lands on (MP-14): the write happens only when the button is pressed. */
-export default function UnsubscribePage({ searchParams }: { searchParams?: { r?: string; token?: string } }) {
+export default async function UnsubscribePage({ searchParams: pendingSearch }: { searchParams?: Promise<{ r?: string; token?: string }> }) {
+  const searchParams = await pendingSearch;
   if (!renterCaptureUiEnabled()) notFound();
   const r = searchParams?.r ?? '';
   const token = searchParams?.token ?? '';

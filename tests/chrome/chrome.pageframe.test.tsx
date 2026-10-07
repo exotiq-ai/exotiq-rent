@@ -114,7 +114,7 @@ describe('MP-17 PageFrame (AC5)', () => {
     vi.stubEnv('NEXT_PUBLIC_SITE_MODE', 'booking');
     for (const [label, heading, lookup, searchParams] of states) {
       svc.lookup = lookup;
-      const page = renderToStaticMarkup(await VerifyRoute({ searchParams }));
+      const page = renderToStaticMarkup(await VerifyRoute({ searchParams: Promise.resolve(searchParams) }));
       const root = frameRoot(page);
       if (!root) { problems.push(`/verify ${label}: not inside the page frame`); continue; }
       const h1 = elements(root).filter((e) => e.tag === 'h1').map((e) => norm(textOf(e)));

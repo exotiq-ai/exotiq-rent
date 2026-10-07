@@ -29,9 +29,10 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-type Props = { searchParams: { ref?: string; token?: string; t?: string } };
+type Props = { searchParams: Promise<{ ref?: string; token?: string; t?: string }> };
 
-export default async function VerifyRoute({ searchParams }: Props) {
+export default async function VerifyRoute({ searchParams: pendingSearch }: Props) {
+  const searchParams = await pendingSearch;
   // Marketplace-mode deploys (exotiq.rent) do not route the booking flow.
   if (getSiteMode() === 'marketplace') notFound();
 

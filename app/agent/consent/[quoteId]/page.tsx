@@ -1,9 +1,10 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { use, useEffect, useRef, useState } from 'react';
 import { authorizeQuote, canAuthorizeQuote, customerSignInPath, readCustomerSession, readQuoteReview } from '@/domain/booking/externalConsent';
 import { ownedUuid, type CustomerSession, type QuoteReview } from '@/domain/booking/externalContracts';
 const money = (cents: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100);
-export default function ConsentPage({ params }: { params: { quoteId: string } }) {
+export default function ConsentPage({ params: pendingParams }: { params: Promise<{ quoteId: string }> }) {
+  const params = use(pendingParams);
   const [session, setSession] = useState<CustomerSession | null>(null);
   const [review, setReview] = useState<QuoteReview | null>(null);
   const [loading, setLoading] = useState(true), [error, setError] = useState(''), [authorized, setAuthorized] = useState(false), [pending, setPending] = useState(false);

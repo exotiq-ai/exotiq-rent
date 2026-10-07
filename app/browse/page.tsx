@@ -17,7 +17,8 @@ import { getMarketplaceFacets, getMarketplaceListings } from '@/domain/booking/s
 // loading.tsx on this route: its Suspense boundary streams a 200 shell before
 // notFound() or the offset redirect() below can set the status — verified
 // 2026-09-03 — and the page renders from the revalidate cache in ~30ms anyway.
-export function generateMetadata({ searchParams }: { searchParams: SearchParamsLike }): Metadata {
+export async function generateMetadata({ searchParams: pendingSearch }: { searchParams: Promise<SearchParamsLike> }): Promise<Metadata> {
+  const searchParams = await pendingSearch;
   if (!browseEnabled()) notFound();
   const query = parseMarketplaceQuery(searchParams);
   // One canonical grid. Every facet, sort and page permutation points back
@@ -40,7 +41,8 @@ export function generateMetadata({ searchParams }: { searchParams: SearchParamsL
  * as real inventory. Absence of the env flag means 404 — set it only on the
  * staging site until launch.
  */
-export default async function BrowsePage({ searchParams }: { searchParams: SearchParamsLike }) {
+export default async function BrowsePage({ searchParams: pendingSearch }: { searchParams: Promise<SearchParamsLike> }) {
+  const searchParams = await pendingSearch;
   if (!browseEnabled()) notFound();
 
   const query = parseMarketplaceQuery(searchParams);

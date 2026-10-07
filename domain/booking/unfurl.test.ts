@@ -192,10 +192,10 @@ describe('MP-18 vehicle link preview (AC5)', () => {
 
   it('relative mock hero resolves to an absolute url through metadataBase', async () => {
     const ctx = await getMockPublicVehicleContext('desert-exotic-rentals', 'mclaren-750s-spider');
-    const resolve = (og: unknown) => resolveOpenGraph(og as never, new URL('https://book.example'), { pathname: '/', trailingSlash: false, isStandaloneMode: false }, null) as unknown as { images: { url: URL | string; width?: number; height?: number; alt?: string }[] };
-    const og = resolve(api.vehicleOpenGraph?.(ctx!.team, ctx!.vehicle));
+    const resolve = async (og: unknown) => await resolveOpenGraph(og as never, new URL('https://book.example'), Promise.resolve('/'), { trailingSlash: false, isStaticMetadataRouteFile: false }, null) as unknown as { images: { url: URL | string; width?: number; height?: number; alt?: string }[] };
+    const og = await resolve(api.vehicleOpenGraph?.(ctx!.team, ctx!.vehicle));
     expect(String(og.images[0].url)).toBe(`https://book.example${ctx!.vehicle.heroImage}`);
-    const floor = resolve(api.vehicleOpenGraph?.(ctx!.team, { ...ctx!.vehicle, heroImage: '' }));
+    const floor = await resolve(api.vehicleOpenGraph?.(ctx!.team, { ...ctx!.vehicle, heroImage: '' }));
     expect(String(floor.images[0].url)).toBe('https://book.example/opengraph-image');
     expect([floor.images[0].width, floor.images[0].height, floor.images[0].alt]).toEqual([1200, 630, 'Drive Exotiq']);
   });

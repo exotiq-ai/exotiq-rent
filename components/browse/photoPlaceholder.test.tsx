@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
+import type {JSX} from 'react';
 import { describe, expect, it } from 'vitest';
 import config from '../../tailwind.config';
 import { compileWith, stripComments } from '../../tests/design/lib/scan.mjs';

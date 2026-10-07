@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useCookieConsent } from './PostHogInit';
 import { cookieControlState, toggleOptionalCookies } from './cookieControlsModel';
 
@@ -194,7 +195,7 @@ export function CookieControls({ manual = false, viewport = 'all', className = '
           {gpc && <p id={`${id}-gpc`} role="status" className="mt-2 text-[11px] leading-4 text-muted">Global Privacy Control is enabled. Advertising is disabled.</p>}
           <div className="flex items-center justify-between gap-2 text-[10px] leading-4 text-muted">
             <span>Changes apply instantly.</span>
-            <a href="/privacy" className={`inline-flex min-h-11 items-center rounded text-gold underline underline-offset-[3px] ${focusRing}`}>Privacy notice</a>
+            <Link href="/privacy" className={`inline-flex min-h-11 items-center rounded text-gold underline underline-offset-[3px] ${focusRing}`}>Privacy notice</Link>
           </div>
         </section>
       )}

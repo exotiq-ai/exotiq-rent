@@ -11,7 +11,7 @@ let root: Root, host: HTMLDivElement, session: any, data: any, posted: { path: s
 const json = (value: unknown, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'content-type': 'application/json' } });
 function props(element: Element): any { return (element as any)[Object.keys(element).find((key) => key.startsWith('__reactProps$'))!]; }
 const button = (text: string) => Array.from(host.querySelectorAll('button')).find((b) => b.textContent === text)!;
-const mount = (page: any, params: any) => act(async () => root.render(createElement(page, { params })));
+const mount = (page: any, params: any) => act(async () => root.render(createElement(page, { params: Promise.resolve(params) })));
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(now); vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true); posted = [];
   session = { authenticated: true, csrf: 'synthetic-csrf', expires_at: '2030-01-01T12:10:00Z', profile: { email: 'verified@example.invalid', emailVerified: true, name: 'Synthetic Customer' } };

@@ -90,7 +90,7 @@ async function confirmation(kind: 'paid' | 'requested' | 'mock', c?: Case): Prom
 }
 async function storefront(withAbout: boolean): Promise<string> {
   svc.dropAbout = !withAbout;
-  return renderToStaticMarkup(await TeamStorefrontRoute({ params: { operatorSlug: OPERATOR.slug }, searchParams: {} }));
+  return renderToStaticMarkup(await TeamStorefrontRoute({ params: Promise.resolve({ operatorSlug: OPERATOR.slug }), searchParams: Promise.resolve({}) }));
 }
 const flow = () => renderToStaticMarkup(createElement(BookingFlow, { operator: OPERATOR, vehicle: VEHICLE }));
 

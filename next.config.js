@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  outputFileTracingRoot: __dirname,
   async redirects() {
     // Site split (2026-07-22): booking mode (default, book.exotiq.rent)
     // lands visitors straight on a storefront. Marketplace mode
@@ -48,8 +49,6 @@ const nextConfig = {
   },
   compress: true,
   poweredByHeader: false,
-  // Enable SWC minification
-  swcMinify: true,
   // Optimize fonts
   reactStrictMode: true,
 };

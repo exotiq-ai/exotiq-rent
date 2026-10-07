@@ -34,7 +34,7 @@ beforeEach(() => {
   host = document.createElement('div'); document.body.append(host); root = createRoot(host);
 });
 afterEach(async () => { await act(async () => root.unmount()); host.remove(); vi.useRealTimers(); vi.unstubAllGlobals(); });
-const mount = () => act(async () => root.render(createElement(ConsentPage, { params: { quoteId } })));
+const mount = () => act(async () => root.render(createElement(ConsentPage, { params: Promise.resolve({ quoteId }) })));
 describe('actual hosted customer quote review', () => {
   it('shows all authoritative terms and charge legs, then posts explicit quote-bound consent without a receipt', async () => {
     await mount();
@@ -93,7 +93,7 @@ describe('actual hosted customer quote review', () => {
   });
   it('route replacement invalidates a previously captured quote-authorize handler', async () => {
     await mount(); const callback = props(authorize()).onClick;
-    await act(async () => root.render(createElement(ConsentPage, { params: { quoteId: operatorId } })));
+    await act(async () => root.render(createElement(ConsentPage, { params: Promise.resolve({ quoteId: operatorId }) })));
     await act(async () => callback()); expect(posted).toHaveLength(0); expect(host.textContent).not.toContain('Synthetic touring car');
   });
 });
