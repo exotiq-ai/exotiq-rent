@@ -293,7 +293,7 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
               // MP-11: hover fill and keyboard ring are drawn on the same 34px
               // disc the selected/today states use (a `before:` layer under
               // the number), so the grid never mixes two circle sizes.
-              className="relative aspect-square text-muted outline-none transition-colors before:pointer-events-none before:absolute before:left-1/2 before:top-1/2 before:h-[34px] before:w-[34px] before:-translate-x-1/2 before:-translate-y-1/2 before:rounded-full enabled:hover:text-ink enabled:hover:before:bg-surface focus-visible:before:ring-2 focus-visible:before:ring-gold/60 disabled:cursor-not-allowed disabled:text-dim data-[taken]:text-dim data-[taken]:hover:text-dim2"
+              className="relative aspect-square text-muted outline-none transition-colors before:pointer-events-none before:absolute before:left-1/2 before:top-1/2 before:h-[34px] before:w-[34px] before:-translate-x-1/2 before:-translate-y-1/2 before:rounded-full enabled:hover:text-ink enabled:hover:before:bg-surface focus-visible:before:ring-2 focus-visible:before:ring-gold/60 disabled:cursor-not-allowed disabled:text-dim data-[taken]:text-dim data-[taken]:hover:text-dim2 before:transition-transform before:duration-100 enabled:active:before:bg-surface active:before:scale-[0.96] motion-reduce:active:before:scale-100"
               aria-pressed={inRange}
               aria-label={`${longDate(iso)}${blocked ? (iso >= todayIso && captureOn ? ', taken — get an alert' : ', unavailable') : ''}`}
               aria-current={iso === todayIso ? 'date' : undefined}
@@ -318,9 +318,9 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
       <ScreenShell>
         <StepHeader eyebrow={stepEyebrow(1)} title="When are you driving?" sub={`${cart.vehicle.minRentalDays}-day minimum · from ${formatMoney(cart.vehicle.dailyRateCents)}/day`} />
         <div className="mt-4 flex items-center justify-between px-1">
-          <button type="button" onClick={() => page(-1)} disabled={!canGoPrev} className="grid h-8 w-8 place-items-center rounded-lg text-muted transition hover:bg-surface hover:text-ink disabled:opacity-30" aria-label="Previous month"><ChevronLeft size={16} /></button>
+          <button type="button" onClick={() => page(-1)} disabled={!canGoPrev} className="grid h-8 w-8 place-items-center rounded-lg text-muted transition hover:bg-surface hover:text-ink disabled:opacity-30 duration-100 active:scale-[0.96] motion-reduce:active:scale-100" aria-label="Previous month"><ChevronLeft size={16} /></button>
           <span className="text-body font-medium tracking-[-0.005em]">{monthLabel(visibleMonth)}</span>
-          <button type="button" onClick={() => page(1)} disabled={!canGoNext} className="grid h-8 w-8 place-items-center rounded-lg text-muted transition hover:bg-surface hover:text-ink disabled:opacity-30" aria-label="Next month"><ChevronRight size={16} /></button>
+          <button type="button" onClick={() => page(1)} disabled={!canGoNext} className="grid h-8 w-8 place-items-center rounded-lg text-muted transition hover:bg-surface hover:text-ink disabled:opacity-30 duration-100 active:scale-[0.96] motion-reduce:active:scale-100" aria-label="Next month"><ChevronRight size={16} /></button>
         </div>
         <div className={`mt-3 grid grid-cols-7 px-0.5 text-center ${microLabelClassName} text-faint`}>
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, index) => <span key={`${d}-${index}`} className="py-1.5">{d}</span>)}
