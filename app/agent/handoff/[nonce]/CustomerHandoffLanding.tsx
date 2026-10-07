@@ -21,7 +21,7 @@ export default function CustomerHandoffLanding({nonce,review,csrf,sessionExpires
   finally{clearTimeout(timer);if(current.current===nonce&&generation.current===epoch){busy.current=false;setPending(false);}}
  }
  const destination=target&&Date.parse(target.expires_at)>now&&sessionExpiresAt>now?target:null;
- return <main className="mx-auto max-w-xl px-6 py-12"><h1 className="text-2xl font-semibold">Continue your rental request</h1>
+ return <main className="mx-auto max-w-xl px-6 py-12"><h1 className="text-heading font-semibold">Continue your rental request</h1>
   {checked&&<><p className="mt-4">{checked.operator_name} · {checked.vehicle_name}</p><p>Request {checked.ref} · {checked.status.replaceAll('_',' ')}</p><p>{checked.action==='identity'?'Verify your identity with Stripe.':'Review and complete your hosted payment with Stripe.'}</p><p>Link expires {new Date(checked.expires_at).toLocaleString()}.</p><p className="mt-4">Your agent cannot access this provider session. Continuing does not bypass operator approval or change your rental terms.</p></>}
   {!available&&<p role="alert" className="mt-4">This secure handoff is unavailable or expired. Sign in again or ask your agent for a fresh link.</p>}
   {error&&<p role="alert" className="mt-4">The handoff could not be confirmed. Retry while this link is valid, or sign in again.</p>}

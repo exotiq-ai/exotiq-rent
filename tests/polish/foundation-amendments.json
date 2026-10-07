@@ -33,7 +33,7 @@
     "app/share/[operatorSlug]/[vehicleSlug]/page.tsx": "13489dfd39ab0b05015701acff4667ad8a5920a9f947a59a4b3ed31342a380c9",
     "app/verify/page.tsx": "ac1d184625d1ee881a9869e8852b34eb0d9340f223fb5021f7f7b5bbe098199f",
     "components/analytics/CookieControls.tsx": "657dcb59cc8ca036b7ef7731aaf5062abd65d4ba31eb271a74be92b7cf9472f1",
-    "components/browse/photoPlaceholder.test.tsx": "6bf7c66325bf49ca692eb09755afccc25a1c781b0de325ea2509cb6c13271251",
+    "components/browse/photoPlaceholder.test.tsx": "759b98d040ebbb095fc322f4d225bacfa1cd861e69db4d6b5705b5e22ad744bf",
     "next.config.js": "1b1c4eadcda7bb9859406eb4ed5229af0265489d1939402de7b9fc7a0a33660c",
     "tests/chrome/chrome.pageframe.test.tsx": "e713c57333dd3da6f8619d778b809c8b7f5beb92020245e162abf472e6bbb2ce",
     "tests/chrome/chrome.surfaces.test.tsx": "47ba901802aff4c9c103fcf95e6b18cfdcf2a628b5519432dc9f79ac98a1d0b0",
