@@ -23,6 +23,7 @@ vi.mock('@/components/analytics/PostHogInit', () => ({
 vi.mock('@/components/drive-exotiq/fonts', () => ({ driveFontClassName: 'font-vars' }));
 
 import { BookingChrome, PhoneViewport } from '@/components/drive-exotiq/BookingChrome';
+import { FLOW_STEPS } from '@/components/drive-exotiq/flow/steps';
 import { stripComments } from '../design/lib/scan.mjs';
 import { type El, byAttr, classes, elements, hasClass, norm, outer, parseHtml, textOf } from '../fees/fixtures';
 import { goldCount, openTags } from '../restraint/restraintScan';
@@ -93,7 +94,7 @@ function progressOf(html: string): { nav: El; items: El[]; labels: (El | undefin
   const labels = items.map((li) => elements(li).find((e) => e !== li && e.tag === 'span' && norm(textOf(e)) !== ''));
   return { nav, items, labels };
 }
-const LABELS = ['Dates', 'Driver', 'Review & Request'];
+const LABELS = ['Dates', 'Driver', 'Review'];
 
 /** AC14 cases: what the base was rendered with, and what the same caller passes after this ticket. */
 const CASES: Record<string, { base: Record<string, unknown>; now: Record<string, unknown>; stepped: boolean }> = {
@@ -280,7 +281,7 @@ describe('MP-17 frame', () => {
     expect(problems).toEqual([]);
   });
 
-  it('flow progress names exactly Dates, Driver and Review & Request and marks the current step', () => {
+  it('flow progress names exactly Dates, Driver and Review and marks the current step', () => {
     const problems: string[] = [];
     for (const n of [1, 2, 3]) {
       const html = renderChrome(n);
@@ -302,7 +303,7 @@ describe('MP-17 frame', () => {
       if (elements(parseHtml(html)).filter((e) => 'aria-current' in e.attrs).length !== 1) problems.push(`step=${n}: aria-current outside the current item`);
       const text = norm(textOf(nav));
       for (const word of ['Vehicle', 'Done', 'Pay']) if (new RegExp(`\\b${word}\\b`).test(text)) problems.push(`step=${n}: "${word}" in the progress`);
-      if (/\bReview\b(?! & Request)/.test(text)) problems.push(`step=${n}: a bare "Review" in the progress`);
+      if (JSON.stringify(got) !== JSON.stringify(FLOW_STEPS.map((s) => s.label))) problems.push(`step=${n}: the progress labels are not FLOW_STEPS (${JSON.stringify(got)})`);
       if (/\d/.test(text)) problems.push(`step=${n}: a numeral in the progress ("${text}")`);
       if (goldCount(outer(html, nav))) problems.push(`step=${n}: gold in the progress`);
     }

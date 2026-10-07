@@ -118,7 +118,7 @@ describe('MP-26 flow: three steps (AC7, AC8, AC10, AC12)', () => {
     if (!s) problems.push('components/drive-exotiq/flow/steps.ts does not exist');
     else {
       if (JSON.stringify(s.FLOW_STEPS.map((x) => x.key)) !== JSON.stringify(['dates', 'driver', 'review'])) problems.push(`FLOW_STEPS keys ${s.FLOW_STEPS.map((x) => x.key).join(',')}`);
-      if (JSON.stringify(s.FLOW_STEPS.map((x) => x.label)) !== JSON.stringify(['Dates', 'Driver', 'Review & Request'])) problems.push(`FLOW_STEPS labels ${s.FLOW_STEPS.map((x) => x.label).join(',')}`);
+      if (JSON.stringify(s.FLOW_STEPS.map((x) => x.label)) !== JSON.stringify(['Dates', 'Driver', 'Review'])) problems.push(`FLOW_STEPS labels ${s.FLOW_STEPS.map((x) => x.label).join(',')}`);
       if (s.COMMIT_STEP !== 3 || s.COMMIT_STEP !== s.FLOW_STEPS.length) problems.push(`COMMIT_STEP ${s.COMMIT_STEP}, FLOW_STEPS.length ${s.FLOW_STEPS.length}`);
     }
     problems.push(...flowSourceProblems(src(FLOW)));
