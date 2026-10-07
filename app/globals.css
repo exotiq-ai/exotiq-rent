@@ -234,6 +234,20 @@
     animation: shimmer 1.5s ease-in-out infinite;
   }
 
+  /* polish:begin (MP-25) */
+  /* A step's scroll content settles in (ScreenShell; the bar, header and progress hold still).
+     No fill mode: once it ends the element carries no transform, so it never becomes the
+     containing block of a fixed descendant. */
+  @keyframes stepIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-step-in {
+    animation: stepIn 280ms ease-out;
+  }
+  /* polish:end */
+
   /* Confirmation celebration — one champagne-gold sheen across the hero,
      then still. Deliberately runs once; the reserved car is the trophy. */
   @keyframes goldSheen {

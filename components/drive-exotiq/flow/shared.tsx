@@ -22,7 +22,7 @@ export function ScreenShell({ children, stickySafe = true }: { children: ReactNo
       // min-h-0 is load-bearing: without it this flex child grows to its
       // content instead of scrolling, pushing the "sticky" footer below the
       // fold on long steps (review/pay).
-      className={`min-h-0 flex-1 overflow-y-auto px-4 pt-2 [scrollbar-width:none] ${stickySafe ? 'pb-5' : 'pb-20'} overscroll-y-contain`}
+      className={`min-h-0 flex-1 overflow-y-auto px-4 pt-2 [scrollbar-width:none] ${stickySafe ? 'pb-5' : 'pb-20'} overscroll-y-contain animate-step-in`}
       style={{ fontFamily: 'var(--font-drive-inter), system-ui, sans-serif' }}
     >
       {children}
