@@ -139,6 +139,7 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
   const [neighbor, setNeighbor] = useState<{ month: MonthKey; dir: 1 | -1 } | null>(null);
   // The day just tapped: only its disc springs (never on paging, first render or other re-renders).
   const [springIso, setSpringIso] = useState<string | null>(null);
+  const [washFrom, setWashFrom] = useState<string | null>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const drag = useRef<{ id: number; x0: number; y0: number; axis: 'x' | 'y' | null; dx: number; samples: Sample[] } | null>(null);
@@ -262,6 +263,8 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
   };
   const minEndIso = startIso ? addDays(startIso, cart.vehicle.minRentalDays) : '';
   const dateLabel = formatRangeLabel(startIso, endIso);
+  // The closing tap: its end disc is the one just tapped and the range is no longer awaiting an end.
+  const washIn = springIso !== null && springIso === endIso && !awaitingEnd;
 
   /** One month's day grid. Six week rows always (42 square cells), so paging never moves what sits below. */
   const renderMonth = (month: MonthKey) => {
@@ -282,7 +285,10 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
               key={day}
               type="button"
               onClick={() => {
-                if (!blocked) setSpringIso(iso);
+                if (!blocked) {
+                  setSpringIso(iso);
+                  setWashFrom(endIso);
+                }
                 selectDay(iso);
               }}
               // Past days are disabled. With capture on, a taken future day is
@@ -299,9 +305,9 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
               aria-current={iso === todayIso ? 'date' : undefined}
             >
               {iso === todayIso && !inRange && !blocked && <span className="absolute left-1/2 top-1/2 h-[34px] w-[34px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-line2" aria-hidden />}
-              {inRange && !isStart && !isEnd && <span className="absolute inset-y-[5px] left-0 right-0 bg-gold/10" />}
-              {isStart && !isEnd && <span className="absolute inset-y-[5px] left-1/2 right-0 bg-gold/10" />}
-              {isEnd && !isStart && <span className="absolute inset-y-[5px] left-0 right-1/2 bg-gold/10" />}
+              {inRange && !isStart && !isEnd && <span className={`absolute inset-y-[5px] left-0 right-0 bg-gold/10${washIn && iso > (washFrom ?? '') ? ' animate-wash-in' : ''}`} />}
+              {isStart && !isEnd && <span className={`absolute inset-y-[5px] left-1/2 right-0 bg-gold/10${washIn && iso > (washFrom ?? '') ? ' animate-wash-in' : ''}`} />}
+              {isEnd && !isStart && <span className={`absolute inset-y-[5px] left-0 right-1/2 bg-gold/10${washIn && iso > (washFrom ?? '') ? ' animate-wash-in' : ''}`} />}
               {(isStart || isEnd) && <span className={`absolute left-1/2 top-1/2 h-[34px] w-[34px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold${iso === springIso ? ' animate-day-spring' : ''}`} onAnimationEnd={() => setSpringIso(null)} />}
               {!inRange && !blocked && isMinHint && <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 translate-y-[15px] rounded-full bg-faint" />}
               <span className={`absolute inset-0 grid place-items-center tabular-nums${isStart || isEnd ? ' font-semibold text-goldInk' : inRange ? ' text-ink' : ''}${blocked ? ' line-through decoration-dim2' : ''}`}>{day}</span>

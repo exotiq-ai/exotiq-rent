@@ -259,6 +259,16 @@
     animation: daySpring 320ms ease-out;
   }
 
+  /* The range wash fades in on the tap that closes the range, on the newly covered days only. */
+  @keyframes washIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .animate-wash-in {
+    animation: washIn 160ms ease-out;
+  }
+
   /* The one glass recipe's Safari 17 twin (glassBarClassName in components/browse/tokens.ts).
      Autoprefixer drops the prefixed property the utility generates; this hand-written one is
      kept, and its blur must equal the recipe's. */
