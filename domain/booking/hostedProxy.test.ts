@@ -5,6 +5,15 @@ const config={issuer:'https://identity.example.invalid',authorizationEndpoint:'h
 const session={issuer:config.issuer,subject:'renter',clientId:config.clientId,accessToken:'synthetic-test-token',expiresAt:Date.now()+60000,csrf:'synthetic-csrf',profile:{email:'verified@example.invalid',emailVerified:true,name:'Synthetic Renter'}};
 const quote='10000000-0000-4000-8000-000000000008';
 describe('customer same-origin backend bridge',()=>{
+ it.each(['identity','checkout'])('creates only the explicitly chosen customer-owned %s handoff with fresh proof',async action=>{
+  const path='customers/rental-requests/SYNTHETIC-REQUEST/'+action+'-handoff';
+  const output={api_version:'v1',source_checked_at:new Date().toISOString(),customer_url:config.frontendOrigin+'/agent/handoff/'+'a'.repeat(43),expires_at:new Date(Date.now()+60000).toISOString(),state:action==='identity'?'pending_documents':'pending_payment',next_action:action==='identity'?'verify_identity':'hosted_checkout'};
+  const transport=vi.fn(async(url:URL,init:RequestInit)=>{expect(url.pathname).toBe('/external-booking-api/v1/'+path);expect(JSON.parse(init.body as string)).toEqual({action:'continue'});expect(decodeJwt((init.headers as any)['X-Exotiq-Hosted-Proof']).path).toBe(url.pathname);return Response.json(output);});
+  expect((await forwardHostedRequest(config,session,'POST',path,{csrf:session.csrf,action:'continue'},config.frontendOrigin,transport as any)).body).toEqual(output);
+  await expect(forwardHostedRequest(config,session,'POST',path,{csrf:session.csrf,action:'continue',customer_id:quote},config.frontendOrigin,transport as any)).rejects.toThrow();
+  await expect(forwardHostedRequest(config,session,'POST',path,{csrf:session.csrf,action:'continue'},config.frontendOrigin,(async()=>Response.json({...output,customer_url:'https://checkout.stripe.com/private'})) as any)).rejects.toThrow();
+  await expect(forwardHostedRequest(config,session,'POST',path,{csrf:session.csrf,action:'continue'},config.frontendOrigin,(async()=>Response.json({...output,expires_at:'2000-01-01T00:00:00Z'})) as any)).rejects.toThrow();
+ });
  it('signs the real customer-owned status path and refuses raw provider/private output',async()=>{
   const path='customers/rental-requests/SYNTHETIC-REQUEST';
   const body={api_version:'v1',source_checked_at:new Date().toISOString(),ref:'SYNTHETIC-REQUEST',operator_id:quote,operator_name:'Synthetic operator',vehicle_name:'Synthetic car',status:'pending_payment',next_action:'await_reconciliation',hold_expires_at:null,payment_due_at:null};

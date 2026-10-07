@@ -1,10 +1,19 @@
 import {describe,it,expect} from 'vitest';
-import {accountProviderReturnPath,parseProviderReturnQuery} from './customerProviderReturn';
+import {accountProviderReturnPath,parseProviderReturnQuery,parseCustomerAccountQuery} from './customerProviderReturn';
 import {createHostedAuth,openCookie} from './hostedAuth.server';
 const operator='10000000-0000-4000-8000-000000000002';
 const cookieKey=Buffer.alloc(32,4).toString('base64url');
 const config={issuer:'https://identity.example.invalid',authorizationEndpoint:'https://identity.example.invalid/authorize',tokenEndpoint:'https://identity.example.invalid/token',jwksUri:'https://identity.example.invalid/jwks',allowedHosts:['identity.example.invalid'],resource:'https://api.example.invalid/external-booking-api',frontendOrigin:'https://rent.example.invalid',clientId:'hosted-customer',clientSecret:'synthetic-test-only',cookieKey,bridgeKey:Buffer.alloc(32,5).toString('base64url')};
 describe('fixed provider return boundary',()=>{
+ it('preserves a plain customer request selector through login without labeling it a provider return',async()=>{
+  const selected=parseCustomerAccountQuery({ref:'SYNTHETIC-REQUEST'});
+  expect(selected).toEqual({ref:'SYNTHETIC-REQUEST',action:null});
+  const path=accountProviderReturnPath(operator,selected!);
+  expect(path).toBe('/agent/account/'+operator+'?ref=SYNTHETIC-REQUEST');
+  const login=await createHostedAuth(config).beginLogin(path);
+  expect((await openCookie(cookieKey,'transaction',login.cookie,Date.now())).destination).toBe(path);
+ });
+ it.each([{ref:['X','Y']},{ref:'../admin'},{ref:'X',action:'identity'},{ref:'X',booking_ref:'Y'},{ref:'X',token:'secret'}])('rejects polluted customer request selectors %j',query=>expect(()=>parseCustomerAccountQuery(query)).toThrow());
  it('preserves only a safe request reference and action through the encrypted login transaction',async()=>{
   const query={booking_ref:'SYNTHETIC-REQUEST',action:'identity'};
   expect(parseProviderReturnQuery(query)).toEqual({ref:'SYNTHETIC-REQUEST',action:'identity'});
