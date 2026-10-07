@@ -1,6 +1,7 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { flushSync } from 'react-dom';
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PrimaryButton } from '../BookingChrome';
 import { countRentalDays, formatMoney } from '@/domain/booking/totals';
@@ -23,6 +24,7 @@ import { renterCaptureUiEnabled } from '@/domain/renters/flags';
 import { MAX_WINDOW_DAYS, daysBetween } from '@/domain/booking/marketplaceQuery';
 import { recomputeBookingCart } from './state';
 import { stepEyebrow } from './steps';
+import { SETTLE_MS, type PageDir, type Sample, dragOffset, lockAxis, markInert, pageDecision, prefersReducedMotion, releaseVelocity, settleTransition } from './monthPager';
 import { eyebrowClassName, microLabelClassName } from '@/components/browse/tokens';
 
 // value is what the booking stores and what the backend casts into a
@@ -132,11 +134,128 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
     setAwaitingEnd(false);
   };
 
-  const canGoPrev = compareMonthKeys(visibleMonth, minMonth) > 0;
-  const canGoNext = compareMonthKeys(visibleMonth, maxMonth) < 0;
-  // MP-25: the month pager's frame and the track that slides inside it.
+  // MP-25: the month pager. visibleMonth is the one reachable month; `neighbor` is the month sliding
+  // in (mid-swipe or mid-slide), inert and out of the accessibility tree until it lands.
+  const [neighbor, setNeighbor] = useState<{ month: MonthKey; dir: 1 | -1 } | null>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
+  const drag = useRef<{ id: number; x0: number; y0: number; axis: 'x' | 'y' | null; dx: number; samples: Sample[] } | null>(null);
+  const settling = useRef(false);
+  const settleId = useRef(0);
+  const settleTarget = useRef<MonthKey | null>(null);
+  const settleTimer = useRef<number | undefined>(undefined);
+  const swallowClick = useRef(false);
+
+  const canGoPrev = compareMonthKeys(visibleMonth, minMonth) > 0;
+  const canGoNext = compareMonthKeys(visibleMonth, maxMonth) < 0;
+
+  const setTrack = (transform: string, transition: string) => {
+    const el = trackRef.current;
+    if (!el) return;
+    el.style.transition = transition;
+    el.style.transform = transform;
+  };
+  const commit = (to: MonthKey | null) => {
+    settling.current = false;
+    window.clearTimeout(settleTimer.current);
+    flushSync(() => {
+      if (to) {
+        setVisibleMonth(to);
+      }
+      setNeighbor(null);
+    });
+    setTrack('', 'none');
+  };
+  /** Slide to rest (dir 0 settles back) and commit; at once under reduced motion. Chevrons and swipes share it. */
+  const settle = (dir: PageDir, to: MonthKey | null) => {
+    const track = trackRef.current;
+    const width = viewportRef.current?.clientWidth ?? 0;
+    const target = dir === 0 ? null : to;
+    if (!track || prefersReducedMotion() || width === 0) {
+      commit(target);
+      return;
+    }
+    settling.current = true;
+    settleTarget.current = target;
+    // Only this settle may land it: a later tap or swipe finishes it first and starts its own.
+    const id = ++settleId.current;
+    const finish = () => {
+      if (settling.current && settleId.current === id) commit(target);
+    };
+    // The day buttons' colour changes end here too (the event bubbles): only the track's own slide lands the page.
+    const onEnd = (e: TransitionEvent) => {
+      if (e.target !== track || e.propertyName !== 'transform') return;
+      track.removeEventListener('transitionend', onEnd);
+      finish();
+    };
+    track.addEventListener('transitionend', onEnd);
+    settleTimer.current = window.setTimeout(finish, SETTLE_MS + 120);
+    setTrack(`translateX(${-dir * width}px)`, settleTransition(false));
+  };
+  /** A tap or a touch during a slide lands it at once, so no tap is lost. */
+  const finishSettle = (): MonthKey => {
+    const shown = settleTarget.current ?? visibleMonth;
+    commit(settleTarget.current);
+    return shown;
+  };
+  const page = (dir: 1 | -1) => {
+    if (drag.current) return;
+    const from = settling.current ? finishSettle() : visibleMonth;
+    const to = addMonths(from, dir);
+    if (compareMonthKeys(to, minMonth) < 0 || compareMonthKeys(to, maxMonth) > 0) return;
+    if (prefersReducedMotion()) {
+      setVisibleMonth(to);
+      return;
+    }
+    flushSync(() => setNeighbor({ month: to, dir }));
+    settle(dir, to);
+  };
+  const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    swallowClick.current = false;
+    if (e.pointerType === 'mouse' || drag.current) return;
+    if (settling.current) finishSettle();
+    drag.current = { id: e.pointerId, x0: e.clientX, y0: e.clientY, axis: null, dx: 0, samples: [{ x: e.clientX, y: e.clientY, t: e.timeStamp }] };
+  };
+  const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    if (!d || e.pointerId !== d.id) return;
+    const dx = e.clientX - d.x0;
+    if (d.axis === null) {
+      d.axis = lockAxis(dx, e.clientY - d.y0);
+      if (d.axis === null) return;
+      if (d.axis === 'y') {
+        drag.current = null;
+        return;
+      }
+      e.currentTarget.setPointerCapture(e.pointerId);
+    }
+    d.dx = dx;
+    d.samples.push({ x: e.clientX, y: e.clientY, t: e.timeStamp });
+    const dir = dx < 0 ? 1 : -1;
+    if ((dir === 1 ? canGoNext : canGoPrev) && neighbor?.dir !== dir) setNeighbor({ month: addMonths(visibleMonth, dir), dir });
+    const offset = dragOffset(dx, canGoPrev, canGoNext, viewportRef.current?.clientWidth ?? 0);
+    setTrack(`translateX(${offset}px)`, 'none');
+  };
+  const onPointerEnd = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    if (!d || e.pointerId !== d.id) return;
+    drag.current = null;
+    if (d.axis !== 'x') return;
+    swallowClick.current = true;
+    if (e.type === 'pointercancel') {
+      settle(0, null);
+      return;
+    }
+    const dir = pageDecision({ dx: d.dx, width: viewportRef.current?.clientWidth ?? 0, velocity: releaseVelocity(d.samples), canPrev: canGoPrev, canNext: canGoNext });
+    settle(dir, dir === 0 ? null : addMonths(visibleMonth, dir));
+  };
+  // A swipe that started on a day selects nothing.
+  const onClickCapture = (e: ReactMouseEvent<HTMLDivElement>) => {
+    if (!swallowClick.current) return;
+    swallowClick.current = false;
+    e.stopPropagation();
+    e.preventDefault();
+  };
   const minEndIso = startIso ? addDays(startIso, cart.vehicle.minRentalDays) : '';
   const dateLabel = formatRangeLabel(startIso, endIso);
 
@@ -192,16 +311,21 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
       <ScreenShell>
         <StepHeader eyebrow={stepEyebrow(1)} title="When are you driving?" sub={`${cart.vehicle.minRentalDays}-day minimum · from ${formatMoney(cart.vehicle.dailyRateCents)}/day`} />
         <div className="mt-4 flex items-center justify-between px-1">
-          <button type="button" onClick={() => canGoPrev && setVisibleMonth(addMonths(visibleMonth, -1))} disabled={!canGoPrev} className="grid h-8 w-8 place-items-center rounded-lg text-muted transition hover:bg-surface hover:text-ink disabled:opacity-30" aria-label="Previous month"><ChevronLeft size={16} /></button>
+          <button type="button" onClick={() => page(-1)} disabled={!canGoPrev} className="grid h-8 w-8 place-items-center rounded-lg text-muted transition hover:bg-surface hover:text-ink disabled:opacity-30" aria-label="Previous month"><ChevronLeft size={16} /></button>
           <span className="text-body font-medium tracking-[-0.005em]">{monthLabel(visibleMonth)}</span>
-          <button type="button" onClick={() => canGoNext && setVisibleMonth(addMonths(visibleMonth, 1))} disabled={!canGoNext} className="grid h-8 w-8 place-items-center rounded-lg text-muted transition hover:bg-surface hover:text-ink disabled:opacity-30" aria-label="Next month"><ChevronRight size={16} /></button>
+          <button type="button" onClick={() => page(1)} disabled={!canGoNext} className="grid h-8 w-8 place-items-center rounded-lg text-muted transition hover:bg-surface hover:text-ink disabled:opacity-30" aria-label="Next month"><ChevronRight size={16} /></button>
         </div>
         <div className={`mt-3 grid grid-cols-7 px-0.5 text-center ${microLabelClassName} text-faint`}>
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, index) => <span key={`${d}-${index}`} className="py-1.5">{d}</span>)}
         </div>
-        <div ref={viewportRef} data-calendar="viewport" className="relative overflow-hidden touch-pan-y">
+        <div ref={viewportRef} data-calendar="viewport" className="relative overflow-hidden touch-pan-y" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerEnd} onPointerCancel={onPointerEnd} onClickCapture={onClickCapture}>
           <div ref={trackRef} className="relative">
             {renderMonth(visibleMonth)}
+            {neighbor && (
+              <div ref={markInert} aria-hidden="true" className={`absolute inset-y-0 w-full ${neighbor.dir === 1 ? 'left-full' : 'right-full'}`}>
+                {renderMonth(neighbor.month)}
+              </div>
+            )}
           </div>
         </div>
         <div className={`mt-3 text-center ${microLabelClassName} text-faint`}>Tap start, then end · {cart.vehicle.minRentalDays}-day minimum{hasBlockedDays ? (captureOn ? ' · Crossed-out dates are taken — tap one for an alert' : ' · Crossed-out dates are unavailable') : ''}</div>
