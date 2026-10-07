@@ -27,6 +27,7 @@ import { DriverStep } from '@/components/drive-exotiq/flow/DriverStep';
 import { ReviewStep } from '@/components/drive-exotiq/flow/ReviewStep';
 import { Sticky } from '@/components/drive-exotiq/flow/shared';
 import { createInitialCart } from '@/domain/booking/mockData';
+import { mockVehicleAvailability } from '@/domain/booking/mockService';
 import { NOW_ISO, OPERATOR, VEHICLE, fixture, quoteOf, reviewCartOf } from './fixtures';
 import {
   BASE_JSON,
@@ -58,7 +59,7 @@ afterAll(() => {
 
 /** The four AC19 renders, cut. The cart is the mock cart under the fixed clock. */
 function ac19Renders(): Record<'dates-step.html' | 'driver-step.html' | 'sticky-footer.html' | 'panel-header-row.html', string> {
-  const cart = createInitialCart({ operator: OPERATOR, vehicle: VEHICLE });
+  const cart = createInitialCart({ operator: OPERATOR, vehicle: mockVehicleAvailability(VEHICLE) });
   return {
     'dates-step.html': cutDates(renderToStaticMarkup(<DatesStep cart={cart} setCart={noop} next={noop} />)),
     'driver-step.html': cutDriver(renderToStaticMarkup(<DriverStep cart={cart} setCart={noop} next={noop} />)),

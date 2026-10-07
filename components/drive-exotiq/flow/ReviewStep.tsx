@@ -16,6 +16,8 @@ import { CONSENT_TEXT } from '@/domain/renters/consentText';
 // TODO(PROTECT_ENABLED): see domain/booking/protect.ts. The switch, the statement's "and protection", the summary and the cover paragraph are gated where they render.
 import { protectEnabled } from '@/domain/booking/protect';
 import { attemptContinue, termsMissing, TERMS_MESSAGE } from '@/domain/booking/driverValidation';
+import { rangeIsBookable, localTodayIso } from '@/domain/booking/availability';
+import { getDataMode } from '@/domain/booking/config';
 
 type ProtectChoice = Extract<ProtectionTier, 'premium' | 'decline'>;
 
@@ -33,6 +35,9 @@ export function ReviewStep({
   quoteError,
   onRetryQuote,
   blocked,
+  authorityBlocking,
+  onRetryAvailability,
+  availabilityPending = false,
   onProtectionChange,
   onMarketingConsentChange,
   onRequest,
@@ -50,6 +55,9 @@ export function ReviewStep({
   onMarketingConsentChange?: (checked: boolean) => void;
   /** True when live pricing is unconfirmed — the renter must not request. */
   blocked?: boolean;
+  authorityBlocking?: boolean;
+  onRetryAvailability?: () => void;
+  availabilityPending?: boolean;
   /** T-12: premium is the default; the renter may toggle to declined while
    * the protect-plan T&C are finalized. Only these two tiers are offered. */
   onProtectionChange?: (tier: ProtectChoice) => void;
@@ -70,23 +78,33 @@ export function ReviewStep({
   const termsInput = useRef<HTMLInputElement>(null);
   const termsGap = termsMissing(termsAccepted);
   const showTermsError = termsAttempted && termsGap.length > 0;
-  const termsOnly = !requesting && termsGap.length > 0;
+  const availabilityBlocked = Boolean(authorityBlocking) || availabilityPending || (getDataMode() === 'supabase' && !rangeIsBookable(cart.vehicle, cart.dates.start, cart.dates.end, localTodayIso()));
+  const termsOnly = !requesting && !availabilityBlocked && !blocked && !quotePending && termsGap.length > 0;
   const protectionOn = cart.protection !== 'decline';
-  const button = requestButtonState({ blocked: Boolean(blocked), pending: Boolean(quotePending), termsAccepted, requesting });
+  const button = requestButtonState({ blocked: Boolean(blocked) || availabilityBlocked, pending: Boolean(quotePending), termsAccepted, requesting });
+  const safeRequest = () => {
+    if (requesting || blocked || quotePending || authorityBlocking || availabilityPending) return;
+    if (getDataMode() === 'supabase' && !rangeIsBookable(cart.vehicle, cart.dates.start, cart.dates.end, localTodayIso())) return;
+    onRequest();
+  };
   // A request in flight freezes the payload controls: reserve posts the cart as it was at the
   // click, so a change made now would show on screen and never reach the booking.
   const onProtect = onProtectionChange && whileIdle(requesting, onProtectionChange);
   const onConsent = onMarketingConsentChange && whileIdle(requesting, onMarketingConsentChange);
   const toDates = whileIdle(requesting, () => goTo(1));
 
-  if (blocked) {
+  if (blocked || availabilityBlocked) {
     return (
       <>
         <ScreenShell>
           <StepHeader eyebrow={stepEyebrow(3)} title="Here's the breakdown." sub="Nothing is charged yet." />
-          <QuoteNotice pending={quotePending} message={quoteError} onRetry={onRetryQuote} />
+          {availabilityBlocked ? <div role="status" aria-live="polite" className="mt-4 rounded-xl border border-line bg-surface p-4 text-body-sm">
+            <p>{availabilityPending ? 'Checking availability…' : 'Availability must be confirmed for these dates before requesting.'}</p>
+            <button type="button" className="mt-2 mr-4 underline" onClick={toDates} disabled={requesting}>Change dates</button>
+            {onRetryAvailability && <button type="button" className="mt-2 underline" onClick={onRetryAvailability} disabled={availabilityPending || requesting}>Check availability</button>}
+          </div> : <QuoteNotice pending={quotePending} message={quoteError} onRetry={onRetryQuote} />}
         </ScreenShell>
-        <Sticky><PrimaryButton onClick={onRequest} disabled={button.inert}>{button.label}</PrimaryButton></Sticky>
+        <Sticky><PrimaryButton onClick={safeRequest} disabled={button.inert}>{button.label}</PrimaryButton></Sticky>
       </>
     );
   }
@@ -188,7 +206,7 @@ export function ReviewStep({
         {/* The button sends a request, not a payment: nothing is charged until
             the renter pays from the link the operator's approval sends. */}
         <PrimaryButton
-          onClick={() => attemptContinue(termsGap, onRequest, () => {
+          onClick={() => attemptContinue(termsGap, safeRequest, () => {
             setTermsAttempted(true);
             termsInput.current?.focus();
           })}

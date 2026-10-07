@@ -206,6 +206,8 @@ function rowOf(c: Case, over: Partial<RpcQuoteRow> = {}): RpcQuoteRow {
 }
 /** Both request bodies for one cart, exactly as fetch received them (JSON strings). */
 async function requestBodies(cart: BookingCart, flag: string | undefined, row: RpcQuoteRow = rowOf(fixture('FX-T1S1P0'))) {
+  // This wire-only fixture explicitly supplies a successful synthetic check.
+  cart = { ...cart, vehicle: { ...cart.vehicle, unavailableRanges: [], availabilityAuthority: { status: 'KNOWN', checkedAt: new Date().toISOString(), windowStart: cart.dates.start, windowEnd: cart.dates.end } } };
   env(flag, SUPA);
   const sent: { url: string; body: string }[] = [];
   vi.stubGlobal('fetch', vi.fn(async (url: string | URL, init?: RequestInit) => {
