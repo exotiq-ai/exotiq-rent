@@ -14,8 +14,7 @@ export interface ExternalQuote {
 export interface QuoteReview { quote: ExternalQuote; operator_name: string; vehicle_name: string; agent_client_id: string }
 const record = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 export function parseQuoteReview(value: unknown, quoteId: string, now = Date.now()): QuoteReview {
-  if (!record(value) || Object.keys(value).some((key) => !['quote', 'operator_name', 'vehicle_name', 'agent_client_id'].includes(key)) ||
-    !['operator_name', 'vehicle_name', 'agent_client_id'].every((key) => typeof value[key] === 'string' && (value[key] as string).length > 0 && (value[key] as string).length <= 512) ||
+  if (!record(value) || !validateContract('QuoteReviewResult', value).ok ||
     !validateContract('QuoteResult', value.quote, { now }).ok || !record(value.quote) || value.quote.quote_id !== quoteId) throw Error('The complete rental terms could not be confirmed. Request a fresh quote from your agent.');
   return value as unknown as QuoteReview;
 }

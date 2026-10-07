@@ -1,6 +1,6 @@
 // GENERATED canonical backend schema/validator; do not edit by hand.
 // Source: supabase/functions/_shared/external-booking/contracts.ts
-// Source SHA256: 13943e53f8ab5ccbdef0698a96051882216bab678b5c750a2cb6ece931249c60
+// Source SHA256: fa6b9a17bac76e8cb82f0d47c6e17c1b5f96abe8fa8c1bb41cab763e37479737
 // Generator: scripts/generate-external-contracts.mjs; server-only section excluded; 0n -> BigInt(0).
 /** Canonical transport-independent v1 schemas. OpenAPI and adapters consume these.
  * JSON Schema 2020-12: https://json-schema.org/draft/2020-12/json-schema-validation
@@ -46,8 +46,8 @@ export const OperatorsPage = object({ ...metadata, items: array(Operator, 50), n
 export const VehiclesPage = object({ ...metadata, items: array(Vehicle, 50), next_cursor: nullable(cursor) });
 export const AvailabilityRequest = object(rentalWindow);
 export const AvailabilityResult: JsonSchema = { oneOf: [
-  object({ ...metadata, ...rentalWindow, availability: enumeration('AVAILABLE', 'UNAVAILABLE') }),
-  object({ ...metadata, ...rentalWindow, availability: { const: 'UNKNOWN' }, reason_code: enumeration('upstream_unavailable'), retry_after_seconds: integer(3600, 1) }),
+  object({ ...metadata, ...rentalWindow, availability: enumeration('AVAILABLE', 'UNAVAILABLE'), buffer_policy_version: text(128) }),
+  object({ ...metadata, ...rentalWindow, availability: { const: 'UNKNOWN' }, buffer_policy_version: { type:'null' }, reason_code: enumeration('upstream_unavailable'), retry_after_seconds: integer(3600, 1) }),
 ] };
 export const QuoteRequest = object({ ...rentalWindow, selected_options: options });
 export const QuoteItemization = object({ rental_subtotal_cents: integer(), operator_tax_cents: integer(), operator_tax_inclusive: { type: 'boolean' }, platform_fee_cents: integer(), protection_total_cents: integer(), state_fee_cents: integer(), processing_fee_cents: integer(), deposit_cents: { ...integer(), description: 'Separate security deposit disclosure; excluded from both rental charge totals. No card authorization is created by quoting.' } });
@@ -64,8 +64,19 @@ export const RentalStatusResult = object({ ...RentalRequestResult.properties, pa
 export const CheckoutHandoffResult = object({ ...metadata, customer_url: httpsUrl, expires_at: timestamp, state: enumeration('pending_payment'), next_action: enumeration('hosted_checkout') });
 export const ConsentResult = object({ ...metadata, quote_id: uuid, state: enumeration('waiting', 'authorized'), consent_receipt_id: uuid, expires_at: timestamp }, ['consent_receipt_id', 'expires_at']);
 export const RecoveryResult = object({ ...metadata, ref: text(80), state: enumeration('authorization_required', 'authorized'), customer_url: httpsUrl, expires_at: timestamp });
+export const ConsentInput = object({terms_hash:{...text(64,64),pattern: "^[a-f0-9]{64}$"},action:{const:"rental_requests:create"}});
+export const CustomerConsentResult = object({...metadata,quote_id:uuid,state:{const:"authorized"},expires_at:timestamp});
+export const QuoteReviewResult = object({quote:QuoteResult,operator_name:text(160),vehicle_name:text(160),agent_client_id:text(512)});
+export const CustomerOperatorLinkInput = object({operator_id:uuid,full_name:text(160,2),phone:{...text(30,7),pattern:"^[+0-9() .-]{7,30}$"},consented:{const:true}});
+export const CustomerOperatorLinkResult = object({...metadata,operator_id:uuid,state:{const:"linked"}});
+const grantScopes:JsonSchema={...array(enumeration("rental_requests:read","checkout:handoff"),2,1),uniqueItems:true};
+export const GrantRenewalInput = object({grant_id:uuid});
+export const GrantRenewalReviewInput = object({});
+export const GrantRenewalCompleteInput = object({action_scopes:grantScopes,explicit_new_delegation:{type:"boolean"},consented:{const:true}});
+export const GrantRenewalReviewResult = object({...metadata,renewal_id:uuid,previous_grant_id:uuid,ref:text(80),operator_id:uuid,agent_client_id:text(512),operator_name:text(160),vehicle_name:text(160),pickup_at:timestamp,return_at:timestamp,timezone:rentalWindow.timezone,status:enumeration(...BACKEND_STATUSES),hold_expires_at:nullable(timestamp),payment_due_at:nullable(timestamp),action_scopes:grantScopes,expires_at:timestamp,state:enumeration("authorization_required","authorized"),requires_new_delegation:{type:"boolean"}});
+export const GrantRenewalResult = object({...metadata,renewal_id:uuid,state:enumeration("authorization_required","authorized"),customer_url:httpsUrl,expires_at:timestamp,grant_id:uuid},["grant_id"]);
 export const ApiError = object({ code: enumeration(...ERROR_CODES), message: text(200), request_id: { ...text(80, 16), pattern: '^[A-Za-z0-9_-]+$' }, retryable: { type: 'boolean' }, details: object({ retry_after_seconds: integer(3600, 1), field: enumeration('operator_id', 'vehicle_id', 'pickup_at', 'return_at', 'timezone', 'quote_id', 'consent_receipt_id', 'selected_options', 'cursor', 'limit', 'Idempotency-Key') }, ['retry_after_seconds', 'field']) }, ['details']);
-export const schemas = { OperatorsQuery, VehiclesQuery, Operator, Vehicle, OperatorsPage, VehiclesPage, AvailabilityRequest, AvailabilityResult, QuoteRequest, QuoteItemization, PaymentScheduleItem, QuoteTerms, QuotePricingDetails, QuoteResult, RentalRequestInput, ScopedLinks, RentalRequestResult, RentalStatusResult, CheckoutHandoffResult, ConsentResult, RecoveryResult, ApiError };
+export const schemas = { OperatorsQuery, VehiclesQuery, Operator, Vehicle, OperatorsPage, VehiclesPage, AvailabilityRequest, AvailabilityResult, QuoteRequest, QuoteItemization, PaymentScheduleItem, QuoteTerms, QuotePricingDetails, QuoteResult, RentalRequestInput, ScopedLinks, RentalRequestResult, RentalStatusResult, CheckoutHandoffResult, ConsentResult, RecoveryResult, ConsentInput, CustomerConsentResult, QuoteReviewResult, CustomerOperatorLinkInput, CustomerOperatorLinkResult, GrantRenewalInput, GrantRenewalReviewInput, GrantRenewalCompleteInput, GrantRenewalReviewResult, GrantRenewalResult, ApiError };
 export type ContractName = keyof typeof schemas;
 export type ValidationResult = { ok: true } | { ok: false; issues: string[] };
 type JsonObject = Record<string, unknown>;

@@ -25,21 +25,21 @@ export default function ConsentPage({ params }: { params: { quoteId: string } })
     return () => { ++generation.current; clearInterval(timer); };
   }, [params.quoteId, reload]);
   const authorize = async () => {
-    if (locked.current || !review || !session || authorized || latest.current.review !== review || latest.current.session !== session || latest.current.quoteId !== params.quoteId || latest.current.authorized) return;
+    if (locked.current || !review || review.quote.quote_id !== params.quoteId || !session || authorized || latest.current.review !== review || latest.current.session !== session || latest.current.quoteId !== params.quoteId || latest.current.authorized) return;
     if (!canAuthorizeQuote(review, session)) { setError('This quote or sign-in expired. Sign in again and request a fresh quote.'); return; }
     locked.current = true; setPending(true); setError(''); const current = generation.current;
     try { await authorizeQuote(review, session); if (current === generation.current) setAuthorized(true); }
     catch (failure) { if (current === generation.current) { setError(failure instanceof Error ? failure.message : 'Authorization could not be confirmed.'); setReview(null); } }
     finally { if (current === generation.current) { locked.current = false; setPending(false); } }
   };
-  const valid = review && session && canAuthorizeQuote(review, session);
+  const valid = review && review.quote.quote_id === params.quoteId && session && canAuthorizeQuote(review, session);
   return <main className="mx-auto max-w-2xl p-6 text-ink">
     <h1 className="text-2xl font-semibold">Review your rental request</h1>
     {loading && <p role="status">Loading your secure review…</p>}
     {error && <p role="alert" className="mt-4">{error}</p>}
     {error && !loading && <button type="button" className="mt-3 underline" onClick={() => { latest.current.review = null; setReload((value) => value + 1); }}>Reload secure review</button>}
     {!loading && !session && ownedUuid(params.quoteId) && <><p className="mt-4">Sign in securely to review and authorize this request. Customer sign-in must be configured before you can continue.</p><a className="mt-3 inline-block underline" href={customerSignInPath('consent', params.quoteId)}>Sign in to review</a></>}
-    {review && <>
+    {review && review.quote.quote_id === params.quoteId && <>
       <h2 className="mt-6 text-xl">{review.vehicle_name} · {review.operator_name}</h2>
       <p className="mt-2">Agent application: {review.agent_client_id}</p>
       <p className="mt-2">Pickup: {review.quote.pickup_at} · Return: {review.quote.return_at}</p><p>Time zone: {review.quote.timezone}</p>

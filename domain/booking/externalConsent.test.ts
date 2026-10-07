@@ -66,4 +66,13 @@ describe('actual hosted customer quote review', () => {
     const invalid = review(); invalid.quote.payment_schedule[0].amount_cents++;
     expect(() => parseQuoteReview(invalid, quoteId, now.getTime())).toThrow();
   });
+  it('another customer or a changed quote cannot authorize, and server-private errors stay hidden', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => url === '/api/agent/auth/session' ? json(session) : json({ code: 'not_found', message: 'private other customer' }, 404)));
+    await mount(); expect(authorize()).toBeUndefined(); expect(host.textContent).not.toContain('private other customer'); expect(posted).toHaveLength(0);
+  });
+  it('CSRF or changed-terms rejection clears authorization rather than reporting success', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => url === '/api/agent/auth/session' ? json(session) : url.endsWith('/consents') ? json({ code: 'quote_changed', message: 'private server details' }, 409) : json(data)));
+    await mount(); await act(async () => props(authorize()).onClick());
+    expect(authorize()).toBeUndefined(); expect(host.textContent).toContain('fresh quote'); expect(host.textContent).not.toContain('private server details');
+  });
 });

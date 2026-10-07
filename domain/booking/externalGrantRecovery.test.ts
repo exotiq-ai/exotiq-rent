@@ -15,13 +15,14 @@ const mount = (page: any, params: any) => act(async () => root.render(createElem
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(now); vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true); posted = [];
   session = { authenticated: true, csrf: 'synthetic-csrf', expires_at: '2030-01-01T12:10:00Z', profile: { email: 'verified@example.invalid', emailVerified: true, name: 'Synthetic Customer' } };
-  data = { api_version: 'v1', source_checked_at: now.toISOString(), renewal_id: renewalId, ref: 'SYNTHETIC-REQUEST', operator_id: operatorId, operator_name: 'Synthetic Tampa operator', vehicle_name: 'Synthetic car', agent_client_id: 'synthetic-agent-client', action_scopes: ['rental_requests:read', 'checkout:handoff'], expires_at: '2030-01-01T12:10:00Z', state: 'authorization_required', requires_new_delegation: false, pickup_at: '2030-01-10T10:00:00-05:00', return_at: '2030-01-12T10:00:00-05:00', timezone: 'America/New_York', status: 'pending_payment', hold_expires_at: '2030-01-04T12:00:00Z', payment_due_at: '2030-01-03T12:00:00Z' };
+  data = { api_version: 'v1', source_checked_at: now.toISOString(), renewal_id: renewalId, previous_grant_id: '10000000-0000-4000-8000-000000000005', ref: 'SYNTHETIC-REQUEST', operator_id: operatorId, operator_name: 'Synthetic Tampa operator', vehicle_name: 'Synthetic car', agent_client_id: 'synthetic-agent-client', action_scopes: ['rental_requests:read', 'checkout:handoff'], expires_at: '2030-01-01T12:10:00Z', state: 'authorization_required', requires_new_delegation: false, pickup_at: '2030-01-10T10:00:00-05:00', return_at: '2030-01-12T10:00:00-05:00', timezone: 'America/New_York', status: 'pending_payment', hold_expires_at: '2030-01-04T12:00:00Z', payment_due_at: '2030-01-03T12:00:00Z' };
   vi.stubGlobal('fetch', vi.fn(async (path: string, init?: RequestInit) => {
     if (path === '/api/agent/auth/session') return json(session, session.authenticated ? 200 : 401);
     if (path === `/api/agent/customer/grant-renewals/${renewalId}`) return json(data);
     posted.push({ path, body: JSON.parse(init!.body as string) });
     if (path.endsWith('/review')) return json(data);
     if (path.endsWith('/complete')) return json({ ...data, state: 'authorized' });
+    if (path.endsWith('/revoke')) return new Response(null, { status: 204 });
     if (path === '/api/agent/customer/customers/operator-links') return json({ api_version: 'v1', source_checked_at: now.toISOString(), operator_id: operatorId, state: 'linked' }, 201);
     throw Error('Offline tests forbid unowned network URL');
   }));
@@ -32,7 +33,13 @@ describe('actual hosted grant recovery and customer account linking', () => {
   it.each([25, 71])('after %ih delegates only existing status/payment scopes with unchanged request and deadlines', async (hours) => {
     // Long-lived booking hold is distinct from the fresh ten-minute customer
     // browser session. No refresh token or old session is trusted by the UI.
-    data.source_checked_at = new Date(now.getTime() - hours * 3600000).toISOString();
+    const later = new Date(now.getTime() + hours * 3600000); vi.setSystemTime(later);
+    await mount(RecoveryPage, { renewalId });
+    expect(host.querySelector('a')?.getAttribute('href')).toContain('/api/agent/auth/start?return_to='); expect(posted).toHaveLength(0);
+    // Managed login returns a fresh session in a new document. This test
+    // mocks the signed session boundary; hosted PKCE/JWT is verified separately.
+    await act(async () => root.unmount()); root = createRoot(host);
+    session.expires_at = new Date(later.getTime() + 600000).toISOString(); data.expires_at = session.expires_at; data.source_checked_at = later.toISOString();
     await mount(RecoveryPage, { renewalId });
     for (const text of ['SYNTHETIC-REQUEST', 'Synthetic Tampa operator', 'pending_payment', '2030-01-04T12:00:00Z', '2030-01-03T12:00:00Z']) expect(host.textContent).toContain(text);
     const callback = props(button('Reauthorize agent access')).onClick;
@@ -68,11 +75,25 @@ describe('actual hosted grant recovery and customer account linking', () => {
     expect(host.textContent).toMatch(/linked/i); expect(JSON.stringify(posted)).not.toMatch(/email_verified|access_token|consent_receipt/);
   });
   it.each([false, null])('missing verified provider email disables linking, regardless of display-name fields', async (verified) => {
-    session.profile.emailVerified = verified === true; if (verified === null) session.profile.email = null;
+    session.profile.emailVerified = false; if (verified === null) session.profile.email = null;
     await mount(AccountPage, { operatorId }); expect(button('Link my customer account')?.disabled ?? true).toBe(true);
     expect(host.textContent).toMatch(/verified email/i); expect(posted).toHaveLength(0);
   });
   it('all agent customer routes are excluded from analytics eligibility', () => {
     for (const path of ['/agent', '/agent/account', `/agent/account/${operatorId}`, `/agent/consent/${renewalId}`, `/agent/authorization/${renewalId}`]) expect(eligibleRoute(path)).toBe(false);
+  });
+  it('revokes only prior grant access without cancelling the existing rental', async () => {
+    await mount(RecoveryPage, { renewalId });
+    await act(async () => props(button('Revoke prior agent access')).onClick());
+    expect(posted).toEqual([{ path: `/api/agent/customer/grants/${data.previous_grant_id}/revoke`, body: { csrf: 'synthetic-csrf' } }]);
+    expect(host.textContent).toContain('booking has not been cancelled'); expect(button('Reauthorize agent access')).toBeUndefined();
+  });
+  it('rechecks fresh session expiration in captured recovery and account callbacks', async () => {
+    await mount(RecoveryPage, { renewalId }); const recover = props(button('Reauthorize agent access')).onClick;
+    vi.setSystemTime('2030-01-01T12:10:01Z'); await act(async () => recover()); expect(posted).toHaveLength(0);
+    vi.setSystemTime(now); await mount(AccountPage, { operatorId });
+    await act(async () => props(host.querySelector('input[name="phone"]')!).onChange({ target: { value: '+13055550100' } }));
+    const link = props(button('Link my customer account')).onClick;
+    vi.setSystemTime('2030-01-01T12:10:01Z'); await act(async () => link()); expect(posted).toHaveLength(0);
   });
 });
