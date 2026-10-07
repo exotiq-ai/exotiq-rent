@@ -1,7 +1,8 @@
 import {test,expect,type BrowserContext} from '@playwright/test';
+import {quoteId} from './customer-fixtures.mjs';
 const nonce='a'.repeat(43),origin='https://rent.synthetic.invalid:9444';
 async function login(context:BrowserContext,subject='renter'){const response=await context.request.get('https://127.0.0.1:9443/__test/session?subject='+subject);expect(response.ok()).toBe(true);const {cookie}=await response.json();await context.addCookies([{name:'__Host-exotiq-customer',value:cookie,url:origin,httpOnly:true,secure:true,sameSite:'Lax'}]);}
-test.beforeEach(async({context})=>{await context.route('**/*',async route=>{const url=new URL(route.request().url());if(url.origin===origin)return route.continue();return route.abort('blockedbyclient');});});
+test.beforeEach(async({context})=>{await context.route('**/*',async route=>{const url=new URL(route.request().url());if(url.origin===origin||url.origin==='https://identity.synthetic.invalid')return route.continue();return route.abort('blockedbyclient');});});
 test('actual SSR and BFF require a fresh cookie, then explicit continue produces a private validated provider link',async({page,context})=>{
  await page.goto('/agent/handoff/'+nonce);await expect(page.getByRole('link',{name:'Sign in securely'})).toHaveAttribute('href','/api/agent/auth/start?return_to='+encodeURIComponent('/agent/handoff/'+nonce));
  await expect(page.getByRole('button',{name:'Continue securely'})).toHaveCount(0);
@@ -24,3 +25,10 @@ test('retry reuses the local provider session and CSRF/extra fields cannot creat
  await page.getByRole('button',{name:'Continue securely'}).click();const first=await page.getByRole('link',{name:'Open Stripe securely'}).getAttribute('href');await page.reload();await page.getByRole('button',{name:'Continue securely'}).click();await expect(page.getByRole('link',{name:'Open Stripe securely'})).toHaveAttribute('href',first!);
 });
 test('identity uses a separate strict hosted provider destination',async({page,context})=>{await login(context);await page.goto('/agent/handoff/'+'i'.repeat(43));await expect(page.getByText('Verify your identity with Stripe.')).toBeVisible();await page.getByRole('button',{name:'Continue securely'}).click();await expect(page.getByRole('link',{name:'Open Stripe securely'})).toHaveAttribute('href','https://verify.stripe.com/start/synthetic-local');});
+test('actual hosted OAuth start/callback and customer quote consent work behind the public HTTPS proxy',async({page,context})=>{
+ await page.goto('/agent/consent/'+quoteId);await page.getByRole('link',{name:'Sign in to review'}).click();await expect(page.getByRole('button',{name:'Authorize rental request'})).toBeVisible();
+ await expect(page.getByText('Synthetic cancellation policy')).toBeVisible();const sessionCookie=(await context.cookies()).find(c=>c.name==='__Host-exotiq-customer');expect(sessionCookie?.httpOnly).toBe(true);expect(sessionCookie?.secure).toBe(true);expect(await page.evaluate(()=>document.cookie)).not.toContain('__Host-exotiq-customer');
+ await page.getByRole('button',{name:'Authorize rental request'}).click();await expect(page.getByText('Authorization recorded.',{exact:false})).toBeVisible();
+ const leaked=await page.evaluate(async()=>{const r=await fetch('/api/agent/auth/session?access_token=ignored');return {status:r.status,body:await r.text()};});expect(leaked.status).toBe(401);expect(leaked.body).not.toContain('csrf');
+ const polluted=await page.evaluate(async()=>{const r=await fetch('/api/agent/customer/quotes/'+document.location.pathname.split('/').pop()+'?customer_id=other');return r.status;});expect(polluted).toBe(503);
+});
