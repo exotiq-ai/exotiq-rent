@@ -114,4 +114,12 @@ describe('actual hosted grant recovery and customer account linking', () => {
     expect(posted[posted.length - 1]).toEqual({ path: '/api/agent/customer/grants/10000000-0000-4000-8000-000000000006/revoke', body: { csrf: 'synthetic-csrf' } });
     expect(host.textContent).not.toContain('Agent access authorized for');
   });
+  it('restores identity access only when it was explicitly present in the original scopes',async()=>{
+    data.action_scopes.push('identity:handoff');await mount(RecoveryPage,{renewalId});expect(host.textContent).toContain('Open customer-hosted identity verification');
+    await act(async()=>props(button('Reauthorize agent access')).onClick());expect(posted.find(p=>p.path.endsWith('/complete'))?.body.action_scopes).toEqual(data.action_scopes);
+  });
+  it('fails closed if completed renewal silently expands the previously approved scope set',async()=>{
+    const original=fetch;vi.stubGlobal('fetch',vi.fn(async(path:string,init?:RequestInit)=>path.endsWith('/complete')?json({...data,state:'authorized',action_scopes:[...data.action_scopes,'identity:handoff']}):original(path,init)));
+    await mount(RecoveryPage,{renewalId});await act(async()=>props(button('Reauthorize agent access')).onClick());expect(host.textContent).not.toContain('Agent access authorized for');expect(host.querySelector('[role="alert"]')).not.toBeNull();
+  });
 });
