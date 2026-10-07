@@ -4,6 +4,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ConsentPage from '@/app/agent/consent/[quoteId]/page';
 import { parseQuoteReview } from './externalContracts';
+import { metadata as customerMetadata, dynamic as customerDynamic } from '@/app/agent/layout';
 const quoteId = '10000000-0000-4000-8000-000000000001';
 const operatorId = '10000000-0000-4000-8000-000000000002';
 const now = new Date('2030-01-01T12:00:00Z');
@@ -74,5 +75,20 @@ describe('actual hosted customer quote review', () => {
     vi.stubGlobal('fetch', vi.fn(async (url: string) => url === '/api/agent/auth/session' ? json(session) : url.endsWith('/consents') ? json({ code: 'quote_changed', message: 'private server details' }, 409) : json(data)));
     await mount(); await act(async () => props(authorize()).onClick());
     expect(authorize()).toBeUndefined(); expect(host.textContent).toContain('fresh quote'); expect(host.textContent).not.toContain('private server details');
+  });
+  it('customer pages suppress indexing, referrers and inherited marketing previews', () => {
+    expect(customerDynamic).toBe('force-dynamic'); expect(customerMetadata.referrer).toBe('no-referrer');
+    expect(customerMetadata.robots).toMatchObject({ index: false, follow: false });
+    expect(customerMetadata.openGraph).toBeNull(); expect(customerMetadata.twitter).toBeNull();
+  });
+  it('hung session fetch aborts and clears loading without revealing a quote', async () => {
+    vi.useFakeTimers(); vi.setSystemTime(now); let signal: AbortSignal | undefined;
+    vi.stubGlobal('fetch', vi.fn((_path: string, init: RequestInit) => {
+      signal = init.signal!;
+      return new Promise((_, reject) => signal!.addEventListener('abort', () => reject(new DOMException('Abort', 'AbortError')), { once: true }));
+    }));
+    await mount(); expect(host.textContent).toContain('Loading');
+    await act(async () => vi.advanceTimersByTimeAsync(10001));
+    expect(signal?.aborted).toBe(true); expect(host.textContent).not.toContain('Loading'); expect(authorize()).toBeUndefined(); expect(host.textContent).toContain('Sign in securely');
   });
 });
