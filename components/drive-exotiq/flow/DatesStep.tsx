@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PrimaryButton } from '../BookingChrome';
 import { countRentalDays, formatMoney } from '@/domain/booking/totals';
@@ -134,10 +134,58 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
 
   const canGoPrev = compareMonthKeys(visibleMonth, minMonth) > 0;
   const canGoNext = compareMonthKeys(visibleMonth, maxMonth) < 0;
-  const totalDays = daysInMonth(visibleMonth);
-  const leadingBlanks = firstWeekdayOfMonth(visibleMonth);
+  // MP-25: the month pager's frame and the track that slides inside it.
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
   const minEndIso = startIso ? addDays(startIso, cart.vehicle.minRentalDays) : '';
   const dateLabel = formatRangeLabel(startIso, endIso);
+
+  /** One month's day grid. Six week rows always (42 square cells), so paging never moves what sits below. */
+  const renderMonth = (month: MonthKey) => {
+    const totalDays = daysInMonth(month);
+    const leadingBlanks = firstWeekdayOfMonth(month);
+    return (
+      <div data-calendar="month" className="grid grid-cols-7 px-0.5 text-center text-body">
+        {Array.from({ length: leadingBlanks }).map((_, index) => <span key={`blank-${index}`} className="aspect-square" />)}
+        {Array.from({ length: totalDays }, (_, i) => i + 1).map((day) => {
+          const iso = isoDate(month.year, month.month, day);
+          const blocked = isBlocked(iso);
+          const isStart = iso === startIso;
+          const isEnd = iso === endIso;
+          const inRange = !blocked && iso >= startIso && iso <= endIso;
+          const isMinHint = iso === minEndIso && countRentalDays(startIso, iso) === cart.vehicle.minRentalDays;
+          return (
+            <button
+              key={day}
+              type="button"
+              onClick={() => selectDay(iso)}
+              // Past days are disabled. With capture on, a taken future day is
+              // a real control that offers an alert, and says so in its name;
+              // with capture off it is disabled like before (MP-14).
+              disabled={iso < todayIso || (blocked && !captureOn)}
+              data-taken={blocked && iso >= todayIso ? '' : undefined}
+              // MP-11: hover fill and keyboard ring are drawn on the same 34px
+              // disc the selected/today states use (a `before:` layer under
+              // the number), so the grid never mixes two circle sizes.
+              className="relative aspect-square text-muted outline-none transition-colors before:pointer-events-none before:absolute before:left-1/2 before:top-1/2 before:h-[34px] before:w-[34px] before:-translate-x-1/2 before:-translate-y-1/2 before:rounded-full enabled:hover:text-ink enabled:hover:before:bg-surface focus-visible:before:ring-2 focus-visible:before:ring-gold/60 disabled:cursor-not-allowed disabled:text-dim data-[taken]:text-dim data-[taken]:hover:text-dim2"
+              aria-pressed={inRange}
+              aria-label={`${longDate(iso)}${blocked ? (iso >= todayIso && captureOn ? ', taken — get an alert' : ', unavailable') : ''}`}
+              aria-current={iso === todayIso ? 'date' : undefined}
+            >
+              {iso === todayIso && !inRange && !blocked && <span className="absolute left-1/2 top-1/2 h-[34px] w-[34px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-line2" aria-hidden />}
+              {inRange && !isStart && !isEnd && <span className="absolute inset-y-[5px] left-0 right-0 bg-gold/10" />}
+              {isStart && !isEnd && <span className="absolute inset-y-[5px] left-1/2 right-0 bg-gold/10" />}
+              {isEnd && !isStart && <span className="absolute inset-y-[5px] left-0 right-1/2 bg-gold/10" />}
+              {(isStart || isEnd) && <span className="absolute left-1/2 top-1/2 h-[34px] w-[34px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold" />}
+              {!inRange && !blocked && isMinHint && <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 translate-y-[15px] rounded-full bg-faint" />}
+              <span className={`absolute inset-0 grid place-items-center tabular-nums${isStart || isEnd ? ' font-semibold text-goldInk' : inRange ? ' text-ink' : ''}${blocked ? ' line-through decoration-dim2' : ''}`}>{day}</span>
+            </button>
+          );
+        })}
+        {Array.from({ length: 42 - leadingBlanks - totalDays }).map((_, index) => <span key={`tail-${index}`} className="aspect-square" />)}
+      </div>
+    );
+  };
 
   return (
     <>
@@ -151,43 +199,10 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
         <div className={`mt-3 grid grid-cols-7 px-0.5 text-center ${microLabelClassName} text-faint`}>
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, index) => <span key={`${d}-${index}`} className="py-1.5">{d}</span>)}
         </div>
-        <div className="grid grid-cols-7 px-0.5 text-center text-body">
-          {Array.from({ length: leadingBlanks }).map((_, index) => <span key={`blank-${index}`} />)}
-          {Array.from({ length: totalDays }, (_, i) => i + 1).map((day) => {
-            const iso = isoDate(visibleMonth.year, visibleMonth.month, day);
-            const blocked = isBlocked(iso);
-            const isStart = iso === startIso;
-            const isEnd = iso === endIso;
-            const inRange = !blocked && iso >= startIso && iso <= endIso;
-            const isMinHint = iso === minEndIso && countRentalDays(startIso, iso) === cart.vehicle.minRentalDays;
-            return (
-              <button
-                key={day}
-                type="button"
-                onClick={() => selectDay(iso)}
-                // Past days are disabled. With capture on, a taken future day is
-                // a real control that offers an alert, and says so in its name;
-                // with capture off it is disabled like before (MP-14).
-                disabled={iso < todayIso || (blocked && !captureOn)}
-                data-taken={blocked && iso >= todayIso ? '' : undefined}
-                // MP-11: hover fill and keyboard ring are drawn on the same 34px
-                // disc the selected/today states use (a `before:` layer under
-                // the number), so the grid never mixes two circle sizes.
-                className="relative aspect-square text-muted outline-none transition-colors before:pointer-events-none before:absolute before:left-1/2 before:top-1/2 before:h-[34px] before:w-[34px] before:-translate-x-1/2 before:-translate-y-1/2 before:rounded-full enabled:hover:text-ink enabled:hover:before:bg-surface focus-visible:before:ring-2 focus-visible:before:ring-gold/60 disabled:cursor-not-allowed disabled:text-dim data-[taken]:text-dim data-[taken]:hover:text-dim2"
-                aria-pressed={inRange}
-                aria-label={`${longDate(iso)}${blocked ? (iso >= todayIso && captureOn ? ', taken — get an alert' : ', unavailable') : ''}`}
-                aria-current={iso === todayIso ? 'date' : undefined}
-              >
-                {iso === todayIso && !inRange && !blocked && <span className="absolute left-1/2 top-1/2 h-[34px] w-[34px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-line2" aria-hidden />}
-                {inRange && !isStart && !isEnd && <span className="absolute inset-y-[5px] left-0 right-0 bg-gold/10" />}
-                {isStart && !isEnd && <span className="absolute inset-y-[5px] left-1/2 right-0 bg-gold/10" />}
-                {isEnd && !isStart && <span className="absolute inset-y-[5px] left-0 right-1/2 bg-gold/10" />}
-                {(isStart || isEnd) && <span className="absolute left-1/2 top-1/2 h-[34px] w-[34px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold" />}
-                {!inRange && !blocked && isMinHint && <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 translate-y-[15px] rounded-full bg-faint" />}
-                <span className={`absolute inset-0 grid place-items-center tabular-nums${isStart || isEnd ? ' font-semibold text-goldInk' : inRange ? ' text-ink' : ''}${blocked ? ' line-through decoration-dim2' : ''}`}>{day}</span>
-              </button>
-            );
-          })}
+        <div ref={viewportRef} data-calendar="viewport" className="relative overflow-hidden touch-pan-y">
+          <div ref={trackRef} className="relative">
+            {renderMonth(visibleMonth)}
+          </div>
         </div>
         <div className={`mt-3 text-center ${microLabelClassName} text-faint`}>Tap start, then end · {cart.vehicle.minRentalDays}-day minimum{hasBlockedDays ? (captureOn ? ' · Crossed-out dates are taken — tap one for an alert' : ' · Crossed-out dates are unavailable') : ''}</div>
         {/* One sentence announces the card's arrival; the form below keeps its own status line (MP-14). */}
