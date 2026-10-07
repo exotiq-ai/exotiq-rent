@@ -17,7 +17,9 @@ export async function forwardHostedRequest(config:HostedAuthConfiguration,sessio
   const {csrf:_,...fields}=input!;payload=fields;
   if(path==='customers/operator-links'){
    if(!session.profile.email||!session.profile.emailVerified)fail();
-   payload={...fields,email:session.profile.email,email_verified:true};
+   // Identity is attested only by the server-signed proof. The body carries
+   // contact details and explicit consent, never customer ownership selectors.
+   payload=Object.fromEntries(Object.entries(fields).filter(([key])=>['operator_id','full_name','phone','consented'].includes(key)));
   }
  }
  const body=method==='GET'?'':JSON.stringify(payload);if(Buffer.byteLength(body)>65536)fail();
