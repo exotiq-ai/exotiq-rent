@@ -21,4 +21,5 @@ describe('customer-only provider handoff boundary',()=>{
   await expect(forwardCustomerHandoff(config,session,nonce,'GET',null,null,(async()=>new Response(null,{status:303,headers:{Location:'https://evil.invalid'}})) as any)).rejects.toThrow();
  });
  it('supports only the opaque owned sign-in return path',()=>{expect(handoffSignIn(nonce)).toBe(`/api/agent/auth/start?return_to=${encodeURIComponent('/agent/handoff/'+nonce)}`);expect(()=>handoffSignIn('../other')).toThrow();});
+ it('refuses a provider URL that embeds the handoff nonce',async()=>{await expect(forwardCustomerHandoff(config,session,nonce,'POST',{csrf:session.csrf,action:'continue'},config.frontendOrigin,(async()=>Response.json(resolve('https://checkout.stripe.com/c/pay/'+nonce))) as any)).rejects.toThrow();});
 });

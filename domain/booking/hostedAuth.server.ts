@@ -15,7 +15,7 @@ export interface HostedSession {
 }
 export interface HostedAuthDependencies { now?:()=>Date; fetch?:typeof fetch; keyResolver?:JWTVerifyGetKey; }
 const uuid='[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}';
-const returnPath=new RegExp(`^/agent/(?:consent|authorization|account)/${uuid}$`,'i');
+const returnPath=new RegExp(`^(?:/agent/(?:consent|authorization|account)/${uuid}|/agent/handoff/[A-Za-z0-9_-]{43})$`,'i');
 const fail=():never=>{throw new Error('Customer authorization unavailable');};
 const secret=(value:string)=>{if(!/^[A-Za-z0-9_-]{43}$/.test(value))fail();const bytes=Buffer.from(value,'base64url');if(bytes.length!==32)fail();return bytes;};
 const equal=(a:string,b:string)=>{const x=Buffer.from(a),y=Buffer.from(b);return x.length===y.length&&timingSafeEqual(x,y);};

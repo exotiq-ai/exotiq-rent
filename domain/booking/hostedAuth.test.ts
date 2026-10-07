@@ -6,6 +6,7 @@ const cfg={issuer:'https://identity.example.invalid',authorizationEndpoint:'http
 const now=new Date('2030-01-01T00:00:00Z');
 const returnTo='/agent/consent/10000000-0000-4000-8000-000000000008';
 describe('hosted customer OIDC bridge',()=>{
+ it('accepts only an opaque owned handoff return path',async()=>{const auth=createHostedAuth(cfg);expect(new URL((await auth.beginLogin('/agent/handoff/'+'a'.repeat(43))).url).pathname).toBe('/authorize');for(const path of ['/agent/handoff/x','/agent/handoff/'+'a'.repeat(43)+'?token=x','/agent/handoff/'+'a'.repeat(43)+'/other'])await expect(auth.beginLogin(path)).rejects.toThrow();});
  it('uses PKCE S256, nonce, exact callback/resource and a bounded owned return path',async()=>{
   const client=createHostedAuth(cfg,{now:()=>now});const login=await client.beginLogin(returnTo);
   const url=new URL(login.url);expect(url.searchParams.get('code_challenge_method')).toBe('S256');expect(url.searchParams.get('resource')).toBe(cfg.resource);expect(url.searchParams.get('redirect_uri')).toBe(cfg.frontendOrigin+'/api/agent/auth/callback');expect(url.searchParams.get('response_type')).toBe('code');expect(url.searchParams.get('nonce')).toMatch(/^[\w-]{43}$/);
