@@ -6,6 +6,8 @@ import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PrimaryButton } from '../BookingChrome';
 import { countRentalDays, formatMoney } from '@/domain/booking/totals';
 import type { BookingCart } from '@/domain/booking/types';
+import { hasKnownAvailability } from '@/domain/booking/types';
+import { rangeIsBookable, localTodayIso } from '@/domain/booking/availability';
 import {
   addDays,
   addMonths,
@@ -59,7 +61,7 @@ function todayIsoDate(): string {
   return isoDate(now.getFullYear(), now.getMonth() + 1, now.getDate());
 }
 
-export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart: (cart: BookingCart) => void; next: () => void }) {
+export function DatesStep({ cart, setCart, next, onRetryAvailability, availabilityPending = false }: { cart: BookingCart; setCart: (cart: BookingCart) => void; next: () => void; onRetryAvailability?: () => void; availabilityPending?: boolean }) {
   // Calendar opens on the month of the selected start date (today by default)
   // and browses up to six months out.
   const [todayIso] = useState(todayIsoDate);
@@ -69,9 +71,11 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
   const startIso = cart.dates.start;
   const endIso = cart.dates.end;
 
+  const checked = hasKnownAvailability(cart.vehicle, startIso, endIso);
+  const isVerified = (iso: string) => hasKnownAvailability(cart.vehicle, iso, iso);
   const isBlocked = (iso: string) =>
-    iso < todayIso || (cart.vehicle.unavailableRanges ?? []).some((range) => range.start <= iso && iso <= range.end);
-  const hasBlockedDays = (cart.vehicle.unavailableRanges ?? []).length > 0;
+    iso < todayIso || (isVerified(iso) && (cart.vehicle.unavailableRanges ?? []).some((range) => range.start <= iso && iso <= range.end));
+  const hasBlockedDays = checked && (cart.vehicle.unavailableRanges ?? []).length > 0;
 
   const rangeCrossesBlocked = (fromIso: string, toIso: string) => {
     for (let iso = fromIso; iso <= toIso; iso = addDays(iso, 1)) if (isBlocked(iso)) return true;
@@ -79,7 +83,7 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
   };
   // Belt and braces for a seeded selection (MP-10): whatever wrote cart.dates,
   // Continue is only offered for a range the calendar itself would allow.
-  const canContinue = cart.totals.days >= cart.vehicle.minRentalDays && !rangeCrossesBlocked(startIso, endIso);
+  const canContinue = !availabilityPending && rangeIsBookable(cart.vehicle, startIso, endIso, localTodayIso());
 
   // Explicit two-tap selection. `awaitingEnd` tracks the phase directly rather
   // than inferring it from totals — the old inference (days >= min) meant the
@@ -298,12 +302,13 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
               // with capture off it is disabled like before (MP-14).
               disabled={iso < todayIso || (blocked && !captureOn)}
               data-taken={blocked && iso >= todayIso ? '' : undefined}
+              data-unverified={!isVerified(iso) && iso >= todayIso ? '' : undefined}
               // MP-11: hover fill and keyboard ring are drawn on the same 34px
               // disc the selected/today states use (a `before:` layer under
               // the number), so the grid never mixes two circle sizes.
               className="relative aspect-square text-muted outline-none transition-colors before:pointer-events-none before:absolute before:left-1/2 before:top-1/2 before:h-[34px] before:w-[34px] before:-translate-x-1/2 before:-translate-y-1/2 before:rounded-full enabled:hover:text-ink enabled:hover:before:bg-surface focus-visible:before:ring-2 focus-visible:before:ring-gold/60 disabled:cursor-not-allowed disabled:text-dim data-[taken]:text-dim data-[taken]:hover:text-dim2 before:transition-transform before:duration-100 enabled:active:before:bg-surface active:before:scale-[0.96] motion-reduce:active:before:scale-100"
               aria-pressed={inRange}
-              aria-label={`${longDate(iso)}${blocked ? (iso >= todayIso && captureOn ? ', taken — get an alert' : ', unavailable') : ''}`}
+              aria-label={`${longDate(iso)}${blocked ? (iso >= todayIso && captureOn ? ', taken — get an alert' : ', unavailable') : !isVerified(iso) ? ', availability not checked' : ''}`}
               aria-current={iso === todayIso ? 'date' : undefined}
             >
               {iso === todayIso && !inRange && !blocked && <span className="absolute left-1/2 top-1/2 h-[34px] w-[34px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-line2" aria-hidden />}
@@ -325,6 +330,10 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
     <>
       <ScreenShell>
         <StepHeader eyebrow={stepEyebrow(1)} title="When are you driving?" sub={`${cart.vehicle.minRentalDays}-day minimum · from ${formatMoney(cart.vehicle.dailyRateCents)}/day`} />
+        {(!checked || availabilityPending) && <div role="status" aria-live="polite" className="mt-4 rounded-xl border border-line bg-surface p-4 text-body-sm">
+          <p>{availabilityPending ? 'Checking availability…' : 'Availability has not been confirmed for these dates. Check before continuing.'}</p>
+          {onRetryAvailability && <button type="button" className="mt-2 underline" disabled={availabilityPending} onClick={onRetryAvailability}>Check availability</button>}
+        </div>}
         <div className="mt-4 flex items-center justify-between px-1">
           <button type="button" onClick={() => page(-1)} disabled={!canGoPrev} className="grid h-8 w-8 place-items-center rounded-lg text-muted transition hover:bg-surface hover:text-ink disabled:opacity-30 duration-100 active:scale-[0.96] motion-reduce:active:scale-100" aria-label="Previous month"><ChevronLeft size={16} /></button>
           <span className="text-body font-medium tracking-[-0.005em]">{monthLabel(visibleMonth)}</span>
@@ -367,7 +376,7 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
       </ScreenShell>
       <Sticky>
         <RunningTotalCard label={`${dateLabel} · ${cart.totals.days} ${cart.totals.days === 1 ? 'day' : 'days'}`} detail={`${formatMoney(cart.vehicle.dailyRateCents)}/day × ${cart.totals.days}`} amountCents={cart.totals.rentalSubtotalCents} />
-        <PrimaryButton onClick={next} disabled={!canContinue}>Continue</PrimaryButton>
+        <PrimaryButton onClick={() => { if (!availabilityPending && rangeIsBookable(cart.vehicle, startIso, endIso, localTodayIso())) next(); }} disabled={!canContinue}>Continue</PrimaryButton>
       </Sticky>
     </>
   );

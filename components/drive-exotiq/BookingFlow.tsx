@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { BookingChrome, Money } from './BookingChrome';
-import { createBookingCart, createRenterBooking } from '@/domain/booking/service';
+import { createBookingCart, createRenterBooking, getBookingStartContext } from '@/domain/booking/service';
 import { getDataMode } from '@/domain/booking/config';
 import { track } from '@/components/analytics/posthog';
 import { loadQuote, quoteKey, quotingEnabled, QuoteUnavailableError, type QuoteState } from '@/domain/booking/quote';
@@ -41,7 +41,7 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
           end: daysBetween(initialDates.start, initialDates.end) >= vehicle.minRentalDays ? initialDates.end : addDays(initialDates.start, vehicle.minRentalDays),
         }
       : undefined;
-    const seeded = stretched && rangeIsBookable(vehicle, stretched.start, stretched.end, localTodayIso()) ? stretched : base.dates;
+    const seeded = stretched && rangeIsBookable(base.vehicle, stretched.start, stretched.end, localTodayIso()) ? stretched : base.dates;
     const base5 = recomputeBookingCart({ ...base, dates: seeded, protection: defaultProtection(), extras: [] });
     if (getDataMode() !== 'supabase') return base5;
     // Live mode additionally starts the driver form empty — the base cart
@@ -57,7 +57,6 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
     setAnnouncement('');
   }, [step]);
   const [reserveError, setReserveError] = useState<string | undefined>();
-  const next = () => setStep((value) => Math.min(value + 1, FLOW_STEPS.length));
   // Back freezes with the step while a request is in flight (AC21 driver ruling).
   const back = step > 1 && !reserving ? () => setStep((value) => value - 1) : undefined;
 
@@ -72,17 +71,65 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
   // when that key still matches the cart: showing a stale total for a changed
   // selection is the worst failure here, because it looks correct.
   const [quoteState, setQuoteState] = useState<QuoteState>({ status: 'idle' });
-  const currentKey = quoteKey(cart);
-  const quote = quoteState.status === 'ready' && quoteState.key === currentKey ? quoteState.quote : null;
+  const sourceVehicle = useRef(vehicle);
+  // A changed upstream authority takes effect during this render, before effects.
+  const effectiveCart = sourceVehicle.current === vehicle ? cart : { ...cart, vehicle: createBookingCart({ operator, vehicle }).vehicle };
+  useEffect(() => {
+    if (sourceVehicle.current === vehicle) return;
+    sourceVehicle.current = vehicle;
+    setCart((previous) => recomputeBookingCart({ ...previous, vehicle: createBookingCart({ operator, vehicle }).vehicle }));
+    setQuoteState({ status: 'idle' });
+  }, [vehicle, operator]);
+  const [availabilityPending, setAvailabilityPending] = useState(false);
+  const [, tick] = useState(0);
+  useEffect(() => { const timer = setInterval(() => tick((v) => v + 1), 30_000); return () => clearInterval(timer); }, []);
+  const currentKey = `${quoteKey(effectiveCart)}:${JSON.stringify([effectiveCart.vehicle.availabilityAuthority, effectiveCart.vehicle.unavailableRanges])}`;
+  const authorityBlocking = availabilityPending || !rangeIsBookable(effectiveCart.vehicle, effectiveCart.dates.start, effectiveCart.dates.end, localTodayIso());
+  const quote = !authorityBlocking && quoteState.status === 'ready' && quoteState.key === currentKey ? quoteState.quote : null;
+  const latest = useRef({ cart: effectiveCart, key: currentKey, quote, pending: availabilityPending });
+  latest.current = { cart: effectiveCart, key: currentKey, quote, pending: availabilityPending };
+  const requestInFlight = useRef(false);
+  const retrySequence = useRef(0);
+  const canProceed = () => !latest.current.pending && rangeIsBookable(latest.current.cart.vehicle, latest.current.cart.dates.start, latest.current.cart.dates.end, localTodayIso());
+  const next = () => {
+    if (!canProceed() || requestInFlight.current) { setAnnouncement('Confirm availability before continuing.'); return; }
+    setStep((value) => Math.min(value + 1, FLOW_STEPS.length));
+  };
+  const retryAvailability = async () => {
+    if (latest.current.pending || requestInFlight.current) return;
+    const selected = latest.current.cart;
+    const selection = JSON.stringify([selected.operator.slug, selected.vehicle.slug, selected.dates]);
+    const sequence = ++retrySequence.current;
+    latest.current.pending = true;
+    latest.current.quote = null;
+    setAvailabilityPending(true);
+    setQuoteState({ status: 'idle' });
+    const unknownVehicle = { ...selected.vehicle, availabilityAuthority: { status: 'UNKNOWN' as const, reason: 'not_checked' as const, retryAfterSeconds: 0 }, unavailableRanges: undefined };
+    setCart((previous) => ({ ...previous, vehicle: unknownVehicle }));
+    try {
+      const context = await getBookingStartContext(selected.operator.slug, selected.vehicle.slug, selected.dates);
+      const current = latest.current.cart;
+      if (sequence !== retrySequence.current || selection !== JSON.stringify([current.operator.slug, current.vehicle.slug, current.dates])) return;
+      if (context?.team.slug === selected.operator.slug && context.vehicle.slug === selected.vehicle.slug) {
+        setCart((previous) => recomputeBookingCart({ ...previous, vehicle: { ...context.vehicle, availabilityAuthority: context.availabilityAuthority } }));
+      }
+    } catch {
+      setAnnouncement('Availability could not be confirmed. Please check again.');
+    } finally {
+      if (sequence === retrySequence.current) setAvailabilityPending(false);
+    }
+  };
 
   const refreshQuote = useCallback(async () => {
-    if (!quotingEnabled()) return;
-    const key = quoteKey(cart);
+    if (!quotingEnabled() || !canProceed() || requestInFlight.current) return;
+    const { key, cart: selected } = latest.current;
     setQuoteState({ status: 'loading', key });
     try {
-      const fresh = await loadQuote(cart);
+      const fresh = await loadQuote(selected);
+      if (latest.current.key !== key || !canProceed()) return;
       setQuoteState({ status: 'ready', key, quote: fresh });
     } catch (error) {
+      if (latest.current.key !== key || !canProceed()) return;
       setQuoteState({
         status: 'error',
         key,
@@ -91,7 +138,7 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
           : "We couldn't confirm final pricing. Please try again.",
       });
     }
-  }, [cart]);
+  }, []);
 
   // Quote once the renter reaches Review & Request, the one step that holds
   // the request button, and re-quote whenever the priced selection changes
@@ -101,15 +148,17 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
   // date tap spends the anonymous rate limit. A failed quote for the current
   // selection waits for the renter's retry.
   useEffect(() => {
-    if (!shouldRequestQuote({ step, enabled: quotingEnabled(), state: quoteState, currentKey })) return;
+    if (authorityBlocking || !shouldRequestQuote({ step, enabled: quotingEnabled(), state: quoteState, currentKey })) return;
     void refreshQuote();
-  }, [step, currentKey, quoteState, refreshQuote]);
+  }, [step, currentKey, quoteState, refreshQuote, authorityBlocking]);
 
   // In live mode the renter must never commit against unconfirmed numbers.
   const quoteBlocking = quotingEnabled() && !quote;
 
   const reserve = async () => {
-    if (reserving) return;
+    if (requestInFlight.current || !canProceed() || (quotingEnabled() && !latest.current.quote)) return;
+    requestInFlight.current = true;
+    const selected = latest.current.cart;
     setReserving(true);
     setReserveError(undefined);
     // No driver email is stashed for the confirmation page: identity
@@ -118,18 +167,19 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
     try {
       // Mock mode: fixed demo ref. Supabase mode: rent-create-booking with a
       // server-side re-quote and transactional double-booking guard.
-      const result = await createRenterBooking(cart);
+      const result = await createRenterBooking(selected);
       const query = result.confirmationToken ? `?t=${encodeURIComponent(result.confirmationToken)}` : '';
       // The ref only — the confirmation token is the renter's credential.
       track('booking_created', { booking: result.bookingRef, team: operator.slug, vehicle: vehicle.slug });
       // MP-14: the renter store learns the address + consent now; keepalive, never awaited.
-      captureBooking(cart, result.bookingRef, result.confirmationToken);
+      captureBooking(selected, result.bookingRef, result.confirmationToken);
       // A new document unloads public-page advertising scripts before the
       // credential-bearing confirmation URL becomes the current location.
       window.location.assign(`/booking/${encodeURIComponent(result.bookingRef)}${query}`);
     } catch (error) {
       setReserveError(error instanceof Error ? error.message : 'Something went wrong — please try again.');
       setReserving(false);
+      requestInFlight.current = false;
     }
   };
 
@@ -156,11 +206,14 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
 
   return (
     <BookingChrome step={step} onBack={back} closeHref={`/${cart.operator.slug}`} rail={rail}>
-      {step === 1 && <DatesStep cart={cart} setCart={setCart} next={next} />}
-      {step === 2 && <DriverStep cart={cart} setCart={setCart} next={next} announce={setAnnouncement} />}
+      {step === 1 && <DatesStep cart={effectiveCart} setCart={setCart} next={next} onRetryAvailability={retryAvailability} availabilityPending={availabilityPending} />}
+      {step === 2 && <>
+        {authorityBlocking && <div role="status" className="rounded-xl border border-line p-4"><p>Confirm availability before continuing.</p><button type="button" className="underline" onClick={retryAvailability} disabled={availabilityPending}>{availabilityPending ? 'Checking availability…' : 'Check availability'}</button></div>}
+        <DriverStep cart={effectiveCart} setCart={setCart} next={next} announce={setAnnouncement} />
+      </>}
       {step === 3 && (
         <ReviewStep
-          cart={cart}
+          cart={effectiveCart}
           goTo={setStep}
           onRequest={reserve}
           requesting={reserving}
@@ -170,6 +223,9 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
           quoteError={quoteState.status === 'error' && quoteState.key === currentKey ? quoteState.message : undefined}
           onRetryQuote={refreshQuote}
           blocked={quoteBlocking}
+          authorityBlocking={authorityBlocking}
+          onRetryAvailability={retryAvailability}
+          availabilityPending={availabilityPending}
           // T-12: premium stays the default; the renter may decline. quoteKey
           // includes the tier, so this recompute invalidates the current quote
           // and the blocked state holds the renter until fresh numbers arrive —
