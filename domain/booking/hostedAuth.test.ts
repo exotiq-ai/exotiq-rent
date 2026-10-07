@@ -2,7 +2,7 @@ import {describe,it,expect} from 'vitest';
 import {generateKeyPair,SignJWT} from 'jose';
 import {createHostedAuth,sealCookie,openCookie} from './hostedAuth.server';
 const key=Buffer.alloc(32,4).toString('base64url');
-const cfg={issuer:'https://identity.example.invalid',authorizationEndpoint:'https://identity.example.invalid/authorize',tokenEndpoint:'https://identity.example.invalid/token',jwksUri:'https://identity.example.invalid/jwks',allowedHosts:['identity.example.invalid'],resource:'https://api.example.invalid/external-booking-api',frontendOrigin:'https://rent.example.invalid',clientId:'hosted-customer',clientSecret:'synthetic-test-only',cookieKey:key,bridgeKey:key};
+const cfg={issuer:'https://identity.example.invalid',authorizationEndpoint:'https://identity.example.invalid/authorize',tokenEndpoint:'https://identity.example.invalid/token',jwksUri:'https://identity.example.invalid/jwks',allowedHosts:['identity.example.invalid'],resource:'https://api.example.invalid/external-booking-api',frontendOrigin:'https://rent.example.invalid',clientId:'hosted-customer',clientSecret:'synthetic-test-only',cookieKey:key,bridgeKey:Buffer.alloc(32,5).toString('base64url')};
 const now=new Date('2030-01-01T00:00:00Z');
 const returnTo='/agent/consent/10000000-0000-4000-8000-000000000008';
 describe('hosted customer OIDC bridge',()=>{
@@ -15,6 +15,7 @@ describe('hosted customer OIDC bridge',()=>{
  it('refuses provider URL tricks and missing production configuration',()=>{
   expect(()=>createHostedAuth({...cfg,tokenEndpoint:'http://127.0.0.1/token'})).toThrow();expect(()=>createHostedAuth({...cfg,clientSecret:''})).toThrow();expect(()=>createHostedAuth(null)).toThrow();
  });
+ it('keeps the backend proof signing key separate from browser session encryption',()=>{expect(()=>createHostedAuth({...cfg,bridgeKey:cfg.cookieKey})).toThrow();});
  it('encrypts cookie contents, denies tampering/wrongpurpose/expiry and leaks no token',async()=>{
   const cookie=await sealCookie(key,'session',{accessToken:'synthetic-access'},now.getTime()+1000);expect(cookie).not.toContain('synthetic-access');expect(await openCookie(key,'session',cookie,now.getTime())).toEqual({accessToken:'synthetic-access'});
   await expect(openCookie(key,'transaction',cookie,now.getTime())).rejects.toThrow();await expect(openCookie(key,'session',cookie,now.getTime()+1001)).rejects.toThrow();await expect(openCookie(key,'session',cookie.slice(0,-3)+'bad',now.getTime())).rejects.toThrow();
