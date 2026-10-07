@@ -11,7 +11,7 @@ let root: Root, host: HTMLDivElement, session: any, data: any, posted: { path: s
 const json = (value: unknown, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'content-type': 'application/json' } });
 function props(element: Element): any { return (element as any)[Object.keys(element).find((key) => key.startsWith('__reactProps$'))!]; }
 const button = (text: string) => Array.from(host.querySelectorAll('button')).find((b) => b.textContent === text)!;
-const mount = (page: any, params: any) => act(async () => root.render(createElement(page, { params: Promise.resolve(params) })));
+const mount = (page: any, params: any, searchParams: any={}) => act(async () => root.render(createElement(page, { params: Promise.resolve(params),searchParams:Promise.resolve(searchParams) })));
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(now); vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true); posted = [];
   session = { authenticated: true, csrf: 'synthetic-csrf', expires_at: '2030-01-01T12:10:00Z', profile: { email: 'verified@example.invalid', emailVerified: true, name: 'Synthetic Customer' } };
@@ -30,6 +30,18 @@ beforeEach(() => {
 });
 afterEach(async () => { await act(async () => root.unmount()); host.remove(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 describe('actual hosted grant recovery and customer account linking', () => {
+  it('shows a generic provider return with no onboarding mutation or inferred success',async()=>{
+    await mount(AccountPage,{operatorId},{booking_ref:'SYNTHETIC-REQUEST',action:'checkout'});
+    expect(host.textContent).toContain('Returned from hosted payment');
+    expect(host.textContent).toContain('does not confirm payment or identity verification');
+    expect(host.querySelector('input')).toBeNull();expect(button('Link my customer account')).toBeUndefined();expect(posted).toEqual([]);
+  });
+  it('preserves the safe provider return through fresh sign-in and rejects query pollution',async()=>{
+    session.authenticated=false;await mount(AccountPage,{operatorId},{booking_ref:'SYNTHETIC-REQUEST',action:'identity'});
+    expect(decodeURIComponent(host.querySelector('a')!.getAttribute('href')!)).toContain(`/agent/account/${operatorId}?booking_ref=SYNTHETIC-REQUEST&action=identity`);
+    await mount(AccountPage,{operatorId},{booking_ref:'SYNTHETIC-REQUEST',action:'identity',access_token:'SECRET'});
+    expect(host.querySelector('a')).toBeNull();expect(host.querySelector('input')).toBeNull();expect(host.textContent).not.toContain('SECRET');expect(posted).toEqual([]);
+  });
   it.each([25, 71])('after %ih delegates only existing status/payment scopes with unchanged request and deadlines', async (hours) => {
     // Long-lived booking hold is distinct from the fresh ten-minute customer
     // browser session. No refresh token or old session is trusted by the UI.
