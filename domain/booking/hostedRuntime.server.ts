@@ -22,7 +22,10 @@ export async function readHostedBody(request:Request):Promise<Record<string,unkn
  // A single budget covers the entire inbound stream, even when a caller keeps
  // trickling bytes. Client cancellation must not wait for the stream producer.
  const deadline=new Promise<never>((_,reject)=>{abort=()=>reject(new Error('Invalid customer request'));timer=setTimeout(abort,5000);request.signal.addEventListener('abort',abort,{once:true});if(request.signal.aborted)abort();});
- try{for(;;){const part=await Promise.race([reader.read(),deadline]);if(part.done)break;if(part.value){length+=part.value.byteLength;if(length>65536)throw new Error('Invalid customer request');chunks.push(part.value);}}const body=JSON.parse(Buffer.concat(chunks).toString('utf8'));if(!body||typeof body!=='object'||Array.isArray(body))throw new Error('Invalid customer request');return body;}
+ // An explicit abort check can throw before the first race attaches handlers;
+ // observe only this budget rejection to prevent an unhandled promise.
+ void deadline.catch(()=>{});
+ try{for(;;){if(request.signal.aborted)throw new Error('Invalid customer request');const part=await Promise.race([reader.read(),deadline]);if(request.signal.aborted)throw new Error('Invalid customer request');if(part.done)break;if(part.value){length+=part.value.byteLength;if(length>65536)throw new Error('Invalid customer request');chunks.push(part.value);}}if(request.signal.aborted)throw new Error('Invalid customer request');const body=JSON.parse(Buffer.concat(chunks).toString('utf8'));if(!body||typeof body!=='object'||Array.isArray(body))throw new Error('Invalid customer request');return body;}
  catch{throw new Error('Invalid customer request');}
  finally{if(timer)clearTimeout(timer);request.signal.removeEventListener('abort',abort);void reader.cancel().catch(()=>{});reader.releaseLock();}
 }
