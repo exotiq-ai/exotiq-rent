@@ -90,7 +90,9 @@ async function requestBodies(cart: BookingCart, flag: string | undefined, row: R
   }));
   try {
     await loadQuote(cart).catch(() => undefined);
-    await createSupabaseRenterBooking(cart);
+    // Explicit checked fixture evidence: a wire-format test must not encode
+    // an absent availability observation as permission to create a live request.
+    await createSupabaseRenterBooking({ ...cart, vehicle: { ...cart.vehicle, unavailableRanges: [], availabilityAuthority: { status: 'KNOWN', checkedAt: new Date().toISOString(), windowStart: cart.dates.start, windowEnd: cart.dates.end } } });
   } finally { vi.unstubAllGlobals(); }
   return { quote: sent.find((s) => s.url.includes('/rest/v1/rpc/public_vehicle_quote'))?.body, create: sent.find((s) => s.url.includes('/functions/v1/rent-create-booking'))?.body };
 }

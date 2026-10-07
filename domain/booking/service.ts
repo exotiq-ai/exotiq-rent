@@ -6,6 +6,7 @@ import {
   getSupabaseBookingConfirmation,
   getSupabaseTeamStorefront,
   getSupabaseVehicleContext,
+  requireLiveBookingAvailability,
 } from './supabaseService';
 import { createInitialCart, curatedExtras } from './mockData';
 import {
@@ -14,6 +15,7 @@ import {
   getMockPublicTeamStorefront,
   getMockPublicVehicleContext,
   startMockIdentityVerification,
+  mockVehicleAvailability,
 } from './mockService';
 import { getMockFleetBusy, getMockMarketplaceFacets, getMockMarketplaceListings } from './mockMarketplaceService';
 import { getSupabaseFleetBusy, getSupabaseMarketplaceFacets, getSupabaseMarketplaceListings } from './marketplaceService';
@@ -30,6 +32,7 @@ import type {
   PublicVehicleContext,
 } from './publicContracts';
 import type { BookingCart, ExtraSelection, Operator, Vehicle } from './types';
+import { currentAvailabilityAuthority, type AvailabilityWindow } from './types';
 
 // React.cache exists in the server build Next runs this module in; vitest
 // loads the client React build, which lacks it. Identity is a correct
@@ -39,9 +42,8 @@ const perRequest: typeof cache = typeof cache === 'function' ? cache : (fn) => f
 /**
  * Stable Exotiq Rent frontend service facade.
  *
- * Today these methods use local mocks. Future implementation should swap this
- * facade to public-safe Supabase RPCs / edge functions without changing route
- * components or booking-flow UI internals.
+ * Explicit mock and public-safe Supabase branches share DTOs. Availability
+ * observation never substitutes for backend pricing/consent/inventory rules.
  */
 /**
  * Marketplace reads (MP-2). Supabase mode reads the two cross-tenant RPCs
@@ -79,15 +81,22 @@ export const getPublicTeamStorefront = perRequest(
 // request, and the signed-media fetch inside is deliberately uncacheable
 // (see fetchSignedVehicleMedia) — dedupe within the request so the vehicle
 // route costs one context load, not two.
-export const getPublicVehicleContext = perRequest(
-  async (teamSlug: string, vehicleSlug: string): Promise<PublicVehicleContext | null> => {
-    if (getDataMode() === 'supabase') return getSupabaseVehicleContext(teamSlug, vehicleSlug);
-    return getMockPublicVehicleContext(teamSlug, vehicleSlug);
+const cachedPublicVehicleContext = perRequest(
+  async (teamSlug: string, vehicleSlug: string, window?: AvailabilityWindow): Promise<PublicVehicleContext | null> => {
+    if (getDataMode() === 'supabase') return getSupabaseVehicleContext(teamSlug, vehicleSlug,window);
+    return getMockPublicVehicleContext(teamSlug, vehicleSlug,window);
   },
 );
 
-export async function getBookingStartContext(teamSlug: string, vehicleSlug: string): Promise<PublicVehicleContext | null> {
-  return getPublicVehicleContext(teamSlug, vehicleSlug);
+export async function getPublicVehicleContext(teamSlug: string, vehicleSlug: string, window?: AvailabilityWindow): Promise<PublicVehicleContext | null> {
+  const context = await cachedPublicVehicleContext(teamSlug,vehicleSlug,window);
+  if (!context) return null;
+  const availabilityAuthority = currentAvailabilityAuthority(context.availabilityAuthority);
+  return { ...context, availabilityAuthority, vehicle: { ...context.vehicle, availabilityAuthority } };
+}
+
+export async function getBookingStartContext(teamSlug: string, vehicleSlug: string, window?: AvailabilityWindow): Promise<PublicVehicleContext | null> {
+  return getPublicVehicleContext(teamSlug, vehicleSlug,window);
 }
 
 export async function getBookingConfirmation(bookingRef: string, accessToken?: string): Promise<BookingLookupResult> {
@@ -101,12 +110,17 @@ export async function getBookingConfirmation(bookingRef: string, accessToken?: s
  * confirmation ref.
  */
 export async function createRenterBooking(cart: BookingCart): Promise<CreateBookingResult> {
-  if (getDataMode() === 'supabase') return createSupabaseRenterBooking(cart);
+  if (getDataMode() === 'supabase') { requireLiveBookingAvailability(cart); return createSupabaseRenterBooking(cart); }
   return { bookingRef: 'BK-01001', status: 'pending_documents' };
 }
 
 export function createBookingCart(overrides: { operator?: Operator; vehicle?: Vehicle } = {}): BookingCart {
-  return createInitialCart(overrides);
+  const cart = createInitialCart(overrides);
+  if (getDataMode() === 'mock') {
+    if (currentAvailabilityAuthority(cart.vehicle.availabilityAuthority).status === 'KNOWN' && Array.isArray(cart.vehicle.unavailableRanges)) return cart;
+    return { ...cart, vehicle: mockVehicleAvailability(cart.vehicle) };
+  }
+  return { ...cart, vehicle: { ...cart.vehicle, availabilityAuthority: currentAvailabilityAuthority(cart.vehicle.availabilityAuthority) } };
 }
 
 export function getCuratedExtras(): ExtraSelection[] {
