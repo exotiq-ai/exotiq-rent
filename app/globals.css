@@ -246,6 +246,21 @@
   .animate-step-in {
     animation: stepIn 280ms ease-out;
   }
+
+  /* The one glass recipe's Safari 17 twin (glassBarClassName in components/browse/tokens.ts).
+     Autoprefixer drops the prefixed property the utility generates; this hand-written one is
+     kept, and its blur must equal the recipe's. */
+  .glass-bar-twin {
+    /* autoprefixer: ignore next */
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .glass-bar-twin {
+      /* autoprefixer: ignore next */
+      -webkit-backdrop-filter: none;
+    }
+  }
   /* polish:end */
 
   /* Confirmation celebration — one champagne-gold sheen across the hero,
