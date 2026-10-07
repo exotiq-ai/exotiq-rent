@@ -1,8 +1,9 @@
-import type { Operator, Vehicle } from './types';
+import type { AvailabilityAuthority, Operator, Vehicle } from './types';
 
 export type PublicVehicleContext = {
   team: Operator;
   vehicle: Vehicle;
+  availabilityAuthority: AvailabilityAuthority;
 };
 
 export type PublicTeamStorefront = {

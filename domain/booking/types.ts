@@ -46,6 +46,43 @@ export type UnavailableDateRange = {
   end: string;
 };
 
+/** KNOWN means the checked ranges are known, never that selected dates are free
+ * or held. UI metadata is not server authorization; the database remains final.
+ */
+export type AvailabilityAuthority =
+  | { status: 'KNOWN'; checkedAt: string; windowStart: string; windowEnd: string }
+  | { status: 'UNKNOWN'; reason: 'not_checked' | 'upstream_unavailable' | 'invalid_response' | 'outside_checked_window' | 'stale'; retryAfterSeconds: number };
+export type AvailabilityWindow = { start: string; end: string };
+export const AVAILABILITY_MAX_AGE_MS = 300000;
+
+export function validAvailabilityDate(value: unknown): value is string {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const instant = Date.parse(`${value}T00:00:00Z`);
+  return Number.isFinite(instant) && new Date(instant).toISOString().slice(0, 10) === value;
+}
+
+/** Reassess cached evidence at every proceed/write check. Five-minute freshness
+ * matches the existing catalog cycle; window misses require a new context read.
+ */
+export function currentAvailabilityAuthority(authority?: AvailabilityAuthority, now = Date.now()): AvailabilityAuthority {
+  if (!authority || authority.status !== 'KNOWN') return authority?.status === 'UNKNOWN' ? authority : { status: 'UNKNOWN', reason: 'not_checked', retryAfterSeconds: 30 };
+  const checked = Date.parse(authority.checkedAt);
+  if (!Number.isFinite(now) || typeof authority.checkedAt !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(authority.checkedAt) || !Number.isFinite(checked) ||
+      new Date(checked).toISOString().slice(0, 19) !== authority.checkedAt.slice(0, 19) || checked > now ||
+      !validAvailabilityDate(authority.windowStart) || !validAvailabilityDate(authority.windowEnd) || authority.windowEnd < authority.windowStart) {
+    return { status: 'UNKNOWN', reason: 'invalid_response', retryAfterSeconds: 30 };
+  }
+  if (now - checked > AVAILABILITY_MAX_AGE_MS) return { status: 'UNKNOWN', reason: 'stale', retryAfterSeconds: 1 };
+  return authority;
+}
+
+export function hasKnownAvailability(vehicle: Pick<Vehicle, 'availabilityAuthority' | 'unavailableRanges'>, start: string, end: string, now = Date.now()): boolean {
+  const authority = currentAvailabilityAuthority(vehicle.availabilityAuthority, now);
+  return authority.status === 'KNOWN' && validAvailabilityDate(start) && validAvailabilityDate(end) && end > start &&
+    start >= authority.windowStart && end <= authority.windowEnd && Array.isArray(vehicle.unavailableRanges) &&
+    vehicle.unavailableRanges.every((range) => range && validAvailabilityDate(range.start) && validAvailabilityDate(range.end) && range.end >= range.start);
+}
+
 export type Vehicle = {
   id: string;
   slug: string;
@@ -75,6 +112,8 @@ export type Vehicle = {
   photoCount?: number;
   /** Busy ranges the renter cannot select. Mirrors the future get_vehicle_availability RPC shape. */
   unavailableRanges?: UnavailableDateRange[];
+  /** Additive compatibility: absent is UNKNOWN, never inferred from an empty list. */
+  availabilityAuthority?: AvailabilityAuthority;
   /** Not marketplace-visible: excluded from storefronts and unresolvable by slug (mirrors server-side visibility). */
   hidden?: boolean;
 };
