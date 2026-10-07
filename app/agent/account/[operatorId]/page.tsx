@@ -29,7 +29,7 @@ export default function AccountPage({ params: pendingParams }: { params: Promise
     finally { if (current === generation.current) { lock.current = false; setPending(false); } }
   };
   return <main className="mx-auto max-w-2xl p-6 text-ink">
-    <h1 className="text-2xl font-semibold">Link your customer account</h1>
+    <h1 className="text-heading font-semibold">Link your customer account</h1>
     {loading && <p role="status">Checking your secure customer sign-in…</p>}
     {error && <p role="alert" className="mt-4">{error}</p>}
     {!loading && (!session || Date.parse(session.expires_at) <= Date.now()) && ownedUuid(params.operatorId) && <><p className="mt-4">Sign in securely with a fresh verified email to link your account with this operator.</p><a className="mt-3 inline-block underline" href={customerSignInPath('account', params.operatorId)}>Sign in to link account</a></>}

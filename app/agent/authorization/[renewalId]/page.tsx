@@ -31,13 +31,13 @@ export default function RecoveryPage({ params: pendingParams }: { params: Promis
     finally { if (current === generation.current) { lock.current = false; setPending(false); } }
   };
   return <main className="mx-auto max-w-2xl p-6 text-ink">
-    <h1 className="text-2xl font-semibold">Manage agent access to your rental</h1>
+    <h1 className="text-heading font-semibold">Manage agent access to your rental</h1>
     {loading && <p role="status">Loading your secure authorization review…</p>}
     {error && <p role="alert" className="mt-4">{error}</p>}
     {!loading && ownedUuid(params.renewalId) && (!session || (session && Date.parse(session.expires_at) <= Date.now())) && <><p className="mt-4">Sign in again for fresh customer authorization. This does not create another rental request.</p><a className="mt-3 inline-block underline" href={customerSignInPath('authorization', params.renewalId)}>Sign in to manage access</a></>}
     {error && <button type="button" className="mt-3 underline" onClick={() => { latest.current.review = null; setReload((value) => value + 1); }}>Reload authorization review</button>}
     {review && review.renewal_id === params.renewalId && <>
-      <h2 className="mt-6 text-xl">{review.vehicle_name} · {review.operator_name}</h2>
+      <h2 className="mt-6 text-title">{review.vehicle_name} · {review.operator_name}</h2>
       <p>Existing request: {review.ref}</p><p>Status: {review.status}</p><p>Pickup: {review.pickup_at} · Return: {review.return_at}</p><p>Time zone: {review.timezone}</p>
       <p>Inventory hold deadline: {review.hold_expires_at ?? 'No active hold deadline'}</p><p>Payment deadline: {review.payment_due_at ?? 'Payment is not currently due'}</p>
       <p className="mt-3">Agent application: {review.agent_client_id}</p><p>Authorization review expires: {review.expires_at}</p>

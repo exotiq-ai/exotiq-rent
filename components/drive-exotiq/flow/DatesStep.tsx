@@ -332,11 +332,11 @@ export function DatesStep({ cart, setCart, next, onRetryAvailability, availabili
     <>
       <ScreenShell>
         <StepHeader eyebrow={stepEyebrow(1)} title="When are you driving?" sub={`${cart.vehicle.minRentalDays}-day minimum · from ${formatMoney(cart.vehicle.dailyRateCents)}/day`} />
-        {(!checked || availabilityPending) && <div role="status" aria-live="polite" className="mt-4 rounded-xl border border-line bg-surface p-4 text-body-sm">
+        {(!checked || availabilityPending) && <div role="status" aria-live="polite" className="mt-4 text-body-sm text-muted">
           <p>{availabilityPending ? 'Checking availability…' : 'Availability has not been confirmed for these dates. Check before continuing.'}</p>
           {onRetryAvailability && <button type="button" className="mt-2 underline" disabled={availabilityPending} onClick={onRetryAvailability}>Check availability</button>}
         </div>}
-        {checked && !availabilityPending && rangeCrossesBlocked(startIso, endIso) && <div role="status" aria-live="polite" className="mt-4 rounded-xl border border-line bg-surface p-4 text-body-sm">
+        {checked && !availabilityPending && rangeCrossesBlocked(startIso, endIso) && <div role="status" aria-live="polite" className="mt-4 text-body-sm text-muted">
           <p>These dates are unavailable. Choose different dates or check again.</p>
           {onRetryAvailability && <button type="button" className="mt-2 underline" onClick={onRetryAvailability}>Check availability</button>}
         </div>}

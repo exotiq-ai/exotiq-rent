@@ -37,6 +37,12 @@ const CARD_FILE = /^opengraph-image\.(tsx?|jsx?|png|jpe?g|gif)$/;
 export function findBareOpenGraph(files: PageFile[]): string[] {
   return files
     .filter((f) => /\bopenGraph\b/.test(stripComments(f.source)))
+    // Customer authorization deliberately suppresses previews. This exception
+    // requires all three privacy controls and applies to this exact layout only.
+    .filter((f) => !(f.path === 'app/agent/layout.tsx' &&
+      /referrer:\s*['"]no-referrer['"]/.test(stripComments(f.source)) &&
+      /robots:\s*\{\s*index:\s*false,\s*follow:\s*false/.test(stripComments(f.source)) &&
+      /openGraph:\s*null/.test(stripComments(f.source)) && /twitter:\s*null/.test(stripComments(f.source))))
     .filter((f) => !f.siblings.some((s) => CARD_FILE.test(s)) && !BUILDERS.some((b) => stripComments(f.source).includes(b)))
     .map((f) => f.path);
 }

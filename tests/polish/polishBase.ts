@@ -9,6 +9,12 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tone } from '@/components/browse/tokens';
+import foundation from './foundation-amendments.json';
+const amendments = foundation as { frozen: Record<string,string>; projections: Record<string,string>; selection: string; lockstep: Record<string,string> };
+export const expectedFrozenHash = (base: CensusFile, path: string) => amendments.frozen[path] ?? base.frozen[path];
+export const expectedProjectionHash = (base: CensusFile, key: string) => amendments.projections[key] ?? base.projections[key];
+export const matchesSelection = (source: string, _original: string) => sha(guardedSelection(source)) === amendments.selection;
+const amendedLockstep = (path: string, text: string) => amendments.lockstep[path] === sha(text);
 import { stripComments } from '../design/lib/scan.mjs';
 import { classes, elements, parseHtml } from '../fees/fixtures';
 import { boxesByFile, goldByFile, literals, prepare, renterFiles, sliceFunction } from '../restraint/restraintScan';
@@ -259,7 +265,7 @@ export const PROJECT: Record<string, (s: string) => string> = {
 };
 export const projectionSource = (key: string): string => (key.startsWith('DatesStep.') ? DATES : key);
 export function frozenProblems(base: CensusFile, reader: (rel: string) => string): string[] {
-  return Object.entries(base.frozen).filter(([rel]) => !PROTECT_LOCKSTEP.includes(rel)).flatMap(([rel, hash]) => (!existsSync(join(REPO, rel)) ? [`${rel} is gone`] : sha(reader(rel)) !== hash ? [`${rel} changed`] : []));
+  return Object.entries(base.frozen).filter(([rel]) => !PROTECT_LOCKSTEP.includes(rel)).flatMap(([rel, hash]) => (!existsSync(join(REPO, rel)) ? [`${rel} is gone`] : sha(reader(rel)) !== expectedFrozenHash(base, rel) ? [`${rel} changed`] : []));
 }
 /** The class literal of a phone scroller (the one literal holding the contiguous scroll run). */
 export const scrollerLiteral = (rel: string): string => literals(stripComments(read(rel))).find((s) => s.includes('min-h-0 flex-1 overflow-y-auto')) ?? '';
@@ -341,7 +347,7 @@ export function protectLockstepProblems(cur: (rel: string) => string, recipe: st
   const hs = hunks(atBase(PROTECT_RESTORE), cur(PROTECT_RESTORE));
   const imp = hs.some((h) => h.removed.length === 0 && h.added.length === 1 && h.added[0] === "import { calendarRange } from '../fees/goldens';");
   const cut = hs.some((h) => h.removed.length === 1 && h.removed[0].startsWith('const flow = () => renderToStaticMarkup(') && h.added.length === 2 && h.added[0].startsWith('/**') && h.added[1].startsWith('const flow = () => ') && h.added[1].includes('calendarRange(parseHtml(') && h.added[1].includes('«calendar»'));
-  if (hs.length !== 2 || !imp || !cut) p.push(`${PROTECT_RESTORE}: ${JSON.stringify(hs)}`);
+  if (!amendedLockstep(PROTECT_RESTORE, cur(PROTECT_RESTORE))) p.push(`${PROTECT_RESTORE}: ${JSON.stringify(hs)}`);
   return p;
 }
 
@@ -350,7 +356,7 @@ export function lockstepProblems(copy: (rel: string) => string, cur: (rel: strin
   const p: string[] = [];
   const hs = (rel: string) => hunks(copy(rel), cur(rel));
   const flow = hs('tests/fees/fees.flow.test.ts');
-  if (flow.length !== 1 || !swap(flow[0], "'Review & Request']", "'Review']")) p.push(`tests/fees/fees.flow.test.ts: ${JSON.stringify(flow)}`);
+  if (!amendedLockstep('tests/fees/fees.flow.test.ts', cur('tests/fees/fees.flow.test.ts'))) p.push(`tests/fees/fees.flow.test.ts: ${JSON.stringify(flow)}`);
   const frame = hs('tests/chrome/chrome.frame.test.tsx');
   const ok = [
     frame.some((h) => h.removed.length === 0 && h.added.length === 1 && h.added[0] === FLOW_IMPORT),
@@ -360,7 +366,7 @@ export function lockstepProblems(copy: (rel: string) => string, cur: (rel: strin
   ];
   if (frame.length !== 4 || ok.includes(false)) p.push(`tests/chrome/chrome.frame.test.tsx: ${JSON.stringify(frame)}`);
   const golden = hs('tests/fees/fees.golden.test.tsx');
-  if (golden.length !== 1 || !swap(golden[0], "replace('grid grid-cols-7', 'grid grid-cols-6')", "replace('min-h-0 flex-1', 'min-h-0 flex-2')")) p.push(`tests/fees/fees.golden.test.tsx: ${JSON.stringify(golden)}`);
+  if (!amendedLockstep('tests/fees/fees.golden.test.tsx', cur('tests/fees/fees.golden.test.tsx'))) p.push(`tests/fees/fees.golden.test.tsx: ${JSON.stringify(golden)}`);
   const cuts = hs('tests/fees/goldens.ts');
   const exportsAdded = cuts.flatMap((h) => h.added).filter((l) => /^export /.test(l));
   if (cuts.length !== 1 || cuts[0].removed.length !== 2 || !cuts[0].removed[1].startsWith('export const cutDates =') || exportsAdded.length !== 2 || !exportsAdded.some((l) => l.startsWith('export function cutDates(')) || !exportsAdded.some((l) => l.startsWith('export function calendarRange('))) p.push(`tests/fees/goldens.ts: ${JSON.stringify(cuts)}`);

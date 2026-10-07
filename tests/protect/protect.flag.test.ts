@@ -99,8 +99,12 @@ const CONF = 'components/drive-exotiq/ConfirmationScreen.tsx';
 const PAY = 'components/drive-exotiq/PaymentCard.tsx';
 const FOLD = 'components/drive-exotiq/feeGroups.ts';
 const REVIEW = 'components/drive-exotiq/flow/ReviewStep.tsx';
+const CONSENT = 'app/agent/consent/[quoteId]/page.tsx';
 /** Every Protect literal left in renter source, with the guard that keeps it off the page while the flag is off. */
 const ALLOW: { file: string; text: string; guard: string }[] = [
+  // Exact server-authoritative consent disclosure is required even with the
+  // storefront upsell disabled. Mounted consent tests verify the quoted price.
+  { file: CONSENT, text: 'per day. Protection:', guard: 'validated review for this quote' },
   { file: SF, text: 'A concierge-approved fleet with mobile-first booking, verified drivers, transparent rental charges, and optional Exotiq Protect shown separately.', guard: 'protectEnabled()' },
   { file: SF, text: 'Exotiq Protect is shown separately.', guard: 'protectEnabled()' },
   { file: CANCEL, text: 'The 72-hour window has passed: the rental, Trip Fees, and protection are non-refundable. Cancelling releases the dates without a refund.', guard: 'cancelNotice protection = protectEnabled() || protectionCharged' },
@@ -116,9 +120,10 @@ const ALLOW: { file: string; text: string; guard: string }[] = [
   { file: REVIEW, text: 'Premium coverage ·', guard: 'ProtectSwitch' },
   { file: REVIEW, text: 'Exotiq Protect', guard: 'ProtectSwitch' },
 ];
-const PER_FILE: Record<string, number> = { [SF]: 2, [CANCEL]: 1, [CONF]: 1, [PAY]: 1, [FOLD]: 3, [REVIEW]: 6 };
+const PER_FILE: Record<string, number> = { [SF]: 2, [CANCEL]: 1, [CONF]: 1, [PAY]: 1, [FOLD]: 3, [REVIEW]: 6, [CONSENT]: 1 };
 /** The guard each allowlisted literal hides behind, pinned in comment-stripped source. */
 const GUARD_PINS: [string, string][] = [
+  [CONSENT, '{review && review.quote.quote_id === params.quoteId && <>'],
   [REVIEW, 'between={protectEnabled() && onProtect && <ProtectSwitch'],
   [REVIEW, "for Trip fees{protectEnabled() && ' and protection'}."],
   [REVIEW, "{protectEnabled() ? 'Cancellation & coverage' : 'Cancellation policy'}"],

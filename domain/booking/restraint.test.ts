@@ -57,8 +57,8 @@ describe('MP-18 restraint (AC13)', () => {
     expect(dependencyProblems({ ...BASE_DEPS, dependencies: { ...BASE_DEPS.dependencies, sharp: '^0.33' } })).toEqual(['dependencies: sharp added']);
 
     const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as Deps;
-    // Plan 01-13 adds only the pinned DOM test runtime; runtime dependencies
-    // remain fenced. Arbitrary additions/version drift still fail above.
-    expect(dependencyProblems(pkg, { ...BASE_DEPS, devDependencies: { ...BASE_DEPS.devDependencies, jsdom: '26.1.0', '@types/jsdom': '21.1.7' } })).toEqual([]);
+    // Foundation adds pinned JOSE verification and the DOM test runtime.
+    // Arbitrary additions/version drift still fail the pure controls above.
+    expect(dependencyProblems(pkg, { ...BASE_DEPS, dependencies: { ...BASE_DEPS.dependencies, jose: '6.2.3' }, devDependencies: { ...BASE_DEPS.devDependencies, jsdom: '26.1.0', '@types/jsdom': '21.1.7' } })).toEqual([]);
   });
 });

@@ -1,0 +1,34 @@
+{
+  "reason": "Approved API/MCP foundation authority, customer consent, privacy and local browser fixtures; historical recordings remain unchanged.",
+  "frozen": {
+    "components/analytics/policy.ts": "447bbbc2657b6de3657dbed21726ddbece1955ae23bb1413287c928e49f368ea",
+    "components/drive-exotiq/BookingFlow.tsx": "a880a8886e35bd4e371b27ec5d14aa7ef81bf7a06d6bfd84cf65e518a1f45896",
+    "components/drive-exotiq/flow/ReviewStep.tsx": "5c7ec7acc85a4821b6ea62bd275bc0b2f7db34b3699734fc7d4dfdb580146745",
+    "domain/booking/adapters.ts": "c177ff4029504d151229e4b9c153df10f5d3911a8cc095e63d1e79c9a7e951d6",
+    "domain/booking/availability.ts": "a077d2da359fc47fa502488cde4071dc047800d87b443e55654cff913104bfec",
+    "domain/booking/marketplace.test.ts": "cd975ae3831c5fde80f3926f9051d21984b7e239593e6a1251041cdda0b51d78",
+    "domain/booking/mockService.ts": "690eb7e9b53db905d5fc196028b6e99ddeaa777658b6ba1349c373e442a03df6",
+    "domain/booking/publicContracts.ts": "bf407dbbaa916ddcbf2c29b5a1f5139da9bd7ad28a1e06b65188e325eb7f033a",
+    "domain/booking/restraint.test.ts": "41100070f085b0535d67ad17a660044ed404597a4e30ffd5b5c8a359c887f06a",
+    "domain/booking/rpcClient.ts": "9aa735379e628082540f19c420e685bf95a2415b3d8ce47200b579a5f814f793",
+    "domain/booking/service.test.ts": "d3c445d4543676c7a0c14eca1869bcae1329d983832d5c1d220f343571a4477c",
+    "domain/booking/service.ts": "bbccb804e5fd8760dd63929bc3f7d0aed1bfbd92eea71795e2a17288bedcf812",
+    "domain/booking/supabaseService.ts": "c2d4fbbdac4fb6ae53d5a4020c1253cf0688563838d024346b22811eeb898e97",
+    "domain/booking/types.ts": "264caa20ab0dcb660efa30bcaffdbf6891a73d171dc4540c841e0b50cd23d0ca",
+    "domain/booking/unfurl.test.ts": "5642d51d0c995f45c7f9d1cbb2573b148b64df654aca4357f20c5fd3c911cf4c",
+    "package-lock.json": "4112d54dcfe6d522e8a90708abdcda18a530e89e3d5e7fe570ad70c5b8cd6974",
+    "package.json": "7fb7110aee43a91a863fd57837cf7a9aec9f918708efb668a9860e96b2683b15",
+    "tests/protect/protect.flag.test.ts": "f1a2170b0ff0c58a3fe332bd344b21c81a28aa8f6c35c8a3fc8ce9c42d7f6f9a",
+    "tests/protect/protect.restore.test.tsx": "797d9547c0597657eb1a9e8297ff93410c6b70daf39cbc3eede434b5c6de9681",
+    "tests/protect/protect.wire.test.ts": "2fa8bc2a57c862f2b34aba5b7d8be929be4271e459804b95c2c2c871022f8935"
+  },
+  "projections": {
+    "DatesStep.tail": "16fb55cda1e8a74e2de17c1bff1bfc83bc313493c325d60ea675c92c2c26eb2b"
+  },
+  "selection": "83f16c06a4c1f076e840089df451f674332ecfd1e8f36bd8223dd5176ebbc6ff",
+  "lockstep": {
+    "tests/fees/fees.flow.test.ts": "ccf32b8b608ae2ffb6d0c12cbb6142abb96d6a6e7ee54394574dcd335a65e056",
+    "tests/fees/fees.golden.test.tsx": "1ca565a19b339eddaa39393cf9d89a5e75a89e2e794255b8395ef8e3d44ac993",
+    "tests/protect/protect.restore.test.tsx": "797d9547c0597657eb1a9e8297ff93410c6b70daf39cbc3eede434b5c6de9681"
+  }
+}
