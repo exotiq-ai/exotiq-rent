@@ -12,7 +12,7 @@ export default function ConsentPage({ params }: { params: { quoteId: string } })
   const latest = useRef({ review, session, authorized, quoteId: params.quoteId });
   latest.current = { review, session, authorized, quoteId: params.quoteId };
   useEffect(() => {
-    const current = ++generation.current;
+    const epoch = generation; const current = ++epoch.current;
     setLoading(true); setReview(null); setSession(null); setAuthorized(false); setError(''); locked.current = false;
     void (async () => {
       try { if (!ownedUuid(params.quoteId)) throw Error('Invalid customer request.');
@@ -22,7 +22,7 @@ export default function ConsentPage({ params }: { params: { quoteId: string } })
       finally { if (current === generation.current) setLoading(false); }
     })();
     const timer = setInterval(() => tick((value) => value + 1), 1000);
-    return () => { ++generation.current; clearInterval(timer); };
+    return () => { ++epoch.current; clearInterval(timer); };
   }, [params.quoteId, reload]);
   const authorize = async () => {
     if (locked.current || !review || review.quote.quote_id !== params.quoteId || !session || authorized || latest.current.review !== review || latest.current.session !== session || latest.current.quoteId !== params.quoteId || latest.current.authorized) return;

@@ -10,7 +10,7 @@ export default function RecoveryPage({ params }: { params: { renewalId: string }
   const [reload, setReload] = useState(0), [, tick] = useState(0); const lock = useRef(false), generation = useRef(0);
   const latest = useRef({ review, session, id: params.renewalId }); latest.current = { review, session, id: params.renewalId };
   useEffect(() => {
-    const current = ++generation.current; setLoading(true); setSession(null); setReview(null); setError(''); setRevoked(false); setPending(false); lock.current = false;
+    const epoch = generation; const current = ++epoch.current; setLoading(true); setSession(null); setReview(null); setError(''); setRevoked(false); setPending(false); lock.current = false;
     void (async () => { try {
       if (!ownedUuid(params.renewalId)) throw Error('Invalid customer authorization.');
       const signedIn = await readCustomerSession(); if (current !== generation.current) return; setSession(signedIn);
@@ -18,7 +18,7 @@ export default function RecoveryPage({ params }: { params: { renewalId: string }
     } catch { if (current === generation.current) setError('The existing rental authorization could not be confirmed. Sign in again or retry.'); }
     finally { if (current === generation.current) setLoading(false); } })();
     const timer = setInterval(() => tick((value) => value + 1), 1000);
-    return () => { ++generation.current; clearInterval(timer); };
+    return () => { ++epoch.current; clearInterval(timer); };
   }, [params.renewalId, reload]);
   const mutate = async (action: 'renew' | 'revoke') => {
     if (lock.current || !review || review.renewal_id !== params.renewalId || !session || latest.current.review !== review || latest.current.session !== session || latest.current.id !== params.renewalId || revoked) return;

@@ -10,14 +10,14 @@ export default function AccountPage({ params }: { params: { operatorId: string }
   const lock = useRef(false), generation = useRef(0);
   const latest = useRef({ session, name, phone, id: params.operatorId }); latest.current = { session, name, phone, id: params.operatorId };
   useEffect(() => {
-    const current = ++generation.current; setLoading(true); setSession(null); setLinked(false); setError(''); setName(''); setPhone(''); setPending(false); lock.current = false;
+    const epoch = generation; const current = ++epoch.current; setLoading(true); setSession(null); setLinked(false); setError(''); setName(''); setPhone(''); setPending(false); lock.current = false;
     void (async () => { try {
       if (!ownedUuid(params.operatorId)) throw Error('Invalid operator account.');
       const result = await readCustomerSession(); if (current !== generation.current) return; setSession(result); setName(result?.profile.name ?? '');
     } catch { if (current === generation.current) setError('Customer account linking is unavailable.'); }
     finally { if (current === generation.current) setLoading(false); } })();
     const timer = setInterval(() => tick((value) => value + 1), 1000);
-    return () => { ++generation.current; clearInterval(timer); };
+    return () => { ++epoch.current; clearInterval(timer); };
   }, [params.operatorId]);
   const valid = session && session.profile.emailVerified && session.profile.email && Date.parse(session.expires_at) > Date.now() && name.trim().length > 0 && name.trim().length <= 160 && /^\+?[0-9 ()-]{7,30}$/.test(phone);
   const link = async () => {
