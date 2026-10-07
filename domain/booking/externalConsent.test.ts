@@ -7,7 +7,7 @@ import { parseQuoteReview } from './externalContracts';
 const quoteId = '10000000-0000-4000-8000-000000000001';
 const operatorId = '10000000-0000-4000-8000-000000000002';
 const now = new Date('2030-01-01T12:00:00Z');
-const review = () => ({ operator_name: 'Synthetic Miami operator', vehicle_name: 'Synthetic touring car', quote: {
+const review = () => ({ operator_name: 'Synthetic Miami operator', vehicle_name: 'Synthetic touring car', agent_client_id: 'synthetic-agent-client', quote: {
   api_version: 'v1', source_checked_at: now.toISOString(), operator_id: operatorId, vehicle_id: '10000000-0000-4000-8000-000000000003', quote_id: quoteId,
   pickup_at: '2030-01-10T10:00:00-05:00', return_at: '2030-01-12T10:00:00-05:00', timezone: 'America/New_York', principal_scope: { subject: 'synthetic-subject', operator_id: operatorId }, expires_at: '2030-01-01T12:10:00Z', pricing_version: 'price-v1', terms_version: 'terms-v1', terms_hash: 'a'.repeat(64), selected_options: ['decline'],
   terms: { cancellation_policy: 'Synthetic cancellation policy', pickup_address: 'Synthetic pickup address', pickup_instructions: 'Meet the operator at pickup.', mileage_limit: 100, mileage_overage_rate_usd: '2.5', deposit_disclosure: 'Deposit collected separately at pickup.' },
