@@ -1,6 +1,6 @@
 // GENERATED canonical backend schema/validator; do not edit by hand.
 // Source: supabase/functions/_shared/external-booking/contracts.ts
-// Source SHA256: 7511c3b90ad3551f93bd455fef35e3e46a91b78318c764377beb2d0c9de47d1c
+// Source SHA256: 895a3f0664b570eb15ba0022bde15d7fc9bcb2640ebd8ac3605a7bb4f9570ca9
 // Generator: scripts/generate-external-contracts.mjs; server-only section excluded; 0n -> BigInt(0).
 /** Canonical transport-independent v1 schemas. OpenAPI and adapters consume these.
  * JSON Schema 2020-12: https://json-schema.org/draft/2020-12/json-schema-validation
@@ -117,7 +117,7 @@ function validFormat(format: string, value: string): boolean {
   if (format === 'date-time') return parseTimestamp(value) !== null;
   if (format === 'iana-timezone') return validTimezone(value);
   if (format === 'https-url') {
-    try { const url = new URL(value); return url.protocol === 'https:' && !url.username && !url.password && !url.hash && !/[?&](?:t|token|confirmation_token|access_token)=/i.test(url.search); } catch { return false; }
+    try { const url = new URL(value); return url.protocol === 'https:' && !url.username && !url.password && !url.hash && ![...url.searchParams.keys()].some(key=>/^t$/i.test(key)||/(?:token|secret|credential|authorization|receipt|nonce|email|booking_ref)/i.test(key)); } catch { return false; }
   }
   throw new Error(`Unsupported contract format: ${format}`);
 }

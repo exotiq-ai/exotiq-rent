@@ -4,27 +4,31 @@ import { customerSignInPath, readCustomerSession } from '@/domain/booking/extern
 import { ownedUuid, type CustomerSession } from '@/domain/booking/externalContracts';
 import { linkOperatorCustomer } from '@/domain/booking/externalGrantRecovery';
 import {accountProviderReturnPath,parseProviderReturnQuery,type ProviderReturn} from '@/domain/booking/customerProviderReturn';
+import {readCustomerRentalStatus,customerStatusCurrent,customerNextAction,type CustomerRentalStatus} from '@/domain/booking/customerRentalStatus';
 const emptyQuery=Promise.resolve({});
 export default function AccountPage({ params: pendingParams,searchParams=emptyQuery }: { params: Promise<{ operatorId: string }>;searchParams?:Promise<Record<string,string|string[]|undefined>> }) {
   const params = use(pendingParams);
   const query=use(searchParams);let providerReturn:ProviderReturn|null=null,invalidQuery=false;
   try{providerReturn=parseProviderReturnQuery(query);}catch{invalidQuery=true;}
   const returnKey=invalidQuery?'invalid':providerReturn?`${providerReturn.action}:${providerReturn.ref}`:'';
+  const returnRef=providerReturn?.ref??null;
+  const [rental,setRental]=useState<CustomerRentalStatus|null>(null),[reload,setReload]=useState(0);
   const [session, setSession] = useState<CustomerSession | null>(null), [loading, setLoading] = useState(true), [pending, setPending] = useState(false), [linked, setLinked] = useState(false), [error, setError] = useState('');
   const [name, setName] = useState(''), [phone, setPhone] = useState('');
   const [, tick] = useState(0);
   const lock = useRef(false), generation = useRef(0);
-  const latest = useRef({ session, name, phone, id: params.operatorId }); latest.current = { session, name, phone, id: params.operatorId };
+  const latest = useRef({ session, name, phone, id: params.operatorId,returnKey }); latest.current = { session, name, phone, id: params.operatorId,returnKey };
   useEffect(() => {
-    const epoch = generation; const current = ++epoch.current; setLoading(true); setSession(null); setLinked(false); setError(''); setName(''); setPhone(''); setPending(false); lock.current = false;
+    const epoch = generation; const current = ++epoch.current; setLoading(true); setSession(null);setRental(null); setLinked(false); setError(''); setName(''); setPhone(''); setPending(false); lock.current = false;
     void (async () => { try {
       if (!ownedUuid(params.operatorId)||invalidQuery) throw Error('Invalid operator account.');
       const result = await readCustomerSession(); if (current !== generation.current) return; setSession(result); setName(result?.profile.name ?? '');
-    } catch { if (current === generation.current) setError('Customer account linking is unavailable.'); }
+      if(result&&returnRef){const status=await readCustomerRentalStatus(params.operatorId,returnRef);if(current===generation.current&&Date.parse(result.expires_at)>Date.now())setRental(status);}
+    } catch { if (current === generation.current) setError(returnRef?'The current rental status could not be confirmed. Sign in again or retry.':'Customer account linking is unavailable.'); }
     finally { if (current === generation.current) setLoading(false); } })();
     const timer = setInterval(() => tick((value) => value + 1), 1000);
     return () => { ++epoch.current; clearInterval(timer); };
-  }, [params.operatorId,returnKey,invalidQuery]);
+  }, [params.operatorId,returnKey,returnRef,invalidQuery,reload]);
   const valid = session && session.profile.emailVerified && session.profile.email && Date.parse(session.expires_at) > Date.now() && name.trim().length > 0 && name.trim().length <= 160 && /^\+?[0-9 ()-]{7,30}$/.test(phone);
   const link = async () => {
     if (lock.current || linked || !session || latest.current.session !== session || latest.current.id !== params.operatorId || latest.current.name !== name || latest.current.phone !== phone || !valid) return;
@@ -40,7 +44,15 @@ export default function AccountPage({ params: pendingParams,searchParams=emptyQu
     {loading&&<p role="status" className="mt-4">Checking your secure customer sign-in…</p>}
     {error&&<p role="alert" className="mt-4">{error}</p>}
     {!loading&&(!session||Date.parse(session.expires_at)<=Date.now())&&ownedUuid(params.operatorId)&&<a className="mt-4 inline-block underline" href={'/api/agent/auth/start?return_to='+encodeURIComponent(accountProviderReturnPath(params.operatorId,providerReturn))}>Sign in to review your rental request</a>}
-    {!loading&&session&&Date.parse(session.expires_at)>Date.now()&&<><p className="mt-4">Rental reference: {providerReturn.ref}</p><p className="mt-3">Return to your agent to check the current rental request status.</p></>}
+    {!loading&&session&&Date.parse(session.expires_at)>Date.now()&&<>
+      {rental&&rental.ref===providerReturn.ref&&rental.operator_id===params.operatorId&&customerStatusCurrent(rental)?<>
+        <h2 className="mt-6 text-title">{rental.vehicle_name} · {rental.operator_name}</h2><p className="mt-3">Rental reference: {rental.ref}</p>
+        <p>Current status: {rental.status}</p><p className="mt-3">{customerNextAction[rental.next_action]}</p>
+        <p>Inventory hold deadline: {rental.hold_expires_at??'No active hold deadline'}</p><p>Payment deadline: {rental.payment_due_at??'Payment is not currently due'}</p>
+        <p className="mt-3 text-body-sm">Status checked: <time dateTime={rental.source_checked_at}>{rental.source_checked_at}</time></p>
+      </>:!error&&<p role="status" className="mt-4">The current status needs refreshing.</p>}
+      <button type="button" className="mt-4 underline" onClick={()=>{if(latest.current.id!==params.operatorId||latest.current.returnKey!==returnKey)return;setRental(null);setReload(value=>value+1);}}>Refresh current status</button>
+    </>}
   </main>;
   return <main className="mx-auto max-w-2xl p-6 text-ink">
     <h1 className="text-heading font-semibold">Link your customer account</h1>

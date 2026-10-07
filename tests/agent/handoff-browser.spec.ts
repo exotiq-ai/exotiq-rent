@@ -28,6 +28,8 @@ test('identity uses a separate strict hosted provider destination',async({page,c
 test('actual hosted OAuth start/callback and customer quote consent work behind the public HTTPS proxy',async({page,context})=>{
  await page.goto('/agent/consent/'+quoteId);await page.getByRole('link',{name:'Sign in to review'}).click();await expect(page.getByRole('button',{name:'Authorize rental request'})).toBeVisible();
  await expect(page.getByText('Synthetic cancellation policy')).toBeVisible();const sessionCookie=(await context.cookies()).find(c=>c.name==='__Host-exotiq-customer');expect(sessionCookie?.httpOnly).toBe(true);expect(sessionCookie?.secure).toBe(true);expect(await page.evaluate(()=>document.cookie)).not.toContain('__Host-exotiq-customer');
+ await expect(page.getByRole('button',{name:'Authorize rental request'})).toBeDisabled();await expect(page.getByLabel('Open customer-hosted identity verification for this rental')).not.toBeChecked();
+ await page.getByLabel('Read this rental request’s status').check();await page.getByLabel('Open customer-hosted checkout for this rental').check();
  await page.getByRole('button',{name:'Authorize rental request'}).click();await expect(page.getByText('Authorization recorded.',{exact:false})).toBeVisible();
  const leaked=await page.evaluate(async()=>{const r=await fetch('/api/agent/auth/session?access_token=ignored');return {status:r.status,body:await r.text()};});expect(leaked.status).toBe(401);expect(leaked.body).not.toContain('csrf');
  const polluted=await page.evaluate(async()=>{const r=await fetch('/api/agent/customer/quotes/'+document.location.pathname.split('/').pop()+'?customer_id=other');return r.status;});expect(polluted).toBe(503);
@@ -36,6 +38,12 @@ test('fixed provider return survives real hosted login without trusting a paymen
  const path='/agent/account/10000000-0000-4000-8000-000000000002?booking_ref=SYNTHETIC-REQUEST&action=checkout';
  await page.goto(path);await page.getByRole('link',{name:'Sign in to review your rental request'}).click();
  await expect(page.getByText('Rental reference: SYNTHETIC-REQUEST')).toBeVisible();expect(new URL(page.url()).pathname+new URL(page.url()).search).toBe(path);
+ await expect(page.getByText('Payment settlement is still pending.')).toBeVisible();await expect(page.getByText('Current status: pending_payment')).toBeVisible();
  await expect(page.getByText('Returning here does not confirm payment or identity verification.',{exact:false})).toBeVisible();await expect(page.getByRole('button',{name:'Link my customer account'})).toHaveCount(0);
  await page.goto(path+'&unexpected=field');await expect(page.getByRole('heading',{name:'Invalid provider return'})).toBeVisible();await expect(page.getByText('Rental reference:',{exact:false})).toHaveCount(0);
+});
+test('actual customer status bridge hides wrong-customer data and returned provider metadata',async({page,context})=>{
+ await login(context,'other-customer');await page.goto('/agent/account/10000000-0000-4000-8000-000000000002?booking_ref=SYNTHETIC-REQUEST&action=identity');
+ await expect(page.getByRole('main').getByRole('alert')).toContainText('current rental status could not be confirmed');await expect(page.getByText('Synthetic touring car')).toHaveCount(0);
+ const denied=await page.evaluate(async()=>{const r=await fetch('/api/agent/customer/customers/rental-requests/SYNTHETIC-REQUEST');return {status:r.status,body:await r.text()};});expect(denied.status).toBe(404);expect(denied.body).not.toContain('private other customer');expect(denied.body).not.toContain('provider_url');
 });

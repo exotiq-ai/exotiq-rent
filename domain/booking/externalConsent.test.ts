@@ -107,7 +107,7 @@ describe('actual hosted customer quote review', () => {
     await act(async()=>stale());expect(posted).toEqual([]);await act(async()=>props(authorize()).onClick());
     expect(posted[0].body.action_scopes).toEqual(['identity:handoff']);
   });
-  it.each([[],['rental_requests:create'],['identity:handoff','identity:handoff'],['unknown']])('rejects invalid action scope input %j before any mutation',async(scopes)=>{
+  it.each([{scopes:[]},{scopes:['rental_requests:create']},{scopes:['identity:handoff','identity:handoff']},{scopes:['unknown']}])('rejects invalid action scope input %j before any mutation',async({scopes})=>{
     await expect((authorizeQuote as any)(parseQuoteReview(data,quoteId,now.getTime()),session,scopes)).rejects.toThrow();expect(posted).toEqual([]);
   });
 });
