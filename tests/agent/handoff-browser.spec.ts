@@ -32,3 +32,10 @@ test('actual hosted OAuth start/callback and customer quote consent work behind 
  const leaked=await page.evaluate(async()=>{const r=await fetch('/api/agent/auth/session?access_token=ignored');return {status:r.status,body:await r.text()};});expect(leaked.status).toBe(401);expect(leaked.body).not.toContain('csrf');
  const polluted=await page.evaluate(async()=>{const r=await fetch('/api/agent/customer/quotes/'+document.location.pathname.split('/').pop()+'?customer_id=other');return r.status;});expect(polluted).toBe(503);
 });
+test('fixed provider return survives real hosted login without trusting a payment success claim',async({page})=>{
+ const path='/agent/account/10000000-0000-4000-8000-000000000002?booking_ref=SYNTHETIC-REQUEST&action=checkout';
+ await page.goto(path);await page.getByRole('link',{name:'Sign in to review your rental request'}).click();
+ await expect(page.getByText('Rental reference: SYNTHETIC-REQUEST')).toBeVisible();expect(new URL(page.url()).pathname+new URL(page.url()).search).toBe(path);
+ await expect(page.getByText('Returning here does not confirm payment or identity verification.',{exact:false})).toBeVisible();await expect(page.getByRole('button',{name:'Link my customer account'})).toHaveCount(0);
+ await page.goto(path+'&unexpected=field');await expect(page.getByRole('heading',{name:'Invalid provider return'})).toBeVisible();await expect(page.getByText('Rental reference:',{exact:false})).toHaveCount(0);
+});

@@ -16,6 +16,10 @@ export interface HostedSession {
 export interface HostedAuthDependencies { now?:()=>Date; fetch?:typeof fetch; keyResolver?:JWTVerifyGetKey; }
 const uuid='[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}';
 const returnPath=new RegExp(`^(?:/agent/(?:consent|authorization|account)/${uuid}|/agent/handoff/[A-Za-z0-9_-]{43})$`,'i');
+// Provider return carries a public reference and action only. Exact canonical
+// ordering excludes arbitrary query fields, duplicate selectors and tokens.
+const providerReturnPath=new RegExp(`^/agent/account/${uuid.replaceAll('a-f','a-fA-F')}\\?booking_ref=[A-Za-z0-9_-]{1,80}&action=(?:identity|checkout)$`);
+const ownedReturnPath=(value:string)=>returnPath.test(value)||providerReturnPath.test(value);
 const fail=():never=>{throw new Error('Customer authorization unavailable');};
 const secret=(value:string)=>{if(!/^[A-Za-z0-9_-]{43}$/.test(value))fail();const bytes=Buffer.from(value,'base64url');if(bytes.length!==32)fail();return bytes;};
 const equal=(a:string,b:string)=>{const x=Buffer.from(a),y=Buffer.from(b);return x.length===y.length&&timingSafeEqual(x,y);};
@@ -53,14 +57,14 @@ export function createHostedAuth(config:HostedAuthConfiguration|null,dependencie
  }
  return {
   async beginLogin(destination:string){
-   if(!returnPath.test(destination))fail();const verifier=randomBytes(32).toString('base64url'),nonce=randomBytes(32).toString('base64url'),state=randomBytes(32).toString('base64url');
+   if(!ownedReturnPath(destination))fail();const verifier=randomBytes(32).toString('base64url'),nonce=randomBytes(32).toString('base64url'),state=randomBytes(32).toString('base64url');
    const url=new URL(c.authorizationEndpoint);for(const [k,v] of Object.entries({response_type:'code',client_id:c.clientId,redirect_uri:c.frontendOrigin+'/api/agent/auth/callback',scope:'openid email profile quotes:create rental_requests:create rental_requests:read checkout:handoff',resource:c.resource,state,nonce,code_challenge:createHash('sha256').update(verifier).digest('base64url'),code_challenge_method:'S256',max_age:'0'}))url.searchParams.set(k,v);
    return {url:url.toString(),cookie:await sealCookie(c.cookieKey,'transaction',{verifier,nonce,state,destination},now().getTime()+600000)};
   },
   async completeLogin(callback:URL,transactionCookie:string){
    try {if(callback.origin!==c.frontendOrigin||callback.pathname!=='/api/agent/auth/callback'||callback.searchParams.getAll('state').length!==1||callback.searchParams.getAll('code').length!==1||callback.searchParams.getAll('iss').length!==1||callback.searchParams.has('error'))fail();
     const tx=await openCookie(c.cookieKey,'transaction',transactionCookie,now().getTime());
-    if(typeof tx.state!=='string'||!equal(tx.state,callback.searchParams.get('state')??'')||!returnPath.test(tx.destination)||callback.searchParams.get('iss')!==c.issuer)fail();
+    if(typeof tx.state!=='string'||!equal(tx.state,callback.searchParams.get('state')??'')||!ownedReturnPath(tx.destination)||callback.searchParams.get('iss')!==c.issuer)fail();
     const code=callback.searchParams.get('code');if(!code||code.length>2048)fail();
     const body=new URLSearchParams({grant_type:'authorization_code',code:code!,redirect_uri:c.frontendOrigin+'/api/agent/auth/callback',code_verifier:tx.verifier,resource:c.resource});
     const response=await transport(c.tokenEndpoint,{method:'POST',redirect:'error',signal:AbortSignal.timeout(5000),headers:{'content-type':'application/x-www-form-urlencoded',authorization:'Basic '+Buffer.from(encodeURIComponent(c.clientId)+':'+encodeURIComponent(c.clientSecret)).toString('base64')},body});
