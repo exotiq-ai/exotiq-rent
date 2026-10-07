@@ -24,7 +24,7 @@ import { renterCaptureUiEnabled } from '@/domain/renters/flags';
 import { MAX_WINDOW_DAYS, daysBetween } from '@/domain/booking/marketplaceQuery';
 import { recomputeBookingCart } from './state';
 import { stepEyebrow } from './steps';
-import { SETTLE_MS, type PageDir, type Sample, dragOffset, lockAxis, markInert, pageDecision, prefersReducedMotion, releaseVelocity, settleTransition } from './monthPager';
+import { SETTLE_MS, SWALLOW_MS, type PageDir, type Sample, dragOffset, lockAxis, markInert, pageDecision, prefersReducedMotion, releaseVelocity, settleTransition, swallowsClick } from './monthPager';
 import { eyebrowClassName, microLabelClassName } from '@/components/browse/tokens';
 
 // value is what the booking stores and what the backend casts into a
@@ -147,7 +147,8 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
   const settleId = useRef(0);
   const settleTarget = useRef<MonthKey | null>(null);
   const settleTimer = useRef<number | undefined>(undefined);
-  const swallowClick = useRef(false);
+  // The deadline a swipe's release arms for its own click (0 when none is pending).
+  const swallowClick = useRef(0);
 
   const canGoPrev = compareMonthKeys(visibleMonth, minMonth) > 0;
   const canGoNext = compareMonthKeys(visibleMonth, maxMonth) < 0;
@@ -216,7 +217,7 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
     settle(dir, to);
   };
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
-    swallowClick.current = false;
+    swallowClick.current = 0;
     if (e.pointerType === 'mouse' || drag.current) return;
     if (settling.current) finishSettle();
     drag.current = { id: e.pointerId, x0: e.clientX, y0: e.clientY, axis: null, dx: 0, samples: [{ x: e.clientX, y: e.clientY, t: e.timeStamp }] };
@@ -246,7 +247,7 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
     if (!d || e.pointerId !== d.id) return;
     drag.current = null;
     if (d.axis !== 'x') return;
-    swallowClick.current = true;
+    swallowClick.current = e.timeStamp + SWALLOW_MS;
     if (e.type === 'pointercancel') {
       settle(0, null);
       return;
@@ -254,10 +255,11 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
     const dir = pageDecision({ dx: d.dx, width: viewportRef.current?.clientWidth ?? 0, velocity: releaseVelocity(d.samples), canPrev: canGoPrev, canNext: canGoNext });
     settle(dir, dir === 0 ? null : addMonths(visibleMonth, dir));
   };
-  // A swipe that started on a day selects nothing.
+  // A swipe that started on a day selects nothing; a keyboard or assistive click right after one still selects.
   const onClickCapture = (e: ReactMouseEvent<HTMLDivElement>) => {
-    if (!swallowClick.current) return;
-    swallowClick.current = false;
+    const deadline = swallowClick.current;
+    swallowClick.current = 0;
+    if (!swallowsClick(deadline, e)) return;
     e.stopPropagation();
     e.preventDefault();
   };

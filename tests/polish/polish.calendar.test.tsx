@@ -114,6 +114,38 @@ describe('MP-25 calendar', () => {
     expect(problems).toEqual([]);
   });
 
+  it('a keyboard or assistive activation after a swipe still selects (review F1)', async () => {
+    const problems: string[] = [];
+    // The checks a swallow decision must pass: the swipe's own pointer click is eaten, Enter/Space or a
+    // switch-control click (detail 0) after a swipe still reaches the day, and a stale flag eats nothing later.
+    const check = (swallows: (deadline: number, click: { detail: number; timeStamp: number }) => boolean, window: number): string[] => {
+      const p: string[] = [];
+      const release = 1000;
+      const deadline = release + window;
+      if (!swallows(deadline, { detail: 1, timeStamp: release + 16 })) p.push("the swipe's own click is not swallowed");
+      if (swallows(deadline, { detail: 0, timeStamp: release + 16 })) p.push('a keyboard or assistive click (detail 0) right after a swipe is swallowed');
+      if (swallows(deadline, { detail: 0, timeStamp: release + 5000 })) p.push('a keyboard click long after a swipe is swallowed');
+      if (swallows(deadline, { detail: 1, timeStamp: release + 5000 })) p.push('a stale swallow flag eats a later click');
+      if (swallows(0, { detail: 1, timeStamp: 50 })) p.push('a click with no swipe before it is swallowed');
+      return p;
+    };
+    // Planted first: the reviewed defect (a flag that eats the next click of any kind until a new press) is seen.
+    if (!check((deadline) => deadline > 0, 400).length) problems.push('planted: a swallow that eats the next click of any kind is not seen');
+    const pager = await loadPager();
+    if (!pager?.swallowsClick || typeof pager.SWALLOW_MS !== 'number') problems.push('monthPager exports no swallowsClick / SWALLOW_MS');
+    else {
+      problems.push(...check(pager.swallowsClick, pager.SWALLOW_MS));
+      if (!(pager.SWALLOW_MS >= 100 && pager.SWALLOW_MS <= 600)) problems.push(`SWALLOW_MS ${pager.SWALLOW_MS}`);
+    }
+    // DatesStep wires it: the release arms a deadline, a press disarms it, every click disarms it and asks swallowsClick.
+    const src = stripComments(read(DATES));
+    if (!/swallowClick\.current = e\.timeStamp \+ SWALLOW_MS;/.test(fnBody(src, 'onPointerEnd'))) problems.push('the swipe release does not arm a deadline');
+    if (!/swallowClick\.current = 0;/.test(fnBody(src, 'onPointerDown'))) problems.push('a new press does not disarm the swallow');
+    const capture = fnBody(src, 'onClickCapture');
+    if (!/swallowClick\.current = 0;[\s\S]*swallowsClick\(/.test(capture)) problems.push('a click does not disarm the swallow and ask swallowsClick');
+    expect(problems).toEqual([]);
+  });
+
   it('six rows are reserved and one month is reachable at a time', async () => {
     const problems: string[] = [];
     for (const m of MONTHS) {

@@ -46,6 +46,9 @@ export type Pager = {
   pageDecision(input: { dx: number; width: number; velocity: number; canPrev: boolean; canNext: boolean }): -1 | 0 | 1;
   settleTransition(reduced: boolean): string;
   prefersReducedMotion(): boolean;
+  /** F1 (review): the swipe's own click is swallowed; a keyboard or assistive click (detail 0), or any later click, is not. */
+  SWALLOW_MS?: number;
+  swallowsClick?(deadline: number, click: { detail: number; timeStamp: number }): boolean;
 };
 export async function loadPager(): Promise<Pager | null> {
   const file = join(REPO, PAGER);

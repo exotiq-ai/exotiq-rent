@@ -56,6 +56,15 @@ export function pageDecision({ dx, width, velocity, canPrev, canNext }: { dx: nu
   return dir;
 }
 
+/** How long after a swipe's release its own click may still arrive (the only click a swipe swallows). */
+export const SWALLOW_MS = 400;
+/**
+ * Whether a click is the one a swipe's release produces, so it must select nothing: a pointer click (detail
+ * at least 1) before the deadline the release armed. A keyboard or assistive click (detail 0) always reaches the
+ * day, and once the deadline passes nothing is swallowed (review F1: Enter right after a swipe was dropped).
+ */
+export const swallowsClick = (deadline: number, click: { detail: number; timeStamp: number }): boolean => click.detail > 0 && click.timeStamp <= deadline;
+
 /** The track's transition for a settle: transform only, and none at all under reduced motion. */
 export const settleTransition = (reduced: boolean): string => (reduced ? 'none' : `transform ${SETTLE_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`);
 

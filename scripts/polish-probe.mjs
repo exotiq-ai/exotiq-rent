@@ -228,6 +228,17 @@ async function ac1(browser) {
     await one('first month, left to right', 0.2, -0.6, 250, false, 0);
     for (let i = 0; i < 7; i++) await chevron(page, 'Next');
     await one('last month, right to left', 0.8, 0.6, 250, false, 0);
+    // Review F1: right after a swipe (which itself must select nothing, checked by one()), Enter on a focused day
+    // still selects. Enter's click has detail 0; only the swipe's own pointer click may be swallowed.
+    await one('settle-back swipe before Enter (F1)', 0.8, 0.12, 600, false, 0);
+    const bar1 = await barText(page);
+    const day = await page.evaluate(() => { const b = [...document.querySelectorAll('[data-calendar="viewport"] button.aspect-square')].filter((x) => !x.disabled && !x.hasAttribute('data-taken') && x.getAttribute('aria-pressed') !== 'true')[3]; b.focus(); return b.getAttribute('aria-label'); });
+    await page.keyboard.press('Enter');
+    await sleep(250);
+    const pressedAfterEnter = await page.evaluate((n) => document.querySelector(`button[aria-label="${n}"]`)?.getAttribute('aria-pressed'), day);
+    const selectionChanged = (await barText(page)) !== bar1;
+    if (pressedAfterEnter !== 'true' || !selectionChanged) problems.push(`${name} F1: the first Enter on ${day} after a swipe selected nothing`);
+    runs.push({ viewport: name, label: 'F1: first Enter on a focused day right after a swipe', gesture: 'cdp-touch swipe, then keyboard Enter', day, pressedAfterEnter, selectionChanged });
     // Informational: the same 25% flick as a synthesized touch scroll gesture with fling (the spec's risk note).
     for (let i = 0; i < 3; i++) await chevron(page, 'Previous');
     const p = await touchPoint(page, 0.8);
