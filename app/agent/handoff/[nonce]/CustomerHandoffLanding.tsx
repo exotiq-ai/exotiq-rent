@@ -4,12 +4,13 @@ import {parseHandoffReview,parseHandoffResolve,type HandoffReview,type HandoffRe
 export default function CustomerHandoffLanding({nonce,review,csrf,sessionExpiresAt}:{nonce:string;review:HandoffReview|null;csrf:string;sessionExpiresAt:number}){
  const current=useRef(nonce);current.current=nonce;
  const generation=useRef(0),busy=useRef(false);
+ const [ready,setReady]=useState(false);
  const [pending,setPending]=useState(false),[error,setError]=useState(false),[target,setTarget]=useState<HandoffResolve|null>(null),[now,setNow]=useState(Date.now());
- useEffect(()=>{const epoch=generation;epoch.current++;busy.current=false;setPending(false);setError(false);setTarget(null);const tick=setInterval(()=>setNow(Date.now()),1000);return()=>{epoch.current++;clearInterval(tick);};},[nonce,review]);
+ useEffect(()=>{const epoch=generation;epoch.current++;setReady(true);busy.current=false;setPending(false);setError(false);setTarget(null);const tick=setInterval(()=>setNow(Date.now()),1000);return()=>{epoch.current++;clearInterval(tick);};},[nonce,review]);
  let checked:HandoffReview|null=null;try{checked=review?parseHandoffReview(review,now):null;}catch{}
  const available=!!checked&&sessionExpiresAt>now;
  async function proceed(){
-  if(busy.current||current.current!==nonce)return;
+  if(!ready||busy.current||current.current!==nonce)return;
   try{if(!review||sessionExpiresAt<=Date.now())throw Error();parseHandoffReview(review);}catch{setError(true);setNow(Date.now());return;}
   busy.current=true;setPending(true);setError(false);const epoch=generation.current;
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);
@@ -25,6 +26,6 @@ export default function CustomerHandoffLanding({nonce,review,csrf,sessionExpires
   {checked&&<><p className="mt-4">{checked.operator_name} · {checked.vehicle_name}</p><p>Request {checked.ref} · {checked.status.replaceAll('_',' ')}</p><p>{checked.action==='identity'?'Verify your identity with Stripe.':'Review and complete your hosted payment with Stripe.'}</p><p>Link expires {new Date(checked.expires_at).toLocaleString()}.</p><p className="mt-4">Your agent cannot access this provider session. Continuing does not bypass operator approval or change your rental terms.</p></>}
   {!available&&<p role="alert" className="mt-4">This secure handoff is unavailable or expired. Sign in again or ask your agent for a fresh link.</p>}
   {error&&<p role="alert" className="mt-4">The handoff could not be confirmed. Retry while this link is valid, or sign in again.</p>}
-  {destination?<a className="mt-6 inline-block underline" href={destination.provider_url} rel="noreferrer noopener" referrerPolicy="no-referrer">Open Stripe securely</a>:available&&<button className="mt-6 rounded-lg bg-black px-5 py-3 text-white disabled:opacity-50" type="button" disabled={pending} onClick={proceed}>{pending?'Confirming secure handoff…':'Continue securely'}</button>}
+  {destination?<a className="mt-6 inline-block underline" href={destination.provider_url} rel="noreferrer noopener" referrerPolicy="no-referrer">Open Stripe securely</a>:available&&<button className="mt-6 rounded-lg bg-black px-5 py-3 text-white disabled:opacity-50" type="button" disabled={!ready||pending} onClick={proceed}>{pending?'Confirming secure handoff…':'Continue securely'}</button>}
  </main>;
 }

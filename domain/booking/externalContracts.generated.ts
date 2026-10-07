@@ -1,6 +1,6 @@
 // GENERATED canonical backend schema/validator; do not edit by hand.
 // Source: supabase/functions/_shared/external-booking/contracts.ts
-// Source SHA256: 895a3f0664b570eb15ba0022bde15d7fc9bcb2640ebd8ac3605a7bb4f9570ca9
+// Source SHA256: 0af821208b85743c579bc69873d84d2ffa935871d3263ab334663bc31f1a5a3d
 // Generator: scripts/generate-external-contracts.mjs; server-only section excluded; 0n -> BigInt(0).
 /** Canonical transport-independent v1 schemas. OpenAPI and adapters consume these.
  * JSON Schema 2020-12: https://json-schema.org/draft/2020-12/json-schema-validation
@@ -58,7 +58,7 @@ export const QuoteTerms = object({ cancellation_policy: text(8000), pickup_addre
 export const QuotePricingDetails = object({ rental_days: integer(365, 1), daily_rate_cents: integer(), protection_tier: enumeration('premium', 'standard', 'decline'), protection_daily_cents: integer(), state_code: { ...text(2, 2), pattern: '^[A-Z]{2}$' }, state_fee_label: text(160), state_fee_daily_cents: integer(), operator_tax_label: text(160), operator_tax_rate_percent: decimalAmount, platform_fee_percent: decimalAmount });
 export const QuoteResult = object({ ...metadata, ...rentalWindow, quote_id: uuid, principal_scope: object({ subject: text(256), operator_id: uuid }), expires_at: timestamp, pricing_version: text(128), terms_version: text(128), terms_hash: { ...text(64, 64), pattern: '^[a-f0-9]{64}$' }, selected_options: options, terms: QuoteTerms, pricing_details: QuotePricingDetails, currency: { ...text(3, 3), enum: ['USD'], description: 'ISO 4217 currency. v1 supports USD only; adding a currency requires backend charge-leg and rounding proof.' }, itemization: QuoteItemization, operator_total_cents: integer(), exotiq_total_cents: integer(), total_cents: integer(), payment_schedule: array(PaymentScheduleItem, 2, 2), availability_checked_at: timestamp, holds_inventory: { const: false }, consent_url: httpsUrl });
 export const RentalRequestInput = object({ quote_id: uuid, consent_receipt_id: uuid });
-export const ScopedLinks = object({ status: httpsUrl, consent: httpsUrl, recovery: httpsUrl, identity: httpsUrl, checkout_handoff: httpsUrl }, ['consent', 'recovery', 'identity', 'checkout_handoff']);
+export const ScopedLinks = object({ status: httpsUrl, consent: httpsUrl, recovery: httpsUrl, identity: httpsUrl, checkout_handoff: httpsUrl,customer_account:httpsUrl }, ['consent', 'recovery', 'identity', 'checkout_handoff','customer_account']);
 export const RentalRequestResult = object({ ...metadata, ref: { ...text(80), pattern: '^[A-Za-z0-9_-]+$' }, status: enumeration(...BACKEND_STATUSES), next_action: enumeration(...NEXT_ACTIONS), hold_expires_at: nullable(timestamp), links: ScopedLinks });
 export const RentalStatusResult = object({ ...RentalRequestResult.properties, payment_due_at: nullable(timestamp), inventory_blocked: { type: 'boolean' }, poll_after_seconds: integer(60, 5) });
 export const CheckoutHandoffResult = object({ ...metadata, customer_url: httpsUrl, expires_at: timestamp, state: enumeration('pending_payment'), next_action: enumeration('hosted_checkout') });
