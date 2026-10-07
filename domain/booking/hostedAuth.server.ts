@@ -43,7 +43,7 @@ export function createHostedAuth(config:HostedAuthConfiguration|null,dependencie
  if(!config)fail();const c=config!;
  for(const u of [c.issuer,c.authorizationEndpoint,c.tokenEndpoint,c.jwksUri])providerUrl(u,c.allowedHosts);
  const front=publicUrl(c.frontendOrigin);if(front.origin!==c.frontendOrigin)fail();publicUrl(c.resource);
- if(!c.clientId||c.clientId.length>512||!c.clientSecret||c.clientSecret.length>4096)fail();secret(c.cookieKey);secret(c.bridgeKey);
+ if(!c.clientId||c.clientId.length>512||!c.clientSecret||c.clientSecret.length>4096)fail();secret(c.cookieKey);secret(c.bridgeKey);if(equal(c.cookieKey,c.bridgeKey))fail();
  const resolver=dependencies.keyResolver??createRemoteJWKSet(new URL(c.jwksUri),{timeoutDuration:3000,cooldownDuration:1000,cacheMaxAge:300000});
  const now=()=>dependencies.now?.()??new Date();const transport=dependencies.fetch??fetch;
  const algorithms=['ES256','RS256','PS256'];
