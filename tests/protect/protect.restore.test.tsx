@@ -52,6 +52,7 @@ import type { BookingCart } from '@/domain/booking/types';
 import { stripComments } from '../design/lib/scan.mjs';
 import { between, literals, sliceFunction } from '../restraint/restraintScan';
 import { ACCESS_TOKEN, BOOKING_REF, type Case, type El, NOW_ISO, OPERATOR, VEHICLE, confirmationOf, fixture, norm, parseHtml, paymentPropsOf, quoteOf, reviewCartOf } from '../fees/fixtures';
+import { calendarRange } from '../fees/goldens';
 
 const REPO = fileURLToPath(new URL('../../', import.meta.url));
 const read = (rel: string) => readFileSync(join(REPO, rel), 'utf8');
@@ -87,7 +88,8 @@ async function storefront(withAbout: boolean): Promise<string> {
   svc.dropAbout = !withAbout;
   return renderToStaticMarkup(await TeamStorefrontRoute({ params: { operatorSlug: OPERATOR.slug }, searchParams: {} }));
 }
-const flow = () => renderToStaticMarkup(createElement(BookingFlow, { operator: OPERATOR, vehicle: VEHICLE }));
+/** BookingFlow's first render, its Dates calendar cut to «calendar» as the fee goldens cut it (MP-25 errata #3: tests/polish pins the pager). */
+const flow = () => ((h: string, c = calendarRange(parseHtml(h))) => (c ? `${h.slice(0, c.start)}«calendar»${h.slice(c.end)}` : h))(renderToStaticMarkup(createElement(BookingFlow, { operator: OPERATOR, vehicle: VEHICLE })));
 
 /** The branch base: main after MP-28 (PR #114). */
 const BASE_SHA = '3676b261e6e919db4228a139594773d65d5c2ade';

@@ -234,6 +234,57 @@
     animation: shimmer 1.5s ease-in-out infinite;
   }
 
+  /* polish:begin (MP-25) */
+  /* A step's scroll content settles in (ScreenShell; the bar, header and progress hold still).
+     No fill mode: once it ends the element carries no transform, so it never becomes the
+     containing block of a fixed descendant. */
+  @keyframes stepIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-step-in {
+    animation: stepIn 280ms ease-out;
+  }
+
+  /* The Dates disc of the day just tapped lands with a short spring. The disc is centred by a
+     translate, so every frame repeats it. */
+  @keyframes daySpring {
+    0% { transform: translate(-50%, -50%) scale(0.85); }
+    60% { transform: translate(-50%, -50%) scale(1.05); }
+    100% { transform: translate(-50%, -50%) scale(1); }
+  }
+
+  .animate-day-spring {
+    animation: daySpring 320ms ease-out;
+  }
+
+  /* The range wash fades in on the tap that closes the range, on the newly covered days only. */
+  @keyframes washIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .animate-wash-in {
+    animation: washIn 160ms ease-out;
+  }
+
+  /* The one glass recipe's Safari 17 twin (glassBarClassName in components/browse/tokens.ts).
+     Autoprefixer drops the prefixed property the utility generates; this hand-written one is
+     kept, and its blur must equal the recipe's. */
+  .glass-bar-twin {
+    /* autoprefixer: ignore next */
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .glass-bar-twin {
+      /* autoprefixer: ignore next */
+      -webkit-backdrop-filter: none;
+    }
+  }
+  /* polish:end */
+
   /* Confirmation celebration — one champagne-gold sheen across the hero,
      then still. Deliberately runs once; the reserved car is the trophy. */
   @keyframes goldSheen {

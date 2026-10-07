@@ -52,22 +52,8 @@ export const identitySentenceEl = (root: El): El | undefined => {
   return box?.children.find((c): c is El => typeof c !== 'string' && c.tag === 'p');
 };
 
-/** The Dates calendar (MP-25): navigation row, weekday row and month pager, everything between the step header and the hint line. */
-export function calendarRange(root: El): { start: number; end: number } | undefined {
-  const header = eyebrowEl(root)?.parent;
-  const hint = elements(root).find((e) => e.tag === 'div' && norm(textOf(e)).startsWith('Tap start, then end'));
-  return header && hint && header.end <= hint.start ? { start: header.end, end: hint.start } : undefined;
-}
-/** DatesStep with its eyebrow cut and its calendar cut to one placeholder (MP-25: tests/polish pins the pager). */
-export function cutDates(html: string): string {
-  const root = parseHtml(html);
-  const calendar = calendarRange(root);
-  const eyebrow = eyebrowEl(root);
-  if (!calendar) throw new Error('cut target missing: «calendar»');
-  if (!eyebrow) throw new Error('cut target missing: «eyebrow»');
-  // The calendar sits after the eyebrow, so cutting it first leaves the eyebrow's offsets valid.
-  return cutInner(`${html.slice(0, calendar.start)}«calendar»${html.slice(calendar.end)}`, [[eyebrow, '«eyebrow»']]);
-}
+/** DatesStep with its eyebrow cut. */
+export const cutDates = (html: string) => cutInner(html, [[eyebrowEl(parseHtml(html)), '«eyebrow»']]);
 /**
  * Replace each element WHOLE (opening tag through closing tag, or the single tag of a void element)
  * with a placeholder, ranges applied right to left. cutInner cannot do this for an <input/>: a void

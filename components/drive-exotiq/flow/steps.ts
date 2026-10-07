@@ -8,7 +8,7 @@ import type { QuoteState } from '@/domain/booking/quote';
 export const FLOW_STEPS = [
   { key: 'dates', label: 'Dates' },
   { key: 'driver', label: 'Driver' },
-  { key: 'review', label: 'Review & Request' },
+  { key: 'review', label: 'Review' },
 ] as const;
 
 /** The step that fetches the server quote and holds the request button (=== FLOW_STEPS.length). */

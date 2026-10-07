@@ -159,6 +159,17 @@ export const stickyBarClassName =
 /** The one floating card on a surface that has no sticky bar there (vehicle aside from lg, the browse filters popover, the share card). Neutral, never gold. */
 export const elevatedClassName = 'shadow-[0_24px_60px_-20px_rgba(0,0,0,.8)]';
 
+/**
+ * The one glass recipe (MP-25, D1 to D4): the site bar's frost, and nowhere else. Ground at 90%
+ * alpha, the lowest step at which every text colour the bar renders holds 4.5:1 composited over
+ * white; a 12px frost; the line hairline at 70%; an opaque, unfrosted fallback when the reader
+ * asks for reduced transparency. Its last plain class is the hand-written Safari 17 twin in
+ * app/globals.css. No other surface may wear glass.
+ */
+export const glassBarClassName =
+  'border-line/70 bg-ground/90 backdrop-blur-md glass-bar-twin ' +
+  '[@media(prefers-reduced-transparency:reduce)]:bg-ground [@media(prefers-reduced-transparency:reduce)]:backdrop-blur-none';
+
 /** The daily rate on a card: one figure recipe for browse and storefront, unit beside it at a colour that still reads (5:1). */
 export const priceClassName = 'shrink-0 text-title-sm font-medium leading-none text-gold';
 export const priceUnitClassName = 'ml-1.5 text-micro font-normal uppercase tracking-[0.16em] text-faint';

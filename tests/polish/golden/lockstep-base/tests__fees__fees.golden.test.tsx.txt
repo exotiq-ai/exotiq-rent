@@ -140,7 +140,7 @@ describe('MP-26 base goldens (AC19)', () => {
     }
 
     // Planted: one changed class in DatesStep is caught by the same comparison.
-    const planted = now['dates-step.html'].replace('min-h-0 flex-1', 'min-h-0 flex-2');
+    const planted = now['dates-step.html'].replace('grid grid-cols-7', 'grid grid-cols-6');
     expect(planted).not.toBe(readGolden('dates-step.html'));
 
     if (EVIDENCE) {
