@@ -6,6 +6,10 @@ const session={issuer:config.issuer,subject:'renter',clientId:config.clientId,ac
 const review=()=>({api_version:'v1',source_checked_at:new Date().toISOString(),ref:'RENT-1',operator_name:'Synthetic operator',vehicle_name:'Synthetic car',action:'checkout',status:'pending_payment',expires_at:new Date(Date.now()+60000).toISOString()});
 const resolve=(provider_url='https://checkout.stripe.com/c/pay/synthetic')=>({api_version:'v1',source_checked_at:new Date().toISOString(),action:'checkout',provider_url,expires_at:new Date(Date.now()+60000).toISOString()});
 describe('customer-only provider handoff boundary',()=>{
+ it('preserves the documented opaque Stripe Checkout fragment through canonical validation',()=>{
+  const url='https://checkout.stripe.com/c/pay/synthetic#fidkdSyntheticLocal';expect(parseHandoffResolve(resolve(url)).provider_url).toBe(url);
+  expect(()=>parseHandoffResolve({...resolve('https://verify.stripe.com/start/synthetic#fidkdSyntheticLocal'),action:'identity'})).toThrow();
+ });
  it.each(['grant_expired','grant_revoked'])('preserves only safe canonical409 %s recovery code from review and resolve',async code=>{
   const transport=async()=>Response.json({code,message:'private backend message',request_id:'10000000-0000-4000-8000-000000000002',retryable:false},{status:409});
   expect(await forwardCustomerHandoff(config,session,nonce,'GET',null,null,transport as any)).toEqual({status:409,body:{code}});

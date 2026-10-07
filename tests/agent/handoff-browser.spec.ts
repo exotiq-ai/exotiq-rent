@@ -34,6 +34,20 @@ for(const action of ['identity','checkout'])test('customer can create their own 
  const denied=await page.evaluate(async({ref})=>{const session=await (await fetch('/api/agent/auth/session')).json();const response=await fetch('/api/agent/customer/customers/rental-requests/'+ref+'/identity-handoff',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({csrf:session.csrf,action:'continue',customer_id:'other'})});return response.status;},{ref});expect(denied).toBe(503);
  await link.click();await page.getByRole('button',{name:'Continue securely'}).click();await expect(page.getByRole('link',{name:'Open Stripe securely'})).toHaveAttribute('href',action==='identity'?'https://verify.stripe.com/start/synthetic-local':'https://checkout.stripe.com/c/pay/synthetic-local');
 });
+for(const code of ['grant_expired','grant_revoked'])test('nonce '+code+' starts only an explicit original-agent review and consent',async({page,context})=>{
+ await login(context);const before=await(await context.request.get('https://127.0.0.1:9443/__test/count')).json();
+ await page.goto('/agent/handoff/'+(code==='grant_expired'?'x':'v').repeat(43));const button=page.getByRole('button',{name:'Review agent access'});await expect(button).toBeVisible();
+ expect((await(await context.request.get('https://127.0.0.1:9443/__test/count')).json()).grantRenewals).toBe(before.grantRenewals);
+ await button.click();const link=page.getByRole('link',{name:'Open agent authorization review'});await expect(link).toHaveAttribute('href',origin+'/agent/authorization/10000000-0000-4000-8000-000000000006');
+ expect((await(await context.request.get('https://127.0.0.1:9443/__test/count')).json()).renewalCompletes).toBe(before.renewalCompletes);
+ await link.click();await expect(page.getByText('Agent application: synthetic-original-agent')).toBeVisible();await expect(page.getByText('Read this rental request’s status',{exact:true})).toBeVisible();await expect(page.getByText('Open customer-hosted identity verification for this rental',{exact:true})).toBeVisible();await expect(page.getByText('Open customer-hosted checkout for this rental',{exact:true})).toHaveCount(0);
+ const authorize=page.getByRole('button',{name:code==='grant_revoked'?'Authorize new agent access':'Reauthorize agent access'});await expect(authorize).toBeVisible();
+ expect((await(await context.request.get('https://127.0.0.1:9443/__test/count')).json()).renewalCompletes).toBe(before.renewalCompletes);await authorize.click();await expect(page.getByText('Agent access authorized for the existing request.')).toBeVisible();
+ expect((await(await context.request.get('https://127.0.0.1:9443/__test/count')).json()).renewalCompletes).toBe(before.renewalCompletes+1);
+});
+test('revocation after review reaches explicit recovery through the real resolve bridge',async({page,context})=>{
+ await login(context);await page.goto('/agent/handoff/'+'l'.repeat(43));await page.getByRole('button',{name:'Continue securely'}).click();await expect(page.getByRole('button',{name:'Review agent access'})).toBeVisible();await expect(page.getByRole('link',{name:'Open Stripe securely'})).toHaveCount(0);
+});
 test('actual hosted OAuth start/callback and customer quote consent work behind the public HTTPS proxy',async({page,context})=>{
  await page.goto('/agent/consent/'+quoteId);await page.getByRole('link',{name:'Sign in to review'}).click();await expect(page.getByRole('button',{name:'Authorize rental request'})).toBeVisible();
  await expect(page.getByText('Synthetic cancellation policy')).toBeVisible();const sessionCookie=(await context.cookies()).find(c=>c.name==='__Host-exotiq-customer');expect(sessionCookie?.httpOnly).toBe(true);expect(sessionCookie?.secure).toBe(true);expect(await page.evaluate(()=>document.cookie)).not.toContain('__Host-exotiq-customer');
