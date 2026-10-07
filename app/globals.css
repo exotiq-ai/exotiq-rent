@@ -247,6 +247,18 @@
     animation: stepIn 280ms ease-out;
   }
 
+  /* The Dates disc of the day just tapped lands with a short spring. The disc is centred by a
+     translate, so every frame repeats it. */
+  @keyframes daySpring {
+    0% { transform: translate(-50%, -50%) scale(0.85); }
+    60% { transform: translate(-50%, -50%) scale(1.05); }
+    100% { transform: translate(-50%, -50%) scale(1); }
+  }
+
+  .animate-day-spring {
+    animation: daySpring 320ms ease-out;
+  }
+
   /* The one glass recipe's Safari 17 twin (glassBarClassName in components/browse/tokens.ts).
      Autoprefixer drops the prefixed property the utility generates; this hand-written one is
      kept, and its blur must equal the recipe's. */
