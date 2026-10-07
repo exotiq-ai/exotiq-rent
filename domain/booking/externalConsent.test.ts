@@ -91,4 +91,9 @@ describe('actual hosted customer quote review', () => {
     await act(async () => vi.advanceTimersByTimeAsync(10001));
     expect(signal?.aborted).toBe(true); expect(host.textContent).not.toContain('Loading'); expect(authorize()).toBeUndefined(); expect(host.textContent).toContain('Sign in securely');
   });
+  it('route replacement invalidates a previously captured quote-authorize handler', async () => {
+    await mount(); const callback = props(authorize()).onClick;
+    await act(async () => root.render(createElement(ConsentPage, { params: { quoteId: operatorId } })));
+    await act(async () => callback()); expect(posted).toHaveLength(0); expect(host.textContent).not.toContain('Synthetic touring car');
+  });
 });

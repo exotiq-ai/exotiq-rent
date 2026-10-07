@@ -3,7 +3,7 @@ import { ownedUuid, type CustomerSession } from './externalContracts';
 import { customerFetch, CustomerRequestError } from './externalConsent';
 export interface GrantReview {
   api_version: 'v1'; source_checked_at: string; renewal_id: string; ref: string; operator_id: string;
-  previous_grant_id: string; agent_client_id: string; operator_name: string; vehicle_name: string;
+  previous_grant_id: string; grant_id_to_revoke: string; agent_client_id: string; operator_name: string; vehicle_name: string;
   pickup_at: string; return_at: string; timezone: string; status: string;
   hold_expires_at: string | null; payment_due_at: string | null;
   action_scopes: ('rental_requests:read' | 'checkout:handoff')[];
@@ -27,14 +27,15 @@ export function canRecoverGrant(review: GrantReview, session: CustomerSession, n
 export async function recoverGrant(review: GrantReview, session: CustomerSession): Promise<GrantReview> {
   if (!canRecoverGrant(review, session)) throw new CustomerRequestError('unauthorized', 'This sign-in or authorization review expired. Sign in again to continue.');
   const reviewed = parseGrantReview(await customerFetch(`/api/agent/customer/grant-renewals/${review.renewal_id}/review`, { csrf: session.csrf }), review.renewal_id);
-  if (reviewed.ref !== review.ref || reviewed.previous_grant_id !== review.previous_grant_id || reviewed.operator_id !== review.operator_id || reviewed.agent_client_id !== review.agent_client_id || JSON.stringify(reviewed.action_scopes) !== JSON.stringify(review.action_scopes) || reviewed.requires_new_delegation !== review.requires_new_delegation || !canRecoverGrant(reviewed, session)) throw new CustomerRequestError('upstream_unavailable', 'Authorization details changed. Review the existing request again.');
+  const unchanged = (['ref', 'previous_grant_id', 'operator_id', 'agent_client_id', 'pickup_at', 'return_at', 'timezone', 'status', 'hold_expires_at', 'payment_due_at', 'requires_new_delegation'] as const).every((key) => reviewed[key] === review[key]);
+  if (!unchanged || JSON.stringify(reviewed.action_scopes) !== JSON.stringify(review.action_scopes) || !canRecoverGrant(reviewed, session)) throw new CustomerRequestError('upstream_unavailable', 'Authorization details changed. Review the existing request again.');
   const result = parseGrantReview(await customerFetch(`/api/agent/customer/grant-renewals/${review.renewal_id}/complete`, { csrf: session.csrf, action_scopes: review.action_scopes, explicit_new_delegation: review.requires_new_delegation, consented: true }), review.renewal_id);
   if (result.ref !== review.ref || result.state !== 'authorized') throw new CustomerRequestError('upstream_unavailable', 'Authorization could not be confirmed.');
   return result;
 }
 export async function revokeGrant(review: GrantReview, session: CustomerSession): Promise<void> {
-  if (!ownedUuid(review.previous_grant_id) || Date.parse(session.expires_at) <= Date.now()) throw Error('Sign in again before revoking access.');
-  await customerFetch(`/api/agent/customer/grants/${review.previous_grant_id}/revoke`, { csrf: session.csrf }, 204);
+  if (!ownedUuid(review.grant_id_to_revoke) || Date.parse(session.expires_at) <= Date.now()) throw Error('Sign in again before revoking access.');
+  await customerFetch(`/api/agent/customer/grants/${review.grant_id_to_revoke}/revoke`, { csrf: session.csrf }, 204);
 }
 export async function linkOperatorCustomer(operatorId: string, session: CustomerSession, fullName: string, phone: string): Promise<void> {
   if (!ownedUuid(operatorId) || Date.parse(session.expires_at) <= Date.now() || !session.profile.emailVerified || !session.profile.email || !fullName.trim() || fullName.trim().length > 160 || !/^\+?[0-9 ()-]{7,30}$/.test(phone)) throw Error('A fresh sign-in with a verified email, your name and phone number is required.');

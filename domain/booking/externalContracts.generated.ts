@@ -1,6 +1,6 @@
 // GENERATED canonical backend schema/validator; do not edit by hand.
 // Source: supabase/functions/_shared/external-booking/contracts.ts
-// Source SHA256: fa6b9a17bac76e8cb82f0d47c6e17c1b5f96abe8fa8c1bb41cab763e37479737
+// Source SHA256: 28ddb0bd09fb2f225959e80ee744ff72c9e55b4dce69ceec4f96cab330e298b6
 // Generator: scripts/generate-external-contracts.mjs; server-only section excluded; 0n -> BigInt(0).
 /** Canonical transport-independent v1 schemas. OpenAPI and adapters consume these.
  * JSON Schema 2020-12: https://json-schema.org/draft/2020-12/json-schema-validation
@@ -73,7 +73,7 @@ const grantScopes:JsonSchema={...array(enumeration("rental_requests:read","check
 export const GrantRenewalInput = object({grant_id:uuid});
 export const GrantRenewalReviewInput = object({});
 export const GrantRenewalCompleteInput = object({action_scopes:grantScopes,explicit_new_delegation:{type:"boolean"},consented:{const:true}});
-export const GrantRenewalReviewResult = object({...metadata,renewal_id:uuid,previous_grant_id:uuid,ref:text(80),operator_id:uuid,agent_client_id:text(512),operator_name:text(160),vehicle_name:text(160),pickup_at:timestamp,return_at:timestamp,timezone:rentalWindow.timezone,status:enumeration(...BACKEND_STATUSES),hold_expires_at:nullable(timestamp),payment_due_at:nullable(timestamp),action_scopes:grantScopes,expires_at:timestamp,state:enumeration("authorization_required","authorized"),requires_new_delegation:{type:"boolean"}});
+export const GrantRenewalReviewResult = object({...metadata,renewal_id:uuid,previous_grant_id:uuid,grant_id_to_revoke:uuid,ref:text(80),operator_id:uuid,agent_client_id:text(512),operator_name:text(160),vehicle_name:text(160),pickup_at:timestamp,return_at:timestamp,timezone:rentalWindow.timezone,status:enumeration(...BACKEND_STATUSES),hold_expires_at:nullable(timestamp),payment_due_at:nullable(timestamp),action_scopes:grantScopes,expires_at:timestamp,state:enumeration("authorization_required","authorized"),requires_new_delegation:{type:"boolean"}});
 export const GrantRenewalResult = object({...metadata,renewal_id:uuid,state:enumeration("authorization_required","authorized"),customer_url:httpsUrl,expires_at:timestamp,grant_id:uuid},["grant_id"]);
 export const ApiError = object({ code: enumeration(...ERROR_CODES), message: text(200), request_id: { ...text(80, 16), pattern: '^[A-Za-z0-9_-]+$' }, retryable: { type: 'boolean' }, details: object({ retry_after_seconds: integer(3600, 1), field: enumeration('operator_id', 'vehicle_id', 'pickup_at', 'return_at', 'timezone', 'quote_id', 'consent_receipt_id', 'selected_options', 'cursor', 'limit', 'Idempotency-Key') }, ['retry_after_seconds', 'field']) }, ['details']);
 export const schemas = { OperatorsQuery, VehiclesQuery, Operator, Vehicle, OperatorsPage, VehiclesPage, AvailabilityRequest, AvailabilityResult, QuoteRequest, QuoteItemization, PaymentScheduleItem, QuoteTerms, QuotePricingDetails, QuoteResult, RentalRequestInput, ScopedLinks, RentalRequestResult, RentalStatusResult, CheckoutHandoffResult, ConsentResult, RecoveryResult, ConsentInput, CustomerConsentResult, QuoteReviewResult, CustomerOperatorLinkInput, CustomerOperatorLinkResult, GrantRenewalInput, GrantRenewalReviewInput, GrantRenewalCompleteInput, GrantRenewalReviewResult, GrantRenewalResult, ApiError };
@@ -184,7 +184,8 @@ export function validateContract(name: ContractName, value: unknown, context: { 
       const checked = Date.parse(value.source_checked_at as string), expires = Date.parse(value.expires_at as string), available = Date.parse(value.availability_checked_at as string);
       if (expires <= checked || available > checked || (context.now !== undefined && (expires <= context.now || checked > context.now))) issues.push('$.expires_at');
     }
-    if (name === 'ConsentResult' && (value.state === 'authorized' ? !value.consent_receipt_id || !value.expires_at : value.consent_receipt_id !== undefined || value.expires_at !== undefined)) issues.push('$.state');
+    if (name === 'QuoteReviewResult' && !validateContract('QuoteResult',value.quote,context).ok) issues.push('$.quote');
+    if (name === 'ConsentResult' && (value.state === 'authorized' ? !value.consent_receipt_id || !value.expires_at : value.consent_receipt_id !== undefined || !value.expires_at)) issues.push('$.state');
   }
   return issues.length ? { ok: false, issues } : { ok: true };
 }

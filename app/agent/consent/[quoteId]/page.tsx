@@ -38,7 +38,7 @@ export default function ConsentPage({ params }: { params: { quoteId: string } })
     {loading && <p role="status">Loading your secure review…</p>}
     {error && <p role="alert" className="mt-4">{error}</p>}
     {error && !loading && <button type="button" className="mt-3 underline" onClick={() => { latest.current.review = null; setReload((value) => value + 1); }}>Reload secure review</button>}
-    {!loading && !session && ownedUuid(params.quoteId) && <><p className="mt-4">Sign in securely to review and authorize this request. Customer sign-in must be configured before you can continue.</p><a className="mt-3 inline-block underline" href={customerSignInPath('consent', params.quoteId)}>Sign in to review</a></>}
+    {!loading && (!session || Date.parse(session.expires_at) <= Date.now()) && ownedUuid(params.quoteId) && <><p className="mt-4">Sign in securely to review and authorize this request. Customer sign-in must be configured before you can continue.</p><a className="mt-3 inline-block underline" href={customerSignInPath('consent', params.quoteId)}>Sign in to review</a></>}
     {review && review.quote.quote_id === params.quoteId && <>
       <h2 className="mt-6 text-xl">{review.vehicle_name} · {review.operator_name}</h2>
       <p className="mt-2">Agent application: {review.agent_client_id}</p>

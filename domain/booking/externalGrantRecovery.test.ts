@@ -15,13 +15,13 @@ const mount = (page: any, params: any) => act(async () => root.render(createElem
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(now); vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true); posted = [];
   session = { authenticated: true, csrf: 'synthetic-csrf', expires_at: '2030-01-01T12:10:00Z', profile: { email: 'verified@example.invalid', emailVerified: true, name: 'Synthetic Customer' } };
-  data = { api_version: 'v1', source_checked_at: now.toISOString(), renewal_id: renewalId, previous_grant_id: '10000000-0000-4000-8000-000000000005', ref: 'SYNTHETIC-REQUEST', operator_id: operatorId, operator_name: 'Synthetic Tampa operator', vehicle_name: 'Synthetic car', agent_client_id: 'synthetic-agent-client', action_scopes: ['rental_requests:read', 'checkout:handoff'], expires_at: '2030-01-01T12:10:00Z', state: 'authorization_required', requires_new_delegation: false, pickup_at: '2030-01-10T10:00:00-05:00', return_at: '2030-01-12T10:00:00-05:00', timezone: 'America/New_York', status: 'pending_payment', hold_expires_at: '2030-01-04T12:00:00Z', payment_due_at: '2030-01-03T12:00:00Z' };
+  data = { api_version: 'v1', source_checked_at: now.toISOString(), renewal_id: renewalId, previous_grant_id: '10000000-0000-4000-8000-000000000005', grant_id_to_revoke: '10000000-0000-4000-8000-000000000005', ref: 'SYNTHETIC-REQUEST', operator_id: operatorId, operator_name: 'Synthetic Tampa operator', vehicle_name: 'Synthetic car', agent_client_id: 'synthetic-agent-client', action_scopes: ['rental_requests:read', 'checkout:handoff'], expires_at: '2030-01-01T12:10:00Z', state: 'authorization_required', requires_new_delegation: false, pickup_at: '2030-01-10T10:00:00-05:00', return_at: '2030-01-12T10:00:00-05:00', timezone: 'America/New_York', status: 'pending_payment', hold_expires_at: '2030-01-04T12:00:00Z', payment_due_at: '2030-01-03T12:00:00Z' };
   vi.stubGlobal('fetch', vi.fn(async (path: string, init?: RequestInit) => {
     if (path === '/api/agent/auth/session') return json(session, session.authenticated ? 200 : 401);
     if (path === `/api/agent/customer/grant-renewals/${renewalId}`) return json(data);
     posted.push({ path, body: JSON.parse(init!.body as string) });
     if (path.endsWith('/review')) return json(data);
-    if (path.endsWith('/complete')) return json({ ...data, state: 'authorized' });
+    if (path.endsWith('/complete')) return json({ ...data, state: 'authorized', grant_id_to_revoke: '10000000-0000-4000-8000-000000000006' });
     if (path.endsWith('/revoke')) return new Response(null, { status: 204 });
     if (path === '/api/agent/customer/customers/operator-links') return json({ api_version: 'v1', source_checked_at: now.toISOString(), operator_id: operatorId, state: 'linked' }, 201);
     throw Error('Offline tests forbid unowned network URL');
@@ -84,7 +84,7 @@ describe('actual hosted grant recovery and customer account linking', () => {
   });
   it('revokes only prior grant access without cancelling the existing rental', async () => {
     await mount(RecoveryPage, { renewalId });
-    await act(async () => props(button('Revoke prior agent access')).onClick());
+    await act(async () => props(button('Revoke agent access')).onClick());
     expect(posted).toEqual([{ path: `/api/agent/customer/grants/${data.previous_grant_id}/revoke`, body: { csrf: 'synthetic-csrf' } }]);
     expect(host.textContent).toContain('booking has not been cancelled'); expect(button('Reauthorize agent access')).toBeUndefined();
   });
@@ -95,5 +95,11 @@ describe('actual hosted grant recovery and customer account linking', () => {
     await act(async () => props(host.querySelector('input[name="phone"]')!).onChange({ target: { value: '+13055550100' } }));
     const link = props(button('Link my customer account')).onClick;
     vi.setSystemTime('2030-01-01T12:10:01Z'); await act(async () => link()); expect(posted).toHaveLength(0);
+  });
+  it('revokes the newly authorized grant rather than only its expired or revoked predecessor', async () => {
+    await mount(RecoveryPage, { renewalId }); await act(async () => props(button('Reauthorize agent access')).onClick());
+    await act(async () => props(button('Revoke agent access')).onClick());
+    expect(posted[posted.length - 1]).toEqual({ path: '/api/agent/customer/grants/10000000-0000-4000-8000-000000000006/revoke', body: { csrf: 'synthetic-csrf' } });
+    expect(host.textContent).not.toContain('Agent access authorized for');
   });
 });
