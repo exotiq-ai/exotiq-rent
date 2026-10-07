@@ -27,7 +27,7 @@ const opaque = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i
 
 // Every non-tenant top-level route. A new reserved route MUST be added here or
 // its visitors get the cookie row and a tenant-shaped $pageview.
-const RESERVED_ROUTES = new Set(['api', 'booking', 'browse', 'preview', 'privacy', 'renters', 'saved', 'share', 'terms', 'verify']);
+const RESERVED_ROUTES = new Set(['agent', 'api', 'booking', 'browse', 'preview', 'privacy', 'renters', 'saved', 'share', 'terms', 'verify']);
 
 /** Any tenant storefront, vehicle page, or booking start — not just the exotiq
  * launch tenant. Paid traffic lands on other slugs now (e.g. /ark). */
