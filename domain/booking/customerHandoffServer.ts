@@ -1,5 +1,6 @@
 import {createHostedAuth,type HostedAuthConfiguration,type HostedSession} from './hostedAuth.server';
 import {handoffNonce,parseHandoffReview,parseHandoffResolve} from './customerHandoff';
+import {validateContract} from './externalContracts.generated';
 export {handoffSignIn,parseHandoffReview,parseHandoffResolve} from './customerHandoff';
 const fail=():never=>{throw new Error('Customer handoff unavailable');};
 /** Server-only: callers must first verify the encrypted managed customer cookie.
@@ -9,7 +10,7 @@ export async function forwardCustomerHandoff(config:HostedAuthConfiguration,sess
  const auth=createHostedAuth(config);let body='';
  if(method==='POST'){
   if(!input||Object.keys(input).sort().join(',')!=='action,csrf'||input.action!=='continue'||typeof input.csrf!=='string')fail();
-  auth.assertCsrf(session,origin,input!.csrf as string);body=JSON.stringify({action:'continue'});
+  auth.assertCsrf(session,origin,input!.csrf as string);const payload={action:input!.action};if(!validateContract('CustomerHandoffResolveInput',payload).ok)fail();body=JSON.stringify(payload);
  }
  const url=new URL(config.resource.replace(/\/$/,'')+`/v1/customer-handoffs/${nonce}/${method==='GET'?'review':'resolve'}`);
  const proof=await auth.hostedProof(session,method,url,body);

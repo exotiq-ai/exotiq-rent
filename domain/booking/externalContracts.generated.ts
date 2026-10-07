@@ -1,6 +1,6 @@
 // GENERATED canonical backend schema/validator; do not edit by hand.
 // Source: supabase/functions/_shared/external-booking/contracts.ts
-// Source SHA256: 28ddb0bd09fb2f225959e80ee744ff72c9e55b4dce69ceec4f96cab330e298b6
+// Source SHA256: 7511c3b90ad3551f93bd455fef35e3e46a91b78318c764377beb2d0c9de47d1c
 // Generator: scripts/generate-external-contracts.mjs; server-only section excluded; 0n -> BigInt(0).
 /** Canonical transport-independent v1 schemas. OpenAPI and adapters consume these.
  * JSON Schema 2020-12: https://json-schema.org/draft/2020-12/json-schema-validation
@@ -36,8 +36,8 @@ const options: JsonSchema = { ...array(enumeration('premium', 'standard', 'decli
 // cancelled plus cancellation_reason. Generic 'expired' is not a stored booking state.
 export const BACKEND_STATUSES = ['pending_documents', 'requested', 'pending', 'pending_payment', 'confirmed', 'active', 'declined', 'cancelled', 'payment_expired', 'completed', 'refunded'] as const;
 export const NEXT_ACTIONS = ['verify_identity', 'await_operator', 'hosted_checkout', 'await_payment_settlement', 'await_reconciliation', 'confirmed', 'rental_active', 'declined', 'cancelled', 'expired', 'completed', 'refunded', 'recover_authorization'] as const;
-export const ERROR_CODES = ['invalid_input', 'unauthorized', 'forbidden', 'not_found', 'dates_unavailable', 'quote_changed', 'idempotency_conflict', 'request_in_flight', 'consent_mismatch', 'quote_expired', 'consent_expired', 'payment_window_expired', 'rate_limited', 'upstream_unavailable'] as const;
-export const SCOPES = ['catalog:read', 'quotes:create', 'rental_requests:create', 'rental_requests:read', 'checkout:handoff'] as const;
+export const ERROR_CODES = ['invalid_input', 'unauthorized', 'forbidden', 'not_found', 'dates_unavailable', 'quote_changed', 'idempotency_conflict', 'request_in_flight', 'consent_mismatch', 'quote_expired', 'consent_expired', 'payment_window_expired', 'grant_expired', 'grant_revoked', 'configuration_unavailable', 'external_writes_disabled', 'rate_limited', 'upstream_unavailable'] as const;
+export const SCOPES = ['catalog:read', 'quotes:create', 'rental_requests:create', 'rental_requests:read', 'checkout:handoff','identity:handoff'] as const;
 export const OperatorsQuery = object({ city: text(80), operator_slug: slug, cursor, limit: { ...integer(50, 1), default: 20 } }, ['city', 'operator_slug', 'cursor', 'limit']);
 export const VehiclesQuery = object({ operator_id: uuid, city: text(80), cursor, limit: { ...integer(50, 1), default: 20 }, pickup_at: timestamp, return_at: timestamp, timezone: rentalWindow.timezone }, ['operator_id', 'city', 'cursor', 'limit', 'pickup_at', 'return_at', 'timezone']);
 export const Operator = object({ operator_id: uuid, slug, name: text(160), city: text(80), timezone: rentalWindow.timezone, storefront_url: httpsUrl });
@@ -60,23 +60,29 @@ export const QuoteResult = object({ ...metadata, ...rentalWindow, quote_id: uuid
 export const RentalRequestInput = object({ quote_id: uuid, consent_receipt_id: uuid });
 export const ScopedLinks = object({ status: httpsUrl, consent: httpsUrl, recovery: httpsUrl, identity: httpsUrl, checkout_handoff: httpsUrl }, ['consent', 'recovery', 'identity', 'checkout_handoff']);
 export const RentalRequestResult = object({ ...metadata, ref: { ...text(80), pattern: '^[A-Za-z0-9_-]+$' }, status: enumeration(...BACKEND_STATUSES), next_action: enumeration(...NEXT_ACTIONS), hold_expires_at: nullable(timestamp), links: ScopedLinks });
-export const RentalStatusResult = object({ ...RentalRequestResult.properties, payment_due_at: nullable(timestamp), inventory_blocked: { type: 'boolean' }, poll_after_seconds: integer(3600, 1) });
+export const RentalStatusResult = object({ ...RentalRequestResult.properties, payment_due_at: nullable(timestamp), inventory_blocked: { type: 'boolean' }, poll_after_seconds: integer(60, 5) });
 export const CheckoutHandoffResult = object({ ...metadata, customer_url: httpsUrl, expires_at: timestamp, state: enumeration('pending_payment'), next_action: enumeration('hosted_checkout') });
+export const IdentityHandoffResult = object({...metadata,customer_url:httpsUrl,expires_at:timestamp,state:enumeration('pending_documents','pending_payment'),next_action:{const:'verify_identity'}});
+export const CustomerHandoffResolveInput = object({action:{const:'continue'}});
+export const CustomerHandoffReviewResult = object({...metadata,ref:RentalRequestResult.properties!.ref,operator_name:text(160),vehicle_name:text(160),action:enumeration('identity','checkout'),status:enumeration(...BACKEND_STATUSES),expires_at:timestamp});
+export const CustomerHandoffResolveResult = object({...metadata,action:enumeration('identity','checkout'),provider_url:httpsUrl,expires_at:timestamp});
+export const CustomerRentalStatusResult = object({...metadata,ref:RentalRequestResult.properties!.ref,operator_id:uuid,operator_name:text(160),vehicle_name:text(160),status:enumeration(...BACKEND_STATUSES),next_action:enumeration(...NEXT_ACTIONS),hold_expires_at:nullable(timestamp),payment_due_at:nullable(timestamp)});
 export const ConsentResult = object({ ...metadata, quote_id: uuid, state: enumeration('waiting', 'authorized'), consent_receipt_id: uuid, expires_at: timestamp }, ['consent_receipt_id', 'expires_at']);
 export const RecoveryResult = object({ ...metadata, ref: text(80), state: enumeration('authorization_required', 'authorized'), customer_url: httpsUrl, expires_at: timestamp });
-export const ConsentInput = object({terms_hash:{...text(64,64),pattern: "^[a-f0-9]{64}$"},action:{const:"rental_requests:create"}});
+const bookingActionScopes:JsonSchema={...array(enumeration('rental_requests:read','checkout:handoff','identity:handoff'),3,1),uniqueItems:true};
+export const ConsentInput = object({terms_hash:{...text(64,64),pattern: "^[a-f0-9]{64}$"},action:{const:"rental_requests:create"},action_scopes:bookingActionScopes});
 export const CustomerConsentResult = object({...metadata,quote_id:uuid,state:{const:"authorized"},expires_at:timestamp});
 export const QuoteReviewResult = object({quote:QuoteResult,operator_name:text(160),vehicle_name:text(160),agent_client_id:text(512)});
 export const CustomerOperatorLinkInput = object({operator_id:uuid,full_name:text(160,2),phone:{...text(30,7),pattern:"^[+0-9() .-]{7,30}$"},consented:{const:true}});
 export const CustomerOperatorLinkResult = object({...metadata,operator_id:uuid,state:{const:"linked"}});
-const grantScopes:JsonSchema={...array(enumeration("rental_requests:read","checkout:handoff"),2,1),uniqueItems:true};
+const grantScopes=bookingActionScopes;
 export const GrantRenewalInput = object({grant_id:uuid});
 export const GrantRenewalReviewInput = object({});
 export const GrantRenewalCompleteInput = object({action_scopes:grantScopes,explicit_new_delegation:{type:"boolean"},consented:{const:true}});
 export const GrantRenewalReviewResult = object({...metadata,renewal_id:uuid,previous_grant_id:uuid,grant_id_to_revoke:uuid,ref:text(80),operator_id:uuid,agent_client_id:text(512),operator_name:text(160),vehicle_name:text(160),pickup_at:timestamp,return_at:timestamp,timezone:rentalWindow.timezone,status:enumeration(...BACKEND_STATUSES),hold_expires_at:nullable(timestamp),payment_due_at:nullable(timestamp),action_scopes:grantScopes,expires_at:timestamp,state:enumeration("authorization_required","authorized"),requires_new_delegation:{type:"boolean"}});
 export const GrantRenewalResult = object({...metadata,renewal_id:uuid,state:enumeration("authorization_required","authorized"),customer_url:httpsUrl,expires_at:timestamp,grant_id:uuid},["grant_id"]);
 export const ApiError = object({ code: enumeration(...ERROR_CODES), message: text(200), request_id: { ...text(80, 16), pattern: '^[A-Za-z0-9_-]+$' }, retryable: { type: 'boolean' }, details: object({ retry_after_seconds: integer(3600, 1), field: enumeration('operator_id', 'vehicle_id', 'pickup_at', 'return_at', 'timezone', 'quote_id', 'consent_receipt_id', 'selected_options', 'cursor', 'limit', 'Idempotency-Key') }, ['retry_after_seconds', 'field']) }, ['details']);
-export const schemas = { OperatorsQuery, VehiclesQuery, Operator, Vehicle, OperatorsPage, VehiclesPage, AvailabilityRequest, AvailabilityResult, QuoteRequest, QuoteItemization, PaymentScheduleItem, QuoteTerms, QuotePricingDetails, QuoteResult, RentalRequestInput, ScopedLinks, RentalRequestResult, RentalStatusResult, CheckoutHandoffResult, ConsentResult, RecoveryResult, ConsentInput, CustomerConsentResult, QuoteReviewResult, CustomerOperatorLinkInput, CustomerOperatorLinkResult, GrantRenewalInput, GrantRenewalReviewInput, GrantRenewalCompleteInput, GrantRenewalReviewResult, GrantRenewalResult, ApiError };
+export const schemas = { OperatorsQuery, VehiclesQuery, Operator, Vehicle, OperatorsPage, VehiclesPage, AvailabilityRequest, AvailabilityResult, QuoteRequest, QuoteItemization, PaymentScheduleItem, QuoteTerms, QuotePricingDetails, QuoteResult, RentalRequestInput, ScopedLinks, RentalRequestResult, RentalStatusResult, CheckoutHandoffResult, IdentityHandoffResult, CustomerHandoffResolveInput, CustomerHandoffReviewResult, CustomerHandoffResolveResult, CustomerRentalStatusResult, ConsentResult, RecoveryResult, ConsentInput, CustomerConsentResult, QuoteReviewResult, CustomerOperatorLinkInput, CustomerOperatorLinkResult, GrantRenewalInput, GrantRenewalReviewInput, GrantRenewalCompleteInput, GrantRenewalReviewResult, GrantRenewalResult, ApiError };
 export type ContractName = keyof typeof schemas;
 export type ValidationResult = { ok: true } | { ok: false; issues: string[] };
 type JsonObject = Record<string, unknown>;
@@ -185,6 +191,10 @@ export function validateContract(name: ContractName, value: unknown, context: { 
       if (expires <= checked || available > checked || (context.now !== undefined && (expires <= context.now || checked > context.now))) issues.push('$.expires_at');
     }
     if (name === 'QuoteReviewResult' && !validateContract('QuoteResult',value.quote,context).ok) issues.push('$.quote');
+    if(name==='CustomerHandoffResolveResult'){
+      const url=new URL(value.provider_url as string),host=value.action==='checkout'?'checkout.stripe.com':'verify.stripe.com';
+      if(url.hostname!==host||url.username||url.password||url.hash||(url.port&&url.port!=='443')||url.pathname==='/'||[...url.searchParams.keys()].some(key=>/(?:token|secret|credential|email|nonce|authorization|booking_ref)/i.test(key)))issues.push('$.provider_url');
+    }
     if (name === 'ConsentResult' && (value.state === 'authorized' ? !value.consent_receipt_id || !value.expires_at : value.consent_receipt_id !== undefined || !value.expires_at)) issues.push('$.state');
   }
   return issues.length ? { ok: false, issues } : { ok: true };
