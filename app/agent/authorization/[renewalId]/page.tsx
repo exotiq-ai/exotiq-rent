@@ -1,9 +1,8 @@
 'use client';
 import { use, useEffect, useRef, useState } from 'react';
-import { customerSignInPath, readCustomerSession } from '@/domain/booking/externalConsent';
+import { customerSignInPath, readCustomerSession,customerActionLabels } from '@/domain/booking/externalConsent';
 import { ownedUuid, type CustomerSession } from '@/domain/booking/externalContracts';
 import { canRecoverGrant, readGrantReview, recoverGrant, revokeGrant, type GrantReview } from '@/domain/booking/externalGrantRecovery';
-const scopeLabels = { 'rental_requests:read': 'Read this existing rental request’s status', 'checkout:handoff': 'Open customer-hosted checkout for this rental' };
 export default function RecoveryPage({ params: pendingParams }: { params: Promise<{ renewalId: string }> }) {
   const params = use(pendingParams);
   const [session, setSession] = useState<CustomerSession | null>(null), [review, setReview] = useState<GrantReview | null>(null);
@@ -41,7 +40,7 @@ export default function RecoveryPage({ params: pendingParams }: { params: Promis
       <p>Existing request: {review.ref}</p><p>Status: {review.status}</p><p>Pickup: {review.pickup_at} · Return: {review.return_at}</p><p>Time zone: {review.timezone}</p>
       <p>Inventory hold deadline: {review.hold_expires_at ?? 'No active hold deadline'}</p><p>Payment deadline: {review.payment_due_at ?? 'Payment is not currently due'}</p>
       <p className="mt-3">Agent application: {review.agent_client_id}</p><p>Authorization review expires: {review.expires_at}</p>
-      <ul className="mt-3 list-disc pl-6">{review.action_scopes.map((scope) => <li key={scope}>{scopeLabels[scope]}</li>)}</ul>
+      <ul className="mt-3 list-disc pl-6">{review.action_scopes.map((scope) => <li key={scope}>{customerActionLabels[scope]}</li>)}</ul>
       <p className="mt-4">This changes only the listed agent access. Your existing rental request and its hold and payment deadlines remain unchanged. You complete payment yourself on customer-hosted checkout.</p>
       {review.requires_new_delegation && <p role="status" className="mt-4">Prior agent access was revoked. It stays revoked. You must explicitly authorize a new delegation to give this agent access again.</p>}
       {!revoked && (review.state === 'authorized' ? <p role="status" className="mt-4">Agent access authorized for the existing request.</p> : <button type="button" className="mt-4 rounded-lg border p-3 disabled:opacity-50" disabled={pending || !session || !canRecoverGrant(review, session)} onClick={() => mutate('renew')}>{pending ? 'Recording authorization…' : review.requires_new_delegation ? 'Authorize new agent access' : 'Reauthorize agent access'}</button>)}

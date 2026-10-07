@@ -58,7 +58,7 @@ export function createHostedAuth(config:HostedAuthConfiguration|null,dependencie
  return {
   async beginLogin(destination:string){
    if(!ownedReturnPath(destination))fail();const verifier=randomBytes(32).toString('base64url'),nonce=randomBytes(32).toString('base64url'),state=randomBytes(32).toString('base64url');
-   const url=new URL(c.authorizationEndpoint);for(const [k,v] of Object.entries({response_type:'code',client_id:c.clientId,redirect_uri:c.frontendOrigin+'/api/agent/auth/callback',scope:'openid email profile quotes:create rental_requests:create rental_requests:read checkout:handoff',resource:c.resource,state,nonce,code_challenge:createHash('sha256').update(verifier).digest('base64url'),code_challenge_method:'S256',max_age:'0'}))url.searchParams.set(k,v);
+   const url=new URL(c.authorizationEndpoint);for(const [k,v] of Object.entries({response_type:'code',client_id:c.clientId,redirect_uri:c.frontendOrigin+'/api/agent/auth/callback',scope:'openid email profile quotes:create rental_requests:create rental_requests:read checkout:handoff identity:handoff',resource:c.resource,state,nonce,code_challenge:createHash('sha256').update(verifier).digest('base64url'),code_challenge_method:'S256',max_age:'0'}))url.searchParams.set(k,v);
    return {url:url.toString(),cookie:await sealCookie(c.cookieKey,'transaction',{verifier,nonce,state,destination},now().getTime()+600000)};
   },
   async completeLogin(callback:URL,transactionCookie:string){

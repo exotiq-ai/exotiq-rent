@@ -1,6 +1,6 @@
 'use client';
 import { use, useEffect, useRef, useState } from 'react';
-import { authorizeQuote, canAuthorizeQuote, customerSignInPath, readCustomerSession, readQuoteReview } from '@/domain/booking/externalConsent';
+import { authorizeQuote, canAuthorizeQuote, customerSignInPath, readCustomerSession, readQuoteReview,CUSTOMER_ACTION_SCOPES,customerActionLabels,validConsentScopes,type CustomerActionScope } from '@/domain/booking/externalConsent';
 import { ownedUuid, type CustomerSession, type QuoteReview } from '@/domain/booking/externalContracts';
 const money = (cents: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100);
 export default function ConsentPage({ params: pendingParams }: { params: Promise<{ quoteId: string }> }) {
@@ -10,11 +10,12 @@ export default function ConsentPage({ params: pendingParams }: { params: Promise
   const [loading, setLoading] = useState(true), [error, setError] = useState(''), [authorized, setAuthorized] = useState(false), [pending, setPending] = useState(false);
   const [, tick] = useState(0); const locked = useRef(false); const generation = useRef(0);
   const [reload, setReload] = useState(0);
-  const latest = useRef({ review, session, authorized, quoteId: params.quoteId });
-  latest.current = { review, session, authorized, quoteId: params.quoteId };
+  const [scopes,setScopes]=useState<CustomerActionScope[]>([]);
+  const latest = useRef({ review, session, authorized,scopes, quoteId: params.quoteId });
+  latest.current = { review, session, authorized,scopes, quoteId: params.quoteId };
   useEffect(() => {
     const epoch = generation; const current = ++epoch.current;
-    setLoading(true); setReview(null); setSession(null); setAuthorized(false); setError(''); locked.current = false;
+    setLoading(true); setReview(null); setSession(null); setAuthorized(false);setScopes([]); setError(''); locked.current = false;
     void (async () => {
       try { if (!ownedUuid(params.quoteId)) throw Error('Invalid customer request.');
         const signedIn = await readCustomerSession(); if (current !== generation.current) return; setSession(signedIn);
@@ -26,10 +27,10 @@ export default function ConsentPage({ params: pendingParams }: { params: Promise
     return () => { ++epoch.current; clearInterval(timer); };
   }, [params.quoteId, reload]);
   const authorize = async () => {
-    if (locked.current || !review || review.quote.quote_id !== params.quoteId || !session || authorized || latest.current.review !== review || latest.current.session !== session || latest.current.quoteId !== params.quoteId || latest.current.authorized) return;
+    if (locked.current || !review || review.quote.quote_id !== params.quoteId || !session || authorized || latest.current.review !== review || latest.current.session !== session || latest.current.quoteId !== params.quoteId || latest.current.authorized||latest.current.scopes!==scopes||!validConsentScopes(review,scopes)) return;
     if (!canAuthorizeQuote(review, session)) { setError('This quote or sign-in expired. Sign in again and request a fresh quote.'); return; }
     locked.current = true; setPending(true); setError(''); const current = generation.current;
-    try { await authorizeQuote(review, session); if (current === generation.current) setAuthorized(true); }
+    try { await authorizeQuote(review, session,scopes); if (current === generation.current) setAuthorized(true); }
     catch (failure) { if (current === generation.current) { setError(failure instanceof Error ? failure.message : 'Authorization could not be confirmed.'); setReview(null); } }
     finally { if (current === generation.current) { locked.current = false; setPending(false); } }
   };
@@ -58,8 +59,13 @@ export default function ConsentPage({ params: pendingParams }: { params: Promise
       <p className="mt-3">{review.quote.terms.cancellation_policy}</p><p>{review.quote.terms.deposit_disclosure}</p>
       <p>Mileage allowance: {review.quote.terms.mileage_limit === null ? 'Confirm with operator' : `${review.quote.terms.mileage_limit} miles`}. Overage: {review.quote.terms.mileage_overage_rate_usd === null ? 'Confirm with operator' : `$${review.quote.terms.mileage_overage_rate_usd} per mile`}.</p>
       <p className="mt-6">Authorize the agent to submit this exact rental request. It remains pending operator approval. You complete identity verification and hosted payment yourself; no payment is made by this authorization.</p>
+      <fieldset className="mt-4 space-y-3" disabled={pending||authorized}>
+        <legend className="text-title-sm">Choose the agent actions you authorize</legend>
+        {CUSTOMER_ACTION_SCOPES.map(scope=><label className="block" key={scope}><input type="checkbox" name={scope} checked={scopes.includes(scope)} onChange={event=>{const checked=event.target.checked;latest.current.scopes=[];setScopes(current=>CUSTOMER_ACTION_SCOPES.filter(value=>value===scope?checked:current.includes(value)));}} /> <span>{customerActionLabels[scope]}</span></label>)}
+      </fieldset>
+      <p className="mt-3">Select at least one action. Identity and payment links require your own secure sign-in and explicit Continue; your agent cannot submit documents or make payment for you.</p>
       {!valid && <p role="status" className="mt-3">This quote or sign-in has expired. Sign in again and ask your agent for a fresh quote.</p>}
-      {!authorized && <button type="button" className="mt-4 rounded-lg border p-3 disabled:opacity-50" disabled={!valid || pending} onClick={authorize}>{pending ? 'Recording authorization…' : 'Authorize rental request'}</button>}
+      {!authorized && <button type="button" className="mt-4 rounded-lg border p-3 disabled:opacity-50" disabled={!valid || pending||!validConsentScopes(review,scopes)} onClick={authorize}>{pending ? 'Recording authorization…' : 'Authorize rental request'}</button>}
     </>}
     {authorized && <p role="status" className="mt-6">Authorization recorded. Your agent can submit this request securely. The rental is pending operator approval.</p>}
     <p className="mt-6 text-body-sm">Keep payment details and identity documents on the customer-hosted verification and checkout pages.</p>

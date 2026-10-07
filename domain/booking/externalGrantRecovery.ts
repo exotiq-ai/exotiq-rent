@@ -1,12 +1,12 @@
 import { validateContract, validateRentalWindow } from './externalContracts.generated';
 import { ownedUuid, type CustomerSession } from './externalContracts';
-import { customerFetch, CustomerRequestError } from './externalConsent';
+import { customerFetch, CustomerRequestError,type CustomerActionScope } from './externalConsent';
 export interface GrantReview {
   api_version: 'v1'; source_checked_at: string; renewal_id: string; ref: string; operator_id: string;
   previous_grant_id: string; grant_id_to_revoke: string; agent_client_id: string; operator_name: string; vehicle_name: string;
   pickup_at: string; return_at: string; timezone: string; status: string;
   hold_expires_at: string | null; payment_due_at: string | null;
-  action_scopes: ('rental_requests:read' | 'checkout:handoff')[];
+  action_scopes: CustomerActionScope[];
   expires_at: string; state: 'authorization_required' | 'authorized'; requires_new_delegation: boolean;
 }
 export function parseGrantReview(value: unknown, renewalId: string): GrantReview {
@@ -30,7 +30,7 @@ export async function recoverGrant(review: GrantReview, session: CustomerSession
   const unchanged = (['ref', 'previous_grant_id', 'operator_id', 'agent_client_id', 'pickup_at', 'return_at', 'timezone', 'status', 'hold_expires_at', 'payment_due_at', 'requires_new_delegation'] as const).every((key) => reviewed[key] === review[key]);
   if (!unchanged || JSON.stringify(reviewed.action_scopes) !== JSON.stringify(review.action_scopes) || !canRecoverGrant(reviewed, session)) throw new CustomerRequestError('upstream_unavailable', 'Authorization details changed. Review the existing request again.');
   const result = parseGrantReview(await customerFetch(`/api/agent/customer/grant-renewals/${review.renewal_id}/complete`, { csrf: session.csrf, action_scopes: review.action_scopes, explicit_new_delegation: review.requires_new_delegation, consented: true }), review.renewal_id);
-  if (result.ref !== review.ref || result.state !== 'authorized') throw new CustomerRequestError('upstream_unavailable', 'Authorization could not be confirmed.');
+  if (result.ref !== review.ref || result.state !== 'authorized'||result.operator_id!==review.operator_id||result.agent_client_id!==review.agent_client_id||JSON.stringify(result.action_scopes)!==JSON.stringify(review.action_scopes)) throw new CustomerRequestError('upstream_unavailable', 'Authorization could not be confirmed.');
   return result;
 }
 export async function revokeGrant(review: GrantReview, session: CustomerSession): Promise<void> {

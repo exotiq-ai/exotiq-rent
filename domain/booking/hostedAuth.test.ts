@@ -10,7 +10,7 @@ describe('hosted customer OIDC bridge',()=>{
  it('uses PKCE S256, nonce, exact callback/resource and a bounded owned return path',async()=>{
   const client=createHostedAuth(cfg,{now:()=>now});const login=await client.beginLogin(returnTo);
   const url=new URL(login.url);expect(url.searchParams.get('code_challenge_method')).toBe('S256');expect(url.searchParams.get('resource')).toBe(cfg.resource);expect(url.searchParams.get('redirect_uri')).toBe(cfg.frontendOrigin+'/api/agent/auth/callback');expect(url.searchParams.get('response_type')).toBe('code');expect(url.searchParams.get('nonce')).toMatch(/^[\w-]{43}$/);
-  expect(JSON.stringify(login)).not.toContain('synthetic-test-only');expect(JSON.stringify(login)).not.toContain('code_verifier');
+  expect(url.searchParams.get('scope')?.split(' ')).toContain('identity:handoff');expect(JSON.stringify(login)).not.toContain('synthetic-test-only');expect(JSON.stringify(login)).not.toContain('code_verifier');
  });
  it.each(['https://evil.example/','//evil.example','/agent/consent/x?access_token=secret','/api/admin','/agent/consent/../../settings'])('denies arbitrary return destination %s',async(path)=>{await expect(createHostedAuth(cfg).beginLogin(path)).rejects.toThrow();});
  it('refuses provider URL tricks and missing production configuration',()=>{

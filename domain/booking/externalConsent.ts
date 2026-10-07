@@ -3,6 +3,13 @@ import { validateContract } from './externalContracts.generated';
 export class CustomerRequestError extends Error {
   constructor(readonly code: string, message: string) { super(message); }
 }
+export const CUSTOMER_ACTION_SCOPES=['rental_requests:read','checkout:handoff','identity:handoff'] as const;
+export type CustomerActionScope=typeof CUSTOMER_ACTION_SCOPES[number];
+export const customerActionLabels:Record<CustomerActionScope,string>={
+ 'rental_requests:read':'Read this rental request’s status',
+ 'checkout:handoff':'Open customer-hosted checkout for this rental',
+ 'identity:handoff':'Open customer-hosted identity verification for this rental',
+};
 export function customerSignInPath(kind: 'consent' | 'authorization' | 'account', id: string): string {
   if (!ownedUuid(id)) throw Error('Invalid customer request.');
   return `/api/agent/auth/start?return_to=${encodeURIComponent(`/agent/${kind}/${id}`)}`;
@@ -37,8 +44,12 @@ export async function readQuoteReview(quoteId: string): Promise<QuoteReview> {
 export function canAuthorizeQuote(review: QuoteReview, session: CustomerSession, now = Date.now()): boolean {
   return Date.parse(review.quote.expires_at) > now && Date.parse(session.expires_at) > now;
 }
-export async function authorizeQuote(review: QuoteReview, session: CustomerSession): Promise<void> {
+export function validConsentScopes(review:QuoteReview,actionScopes:readonly CustomerActionScope[]):boolean {
+  return validateContract('ConsentInput',{terms_hash:review.quote.terms_hash,action:'rental_requests:create',action_scopes:actionScopes}).ok;
+}
+export async function authorizeQuote(review: QuoteReview, session: CustomerSession,actionScopes:readonly CustomerActionScope[]): Promise<void> {
   if (!canAuthorizeQuote(review, session)) throw new CustomerRequestError('quote_expired', 'This quote or sign-in expired. Sign in again and request a fresh quote.');
-  const result = await customerFetch(`/api/agent/customer/quotes/${review.quote.quote_id}/consents`, { csrf: session.csrf, terms_hash: review.quote.terms_hash, action: 'rental_requests:create' });
+  if(!validConsentScopes(review,actionScopes))throw new CustomerRequestError('invalid_input','Choose the agent actions you authorize for this rental.');
+  const result = await customerFetch(`/api/agent/customer/quotes/${review.quote.quote_id}/consents`, { csrf: session.csrf, terms_hash: review.quote.terms_hash, action: 'rental_requests:create',action_scopes:[...actionScopes] });
   if (!validateContract('CustomerConsentResult', result).ok || !result || typeof result !== 'object' || (result as any).quote_id !== review.quote.quote_id) throw new CustomerRequestError('upstream_unavailable', 'Authorization could not be confirmed. Please retry.');
 }
