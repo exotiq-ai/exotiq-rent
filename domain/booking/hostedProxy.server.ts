@@ -32,7 +32,7 @@ export async function forwardHostedRequest(config:HostedAuthConfiguration,sessio
  const url=new URL(config.resource.replace(/\/$/,'')+'/v1/'+path);
  const proof=await auth.hostedProof(session,method,url,body);
  const upstream=await transport(url,{method,headers:{authorization:'Bearer '+session.accessToken,'X-Exotiq-Hosted-Proof':proof,'content-type':'application/json'},body:method==='POST'?body:undefined,cache:'no-store',redirect:'error',signal:AbortSignal.timeout(5000)});
- if((customerStatus.test(path)||handoff)&&upstream.status!==200){await upstream.body?.cancel();if(upstream.status>=400&&upstream.status<=599)return {status:upstream.status,body:{code:handoff?'customer_request_unavailable':'customer_status_unavailable'}};fail();}
+ if((customerStatus.test(path)||handoff)&&upstream.status!==200&&!(handoff&&upstream.status===201)){await upstream.body?.cancel();if(upstream.status>=400&&upstream.status<=599)return {status:upstream.status,body:{code:handoff?'customer_request_unavailable':'customer_status_unavailable'}};fail();}
  if(upstream.status===204)return {status:204,body:null};
  if(!upstream.headers.get('content-type')?.toLowerCase().startsWith('application/json')||!upstream.body)fail();
  const reader=upstream.body!.getReader();let size=0;const chunks:Uint8Array[]=[];

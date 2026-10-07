@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+// @vitest-environment-options {"url":"https://rent.example.invalid"}
 import {act,createElement} from 'react';import {createRoot,type Root} from 'react-dom/client';
 import {beforeEach,afterEach,it,expect,vi} from 'vitest';
 import AccountPage from '@/app/agent/account/[operatorId]/page';
@@ -23,7 +24,7 @@ it('reads real customer-owned status only after sign-in and exposes no onboardin
 it.each(['identity','checkout'])('allows a status-only customer to explicitly create their own %s link',async action=>{
  status.next_action=action==='identity'?'verify_identity':'hosted_checkout';status.status=action==='identity'?'pending_documents':'pending_payment';
  const original=fetch;let writes=0;
- vi.stubGlobal('fetch',vi.fn(async(path:string,init?:RequestInit)=>{if(init?.method==='POST'){writes++;expect(path).toBe('/api/agent/customer/customers/rental-requests/SYNTHETIC-REQUEST/'+action+'-handoff');expect(JSON.parse(init.body as string)).toEqual({csrf:session.csrf,action:'continue'});return json({api_version:'v1',source_checked_at:now.toISOString(),customer_url:location.origin+'/agent/handoff/'+'a'.repeat(43),expires_at:'2030-01-01T12:01:00Z',state:status.status,next_action:status.next_action});}return original(path,init);}));
+ vi.stubGlobal('fetch',vi.fn(async(path:string,init?:RequestInit)=>{if(init?.method==='POST'){writes++;expect(path).toBe('/api/agent/customer/customers/rental-requests/SYNTHETIC-REQUEST/'+action+'-handoff');expect(JSON.parse(init.body as string)).toEqual({csrf:session.csrf,action:'continue'});return json({api_version:'v1',source_checked_at:now.toISOString(),customer_url:location.origin+'/agent/handoff/'+'a'.repeat(43),expires_at:'2030-01-01T12:01:00Z',state:status.status,next_action:status.next_action},201);}return original(path,init);}));
  await act(async()=>root.render(createElement(AccountPage,{params:Promise.resolve({operatorId}),searchParams:Promise.resolve({ref:'SYNTHETIC-REQUEST'})})));
  expect(host.textContent).toContain('Your rental request');expect(host.textContent).not.toContain('Returned from hosted');expect(writes).toBe(0);
  const button=Array.from(host.querySelectorAll('button')).find(b=>b.textContent==='Create secure '+(action==='identity'?'identity':'payment')+' link')!;
@@ -44,4 +45,18 @@ it('expires a status snapshot and refreshes it with a new owner-checked read',as
  await mount();vi.setSystemTime('2030-01-01T12:01:01Z');await mount();expect(host.textContent).not.toContain('Synthetic touring car');
  status.source_checked_at=new Date().toISOString();const refresh=Array.from(host.querySelectorAll('button')).find(b=>b.textContent==='Refresh current status')!;
  await act(async()=>props(refresh).onClick());expect(host.textContent).toContain('Synthetic touring car');
+});
+it('captured customer action cannot submit after status expires or the selected request changes',async()=>{
+ status.next_action='verify_identity';status.status='pending_documents';await mount();
+ const button=Array.from(host.querySelectorAll('button')).find(b=>b.textContent==='Create secure identity link')!,captured=props(button).onClick;
+ vi.setSystemTime('2030-01-01T12:01:01Z');await act(async()=>captured());expect(calls).toHaveLength(2);
+ vi.setSystemTime(now);status={...status,ref:'NEW-REQUEST'};await mount('NEW-REQUEST');await act(async()=>captured());expect(calls.some(path=>path.endsWith('-handoff'))).toBe(false);
+});
+it('a late customer link response cannot surface on another rental request',async()=>{
+ status.next_action='verify_identity';status.status='pending_documents';const original=fetch;
+ vi.stubGlobal('fetch',vi.fn(async(path:string,init?:RequestInit)=>init?.method==='POST'?new Promise<Response>(resolve=>{deferred=resolve;}):original(path,init)));
+ await mount();const button=Array.from(host.querySelectorAll('button')).find(b=>b.textContent==='Create secure identity link')!;let action:Promise<void>;
+ await act(async()=>{action=props(button).onClick();});expect(deferred).not.toBeNull();status={...status,ref:'NEW-REQUEST'};await mount('NEW-REQUEST');
+ await act(async()=>{deferred!(json({api_version:'v1',source_checked_at:now.toISOString(),customer_url:location.origin+'/agent/handoff/'+'a'.repeat(43),expires_at:'2030-01-01T12:01:00Z',state:'pending_documents',next_action:'verify_identity'},201));await action;});
+ expect(host.textContent).toContain('NEW-REQUEST');expect(host.querySelector('a')).toBeNull();
 });

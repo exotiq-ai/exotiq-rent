@@ -65,6 +65,7 @@ export default function ConsentPage({ params: pendingParams }: { params: Promise
       </fieldset>
       <p className="mt-3">Select at least one action. Identity and payment links require your own secure sign-in and explicit Continue; your agent cannot submit documents or make payment for you.</p>
       {!valid && <p role="status" className="mt-3">This quote or sign-in has expired. Sign in again and ask your agent for a fresh quote.</p>}
+      <p className="mt-4">Your agent will provide your secure rental page after submitting this request. You can complete identity verification and payment there yourself, even if you did not authorize agent access to those links.</p>
       {!authorized && <button type="button" className="mt-4 rounded-lg border p-3 disabled:opacity-50" disabled={!valid || pending||!validConsentScopes(review,scopes)} onClick={authorize}>{pending ? 'Recording authorization…' : 'Authorize rental request'}</button>}
     </>}
     {authorized && <p role="status" className="mt-6">Authorization recorded. Your agent can submit this request securely. The rental is pending operator approval.</p>}
