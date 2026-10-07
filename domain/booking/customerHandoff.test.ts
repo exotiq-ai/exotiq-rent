@@ -6,6 +6,14 @@ const session={issuer:config.issuer,subject:'renter',clientId:config.clientId,ac
 const review=()=>({api_version:'v1',source_checked_at:new Date().toISOString(),ref:'RENT-1',operator_name:'Synthetic operator',vehicle_name:'Synthetic car',action:'checkout',status:'pending_payment',expires_at:new Date(Date.now()+60000).toISOString()});
 const resolve=(provider_url='https://checkout.stripe.com/c/pay/synthetic')=>({api_version:'v1',source_checked_at:new Date().toISOString(),action:'checkout',provider_url,expires_at:new Date(Date.now()+60000).toISOString()});
 describe('customer-only provider handoff boundary',()=>{
+ it.each(['grant_expired','grant_revoked'])('preserves only safe canonical409 %s recovery code from review and resolve',async code=>{
+  const transport=async()=>Response.json({code,message:'private backend message',request_id:'10000000-0000-4000-8000-000000000002',retryable:false},{status:409});
+  expect(await forwardCustomerHandoff(config,session,nonce,'GET',null,null,transport as any)).toEqual({status:409,body:{code}});
+  expect(await forwardCustomerHandoff(config,session,nonce,'POST',{csrf:session.csrf,action:'continue'},config.frontendOrigin,transport as any)).toEqual({status:409,body:{code}});
+ });
+ it.each([{status:404,code:'grant_revoked'},{status:409,code:'forbidden'},{status:409,code:'grant_revoked',private:'customer'}])('keeps noncanonical/wrongstatus recovery error generic %j',async change=>{
+  const result=await forwardCustomerHandoff(config,session,nonce,'GET',null,null,(async()=>Response.json({code:change.code,message:'private',request_id:'10000000-0000-4000-8000-000000000002',retryable:false,...('private' in change?{private:change.private}:{})},{status:change.status})) as any);expect(result.body).toEqual({code:'handoff_unavailable'});
+ });
  it('reviews without creating a provider session and resolves only an explicit CSRF-bound continue',async()=>{
   const transport=vi.fn(async(url:URL,init:RequestInit)=>{expect(url.pathname).toBe(`/external-booking-api/v1/customer-handoffs/${nonce}/${init.method==='GET'?'review':'resolve'}`);expect(init.headers).toMatchObject({authorization:'Bearer synthetic-test-token'});expect(init.redirect).toBe('error');expect(init.cache).toBe('no-store');expect(init.signal).toBeInstanceOf(AbortSignal);if(init.method==='POST')expect(JSON.parse(init.body as string)).toEqual({action:'continue'});return Response.json(init.method==='GET'?review():resolve());});
   expect((await forwardCustomerHandoff(config,session,nonce,'GET',null,null,transport as any)).body).toMatchObject({ref:'RENT-1'});

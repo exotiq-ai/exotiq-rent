@@ -5,6 +5,15 @@ const config={issuer:'https://identity.example.invalid',authorizationEndpoint:'h
 const session={issuer:config.issuer,subject:'renter',clientId:config.clientId,accessToken:'synthetic-test-token',expiresAt:Date.now()+60000,csrf:'synthetic-csrf',profile:{email:'verified@example.invalid',emailVerified:true,name:'Synthetic Renter'}};
 const quote='10000000-0000-4000-8000-000000000008';
 describe('customer same-origin backend bridge',()=>{
+ it('starts only explicit nonce recovery and allows only a pending exact first-party renewal landing',async()=>{
+  const nonce='a'.repeat(43),path='customer-handoffs/'+nonce+'/grant-renewals';
+  const result={api_version:'v1',source_checked_at:new Date().toISOString(),renewal_id:quote,state:'authorization_required',customer_url:config.frontendOrigin+'/agent/authorization/'+quote,expires_at:new Date(Date.now()+60000).toISOString()};
+  const transport=vi.fn(async(url:URL,init:RequestInit)=>{expect(url.pathname).toBe('/external-booking-api/v1/'+path);expect(JSON.parse(init.body as string)).toEqual({action:'continue'});return Response.json(result,{status:201});});
+  expect((await forwardHostedRequest(config,session,'POST',path,{csrf:session.csrf,action:'continue'},config.frontendOrigin,transport as any)).body).toEqual(result);
+  for(const patch of [{customer_url:'https://evil.example/agent/authorization/'+quote},{customer_url:result.customer_url+'?token=private'},{customer_url:config.frontendOrigin+'/agent/authorization/10000000-0000-4000-8000-000000000009'},{state:'authorized',grant_id:quote},{expires_at:'2000-01-01T00:00:00Z'}])await expect(forwardHostedRequest(config,session,'POST',path,{csrf:session.csrf,action:'continue'},config.frontendOrigin,(async()=>Response.json({...result,...patch},{status:201})) as any)).rejects.toThrow();
+  for(const input of [{csrf:'wrong',action:'continue'},{csrf:session.csrf,action:'continue',grant_id:quote}])await expect(forwardHostedRequest(config,session,'POST',path,input,config.frontendOrigin,transport as any)).rejects.toThrow();
+  await expect(forwardHostedRequest(config,session,'GET',path,null,null,transport as any)).rejects.toThrow();
+ });
  it.each(['identity','checkout'])('creates only the explicitly chosen customer-owned %s handoff with fresh proof',async action=>{
   const path='customers/rental-requests/SYNTHETIC-REQUEST/'+action+'-handoff';
   const output={api_version:'v1',source_checked_at:new Date().toISOString(),customer_url:config.frontendOrigin+'/agent/handoff/'+'a'.repeat(43),expires_at:new Date(Date.now()+60000).toISOString(),state:action==='identity'?'pending_documents':'pending_payment',next_action:action==='identity'?'verify_identity':'hosted_checkout'};
