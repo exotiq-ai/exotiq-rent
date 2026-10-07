@@ -19,7 +19,8 @@ const returnPath=new RegExp(`^(?:/agent/(?:consent|authorization|account)/${uuid
 // Provider return carries a public reference and action only. Exact canonical
 // ordering excludes arbitrary query fields, duplicate selectors and tokens.
 const providerReturnPath=new RegExp(`^/agent/account/${uuid.replaceAll('a-f','a-fA-F')}\\?booking_ref=[A-Za-z0-9_-]{1,80}&action=(?:identity|checkout)$`);
-const ownedReturnPath=(value:string)=>returnPath.test(value)||providerReturnPath.test(value);
+const customerRequestPath=new RegExp(`^/agent/account/${uuid.replaceAll('a-f','a-fA-F')}\\?ref=[A-Za-z0-9_-]{1,80}$`);
+const ownedReturnPath=(value:string)=>returnPath.test(value)||providerReturnPath.test(value)||customerRequestPath.test(value);
 const fail=():never=>{throw new Error('Customer authorization unavailable');};
 const secret=(value:string)=>{if(!/^[A-Za-z0-9_-]{43}$/.test(value))fail();const bytes=Buffer.from(value,'base64url');if(bytes.length!==32)fail();return bytes;};
 const equal=(a:string,b:string)=>{const x=Buffer.from(a),y=Buffer.from(b);return x.length===y.length&&timingSafeEqual(x,y);};
