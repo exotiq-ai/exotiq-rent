@@ -36,7 +36,7 @@ export async function openCookie(key:string,purpose:'transaction'|'session',valu
 }
 async function boundedJson(response:Response):Promise<any>{
  if(!response.ok||!response.headers.get('content-type')?.toLowerCase().startsWith('application/json')||!response.body)fail();
- const reader=response.body.getReader();let size=0;const chunks:Uint8Array[]=[];
+ const reader=response.body!.getReader();let size=0;const chunks:Uint8Array[]=[];
  try {for(;;){const {value,done}=await reader.read();if(done)break;if(value){size+=value.byteLength;if(size>65536){await reader.cancel();fail();}chunks.push(value);}}return JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch{return fail();}finally{reader.releaseLock();}
 }
 export function createHostedAuth(config:HostedAuthConfiguration|null,dependencies:HostedAuthDependencies={}){
@@ -62,7 +62,7 @@ export function createHostedAuth(config:HostedAuthConfiguration|null,dependencie
     const tx=await openCookie(c.cookieKey,'transaction',transactionCookie,now().getTime());
     if(typeof tx.state!=='string'||!equal(tx.state,callback.searchParams.get('state')??'')||!returnPath.test(tx.destination)||callback.searchParams.get('iss')!==c.issuer)fail();
     const code=callback.searchParams.get('code');if(!code||code.length>2048)fail();
-    const body=new URLSearchParams({grant_type:'authorization_code',code,redirect_uri:c.frontendOrigin+'/api/agent/auth/callback',code_verifier:tx.verifier,resource:c.resource});
+    const body=new URLSearchParams({grant_type:'authorization_code',code:code!,redirect_uri:c.frontendOrigin+'/api/agent/auth/callback',code_verifier:tx.verifier,resource:c.resource});
     const response=await transport(c.tokenEndpoint,{method:'POST',redirect:'error',signal:AbortSignal.timeout(5000),headers:{'content-type':'application/x-www-form-urlencoded',authorization:'Basic '+Buffer.from(encodeURIComponent(c.clientId)+':'+encodeURIComponent(c.clientSecret)).toString('base64')},body});
     const result=await boundedJson(response);if(result.token_type?.toLowerCase()!=='bearer'||typeof result.id_token!=='string'||typeof result.access_token!=='string'||result.id_token.length>16384||result.access_token.length>16384)fail();
     const {payload:id,protectedHeader}=await jwtVerify(result.id_token,resolver,{issuer:c.issuer,audience:c.clientId,algorithms,requiredClaims:['iss','aud','sub','iat','exp','nonce','auth_time'],currentDate:now(),clockTolerance:0});
@@ -70,7 +70,7 @@ export function createHostedAuth(config:HostedAuthConfiguration|null,dependencie
     if(id.at_hash!==undefined){if(!['ES256','RS256','PS256'].includes(protectedHeader.alg)||id.at_hash!==createHash('sha256').update(result.access_token).digest().subarray(0,16).toString('base64url'))fail();}
     const access=await accessIdentity(result.access_token);if(access.sub!==id.sub)fail();
     const expiresAt=Math.min(access.exp!*1000,now().getTime()+600000);
-    const session:HostedSession={issuer:c.issuer,subject:id.sub,clientId:c.clientId,accessToken:result.access_token,expiresAt,csrf:randomBytes(32).toString('base64url'),profile:{email:typeof id.email==='string'&&id.email.length<=320?id.email:null,emailVerified:id.email_verified===true,name:typeof id.name==='string'&&id.name.length<=160?id.name:null}};
+    const session:HostedSession={issuer:c.issuer,subject:id.sub!,clientId:c.clientId,accessToken:result.access_token,expiresAt,csrf:randomBytes(32).toString('base64url'),profile:{email:typeof id.email==='string'&&id.email.length<=320?id.email:null,emailVerified:id.email_verified===true,name:typeof id.name==='string'&&id.name.length<=160?id.name:null}};
     return {returnTo:tx.destination,cookie:await sealCookie(c.cookieKey,'session',session,expiresAt),expiresAt};
    } catch {return fail();}
   },
