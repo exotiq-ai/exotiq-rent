@@ -15,7 +15,8 @@ const tls={key:await readFile(out+'key.pem'),cert:await readFile(out+'cert.pem')
 const keyPair=await generateKeyPair('ES256'),publicJwk={...await exportJWK(keyPair.publicKey),kid:'local-synthetic',use:'sig',alg:'ES256'};
 const cookieKey=randomBytes(32).toString('base64url'),bridgeKey=randomBytes(32).toString('base64url');
 const cfg={issuer:'https://identity.synthetic.invalid',authorizationEndpoint:'https://identity.synthetic.invalid/authorize',tokenEndpoint:'https://identity.synthetic.invalid/token',jwksUri:'https://identity.synthetic.invalid/jwks',allowedHosts:['identity.synthetic.invalid'],resource:'https://api.synthetic.invalid/external-booking-api',frontendOrigin:'https://rent.synthetic.invalid:9444',clientId:'local-hosted-customer'};
-let resolves=0,consents=0,customerLinks=0;const targets=new Map(),codes=new Map();const hash=s=>createHash('sha256').update(s).digest('hex');
+let resolves=0,consents=0,customerLinks=0,grantRenewals=0,renewalCompletes=0,activeRenewal=null;const targets=new Map(),codes=new Map();const hash=s=>createHash('sha256').update(s).digest('hex');
+const renewalId='10000000-0000-4000-8000-000000000006';
 function json(res,status,value){res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store','Referrer-Policy':'no-referrer'});res.end(JSON.stringify(value));}
 async function text(req){let result='';for await(const part of req){result+=part;if(result.length>65536)throw Error();}return result;}
 const fixture=https.createServer(tls,async(req,res)=>{
@@ -41,15 +42,25 @@ const fixture=https.createServer(tls,async(req,res)=>{
    const session={issuer:cfg.issuer,subject:sub,clientId:cfg.clientId,accessToken:token,expiresAt:expiry*1000,csrf:randomBytes(24).toString('base64url'),profile:{email:'renter@synthetic.invalid',emailVerified:true,name:'Synthetic renter'}};
    return json(res,200,{cookie:await sealCookie(cookieKey,'session',session,session.expiresAt)});
   }
-  if(url.pathname==='/__test/count')return json(res,200,{resolves,providerSessions:targets.size,consents,customerLinks});
-  const matched=/^\/external-booking-api\/v1\/customer-handoffs\/([A-Za-z0-9_-]{43})\/(review|resolve)$/.exec(url.pathname),quotePath=`/external-booking-api/v1/quotes/${quoteId}`,statusPath='/external-booking-api/v1/customers/rental-requests/SYNTHETIC-REQUEST';
+  if(url.pathname==='/__test/count')return json(res,200,{resolves,providerSessions:targets.size,consents,customerLinks,grantRenewals,renewalCompletes});
+  const matched=/^\/external-booking-api\/v1\/customer-handoffs\/([A-Za-z0-9_-]{43})\/(review|resolve|grant-renewals)$/.exec(url.pathname),quotePath=`/external-booking-api/v1/quotes/${quoteId}`,statusPath='/external-booking-api/v1/customers/rental-requests/SYNTHETIC-REQUEST';
+  const renewal=new RegExp('^/external-booking-api/v1/grant-renewals/'+renewalId+'(?:/(review|complete))?$').exec(url.pathname);
   const customer=/^\/external-booking-api\/v1\/customers\/rental-requests\/(CUSTOMER-IDENTITY|CUSTOMER-CHECKOUT)(?:\/(identity|checkout)-handoff)?$/.exec(url.pathname);
-  if(!matched&&!customer&&![quotePath,quotePath+'/consents',statusPath].includes(url.pathname))return json(res,404,{});
+  if(!matched&&!customer&&!renewal&&![quotePath,quotePath+'/consents',statusPath].includes(url.pathname))return json(res,404,{});
   const raw=await text(req),token=String(req.headers.authorization??'').replace(/^Bearer /,'');
   const access=await jwtVerify(token,keyPair.publicKey,{issuer:cfg.issuer,audience:cfg.resource,algorithms:['ES256']});
   const proof=await jwtVerify(String(req.headers['x-exotiq-hosted-proof']??''),Buffer.from(bridgeKey,'base64url'),{issuer:cfg.frontendOrigin,audience:cfg.resource,algorithms:['HS256']});
   if(proof.payload.provider_subject!==access.payload.sub||proof.payload.path!==url.pathname||proof.payload.method!==req.method||proof.payload.body_hash!==hash(raw)||proof.payload.token_hash!==hash(token))return json(res,403,{message:'private invalid proof'});
   if(access.payload.sub!=='renter')return json(res,404,{message:'private other customer'});
+  if(renewal){
+   if(!activeRenewal)return json(res,404,{});
+   if(renewal[1]==='review'&&(req.method!=='POST'||raw!=='{}'))return json(res,400,{});
+   if(renewal[1]==='complete'){
+    const input=JSON.parse(raw);if(req.method!=='POST'||!validateContract('GrantRenewalCompleteInput',input).ok||JSON.stringify(input.action_scopes)!==JSON.stringify(['rental_requests:read','identity:handoff'])||input.explicit_new_delegation!==activeRenewal.revoked||input.consented!==true)return json(res,400,{});
+    renewalCompletes++;activeRenewal.authorized=true;
+   }
+   return json(res,200,{api_version:'v1',source_checked_at:new Date().toISOString(),renewal_id:renewalId,previous_grant_id:'10000000-0000-4000-8000-000000000007',grant_id_to_revoke:'10000000-0000-4000-8000-000000000008',ref:'ORIGINAL-RENTAL',operator_id:'10000000-0000-4000-8000-000000000002',agent_client_id:'synthetic-original-agent',operator_name:'Synthetic local operator',vehicle_name:'Synthetic touring car',pickup_at:'2030-01-10T10:00:00Z',return_at:'2030-01-12T10:00:00Z',timezone:'UTC',status:'pending_documents',hold_expires_at:'2030-01-10T10:00:00Z',payment_due_at:null,action_scopes:['rental_requests:read','identity:handoff'],expires_at:new Date(Date.now()+60000).toISOString(),state:activeRenewal.authorized?'authorized':'authorization_required',requires_new_delegation:activeRenewal.revoked});
+  }
   if(customer){
    const action=customer[1]==='CUSTOMER-IDENTITY'?'identity':'checkout';
    if(!customer[2]&&req.method==='GET')return json(res,200,{api_version:'v1',source_checked_at:new Date().toISOString(),ref:customer[1],operator_id:'10000000-0000-4000-8000-000000000002',operator_name:'Synthetic local operator',vehicle_name:'Synthetic touring car',status:action==='identity'?'pending_documents':'pending_payment',next_action:action==='identity'?'verify_identity':'hosted_checkout',hold_expires_at:null,payment_due_at:null});
@@ -60,11 +71,17 @@ const fixture=https.createServer(tls,async(req,res)=>{
   if(url.pathname===quotePath&&req.method==='GET')return json(res,200,quoteReview(cfg.frontendOrigin));
   if(url.pathname===quotePath+'/consents'&&req.method==='POST'){const input=JSON.parse(raw);if(!validateContract('ConsentInput',input).ok||input.terms_hash!=='a'.repeat(64))return json(res,400,{});consents++;return json(res,201,{api_version:'v1',source_checked_at:new Date().toISOString(),quote_id:quoteId,state:'authorized',expires_at:new Date(Date.now()+60000).toISOString()});}
   if(matched[1]==='e'.repeat(43))return json(res,410,{message:'private expired record'});
+  const recoveryCode=matched[1]==='x'.repeat(43)?'grant_expired':['v','l'].some(c=>matched[1]===c.repeat(43))?'grant_revoked':null;
+  if(matched[2]==='grant-renewals'){
+   if(req.method!=='POST'||!recoveryCode||raw!==JSON.stringify({action:'continue'}))return json(res,400,{});
+   grantRenewals++;activeRenewal={revoked:recoveryCode==='grant_revoked',authorized:false};return json(res,201,{api_version:'v1',source_checked_at:new Date().toISOString(),renewal_id:renewalId,state:'authorization_required',customer_url:cfg.frontendOrigin+'/agent/authorization/'+renewalId,expires_at:new Date(Date.now()+60000).toISOString()});
+  }
+  if(recoveryCode&&(matched[1]!=='l'.repeat(43)||matched[2]==='resolve'))return json(res,409,{code:recoveryCode,message:'private provider recovery detail',request_id:'10000000-0000-4000-8000-000000000009',retryable:false});
   const action=['i','j'].some(letter=>matched[1]===letter.repeat(43))?'identity':'checkout',stamp=new Date().toISOString(),expires_at=new Date(Date.now()+60000).toISOString();
   const ref=matched[1]==='j'.repeat(43)?'CUSTOMER-IDENTITY':matched[1]==='k'.repeat(43)?'CUSTOMER-CHECKOUT':'LOCAL-RENT-1';
   if(matched[2]==='review'&&req.method==='GET')return json(res,200,{api_version:'v1',source_checked_at:stamp,ref,operator_name:'Synthetic local operator',vehicle_name:'Synthetic touring car',action,status:action==='identity'?'pending_documents':'pending_payment',expires_at});
   if(req.method!=='POST'||raw!==JSON.stringify({action:'continue'}))return json(res,400,{});
-  resolves++;if(!targets.has(matched[1]))targets.set(matched[1],`https://${action==='identity'?'verify':'checkout'}.stripe.com/${action==='identity'?'start':'c/pay'}/synthetic-local`);
+  resolves++;if(!targets.has(matched[1]))targets.set(matched[1],`https://${action==='identity'?'verify':'checkout'}.stripe.com/${action==='identity'?'start':'c/pay'}/synthetic-local${action==='checkout'?'#fidkdSyntheticLocal':''}`);
   return json(res,200,{api_version:'v1',source_checked_at:stamp,action,provider_url:targets.get(matched[1]),expires_at});
  }catch{return json(res,503,{code:'synthetic_unavailable'});}
 });

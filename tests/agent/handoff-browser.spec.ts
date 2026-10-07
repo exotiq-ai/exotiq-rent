@@ -10,7 +10,7 @@ test('actual SSR and BFF require a fresh cookie, then explicit continue produces
  await page.goto('/agent/handoff/'+nonce);await expect(page.locator('meta[name="referrer"]')).toHaveAttribute('content','no-referrer');
  await expect(page.getByText('Synthetic local operator',{exact:false})).toBeVisible();await expect(page.getByRole('button',{name:'Continue securely'})).toBeVisible();
  expect((await(await context.request.get('https://127.0.0.1:9443/__test/count')).json()).resolves).toBe(before.resolves);
- await page.getByRole('button',{name:'Continue securely'}).click();const link=page.getByRole('link',{name:'Open Stripe securely'});await expect(link).toHaveAttribute('href','https://checkout.stripe.com/c/pay/synthetic-local');
+ await page.getByRole('button',{name:'Continue securely'}).click();const link=page.getByRole('link',{name:'Open Stripe securely'});await expect(link).toHaveAttribute('href','https://checkout.stripe.com/c/pay/synthetic-local#fidkdSyntheticLocal');
  let referrer:string|undefined;await context.route('https://checkout.stripe.com/**',async route=>{referrer=route.request().headers().referer;await route.fulfill({contentType:'text/html',body:'<h1>Synthetic hosted provider destination</h1>'});});
  await link.click();await expect(page.getByRole('heading',{name:'Synthetic hosted provider destination'})).toBeVisible();expect(referrer).toBeUndefined();expect(page.url()).not.toContain(nonce);
 });
@@ -32,7 +32,7 @@ for(const action of ['identity','checkout'])test('customer can create their own 
  await page.getByRole('button',{name:'Create secure '+(action==='identity'?'identity':'payment')+' link'}).click();
  const link=page.getByRole('link',{name:'Review secure '+(action==='identity'?'identity':'payment')+' link'});await expect(link).toHaveAttribute('href',origin+'/agent/handoff/'+(action==='identity'?'j':'k').repeat(43));
  const denied=await page.evaluate(async({ref})=>{const session=await (await fetch('/api/agent/auth/session')).json();const response=await fetch('/api/agent/customer/customers/rental-requests/'+ref+'/identity-handoff',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({csrf:session.csrf,action:'continue',customer_id:'other'})});return response.status;},{ref});expect(denied).toBe(503);
- await link.click();await page.getByRole('button',{name:'Continue securely'}).click();await expect(page.getByRole('link',{name:'Open Stripe securely'})).toHaveAttribute('href',action==='identity'?'https://verify.stripe.com/start/synthetic-local':'https://checkout.stripe.com/c/pay/synthetic-local');
+ await link.click();await page.getByRole('button',{name:'Continue securely'}).click();await expect(page.getByRole('link',{name:'Open Stripe securely'})).toHaveAttribute('href',action==='identity'?'https://verify.stripe.com/start/synthetic-local':'https://checkout.stripe.com/c/pay/synthetic-local#fidkdSyntheticLocal');
 });
 for(const code of ['grant_expired','grant_revoked'])test('nonce '+code+' starts only an explicit original-agent review and consent',async({page,context})=>{
  await login(context);const before=await(await context.request.get('https://127.0.0.1:9443/__test/count')).json();
