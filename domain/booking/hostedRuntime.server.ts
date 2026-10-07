@@ -18,5 +18,11 @@ export function hostedRuntime(){
 }
 export async function readHostedBody(request:Request):Promise<Record<string,unknown>>{
  const reader=request.body?.getReader();if(!reader)throw new Error('Invalid customer request');let length=0;const chunks:Uint8Array[]=[];
- try{for(;;){const part=await reader.read();if(part.done)break;if(part.value){length+=part.value.byteLength;if(length>65536){await reader.cancel();throw new Error('Invalid customer request');}chunks.push(part.value);}}const body=JSON.parse(Buffer.concat(chunks).toString('utf8'));if(!body||typeof body!=='object'||Array.isArray(body))throw new Error('Invalid customer request');return body;}finally{reader.releaseLock();}
+ let timer:ReturnType<typeof setTimeout>|undefined;let abort:()=>void=()=>{};
+ // A single budget covers the entire inbound stream, even when a caller keeps
+ // trickling bytes. Client cancellation must not wait for the stream producer.
+ const deadline=new Promise<never>((_,reject)=>{abort=()=>reject(new Error('Invalid customer request'));timer=setTimeout(abort,5000);request.signal.addEventListener('abort',abort,{once:true});if(request.signal.aborted)abort();});
+ try{for(;;){const part=await Promise.race([reader.read(),deadline]);if(part.done)break;if(part.value){length+=part.value.byteLength;if(length>65536)throw new Error('Invalid customer request');chunks.push(part.value);}}const body=JSON.parse(Buffer.concat(chunks).toString('utf8'));if(!body||typeof body!=='object'||Array.isArray(body))throw new Error('Invalid customer request');return body;}
+ catch{throw new Error('Invalid customer request');}
+ finally{if(timer)clearTimeout(timer);request.signal.removeEventListener('abort',abort);void reader.cancel().catch(()=>{});reader.releaseLock();}
 }
