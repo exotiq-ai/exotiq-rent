@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+// @vitest-environment-options {"url":"https://rent.example.invalid"}
 import {act,createElement} from 'react';
 import {createRoot,type Root} from 'react-dom/client';
 import {beforeEach,afterEach,it,expect,vi} from 'vitest';
@@ -21,6 +22,19 @@ it.each(['grant_expired','grant_revoked'])('offers explicit %s review recovery w
 it('can enter safe recovery after explicit resolve reports a current revoked grant',async()=>{
  vi.stubGlobal('fetch',vi.fn(async()=>Response.json({code:'grant_revoked'},{status:409})));await mount();await act(async()=>props(button()).onClick());
  expect(fetch).toHaveBeenCalledTimes(1);expect(Array.from(host.querySelectorAll('button')).some(e=>e.textContent==='Review agent access')).toBe(true);expect(host.querySelector('a')).toBeNull();
+});
+it('a captured recovery handler cannot submit after session expiry or nonce replacement',async()=>{
+ await act(async()=>root.render(createElement(Landing,{nonce,review:null,csrf:'synthetic-csrf',sessionExpiresAt:now+60000,recoveryCode:'grant_revoked'})));
+ const captured=props(Array.from(host.querySelectorAll('button')).find(e=>e.textContent==='Review agent access')!).onClick;
+ vi.setSystemTime(now+60001);await act(async()=>captured());expect(fetch).not.toHaveBeenCalled();vi.setSystemTime(now);
+ await act(async()=>root.render(createElement(Landing,{nonce:other,review:null,csrf:'synthetic-csrf',sessionExpiresAt:now+60000,recoveryCode:'grant_expired'})));await act(async()=>captured());expect(fetch).not.toHaveBeenCalled();
+});
+it('hides a late renewal response after navigation and never invokes consent completion',async()=>{
+ let finish!:(r:Response)=>void;vi.stubGlobal('fetch',vi.fn(()=>new Promise<Response>(resolve=>finish=resolve)));
+ await act(async()=>root.render(createElement(Landing,{nonce,review:null,csrf:'synthetic-csrf',sessionExpiresAt:now+60000,recoveryCode:'grant_expired'})));let promise:Promise<void>;
+ await act(async()=>{promise=props(Array.from(host.querySelectorAll('button')).find(e=>e.textContent==='Review agent access')!).onClick();});
+ await act(async()=>root.render(createElement(Landing,{nonce:other,review:null,csrf:'synthetic-csrf',sessionExpiresAt:now+60000,recoveryCode:'grant_revoked'})));
+ await act(async()=>{finish(Response.json({api_version:'v1',source_checked_at:new Date(now).toISOString(),renewal_id:'10000000-0000-4000-8000-000000000002',state:'authorization_required',customer_url:location.origin+'/agent/authorization/10000000-0000-4000-8000-000000000002',expires_at:new Date(now+60000).toISOString()},{status:201}));await promise;});expect(fetch).toHaveBeenCalledTimes(1);expect(host.querySelector('a')).toBeNull();
 });
 it('keeps server-rendered continuation disabled until the client lifecycle is initialized',()=>{const html=renderToStaticMarkup(createElement(Landing,{nonce,review,csrf:'synthetic-csrf',sessionExpiresAt:now+60000}));expect(html).toMatch(/<button[^>]*disabled=""/);});
 it('shows server-reviewed request and makes exactly one explicit continuation without browser authority tokens',async()=>{await mount();expect(host.textContent).toContain('Synthetic operator');expect(host.textContent).toContain('pending payment');expect(vi.mocked(fetch)).not.toHaveBeenCalled();const click=props(button()).onClick;await act(async()=>{click();click();});expect(fetch).toHaveBeenCalledTimes(1);expect(JSON.parse(vi.mocked(fetch).mock.calls[0][1]!.body as string)).toEqual({csrf:'synthetic-csrf',action:'continue'});const link=host.querySelector('a')!;expect(link.href).toBe('https://checkout.stripe.com/c/pay/synthetic');expect(link.rel).toContain('noreferrer');expect(host.innerHTML).not.toMatch(/Bearer|access_token|confirmation_token/);});
