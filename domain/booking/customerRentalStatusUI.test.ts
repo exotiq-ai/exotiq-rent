@@ -20,6 +20,17 @@ it('reads real customer-owned status only after sign-in and exposes no onboardin
  for(const text of ['Synthetic operator','Synthetic touring car','pending_payment','Payment settlement is still pending','2030-01-03T12:00:00Z','2030-01-04T12:00:00Z'])expect(host.textContent).toContain(text);
  expect(host.querySelector('input')).toBeNull();expect(host.textContent).toContain('does not confirm payment or identity verification');
 });
+it.each(['identity','checkout'])('allows a status-only customer to explicitly create their own %s link',async action=>{
+ status.next_action=action==='identity'?'verify_identity':'hosted_checkout';status.status=action==='identity'?'pending_documents':'pending_payment';
+ const original=fetch;let writes=0;
+ vi.stubGlobal('fetch',vi.fn(async(path:string,init?:RequestInit)=>{if(init?.method==='POST'){writes++;expect(path).toBe('/api/agent/customer/customers/rental-requests/SYNTHETIC-REQUEST/'+action+'-handoff');expect(JSON.parse(init.body as string)).toEqual({csrf:session.csrf,action:'continue'});return json({api_version:'v1',source_checked_at:now.toISOString(),customer_url:location.origin+'/agent/handoff/'+'a'.repeat(43),expires_at:'2030-01-01T12:01:00Z',state:status.status,next_action:status.next_action});}return original(path,init);}));
+ await act(async()=>root.render(createElement(AccountPage,{params:Promise.resolve({operatorId}),searchParams:Promise.resolve({ref:'SYNTHETIC-REQUEST'})})));
+ expect(host.textContent).toContain('Your rental request');expect(host.textContent).not.toContain('Returned from hosted');expect(writes).toBe(0);
+ const button=Array.from(host.querySelectorAll('button')).find(b=>b.textContent==='Create secure '+(action==='identity'?'identity':'payment')+' link')!;
+ expect(button).toBeDefined();await act(async()=>{const first=props(button).onClick;await Promise.all([first(),first()]);});expect(writes).toBe(1);
+ expect(host.querySelector('a')?.getAttribute('href')).toBe(location.origin+'/agent/handoff/'+'a'.repeat(43));
+ vi.setSystemTime('2030-01-01T12:01:01Z');await act(async()=>root.render(createElement(AccountPage,{params:Promise.resolve({operatorId}),searchParams:Promise.resolve({ref:'SYNTHETIC-REQUEST'})})));expect(host.querySelector('a')).toBeNull();
+});
 it.each(['wrong-owner','wrong-tenant','UNKNOWN','private-extra'])('hides status on %s result',async fault=>{
  if(fault==='wrong-owner')status.ref='OTHER';if(fault==='wrong-tenant')status.operator_id='10000000-0000-4000-8000-000000000003';if(fault==='UNKNOWN')status.status='UNKNOWN';if(fault==='private-extra')status.provider_url='https://checkout.stripe.com/private';
  await mount();expect(host.textContent).not.toContain('Synthetic touring car');expect(host.querySelector('[role="alert"]')).not.toBeNull();
