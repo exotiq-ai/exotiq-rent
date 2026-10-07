@@ -25,6 +25,11 @@ describe('customer inbound body total budget',()=>{
   const result=readHostedBody(request).then(()=>{outcome='accepted';},error=>{outcome=error.message;});
   try{if(!before)abort.abort('private caller detail');await new Promise(resolve=>setTimeout(resolve,10));expect(outcome).toBe('Invalid customer request');}finally{try{controller.close();}catch{}await result;}
  });
+ it.each(['{}','{"action":"continue","csrf":"synthetic"}'])('rejects pre-aborted fully buffered valid JSON: %s',async body=>{
+  const controller=new AbortController();controller.abort('private detail');
+  const stream=new ReadableStream<Uint8Array>({start(c){c.enqueue(new TextEncoder().encode(body));c.close();}});
+  await expect(readHostedBody(streamRequest(stream,controller.signal))).rejects.toThrow('Invalid customer request');
+ });
  it('preserves valid object parsing and rejects oversized/nonobject bodies',async()=>{
   expect(await readHostedBody(new Request('https://rent.example.invalid',{method:'POST',body:'{"action":"continue","csrf":"synthetic"}'}))).toEqual({action:'continue',csrf:'synthetic'});
   for(const body of ['[]','null','{"value":"'+'x'.repeat(65536)+'"}'])await expect(readHostedBody(new Request('https://rent.example.invalid',{method:'POST',body}))).rejects.toThrow();
