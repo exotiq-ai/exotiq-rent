@@ -176,7 +176,7 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
         {/* From lg the frame no longer scrolls internally (see PhoneViewport
             'page'), so this section becomes ordinary page flow and the aside
             below can stick to the viewport. */}
-        <section className={`min-h-0 flex-1 overflow-y-auto px-4 pt-2 [scrollbar-width:none] ${hasPhone ? 'pb-5' : 'pb-8'} lg:overflow-visible lg:px-8 lg:pb-20 lg:pt-8`}>
+        <section className={`min-h-0 flex-1 overflow-y-auto px-4 pt-2 [scrollbar-width:none] overscroll-y-contain ${hasPhone ? 'pb-5' : 'pb-8'} lg:overflow-visible lg:px-8 lg:pb-20 lg:pt-8`}>
           <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-x-12">
             <div className="min-w-0">
               {/* Aman route: the photograph is never degraded to accommodate type, and

@@ -190,8 +190,8 @@ const storefrontClearance = (tag: string) => /\$\{hasPhone \? '(pb-\d+)' : 'pb-8
 
 /** A scroller's class string with its one phone bottom-padding token blanked (AC6: only that token may change). */
 const blank = (cls: string) => cls.replace(/\$\{hasPhone \? '(pb-\d+)' : 'pb-8'\}/, "${hasPhone ? '«pb»' : 'pb-8'}").replace(/ pb-\d+ /, ' «pb» ');
-const WANT_VEP = 'min-h-0 flex-1 overflow-y-auto px-4 «pb» pt-1 [scrollbar-width:none] lg:overflow-visible lg:px-8 lg:pb-20 lg:pt-8';
-const WANT_SF = "min-h-0 flex-1 overflow-y-auto px-4 pt-2 [scrollbar-width:none] ${hasPhone ? '«pb»' : 'pb-8'} lg:overflow-visible lg:px-8 lg:pb-20 lg:pt-8";
+const WANT_VEP = 'min-h-0 flex-1 overflow-y-auto px-4 «pb» pt-1 [scrollbar-width:none] overscroll-y-contain lg:overflow-visible lg:px-8 lg:pb-20 lg:pt-8';
+const WANT_SF = "min-h-0 flex-1 overflow-y-auto px-4 pt-2 [scrollbar-width:none] overscroll-y-contain ${hasPhone ? '«pb»' : 'pb-8'} lg:overflow-visible lg:px-8 lg:pb-20 lg:pt-8";
 
 describe('MP-28 pinned bar recipe (AC1, AC2, AC3, AC4, AC6, AC7)', () => {
   it('the pinned bar is one in-flow recipe with its safe area inside its own padding', () => {
