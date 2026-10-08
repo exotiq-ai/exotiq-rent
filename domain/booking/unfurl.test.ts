@@ -37,6 +37,12 @@ const CARD_FILE = /^opengraph-image\.(tsx?|jsx?|png|jpe?g|gif)$/;
 export function findBareOpenGraph(files: PageFile[]): string[] {
   return files
     .filter((f) => /\bopenGraph\b/.test(stripComments(f.source)))
+    // Customer authorization deliberately suppresses previews. This exception
+    // requires all three privacy controls and applies to this exact layout only.
+    .filter((f) => !(f.path === 'app/agent/layout.tsx' &&
+      /referrer:\s*['"]no-referrer['"]/.test(stripComments(f.source)) &&
+      /robots:\s*\{\s*index:\s*false,\s*follow:\s*false/.test(stripComments(f.source)) &&
+      /openGraph:\s*null/.test(stripComments(f.source)) && /twitter:\s*null/.test(stripComments(f.source))))
     .filter((f) => !f.siblings.some((s) => CARD_FILE.test(s)) && !BUILDERS.some((b) => stripComments(f.source).includes(b)))
     .map((f) => f.path);
 }
@@ -192,10 +198,10 @@ describe('MP-18 vehicle link preview (AC5)', () => {
 
   it('relative mock hero resolves to an absolute url through metadataBase', async () => {
     const ctx = await getMockPublicVehicleContext('desert-exotic-rentals', 'mclaren-750s-spider');
-    const resolve = (og: unknown) => resolveOpenGraph(og as never, new URL('https://book.example'), { pathname: '/', trailingSlash: false, isStandaloneMode: false }, null) as unknown as { images: { url: URL | string; width?: number; height?: number; alt?: string }[] };
-    const og = resolve(api.vehicleOpenGraph?.(ctx!.team, ctx!.vehicle));
+    const resolve = async (og: unknown) => await resolveOpenGraph(og as never, new URL('https://book.example'), Promise.resolve('/'), { trailingSlash: false, isStaticMetadataRouteFile: false }, null) as unknown as { images: { url: URL | string; width?: number; height?: number; alt?: string }[] };
+    const og = await resolve(api.vehicleOpenGraph?.(ctx!.team, ctx!.vehicle));
     expect(String(og.images[0].url)).toBe(`https://book.example${ctx!.vehicle.heroImage}`);
-    const floor = resolve(api.vehicleOpenGraph?.(ctx!.team, { ...ctx!.vehicle, heroImage: '' }));
+    const floor = await resolve(api.vehicleOpenGraph?.(ctx!.team, { ...ctx!.vehicle, heroImage: '' }));
     expect(String(floor.images[0].url)).toBe('https://book.example/opengraph-image');
     expect([floor.images[0].width, floor.images[0].height, floor.images[0].alt]).toEqual([1200, 630, 'Drive Exotiq']);
   });

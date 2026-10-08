@@ -7,9 +7,10 @@ import { getSiteMode } from '@/domain/booking/config';
 import { parseDateWindow } from '@/domain/booking/marketplaceQuery';
 import { getBookingStartContext } from '@/domain/booking/service';
 
-type Props = { params: { operatorSlug: string; vehicleSlug: string }; searchParams?: Record<string, string | string[] | undefined> };
+type Props = { params: Promise<{ operatorSlug: string; vehicleSlug: string }>; searchParams?: Promise<Record<string, string | string[] | undefined>> };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params: pendingParams }: Props): Promise<Metadata> {
+  const params = await pendingParams;
   // Marketplace-mode deploys (exotiq.rent) do not route the booking flow.
   if (getSiteMode() === 'marketplace') notFound();
   const teamSlug = params.operatorSlug;
@@ -21,7 +22,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function BookRoute({ params, searchParams }: Props) {
+export default async function BookRoute({ params: pendingParams, searchParams: pendingSearch }: Props) {
+  const params = await pendingParams, searchParams = await pendingSearch;
   const teamSlug = params.operatorSlug;
   const result = await getBookingStartContext(teamSlug, params.vehicleSlug);
   if (!result) notFound();

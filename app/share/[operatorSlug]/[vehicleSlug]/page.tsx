@@ -12,9 +12,10 @@ import { ctaClassName, elevatedClassName, eyebrowClassName, microLabelClassName,
  * ever appear here: this URL is what renters text their friends, and the
  * booking itself stays private on the token-gated confirmation page.
  */
-type Props = { params: { operatorSlug: string; vehicleSlug: string } };
+type Props = { params: Promise<{ operatorSlug: string; vehicleSlug: string }> };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params: pendingParams }: Props): Promise<Metadata> {
+  const params = await pendingParams;
   if (getSiteMode() === 'marketplace') notFound();
   const result = await getPublicVehicleContext(params.operatorSlug, params.vehicleSlug);
   if (!result) notFound();
@@ -35,7 +36,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function SharePage({ params }: Props) {
+export default async function SharePage({ params: pendingParams }: Props) {
+  const params = await pendingParams;
   if (getSiteMode() === 'marketplace') notFound();
   const result = await getPublicVehicleContext(params.operatorSlug, params.vehicleSlug);
   if (!result) notFound();

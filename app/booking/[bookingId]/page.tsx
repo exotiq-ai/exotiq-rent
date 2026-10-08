@@ -7,14 +7,15 @@ import { getSiteMode } from '@/domain/booking/config';
 import { getBookingConfirmation } from '@/domain/booking/service';
 
 type Props = {
-  params: { bookingId: string };
+  params: Promise<{ bookingId: string }>;
   // `payment` comes from rent-checkout's success/cancel URLs, which also carry
   // `t` so the page resolves the full confirmation rather than the restricted
   // view. (`deposit` is gone — Exotiq no longer sends renters to a deposit page.)
-  searchParams: { t?: string; payment?: string };
+  searchParams: Promise<{ t?: string; payment?: string }>;
 };
 
-export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
+export async function generateMetadata({ params: pendingParams, searchParams: pendingSearch }: Props): Promise<Metadata> {
+  const params = await pendingParams, searchParams = await pendingSearch;
   // Marketplace-mode deploys (exotiq.rent) do not route the booking flow.
   if (getSiteMode() === 'marketplace') notFound();
   const lookup = await getBookingConfirmation(params.bookingId, searchParams.t);
@@ -29,7 +30,8 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   };
 }
 
-export default function ConfirmationRoute({ params, searchParams }: Props) {
+export default async function ConfirmationRoute({ params: pendingParams, searchParams: pendingSearch }: Props) {
+  const params = await pendingParams, searchParams = await pendingSearch;
   return (
     <div className={driveFontClassName}>
       <ConfirmationScreen

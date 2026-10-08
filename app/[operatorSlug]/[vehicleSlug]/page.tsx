@@ -9,9 +9,10 @@ import { parseDateWindow } from '@/domain/booking/marketplaceQuery';
 import { formatMoney } from '@/domain/booking/totals';
 import { vehicleOpenGraph } from '@/domain/booking/seo';
 
-type Props = { params: { operatorSlug: string; vehicleSlug: string }; searchParams?: Record<string, string | string[] | undefined> };
+type Props = { params: Promise<{ operatorSlug: string; vehicleSlug: string }>; searchParams?: Promise<Record<string, string | string[] | undefined>> };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params: pendingParams }: Props): Promise<Metadata> {
+  const params = await pendingParams;
   // Marketplace-mode deploys (exotiq.rent) do not route the booking flow.
   if (getSiteMode() === 'marketplace') notFound();
   const teamSlug = params.operatorSlug;
@@ -29,7 +30,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function VehicleRoute({ params, searchParams }: Props) {
+export default async function VehicleRoute({ params: pendingParams, searchParams: pendingSearch }: Props) {
+  const params = await pendingParams, searchParams = await pendingSearch;
   const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
   const dates = parseDateWindow(one(searchParams?.start), one(searchParams?.end));
   return (

@@ -53,6 +53,7 @@ import { stripComments } from '../design/lib/scan.mjs';
 import { between, literals, sliceFunction } from '../restraint/restraintScan';
 import { ACCESS_TOKEN, BOOKING_REF, type Case, type El, NOW_ISO, OPERATOR, VEHICLE, confirmationOf, fixture, norm, parseHtml, paymentPropsOf, quoteOf, reviewCartOf } from '../fees/fixtures';
 import { calendarRange } from '../fees/goldens';
+import {normalizeReact19Markup} from './react19Markup';
 
 const REPO = fileURLToPath(new URL('../../', import.meta.url));
 const read = (rel: string) => readFileSync(join(REPO, rel), 'utf8');
@@ -86,7 +87,7 @@ async function confirmation(kind: 'paid' | 'requested' | 'mock', c?: Case): Prom
 }
 async function storefront(withAbout: boolean): Promise<string> {
   svc.dropAbout = !withAbout;
-  return renderToStaticMarkup(await TeamStorefrontRoute({ params: { operatorSlug: OPERATOR.slug }, searchParams: {} }));
+  return renderToStaticMarkup(await TeamStorefrontRoute({ params: Promise.resolve({ operatorSlug: OPERATOR.slug }), searchParams: Promise.resolve({}) }));
 }
 /** BookingFlow's first render, its Dates calendar cut to «calendar» as the fee goldens cut it (MP-25 errata #3: tests/polish pins the pager). */
 const flow = () => ((h: string, c = calendarRange(parseHtml(h))) => (c ? `${h.slice(0, c.start)}«calendar»${h.slice(c.end)}` : h))(renderToStaticMarkup(createElement(BookingFlow, { operator: OPERATOR, vehicle: VEHICLE })));
@@ -122,6 +123,7 @@ async function renders(): Promise<Record<HtmlGolden, string>> {
 
 /** A render against its golden: [] when byte-equal, else the first differing offset with ±60 characters. */
 function byteProblems(name: string, got: string, want: string): string[] {
+  got=normalizeReact19Markup(got);want=normalizeReact19Markup(want);
   if (got === want) return [];
   let i = 0;
   while (i < got.length && i < want.length && got[i] === want[i]) i++;
@@ -206,6 +208,8 @@ function rowOf(c: Case, over: Partial<RpcQuoteRow> = {}): RpcQuoteRow {
 }
 /** Both request bodies for one cart, exactly as fetch received them (JSON strings). */
 async function requestBodies(cart: BookingCart, flag: string | undefined, row: RpcQuoteRow = rowOf(fixture('FX-T1S1P0'))) {
+  // This wire-only fixture explicitly supplies a successful synthetic check.
+  cart = { ...cart, vehicle: { ...cart.vehicle, unavailableRanges: [], availabilityAuthority: { status: 'KNOWN', checkedAt: new Date().toISOString(), windowStart: cart.dates.start, windowEnd: cart.dates.end } } };
   env(flag, SUPA);
   const sent: { url: string; body: string }[] = [];
   vi.stubGlobal('fetch', vi.fn(async (url: string | URL, init?: RequestInit) => {
@@ -264,7 +268,7 @@ describe('MP-30 the flag flips both ways in one process', () => {
         const hits = censusHits(html);
         if (!on && hits.length) problems.push(`${label} ${name}: ${hits.length} Protect word(s), first ${hits[0]}`);
         if (on && !hits.length) problems.push(`${label} ${name}: no Protect word with the flag on`);
-        if (on && g && html !== golden(g)) problems.push(`${label} ${name}: differs from the base golden ${g}`);
+        if (on && g && normalizeReact19Markup(html) !== normalizeReact19Markup(golden(g))) problems.push(`${label} ${name}: differs from the base golden ${g}`);
       }
       const bodies = await requestBodies(p1cart, phase);
       const tier = on ? 'premium' : 'decline';

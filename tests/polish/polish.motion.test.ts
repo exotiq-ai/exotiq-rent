@@ -14,7 +14,7 @@ import { ScreenShell } from '@/components/drive-exotiq/flow/shared';
 import { stripComments } from '../design/lib/scan.mjs';
 import { elements, parseHtml } from '../fees/fixtures';
 import { literals, prepare, sliceFunction } from '../restraint/restraintScan';
-import { CSS, DATES, DRIVER, FLOW, PAGER, REVIEW, SHARED, SITEBAR, allKeyframes, animations, baseCensus, fence, keyframes, loadPager, ms, read, sha, withoutFence } from './polishBase';
+import { CSS, DATES, DRIVER, FLOW, PAGER, REVIEW, SHARED, SITEBAR, allKeyframes, animations, baseCensus, expectedFrozenHash, fence, keyframes, loadPager, ms, read, sha, withoutFence } from './polishBase';
 
 /** Motion problems in a polish fence: keyframes beyond transform and opacity, delays, repeats, fills, a raw hover. */
 function fenceMotionProblems(f: string): string[] {
@@ -95,7 +95,7 @@ describe('MP-25 motion', () => {
     const firsts = (review.match(/return \(\s*<>\s*<ScreenShell>/g) ?? []).length;
     if (shells !== 2 || firsts !== 2) problems.push(`ReviewStep: ${shells} ScreenShell tags, ${firsts} first in a fragment and unkeyed`);
     // BookingFlow untouched; no fixed-position element inside a step (a transformed ancestor would capture it).
-    if (sha(read(FLOW)) !== baseCensus().frozen[FLOW]) problems.push('BookingFlow.tsx changed');
+    if (sha(read(FLOW)) !== expectedFrozenHash(baseCensus(), FLOW)) problems.push('BookingFlow.tsx changed');
     for (const rel of [DATES, DRIVER, REVIEW]) if (literals(prepare(rel, read(rel))).some((s) => /(?:^|\s)(?:[\w-]+:)*fixed(?:\s|$)/.test(s))) problems.push(`${rel}: a fixed-position element inside a step`);
     expect(problems).toEqual([]);
   });

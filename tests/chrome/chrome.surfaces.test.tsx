@@ -142,7 +142,7 @@ describe('MP-17 surfaces', () => {
       if (links.length !== 1) problems.push(`${label}: ${links.length} links named "${cta}"`);
       else if (links[0].attrs.href !== href) problems.push(`${label}: "${cta}" goes to ${links[0].attrs.href}, expected ${href}`);
     };
-    const verify = async () => renderToStaticMarkup(await VerifyRoute({ searchParams: {} }));
+    const verify = async () => renderToStaticMarkup(await VerifyRoute({ searchParams: Promise.resolve({}) }));
 
     // Booking mode, default team.
     vi.stubEnv('NEXT_PUBLIC_SITE_MODE', 'booking');

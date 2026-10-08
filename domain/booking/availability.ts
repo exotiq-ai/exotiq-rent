@@ -1,6 +1,6 @@
 import { addDays } from './dates';
 import { countRentalDays } from './totals';
-import type { UnavailableDateRange } from './types';
+import { hasKnownAvailability, type Vehicle } from './types';
 
 /**
  * The one day-granular bookability rule (MP-10). A range [start, end]
@@ -12,11 +12,12 @@ import type { UnavailableDateRange } from './types';
  * never lists a car the calendar would then refuse.
  */
 export function rangeIsBookable(
-  vehicle: { minRentalDays: number; unavailableRanges?: UnavailableDateRange[] },
+  vehicle: Pick<Vehicle, 'minRentalDays' | 'unavailableRanges' | 'availabilityAuthority'>,
   start: string,
   end: string,
   todayIso: string,
 ): boolean {
+  if (!hasKnownAvailability(vehicle, start, end)) return false;
   if (start < todayIso || end <= start) return false;
   if (countRentalDays(start, end) < vehicle.minRentalDays) return false;
   const blocked = vehicle.unavailableRanges ?? [];

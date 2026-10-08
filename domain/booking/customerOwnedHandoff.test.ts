@@ -1,0 +1,6 @@
+import {it,expect} from 'vitest';
+import {parseCustomerOwnedHandoff} from './customerOwnedHandoff';
+const now=Date.parse('2030-01-01T12:00:00Z'),origin='https://rent.example.invalid';
+const result={api_version:'v1',source_checked_at:new Date(now).toISOString(),customer_url:origin+'/agent/handoff/'+'a'.repeat(43),expires_at:'2030-01-01T12:01:00Z',state:'pending_documents',next_action:'verify_identity'};
+it('accepts only an unexpired canonical first-party opaque rendezvous for the chosen action',()=>expect(parseCustomerOwnedHandoff(result,'identity',origin,now)).toEqual(result));
+it.each([{customer_url:'https://checkout.stripe.com/private'},{customer_url:origin+'/agent/handoff/'+'a'.repeat(43)+'?ref=OTHER'},{customer_url:origin+'/agent/handoff/'+'a'.repeat(43)+'#private'},{customer_url:origin+'/agent/account/foo'},{customer_url:'https://user@rent.example.invalid/agent/handoff/'+'a'.repeat(43)},{expires_at:'2030-01-01T11:59:59Z'},{source_checked_at:'2030-01-01T11:58:00Z'},{source_checked_at:'2030-01-01T12:01:00Z'},{access_token:'private'},{next_action:'hosted_checkout'}])('rejects unsafe, stale or wrong-action result %j',change=>expect(()=>parseCustomerOwnedHandoff({...result,...change},'identity',origin,now)).toThrow());

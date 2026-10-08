@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
+import type {JSX} from 'react';
 import { describe, expect, it } from 'vitest';
 import config from '../../tailwind.config';
 import { compileWith, stripComments } from '../../tests/design/lib/scan.mjs';
@@ -31,7 +32,7 @@ const childEls = (e: El) => e.children.filter((c): c is El => typeof c !== 'stri
 /** The base `<Image …>` opening tags of the photo frames MP-18 decorates: their props must not move. */
 const IMAGE_TAGS: [string, string][] = [
   ['components/browse/ListingCard.tsx', '<Image src={vehicle.heroImage} alt={vehicle.name} fill priority={priority} sizes={sizes} className={photoClassName} />'],
-  ['app/[operatorSlug]/page.tsx', '<Image src={heroVehicle.heroImage} alt={heroVehicle.name} fill priority sizes="(min-width: 1024px) 840px, 480px" className="object-cover object-[50%_52%]" />'],
+  ['app/[operatorSlug]/page.tsx', '<Image src={heroVehicle.heroImage} alt={heroVehicle.name} fill priority fetchPriority="high" sizes="(min-width: 1024px) 840px, 480px" className="object-cover object-[50%_52%]" />'],
   ['components/drive-exotiq/VehicleGallery.tsx', '<Image src={hero} alt={vehicleName} fill sizes="(min-width: 1024px) 800px, 480px" priority className="object-cover object-[50%_52%]" onError={() => markFailed(hero)} />'],
   ['components/drive-exotiq/VehicleGallery.tsx', '<Image src={photo} alt={`${shortName} photo ${index + 1}`} fill sizes="(min-width: 1024px) 160px, 128px" className="object-cover" onError={() => markFailed(photo)} />'],
 ];

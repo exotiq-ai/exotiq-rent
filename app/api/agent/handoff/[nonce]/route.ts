@@ -1,0 +1,14 @@
+import {NextResponse} from 'next/server';
+import {cookies} from 'next/headers';
+import {hostedRuntime,CUSTOMER_COOKIE,privateHeaders,readHostedBody,publicHostedUrl} from '@/domain/booking/hostedRuntime.server';
+import {forwardCustomerHandoff} from '@/domain/booking/customerHandoffServer';
+export const dynamic='force-dynamic';
+async function bridge(request:Request,context:{params:Promise<{nonce:string}>},method:'GET'|'POST'){
+ try{const {config,auth}=hostedRuntime();const params=await context.params;publicHostedUrl(request,config,'/api/agent/handoff/'+params.nonce);
+  const session=await auth.readSession((await cookies()).get(CUSTOMER_COOKIE)?.value??'');
+  const result=await forwardCustomerHandoff(config,session,params.nonce,method,method==='POST'?await readHostedBody(request):null,request.headers.get('origin'));
+  return NextResponse.json(result.body,{status:result.status,headers:privateHeaders});
+ }catch{return NextResponse.json({code:'handoff_unavailable'},{status:503,headers:privateHeaders});}
+}
+export const GET=(request:Request,context:{params:Promise<{nonce:string}>})=>bridge(request,context,'GET');
+export const POST=(request:Request,context:{params:Promise<{nonce:string}>})=>bridge(request,context,'POST');

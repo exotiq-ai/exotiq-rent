@@ -11,7 +11,8 @@ import { looksLikeToken } from '@/domain/renters/tokens';
 export const metadata: Metadata = { title: 'Confirm your e-mail | Drive Exotiq', robots: { index: false, follow: false } };
 
 /** The page the confirmation link lands on (MP-14): one button, a plain form, no JavaScript needed. */
-export default async function ConfirmPage({ searchParams }: { searchParams?: { token?: string } }) {
+export default async function ConfirmPage({ searchParams: pendingSearch }: { searchParams?: Promise<{ token?: string }> }) {
+  const searchParams = await pendingSearch;
   if (!renterCaptureUiEnabled()) notFound();
   const token = searchParams?.token;
   const valid = looksLikeToken(token);

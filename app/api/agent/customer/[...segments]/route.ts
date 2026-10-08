@@ -1,0 +1,10 @@
+import {NextResponse} from 'next/server';
+import {cookies} from 'next/headers';
+import {hostedRuntime,CUSTOMER_COOKIE,privateHeaders,readHostedBody,publicHostedUrl} from '@/domain/booking/hostedRuntime.server';
+import {forwardHostedRequest} from '@/domain/booking/hostedProxy.server';
+export const dynamic='force-dynamic';
+async function bridge(request:Request,context:{params:Promise<{segments:string[]}>},method:'GET'|'POST'){
+ try{const {config,auth}=hostedRuntime();const path=(await context.params).segments.join('/');publicHostedUrl(request,config,'/api/agent/customer/'+path);const session=await auth.readSession((await cookies()).get(CUSTOMER_COOKIE)?.value??'');const result=await forwardHostedRequest(config,session,method,path,method==='POST'?await readHostedBody(request):null,request.headers.get('origin'));return result.status===204?new NextResponse(null,{status:204,headers:privateHeaders}):NextResponse.json(result.body,{status:result.status,headers:privateHeaders});}catch{return NextResponse.json({error:'This customer request could not be completed. Sign in again or retry.'},{status:503,headers:privateHeaders});}
+}
+export const GET=(request:Request,context:{params:Promise<{segments:string[]}>})=>bridge(request,context,'GET');
+export const POST=(request:Request,context:{params:Promise<{segments:string[]}>})=>bridge(request,context,'POST');

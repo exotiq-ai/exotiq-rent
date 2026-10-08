@@ -24,7 +24,8 @@ async function heroSrc(url: string): Promise<string | null> {
   }
 }
 
-export default async function ShareCard({ params }: { params: { operatorSlug: string; vehicleSlug: string } }) {
+export default async function ShareCard({ params: pendingParams }: { params: Promise<{ operatorSlug: string; vehicleSlug: string }> }) {
+  const params = await pendingParams;
   const result = await getPublicVehicleContext(params.operatorSlug, params.vehicleSlug);
   const vehicle = result?.vehicle;
   const team = result?.team;

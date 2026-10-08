@@ -1,4 +1,6 @@
 import { mockOperators, mockVehicles } from './mockData';
+import { addDays } from './dates';
+import type { AvailabilityAuthority, AvailabilityWindow, Vehicle } from './types';
 import type {
   IdentityVerificationStart,
   IdentityVerificationState,
@@ -16,12 +18,20 @@ export async function getMockPublicTeamStorefront(teamSlug: string): Promise<Pub
   return { team, vehicles };
 }
 
-export async function getMockPublicVehicleContext(teamSlug: string, vehicleSlug: string): Promise<PublicVehicleContext | null> {
+/** Explicit fixture evidence only. Never called as fallback for a live outage. */
+export function mockVehicleAvailability(vehicle: Vehicle, window?: AvailabilityWindow): Vehicle {
+  const start = window?.start ?? new Date().toISOString().slice(0,10);
+  const availabilityAuthority: AvailabilityAuthority = { status: 'KNOWN', checkedAt: new Date().toISOString(), windowStart: start, windowEnd: window?.end ?? addDays(start,180) };
+  return { ...vehicle, unavailableRanges: vehicle.unavailableRanges ?? [], availabilityAuthority };
+}
+
+export async function getMockPublicVehicleContext(teamSlug: string, vehicleSlug: string, window?: AvailabilityWindow): Promise<PublicVehicleContext | null> {
   const storefront = await getMockPublicTeamStorefront(teamSlug);
   if (!storefront) return null;
   const vehicle = storefront.vehicles.find((candidate) => candidate.slug === vehicleSlug);
   if (!vehicle) return null;
-  return { team: storefront.team, vehicle };
+  const checked = mockVehicleAvailability(vehicle,window);
+  return { team: storefront.team, vehicle: checked, availabilityAuthority: checked.availabilityAuthority! };
 }
 
 export async function getMockBookingConfirmation(bookingRef: string): Promise<PublicBookingConfirmation | null> {

@@ -162,7 +162,7 @@ describe('availability window (MP-10)', () => {
 });
 
 describe('rangeIsBookable — the one rule the calendar and the seed share', () => {
-  const vehicle = { minRentalDays: 2, unavailableRanges: [{ start: '2099-01-15', end: '2099-01-16' }] };
+  const vehicle = { minRentalDays: 2, unavailableRanges: [{ start: '2099-01-15', end: '2099-01-16' }], availabilityAuthority: { status: 'KNOWN' as const, checkedAt: new Date().toISOString(), windowStart: '2099-01-01', windowEnd: '2099-12-31' } };
   it('accepts a forward range of at least the minimum stay with no blocked day, drop-off day included', () => {
     expect(rangeIsBookable(vehicle, '2099-01-10', '2099-01-12', '2099-01-01')).toBe(true);
     expect(rangeIsBookable(vehicle, '2099-01-10', '2099-01-11', '2099-01-01')).toBe(false); // shorter than minimum

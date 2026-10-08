@@ -90,7 +90,9 @@ async function requestBodies(cart: BookingCart, flag: string | undefined, row: R
   }));
   try {
     await loadQuote(cart).catch(() => undefined);
-    await createSupabaseRenterBooking(cart);
+    // Explicit checked fixture evidence: a wire-format test must not encode
+    // an absent availability observation as permission to create a live request.
+    await createSupabaseRenterBooking({ ...cart, vehicle: { ...cart.vehicle, unavailableRanges: [], availabilityAuthority: { status: 'KNOWN', checkedAt: new Date().toISOString(), windowStart: cart.dates.start, windowEnd: cart.dates.end } } });
   } finally { vi.unstubAllGlobals(); }
   return { quote: sent.find((s) => s.url.includes('/rest/v1/rpc/public_vehicle_quote'))?.body, create: sent.find((s) => s.url.includes('/functions/v1/rent-create-booking'))?.body };
 }
@@ -218,17 +220,17 @@ describe('MP-30 the wire', () => {
     expect(problems).toEqual([]);
   });
 
-  it('the quote state machine and the commit path are untouched', async () => {
+  it('the protection wire remains explicit with current authority and synchronous request guards', async () => {
     const problems: string[] = [];
     const flow = stripComments(read(FLOW));
     // MP-26's pins (tests/fees/fees.flow.test.ts:255-262), the back guard, the seed and its one import.
     for (const pin of [
       'const quoteBlocking = quotingEnabled() && !quote;',
       'onProtectionChange={(tier) => setCart(recomputeBookingCart({ ...cart, protection: tier }))}',
-      'if (reserving) return;',
-      'if (!shouldRequestQuote({ step, enabled: quotingEnabled(), state: quoteState, currentKey })) return;',
+      'if (requestInFlight.current || !canProceed() || (quotingEnabled() && !latest.current.quote)) return;',
+      'if (authorityBlocking || !shouldRequestQuote({ step, enabled: quotingEnabled(), state: quoteState, currentKey })) return;',
       'void refreshQuote();',
-      '}, [step, currentKey, quoteState, refreshQuote]);',
+      '}, [step, currentKey, quoteState, refreshQuote, authorityBlocking]);',
       'const back = step > 1 && !reserving ? () => setStep((value) => value - 1) : undefined;',
       'protection: defaultProtection(), extras: [] });',
     ]) if (!flow.includes(pin)) problems.push(`BookingFlow: missing ${pin}`);
@@ -255,8 +257,9 @@ describe('MP-30 the wire', () => {
 
     // Planted: a guard change is a code change; an added comment is not.
     const raw = read(FLOW);
-    expect(code(raw.replace('if (reserving) return;', 'if (reserving || !quote) return;'))).not.toBe(code(raw));
-    expect(code(raw.replace('if (reserving) return;', 'if (reserving) return; // planted comment'))).toBe(code(raw));
+    const guard = 'if (requestInFlight.current || !canProceed() || (quotingEnabled() && !latest.current.quote)) return;';
+    expect(code(raw.replace(guard, 'if (requestInFlight.current) return;'))).not.toBe(code(raw));
+    expect(code(raw.replace(guard, `${guard} // planted comment`))).toBe(code(raw));
 
     expect(problems).toEqual([]);
   });

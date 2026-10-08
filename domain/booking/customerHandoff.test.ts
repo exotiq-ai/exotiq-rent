@@ -1,0 +1,38 @@
+import {describe,it,expect,vi} from 'vitest';
+import {forwardCustomerHandoff,parseHandoffReview,parseHandoffResolve,handoffSignIn} from './customerHandoffServer';
+const nonce='a'.repeat(43);
+const config={issuer:'https://identity.example.invalid',authorizationEndpoint:'https://identity.example.invalid/authorize',tokenEndpoint:'https://identity.example.invalid/token',jwksUri:'https://identity.example.invalid/jwks',allowedHosts:['identity.example.invalid'],resource:'https://api.example.invalid/external-booking-api',frontendOrigin:'https://rent.example.invalid',clientId:'hosted-customer',clientSecret:'synthetic-only',cookieKey:Buffer.alloc(32,4).toString('base64url'),bridgeKey:Buffer.alloc(32,5).toString('base64url')};
+const session={issuer:config.issuer,subject:'renter',clientId:config.clientId,accessToken:'synthetic-test-token',expiresAt:Date.now()+60000,csrf:'synthetic-csrf',profile:{email:'verified@example.invalid',emailVerified:true,name:'Synthetic Renter'}};
+const review=()=>({api_version:'v1',source_checked_at:new Date().toISOString(),ref:'RENT-1',operator_name:'Synthetic operator',vehicle_name:'Synthetic car',action:'checkout',status:'pending_payment',expires_at:new Date(Date.now()+60000).toISOString()});
+const resolve=(provider_url='https://checkout.stripe.com/c/pay/synthetic')=>({api_version:'v1',source_checked_at:new Date().toISOString(),action:'checkout',provider_url,expires_at:new Date(Date.now()+60000).toISOString()});
+describe('customer-only provider handoff boundary',()=>{
+ it('preserves the documented opaque Stripe Checkout fragment through canonical validation',()=>{
+  const url='https://checkout.stripe.com/c/pay/synthetic#fidkdSyntheticLocal';expect(parseHandoffResolve(resolve(url)).provider_url).toBe(url);
+  expect(()=>parseHandoffResolve({...resolve('https://verify.stripe.com/start/synthetic#fidkdSyntheticLocal'),action:'identity'})).toThrow();
+ });
+ it.each(['grant_expired','grant_revoked'])('preserves only safe canonical409 %s recovery code from review and resolve',async code=>{
+  const transport=async()=>Response.json({code,message:'private backend message',request_id:'10000000-0000-4000-8000-000000000002',retryable:false},{status:409});
+  expect(await forwardCustomerHandoff(config,session,nonce,'GET',null,null,transport as any)).toEqual({status:409,body:{code}});
+  expect(await forwardCustomerHandoff(config,session,nonce,'POST',{csrf:session.csrf,action:'continue'},config.frontendOrigin,transport as any)).toEqual({status:409,body:{code}});
+ });
+ it.each([{status:404,code:'grant_revoked'},{status:409,code:'forbidden'},{status:409,code:'grant_revoked',private:'customer'}])('keeps noncanonical/wrongstatus recovery error generic %j',async change=>{
+  const result=await forwardCustomerHandoff(config,session,nonce,'GET',null,null,(async()=>Response.json({code:change.code,message:'private',request_id:'10000000-0000-4000-8000-000000000002',retryable:false,...('private' in change?{private:change.private}:{})},{status:change.status})) as any);expect(result.body).toEqual({code:'handoff_unavailable'});
+ });
+ it('reviews without creating a provider session and resolves only an explicit CSRF-bound continue',async()=>{
+  const transport=vi.fn(async(url:URL,init:RequestInit)=>{expect(url.pathname).toBe(`/external-booking-api/v1/customer-handoffs/${nonce}/${init.method==='GET'?'review':'resolve'}`);expect(init.headers).toMatchObject({authorization:'Bearer synthetic-test-token'});expect(init.redirect).toBe('error');expect(init.cache).toBe('no-store');expect(init.signal).toBeInstanceOf(AbortSignal);if(init.method==='POST')expect(JSON.parse(init.body as string)).toEqual({action:'continue'});return Response.json(init.method==='GET'?review():resolve());});
+  expect((await forwardCustomerHandoff(config,session,nonce,'GET',null,null,transport as any)).body).toMatchObject({ref:'RENT-1'});
+  expect((await forwardCustomerHandoff(config,session,nonce,'POST',{csrf:session.csrf,action:'continue'},config.frontendOrigin,transport as any)).body).toMatchObject({action:'checkout'});
+ });
+ it.each([{csrf:'wrong',action:'continue'},{csrf:session.csrf,action:'continue',customer_id:'other'},{csrf:session.csrf,action:'anything'}])('refuses invalid continuation before upstream',async(body)=>{const transport=vi.fn();await expect(forwardCustomerHandoff(config,session,nonce,'POST',body,config.frontendOrigin,transport)).rejects.toThrow();expect(transport).not.toHaveBeenCalled();});
+ it('refuses expired sessions, nonce path injection and cross-origin CSRF',async()=>{const transport=vi.fn();await expect(forwardCustomerHandoff(config,{...session,expiresAt:0},nonce,'GET',null,null,transport)).rejects.toThrow();await expect(forwardCustomerHandoff(config,session,'../admin','GET',null,null,transport)).rejects.toThrow();await expect(forwardCustomerHandoff(config,session,nonce,'POST',{csrf:session.csrf,action:'continue'},'https://evil.invalid',transport)).rejects.toThrow();expect(transport).not.toHaveBeenCalled();});
+ it.each(['http://checkout.stripe.com/pay','https://checkout.stripe.com.evil.invalid/pay','https://name:pass@checkout.stripe.com/pay','https://checkout.stripe.com:444/pay','https://checkout.stripe.com/pay#secret','https://checkout.stripe.com/pay?client_secret=secret','https://checkout.stripe.com/pay?access_token=secret','https://checkout.stripe.com/pay?confirmation_token=secret','https://verify.stripe.com/pay','https://checkout.stripe.com/','https://checkout.stripe.com/pay?email=customer','https://checkout.stripe.com/pay?booking_ref=RENT-1','https://checkout.stripe.com/pay?authorization=anything'])('rejects unsafe checkout target %s',(url)=>expect(()=>parseHandoffResolve(resolve(url))).toThrow());
+ it('accepts only a matching identity provider host and denies extra secret fields',()=>{expect(parseHandoffResolve({...resolve('https://verify.stripe.com/start/synthetic'),action:'identity'}).action).toBe('identity');expect(()=>parseHandoffReview({...review(),confirmation_token:'secret'})).toThrow();expect(()=>parseHandoffReview({...review(),status:'UNKNOWN'})).toThrow();expect(()=>parseHandoffReview({...review(),expires_at:new Date(0).toISOString()})).toThrow();});
+ it('does not relay private upstream errors and fails closed on malformed or redirected success',async()=>{
+  const response=await forwardCustomerHandoff(config,session,nonce,'GET',null,null,(async()=>Response.json({message:'private customer',token:'secret'},{status:404})) as any);expect(response).toEqual({status:404,body:{code:'handoff_unavailable'}});
+  await expect(forwardCustomerHandoff(config,session,nonce,'GET',null,null,(async()=>Response.json({...review(),access_token:'secret'})) as any)).rejects.toThrow();
+  await expect(forwardCustomerHandoff(config,session,nonce,'GET',null,null,(async()=>new Response(null,{status:303,headers:{Location:'https://evil.invalid'}})) as any)).rejects.toThrow();
+ });
+ it('supports only the opaque owned sign-in return path',()=>{expect(handoffSignIn(nonce)).toBe(`/api/agent/auth/start?return_to=${encodeURIComponent('/agent/handoff/'+nonce)}`);expect(()=>handoffSignIn('../other')).toThrow();});
+ it.each(['https://checkout.stripe.com/pay?receipt=private','https://checkout.stripe.com/pay?%65mail=customer'])('uses canonical decoded credential/identity query checks %s',url=>expect(()=>parseHandoffResolve(resolve(url))).toThrow());
+ it('refuses a provider URL that embeds the handoff nonce',async()=>{await expect(forwardCustomerHandoff(config,session,nonce,'POST',{csrf:session.csrf,action:'continue'},config.frontendOrigin,(async()=>Response.json(resolve('https://checkout.stripe.com/c/pay/'+nonce))) as any)).rejects.toThrow();});
+});

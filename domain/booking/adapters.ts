@@ -7,6 +7,7 @@ import type {
   SignedMediaResponse,
 } from './rpcClient';
 import type { Operator, UnavailableDateRange, Vehicle } from './types';
+import { validAvailabilityDate } from './types';
 import type { PublicQuote } from './publicContracts';
 
 /**
@@ -109,6 +110,7 @@ export function adaptVehicleDetail(row: RpcVehicleDetailRow, team: Operator, med
 
   return {
     ...base,
+    availabilityAuthority: { status: 'UNKNOWN', reason: 'not_checked', retryAfterSeconds: 30 },
     photos,
     heroImage: photos[0] ?? base.heroImage,
     footnote: footnoteFor(base.minRentalDays, row.default_mileage_limit, row.mileage_overage_rate),
@@ -127,6 +129,9 @@ export function adaptVehicleDetail(row: RpcVehicleDetailRow, team: Operator, med
 }
 
 export function adaptBusyRanges(rows: RpcBusyRangeRow[]): UnavailableDateRange[] {
+  if (!Array.isArray(rows) || rows.some((row) => !row || !validAvailabilityDate(row.busy_start) || !validAvailabilityDate(row.busy_end) || row.busy_end < row.busy_start)) {
+    throw new Error('Invalid availability response');
+  }
   return rows.map((row) => ({ start: row.busy_start, end: row.busy_end }));
 }
 
