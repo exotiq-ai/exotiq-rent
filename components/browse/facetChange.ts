@@ -21,3 +21,23 @@ export function changedFacet(query: MarketplaceQuery, submitted: URLSearchParams
   if ((submitted.get('band') ?? '') !== bandOf(query)) return 'band';
   return null;
 }
+
+/** Two searches that spell the same query, whatever their order or leading `?`. */
+export const sameSearch = (a: string, b: string): boolean => {
+  const key = (s: string) => Array.from(new URLSearchParams(s).entries()).map(([k, v]) => `${k}=${v}`).sort().join('&');
+  return key(a) === key(b);
+};
+
+/**
+ * MP-36 fix round (F3): one gesture, one navigation. The gate remembers the last search it allowed and refuses a
+ * repeat of it — a date commit followed by Enter calls navigate() twice before the keyed remount — and refuses
+ * the document's own search, so an unchanged submit never pushes the page onto itself or emits an event.
+ */
+export function createNavigationGate(): (next: string, current: string) => boolean {
+  let last: string | null = null;
+  return (next, current) => {
+    if (sameSearch(next, current) || (last !== null && sameSearch(next, last))) return false;
+    last = next;
+    return true;
+  };
+}

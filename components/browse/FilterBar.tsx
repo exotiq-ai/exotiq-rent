@@ -10,7 +10,7 @@ import { addDays } from '@/domain/booking/dates';
 import { localTodayIso } from '@/domain/booking/availability';
 import { ctaOutlineClassName, datePillClassName, microLabelClassName } from './tokens';
 import { track } from '@/components/analytics/posthog';
-import { changedFacet } from './facetChange';
+import { changedFacet, createNavigationGate } from './facetChange';
 
 /** The control that navigated, so its successor can take focus after the keyed remount (same document, no storage). */
 let pendingFocusId: string | null = null;
@@ -73,6 +73,8 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf', facetsEnable
   const [moreOpen, setMoreOpen] = useState(() => pendingFiltersOpen);
   const today = localTodayIso();
   const [hint, setHint] = useState(() => datesHint(query.start ?? '', query.end ?? ''));
+  // One gate per mount: the keyed remount after a committed push starts a fresh one.
+  const [allowNavigation] = useState(createNavigationGate);
 
   // Keep the drop-off picker honest as the pickup moves, and never submit an
   // inverted pair: pushing pickup past drop-off carries the rental length
@@ -115,6 +117,9 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf', facetsEnable
       params.append(key, value);
     });
     const qs = params.toString();
+    // MP-36 fix round (F3): one gesture, one navigation — a date commit followed by Enter runs navigate()
+    // twice before the keyed remount, and an unchanged submit would push the page onto itself.
+    if (!allowNavigation(qs, window.location.search)) return;
     // MP-36: one event per navigation, the facet's NAME only (never a value); the emitter swallows
     // every error and is a no-op without window, so analytics can never block the push.
     const facet = changedFacet(query, params);

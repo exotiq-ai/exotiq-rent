@@ -133,7 +133,8 @@ function wiringProblems(src: string, others: [string, string][]): string[] {
   const calls = src.match(/\btrack\(/g) ?? [];
   if (calls.length !== 1) p.push(`${calls.length} track( calls in FilterBar.tsx, expected 1`);
   if (!src.includes("import { track } from '@/components/analytics/posthog';")) p.push('track is not imported from @/components/analytics/posthog');
-  if (!src.includes("import { changedFacet } from './facetChange';")) p.push('changedFacet is not imported from ./facetChange');
+  // The decision comes from ./facetChange (fix round F3 widened the same import with createNavigationGate).
+  if (!/import \{[^}]*\bchangedFacet\b[^}]*\} from '\.\/facetChange';/.test(src)) p.push('changedFacet is not imported from ./facetChange');
   const nav = between(src, 'const navigate = () => {', 'const onSubmit');
   const guard = nav.indexOf("if ((start === '') !== (end === '')) return;");
   const decide = nav.indexOf('const facet = changedFacet(query, params);');
