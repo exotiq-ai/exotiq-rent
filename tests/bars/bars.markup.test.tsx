@@ -97,7 +97,7 @@ describe('MP-28 bar states (AC5)', () => {
       if (s.cookie && first?.attrs['data-cookie-controls'] !== 'row') problems.push(`${s.name}: the cookie row is not the bar's first child`);
       const content = bar.children.filter((c): c is El => typeof c !== 'string').pop();
       if (!content || !classes(content).includes('space-y-3')) problems.push(`${s.name}: the content div is not the bar's last child`);
-      const hasTotal = elements(bar).some((e) => e.tag === 'div' && classes(e).includes('border-t') && classes(e).includes('pt-3') && e !== bar);
+      const hasTotal = elements(bar).some((e) => e.tag === 'div' && classes(e).includes('border-t') && classes(e).includes('pt-2') && e !== bar);
       if (s.name.includes('running total') !== hasTotal) problems.push(`${s.name}: running total ${hasTotal ? 'rendered' : 'missing'}`);
       if (s.name.includes('error banner') !== elements(bar).some((e) => e.tag === 'p' && classes(e).includes('border-danger/45'))) problems.push(`${s.name}: banner state wrong`);
     }

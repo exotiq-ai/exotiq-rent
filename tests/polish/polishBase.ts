@@ -310,6 +310,18 @@ const PG = 'tests/protect/golden/';
 export const PROTECT_RESTORE = 'tests/protect/protect.restore.test.tsx';
 export const PROTECT_LOCKSTEP = [...[...PROTECT_REVIEW, ...PROTECT_STOREFRONT, PROTECT_FLOW, 'base.json'].map((n) => PG + n), PROTECT_RESTORE];
 /** A file's text at the recorded branch base (errata #3 postdates the T0 byte copies; git holds the base exactly). */
+/**
+ * The legibility pass (2026-11) substitutions on golden markup, applied to the BASE bytes before they are compared:
+ * field hints dim to the faint grey at 85%, the two caps recipes lose their wide letter spacing (and the price unit goes from normal to medium weight), and the
+ * running total under the cookie line takes pt-2 instead of pt-3. Nothing else in a golden may change.
+ */
+export const legibilityMarkup = (html: string): string =>
+  html
+    .split('text-micro font-normal uppercase tracking-[0.16em]').join('text-micro font-medium uppercase tracking-[0.08em]')
+    .split('text-micro uppercase tracking-[0.16em]').join('text-micro uppercase tracking-[0.08em]')
+    .split('text-label uppercase tracking-[0.2em]').join('text-label uppercase tracking-[0.08em]')
+    .split('placeholder:text-faint').join('placeholder:text-faint/[.85]')
+    .split('border-t border-line pt-3 [:first-child&gt;&amp;]').join('border-t border-line pt-2 [:first-child&gt;&amp;]');
 export const atBase = (rel: string): string => execFileSync('git', ['show', `${baseCensus().cutFrom}:${rel}`], { cwd: REPO, encoding: 'utf8' });
 const SHELL_BASE = 'min-h-0 flex-1 overflow-y-auto px-4 pt-2 [scrollbar-width:none] pb-5';
 const replaceOnce = (s: string, from: string, to: string): string => (s.split(from).length === 2 ? s.replace(from, to) : `${s}\n«${from} not found exactly once»`);
@@ -317,13 +329,13 @@ const replaceOnce = (s: string, from: string, to: string): string => (s.split(fr
 export function protectExpected(rel: string, base: string, recipe: string): string {
   const name = rel.slice(PG.length);
   const shell = (h: string) => replaceOnce(h, `<div class="${SHELL_BASE}"`, `<div class="${SHELL_BASE}${SHELL_SUFFIX}"`);
-  if (PROTECT_REVIEW.includes(name)) return shell(base);
+  if (PROTECT_REVIEW.includes(name)) return legibilityMarkup(shell(base));
   if (PROTECT_STOREFRONT.includes(name)) {
     const bar = replaceOnce(base, 'class="sticky top-0 z-40 border-b border-line/70 bg-ground/85 backdrop-blur-md ', `class="sticky top-0 z-40 border-b ${recipe} `);
-    return replaceOnce(bar, 'overflow-y-auto px-4 pt-2 [scrollbar-width:none] pb-5 lg:overflow-visible', `overflow-y-auto px-4 pt-2 [scrollbar-width:none] ${OVERSCROLL} pb-5 lg:overflow-visible`);
+    return legibilityMarkup(replaceOnce(bar, 'overflow-y-auto px-4 pt-2 [scrollbar-width:none] pb-5 lg:overflow-visible', `overflow-y-auto px-4 pt-2 [scrollbar-width:none] ${OVERSCROLL} pb-5 lg:overflow-visible`));
   }
-  if (name === PROTECT_FLOW) return cutCalendarBytes(replaceOnce(shell(base), '>Review &amp; Request</span>', '>Review</span>'));
-  return base;
+  if (name === PROTECT_FLOW) return legibilityMarkup(cutCalendarBytes(replaceOnce(shell(base), '>Review &amp; Request</span>', '>Review</span>')));
+  return legibilityMarkup(base);
 }
 /** Errata #3: the protect goldens equal their base bytes with exactly the polish substitutions; base.json moves only their hashes; the restore test gains the calendar cut and nothing else. */
 export function protectLockstepProblems(cur: (rel: string) => string, recipe: string): string[] {
@@ -337,7 +349,14 @@ export function protectLockstepProblems(cur: (rel: string) => string, recipe: st
     delete b0.files[n];
     delete b1.files[n];
   }
-  if (JSON.stringify(b0) !== JSON.stringify(b1)) p.push(`${PG}base.json changed beyond the seven hashes`);
+  // The legibility pass (2026-11) also touches three protect goldens MP-25 itself left frozen (the caps letter spacing only).
+  for (const n of ['mock-confirmation.html', 'paid-FX-T1S1P1.html', 'requested-FX-T1S1P1.html']) {
+    if (cur(`${PG}${n}`) !== legibilityMarkup(atBase(`${PG}${n}`))) p.push(`${PG}${n} differs from its base golden beyond the legibility substitutions`);
+    if (b1.files[n] !== sha(cur(`${PG}${n}`))) p.push(`${PG}base.json does not hold ${n}'s hash`);
+    delete b0.files[n];
+    delete b1.files[n];
+  }
+  if (JSON.stringify(b0) !== JSON.stringify(b1)) p.push(`${PG}base.json changed beyond the seven hashes and the legibility pass's three`);
   const hs = hunks(atBase(PROTECT_RESTORE), cur(PROTECT_RESTORE));
   const imp = hs.some((h) => h.removed.length === 0 && h.added.length === 1 && h.added[0] === "import { calendarRange } from '../fees/goldens';");
   const cut = hs.some((h) => h.removed.length === 1 && h.removed[0].startsWith('const flow = () => renderToStaticMarkup(') && h.added.length === 2 && h.added[0].startsWith('/**') && h.added[1].startsWith('const flow = () => ') && h.added[1].includes('calendarRange(parseHtml(') && h.added[1].includes('«calendar»'));
@@ -366,10 +385,10 @@ export function lockstepProblems(copy: (rel: string) => string, cur: (rel: strin
   if (cuts.length !== 1 || cuts[0].removed.length !== 2 || !cuts[0].removed[1].startsWith('export const cutDates =') || exportsAdded.length !== 2 || !exportsAdded.some((l) => l.startsWith('export function cutDates(')) || !exportsAdded.some((l) => l.startsWith('export function calendarRange('))) p.push(`tests/fees/goldens.ts: ${JSON.stringify(cuts)}`);
   const d0 = copy('tests/fees/golden/dates-step.html');
   const d1 = cur('tests/fees/golden/dates-step.html');
-  if (firstClass(d1) !== firstClass(d0) + SHELL_SUFFIX || withFirstClass(cutCalendarBytes(d0), firstClass(d1)) !== d1) p.push('tests/fees/golden/dates-step.html changed beyond the calendar placeholder and the scroller class');
+  if (firstClass(d1) !== firstClass(d0) + SHELL_SUFFIX || withFirstClass(legibilityMarkup(cutCalendarBytes(d0)), firstClass(d1)) !== d1) p.push('tests/fees/golden/dates-step.html changed beyond the calendar placeholder and the scroller class');
   const v0 = copy('tests/fees/golden/driver-step.html');
   const v1 = cur('tests/fees/golden/driver-step.html');
-  if (firstClass(v1) !== firstClass(v0) + SHELL_SUFFIX || withFirstClass(v0, firstClass(v1)) !== v1) p.push('tests/fees/golden/driver-step.html changed beyond the scroller class');
+  if (firstClass(v1) !== firstClass(v0) + SHELL_SUFFIX || withFirstClass(legibilityMarkup(v0), firstClass(v1)) !== v1) p.push('tests/fees/golden/driver-step.html changed beyond the scroller class');
   const b0 = JSON.parse(copy('tests/fees/golden/base.json'));
   const b1 = JSON.parse(cur('tests/fees/golden/base.json'));
   for (const k of ['dates-step.html', 'driver-step.html']) { delete b0.files[k]; delete b1.files[k]; }
@@ -378,7 +397,9 @@ export function lockstepProblems(copy: (rel: string) => string, cur: (rel: strin
     for (const h of hs(rel)) {
       const pure = h.removed.length === 0 && h.added.every((l) => l.includes(OVERSCROLL));
       const swapped = h.removed.length === h.added.length && h.added.every((l, k) => [/'overscroll-y-contain',\s?/, /,\s?'overscroll-y-contain'/, /"overscroll-y-contain",\s?/, / ?overscroll-y-contain/].some((re) => l.replace(re, '') === h.removed[k]));
-      if (!pure && !swapped) p.push(`${rel}: a hunk beyond admitting ${OVERSCROLL}: ${JSON.stringify(h)}`);
+      // The legibility pass: the running total under the slim cookie line wears pt-2, so a test that looks for it looks for pt-2.
+      const legibility = h.removed.length === 1 && h.added.length === 1 && h.removed[0].includes("includes('pt-3')") && h.added[0] === h.removed[0].replace("includes('pt-3')", "includes('pt-2')");
+      if (!pure && !swapped && !legibility) p.push(`${rel}: a hunk beyond admitting ${OVERSCROLL}: ${JSON.stringify(h)}`);
     }
   }
   return p;

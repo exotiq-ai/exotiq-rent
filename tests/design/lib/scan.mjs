@@ -12,8 +12,9 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 
-// Every tone value (14 contract colours + 5 residual tokens), uppercase, no '#'.
-export const AC1_TONE_HEX = ['06070A', '0D0F14', '161922', '1E2230', '10131A', '2A2E3A', '3A3F4D', 'F0F2F5', '9BA1B0', '848A9A', 'C8A664', '1A1308', '6EC1E4', 'FFB84D', '14130F', '0B0D12', '3D4250', '5C6272', 'D7DAE0'];
+// Every distinct tone value (14 contract colours + 5 residual tokens), uppercase, no '#'. Since the legibility pass
+// (2026-11) inkSoft and muted share one value, so the list has 18 entries.
+export const AC1_TONE_HEX = ['06070A', '0D0F14', '161922', '1E2230', '10131A', '2A2E3A', '3A3F4D', 'F4F6F9', 'E1E4EA', 'B9BFCC', 'C8A664', '1A1308', '6EC1E4', 'FFB84D', '14130F', '0B0D12', '3D4250', '5C6272'];
 
 // Sanctioned exceptions: exact file + exact value, each with a reason. Nothing else passes.
 export const HEX_EXCEPTIONS = [

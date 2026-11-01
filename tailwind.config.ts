@@ -34,17 +34,21 @@ const config: Config = {
       // (a component's own step plus a caller's), give the caller's under a breakpoint
       // variant, e.g. max-lg: and lg:, which are emitted after base utilities.
       fontSize: {
-        micro: ["10px", { lineHeight: "1.4" }],
-        label: ["11px", { lineHeight: "1.45" }],
-        "body-sm": ["13px", { lineHeight: "1.5" }],
-        body: ["15px", { lineHeight: "1.5" }],
-        "body-lg": ["16px", { lineHeight: "1.5" }],
-        "title-sm": ["18px", { lineHeight: "1.4" }],
-        title: ["22px", { lineHeight: "1.35" }],
-        heading: ["28px", { lineHeight: "1.3" }],
-        display: ["36px", { lineHeight: "1.2" }],
-        "display-lg": ["48px", { lineHeight: "1.1" }],
-        "display-xl": ["56px", { lineHeight: "1.05" }],
+        // Legibility pass (2026-11): written in rem (1rem = 16px at the default) so a reader's own
+        // text-size setting works; the two smallest steps are both 11px, in medium weight, because
+        // thin light strokes on near-black look weaker than their contrast number. Nothing is
+        // smaller than 11px (tests/design/legibility.test.ts).
+        micro: ["0.6875rem", { lineHeight: "1.4", fontWeight: "500" }],
+        label: ["0.6875rem", { lineHeight: "1.45", fontWeight: "500" }],
+        "body-sm": ["0.8125rem", { lineHeight: "1.5" }],
+        body: ["0.9375rem", { lineHeight: "1.5" }],
+        "body-lg": ["1rem", { lineHeight: "1.5" }],
+        "title-sm": ["1.125rem", { lineHeight: "1.4" }],
+        title: ["1.375rem", { lineHeight: "1.35" }],
+        heading: ["1.75rem", { lineHeight: "1.3" }],
+        display: ["2.25rem", { lineHeight: "1.2" }],
+        "display-lg": ["3rem", { lineHeight: "1.1" }],
+        "display-xl": ["3.5rem", { lineHeight: "1.05" }],
       },
       fontFamily: {
         sans: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],

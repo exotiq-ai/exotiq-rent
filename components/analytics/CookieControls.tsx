@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useCookieConsent } from './PostHogInit';
-import { cookieControlState, toggleOptionalCookies } from './cookieControlsModel';
+import { cookieControlState } from './cookieControlsModel';
 
 const focusRing = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
 
@@ -143,29 +143,25 @@ export function CookieControls({ manual = false, viewport = 'all', className = '
 
   // Responsive instances do not leave hidden interactive controls or dialogs.
   if (!visible) return null;
+  // The row is one slim line (legibility pass): the state in words on the left, one "Change" button
+  // on the right that opens the same preferences card. The line is 26px tall; the button's tap area
+  // is extended to 44px with a pseudo-element, so the target stays full size without the space.
+  const slim = mode === 'row';
+  const stateText = state.label === 'Custom' ? 'Optional cookies: custom' : `Optional cookies are ${state.label.toLowerCase()}`;
   return (
-    <div ref={root} data-cookie-controls={mode} className={`relative -mt-1 mb-1.5 font-[var(--font-drive-inter)] text-muted ${className}`}>
-      <div className="flex min-h-11 items-center gap-2">
-        {mode === 'row' && <span className="flex-1 text-[12px] font-normal tracking-[.01em]">{open ? 'Your privacy choices' : 'Optional cookies'}</span>}
+    <div ref={root} data-cookie-controls={mode} className={`relative ${slim ? '-mt-0.5 mb-0' : '-mt-1 mb-1.5'} font-[var(--font-drive-inter)] text-muted ${className}`}>
+      <div className={`flex items-center gap-2 ${slim ? 'min-h-[26px]' : 'min-h-11'}`}>
+        {slim && <span id={`${id}-state`} aria-live="polite" className="flex-1 text-[12px] font-medium text-faint">{open ? 'Your privacy choices' : stateText}</span>}
         <button
           ref={opener}
           type="button"
           aria-expanded={open}
           aria-controls={`${id}-details`}
+          aria-describedby={slim ? `${id}-state` : undefined}
           disabled={!ready}
-          className={`min-h-11 min-w-11 rounded px-0.5 text-[11px] underline underline-offset-[3px] ${focusRing}`}
+          className={`rounded px-0.5 text-[12px] font-medium underline underline-offset-[3px] ${slim ? 'relative min-h-[26px] before:absolute before:-inset-x-1.5 before:-inset-y-[9px]' : 'min-h-11 min-w-11'} ${focusRing}`}
           onClick={() => open ? dismiss(true) : setActiveDetails(id)}
-        >{mode === 'preferences' ? 'Privacy preferences' : open ? 'Done' : 'Details'}</button>
-        {mode === 'row' && !open && <>
-          <Toggle
-            master
-            label={`Optional cookies: ${state.label}. ${state.checked === false ? 'Switch on to allow optional cookies' : 'Switch off to disable both'}.`}
-            checked={state.checked}
-            describedBy={`${id}-state`}
-            onClick={() => choose(toggleOptionalCookies(choice, gpc))}
-          />
-          <span id={`${id}-state`} aria-live="polite" className="min-w-[36px] text-right text-[10px] tracking-[.05em]">{state.label}</span>
-        </>}
+        >{mode === 'preferences' ? 'Privacy preferences' : open ? 'Done' : 'Change'}</button>
       </div>
       {open && (
         <section
@@ -192,7 +188,7 @@ export function CookieControls({ manual = false, viewport = 'all', className = '
             <Toggle label="Advertising cookies" checked={choice.marketing && !gpc} disabled={gpc} describedBy={gpc ? `${id}-gpc` : undefined} onClick={() => choose({ ...choice, marketing: !choice.marketing })} />
           </div>
           {gpc && <p id={`${id}-gpc`} role="status" className="mt-2 text-[11px] leading-4 text-muted">Global Privacy Control is enabled. Advertising is disabled.</p>}
-          <div className="flex items-center justify-between gap-2 text-[10px] leading-4 text-muted">
+          <div className="flex items-center justify-between gap-2 text-[11px] leading-4 text-muted">
             <span>Changes apply instantly.</span>
             <a href="/privacy" className={`inline-flex min-h-11 items-center rounded text-gold underline underline-offset-[3px] ${focusRing}`}>Privacy notice</a>
           </div>

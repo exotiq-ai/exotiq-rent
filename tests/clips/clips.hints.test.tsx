@@ -32,9 +32,10 @@ const REPO = fileURLToPath(new URL('../../', import.meta.url));
 const DRIVER = 'components/drive-exotiq/flow/DriverStep.tsx';
 const noop = () => {};
 
-// The fieldClass literal as it stands on the base this ticket was cut from (sha256). tests/design/typeScale.test.ts
-// and the focus-gold count read this literal, so this ticket must not change a character of it.
-const FIELD_CLASS_SHA256 = 'e2421714656d6ff87e4e129f80b3d4f4518af86c9d3046a79ce9cbf81ea7dc41';
+// The fieldClass literal (sha256). tests/design/typeScale.test.ts and the focus-gold count read this literal, so a
+// ticket must not change a character of it by accident. Re-pinned by the legibility pass (2026-11), which changed one
+// token in it on purpose: the hint inside an empty field is placeholder:text-faint/[.85] (the faint grey at 85%).
+const FIELD_CLASS_SHA256 = '2d4bc969748fbe523bacd1d8bef4437f41615ec8f60dc8c2e55e444ae93c3ee7';
 const MAX_HINT_CHARS = 12;
 const ELLIPSIS = ['text-ellipsis', 'truncate'];
 

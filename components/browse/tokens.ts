@@ -17,9 +17,13 @@ export const tone = {
   field: '#10131A',
   line: '#2A2E3A',
   line2: '#3A3F4D',
-  ink: '#F0F2F5',
-  muted: '#9BA1B0',
-  faint: '#848A9A',
+  ink: '#F4F6F9',
+  /* Legibility pass (2026-11): the text greys moved up one tier, the pattern the best dark
+     themes use. muted = body notes and secondary copy (15:1, APCA Lc 90); faint = labels, meta,
+     fee lines and the hint inside an empty field (10:1, Lc 68). Nothing that carries words may
+     use dim or dim2 (tests/design/legibility.test.ts). */
+  muted: '#E1E4EA',
+  faint: '#B9BFCC',
   gold: '#C8A664',
   goldInk: '#1A1308',
   verified: '#6EC1E4',
@@ -29,7 +33,7 @@ export const tone = {
   shareGround: '#0B0D12',
   dim: '#3D4250',
   dim2: '#5C6272',
-  inkSoft: '#D7DAE0',
+  inkSoft: '#E1E4EA',
 } as const;
 
 export const serifFamily = 'var(--font-drive-newsreader), Georgia, serif';
@@ -37,11 +41,12 @@ export const serifFamily = 'var(--font-drive-newsreader), Georgia, serif';
 /**
  * Tracked caps, two recipes (MP-12): thirteen size/tracking pairs had grown
  * across the gold pages. `eyebrow` for section and page eyebrows and nav
- * (11px), `microLabel` for field labels, pills, captions and counts (10px).
+ * (11px), `microLabel` for field labels, pills, captions and counts (also 11px since the
+ * legibility pass; both medium weight, 0.08em tracking so capitals stay compact).
  * Colour is applied at the call site.
  */
-export const eyebrowClassName = 'text-label uppercase tracking-[0.2em]';
-export const microLabelClassName = 'text-micro uppercase tracking-[0.16em]';
+export const eyebrowClassName = 'text-label uppercase tracking-[0.08em]';
+export const microLabelClassName = 'text-micro uppercase tracking-[0.08em]';
 
 /**
  * The display-type recipe every headline on the booking surfaces uses, the
@@ -104,7 +109,7 @@ export const photoClassName =
 
 /** Text, date and select fields on the gold surfaces: the Driver step's recipe, with hover and a keyboard ring. */
 export const fieldClassName =
-  'w-full rounded-lg border border-line bg-field px-3 py-2.5 text-body-lg text-ink outline-none transition placeholder:text-faint hover:border-line2 focus:border-gold/70 focus-visible:ring-2 focus-visible:ring-gold/60 [color-scheme:dark]';
+  'w-full rounded-lg border border-line bg-field px-3 py-2.5 text-body-lg text-ink outline-none transition placeholder:text-faint/[.85] hover:border-line2 focus:border-gold/70 focus-visible:ring-2 focus-visible:ring-gold/60 [color-scheme:dark]';
 
 /** A native select wearing the field recipe; pair with a ChevronDown in a `relative` wrapper. */
 export const selectClassName = `${fieldClassName} appearance-none pr-9`;
@@ -172,4 +177,4 @@ export const glassBarClassName =
 
 /** The daily rate on a card: one figure recipe for browse and storefront, unit beside it at a colour that still reads (5:1). */
 export const priceClassName = 'shrink-0 text-title-sm font-medium leading-none text-gold';
-export const priceUnitClassName = 'ml-1.5 text-micro font-normal uppercase tracking-[0.16em] text-faint';
+export const priceUnitClassName = 'ml-1.5 text-micro font-medium uppercase tracking-[0.08em] text-faint';

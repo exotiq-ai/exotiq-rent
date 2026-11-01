@@ -65,7 +65,7 @@ async function problemsFor(label: string, wrapperClasses: string, inputClasses: 
 const DEFAULT_WRAPPER = 'flex flex-col gap-2 sm:flex-row sm:items-stretch';
 const COMPACT_WRAPPER = 'flex flex-nowrap items-stretch gap-2';
 // The class literal as it stood at a73d09b, kept here so the guard can be shown to catch it.
-const CURRENT = 'h-10 min-w-0 flex-1 rounded-lg border border-line bg-field px-3 text-body-lg text-ink outline-none transition placeholder:text-faint hover:border-line2 focus:border-gold/70 focus-visible:ring-2 focus-visible:ring-gold/60';
+const CURRENT = 'h-10 min-w-0 flex-1 rounded-lg border border-line bg-field px-3 text-body-lg text-ink outline-none transition placeholder:text-faint/[.85] hover:border-line2 focus:border-gold/70 focus-visible:ring-2 focus-visible:ring-gold/60';
 
 /** The e-mail input and its wrapper from the rendered markup (never from the source text). */
 function rendered(compact: boolean) {

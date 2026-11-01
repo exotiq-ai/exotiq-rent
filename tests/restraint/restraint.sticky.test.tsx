@@ -76,8 +76,8 @@ describe('MP-16 B1: one rule at the top of the Dates bar', () => {
 
     // The total's own classes, and the dropper Tailwind actually emits for them.
     const noRow = render(<>{total}{button}</>, false);
-    // (The bar itself also carries a top border and pt-3: the total is the one inside it.)
-    const totalEl = walk(noRow).find((el) => el !== noRow && el.cls.includes('pt-3') && el.cls.includes('border-t'));
+    // (The bar itself also carries a top border and pt-3: the total is the one inside it, which wears pt-2 since the slim cookie line.)
+    const totalEl = walk(noRow).find((el) => el !== noRow && el.cls.includes('pt-2') && el.cls.includes('border-t'));
     expect(totalEl, 'RunningTotalCard root').toBeDefined();
     const dropBorder = await dropper(totalEl!.cls, 'border-top-width:0px');
     const dropPad = await dropper(totalEl!.cls, 'padding-top:0px');

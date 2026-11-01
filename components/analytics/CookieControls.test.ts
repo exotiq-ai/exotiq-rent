@@ -22,17 +22,26 @@ beforeEach(() => {
 });
 
 describe('compact cookie control markup', () => {
-  it('starts as a quiet collapsed row, not an automatically opened dialog', () => {
+  it('starts as one slim line, not an automatically opened dialog', () => {
     const html = render();
-    expect(html).toContain('Optional cookies'); expect(html).toContain('Details'); expect(html).toContain('Off');
-    expect(html).toContain('aria-expanded="false"'); expect(html).toContain('aria-checked="false"');
+    expect(html).toContain('Optional cookies are off'); expect(html).toContain('>Change<');
+    expect(html).toContain('aria-expanded="false"'); expect(html).toContain('aria-live="polite"');
     expect(html).not.toContain('role="dialog"'); expect(html).not.toContain('Save choice');
+    // The legibility pass moved the one-tap master switch behind Change: no inline switch or checkbox in the row.
+    expect(html).not.toContain('role="switch"'); expect(html).not.toContain('role="checkbox"'); expect(html).not.toContain('Details');
   });
-  it('exposes a true mixed state for a granular choice, not a falsely enabled switch', () => {
+  it('says the state in words, including a granular choice, and never claims a falsely enabled switch', () => {
     shared.choice = { analytics: true, marketing: false };
+    expect(render()).toContain('Optional cookies: custom');
+    shared.choice = { analytics: true, marketing: true };
+    expect(render()).toContain('Optional cookies are on');
+  });
+  it('is 26px tall with the Change button keeping a 44px tap area', () => {
     const html = render();
-    expect(html).toContain('Custom'); expect(html).toContain('role="checkbox"');
-    expect(html).toContain('aria-checked="mixed"'); expect(html).toContain('Switch off to disable both');
+    expect(html).toContain('min-h-[26px]');
+    // 26px row + 9px above and below = 44px, drawn by a pseudo-element so the line stays slim.
+    expect(html).toContain('before:-inset-y-[9px]');
+    expect(html).toContain('aria-describedby');
   });
   it('renders independent switches only in the explicitly opened nonmodal card', () => {
     const html = expanded();

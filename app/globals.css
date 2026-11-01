@@ -15,9 +15,9 @@
   --tone-field: #10131A;
   --tone-line: #2A2E3A;
   --tone-line-2: #3A3F4D;
-  --tone-ink: #F0F2F5;
-  --tone-muted: #9BA1B0;
-  --tone-faint: #848A9A;
+  --tone-ink: #F4F6F9;
+  --tone-muted: #E1E4EA;
+  --tone-faint: #B9BFCC;
   --tone-gold: #C8A664;
   --tone-gold-ink: #1A1308;
   --tone-verified: #6EC1E4;
@@ -27,7 +27,7 @@
   --tone-share-ground: #0B0D12;
   --tone-dim: #3D4250;
   --tone-dim-2: #5C6272;
-  --tone-ink-soft: #D7DAE0;
+  --tone-ink-soft: #E1E4EA;
 }
 /* tone-mirror:end */
 
@@ -331,7 +331,7 @@
 @layer components {
   .control-check,
   .control-radio {
-    /* Resting border at #848A9A/80 (~4:1 on both grounds): a 1px #3A3F4D
+    /* Resting border at faint/80 (was #848A9A/80, ~4:1 on both grounds; brighter now): a 1px #3A3F4D
        line was 1.7:1, invisible to low vision until hover (WCAG 1.4.11).
        `checked:hover` keeps a selected box solid ink — Tailwind sorts
        `hover:` after `checked:`, so without it a selected box dimmed under

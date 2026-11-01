@@ -87,7 +87,7 @@ export function DriverStep({
     });
 
   // Placeholder was #3D4250 (~1.6:1 on the field): the four boxes read as empty. #848A9A clears 4.5:1 (MP-11).
-  const fieldClass = 'mt-1 w-full rounded-lg border border-line bg-field px-3 py-2.5 text-body-lg text-ink outline-none transition placeholder:text-faint hover:border-line2 focus:border-gold/70 focus-visible:ring-2 focus-visible:ring-gold/60 aria-[invalid=true]:border-danger/70 [color-scheme:dark]';
+  const fieldClass = 'mt-1 w-full rounded-lg border border-line bg-field px-3 py-2.5 text-body-lg text-ink outline-none transition placeholder:text-faint/[.85] hover:border-line2 focus:border-gold/70 focus-visible:ring-2 focus-visible:ring-gold/60 aria-[invalid=true]:border-danger/70 [color-scheme:dark]';
   const label = `${microLabelClassName} text-faint`;
 
   return (

@@ -36,7 +36,9 @@ describe('MP-25 glass', () => {
     const tones = barTextTones();
     for (const t of ['faint', 'muted', 'ink']) if (!tones.includes(t)) problems.push(`the bar's text scan misses text-${t}`);
     const over = (alpha: number) => tones.map((t) => [t, contrast(tokens.tone[t as keyof typeof tokens.tone], mix(tokens.tone.ground, '#ffffff', alpha))] as const);
-    if (over(0.85).every(([, r]) => r >= 4.5)) problems.push('planted: the 85% bar passes the floor (the faint tagline is 4.04:1 there)');
+    // Planted at 60%: since the legibility pass brightened the greys, an 85% bar clears the floor too, so the
+    // planted weak bar is a much thinner one. The recipe itself is still pinned to 90 to 92% above.
+    if (over(0.6).every(([, r]) => r >= 4.5)) problems.push('planted: the 60% bar passes the floor');
     for (const [t, r] of over(alphaOf(recipe))) if (r < 4.5) problems.push(`text-${t} over the bar on white: ${r.toFixed(2)}:1`);
     // 3. One consumer; no other glass anywhere under app/ and components/.
     const holders = (needle: string) => sourceFiles().filter((r) => prepare(r, read(r)).includes(needle));
