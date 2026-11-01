@@ -66,7 +66,10 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf', facetsEnable
   const hasWindow = Boolean(query.start && query.end);
   // chipActive counts what lives behind the mobile pill (dates stay outside it).
   const chipActive = query.makes.length + query.types.length + (currentBand ? 1 : 0);
-  const active = chipActive + (hasWindow ? 1 : 0);
+  // MP-36 fix round (F2): with the facets hidden a bare ?min= / ?max= (no band) is applied server-side
+  // but has no radio to clear it, so it counts as one active filter and the Clear control offers the way out.
+  const boundActive = !facetsEnabled && !currentBand && (query.minDailyRateCents !== undefined || query.maxDailyRateCents !== undefined) ? 1 : 0;
+  const active = chipActive + boundActive + (hasWindow ? 1 : 0);
   const [moreOpen, setMoreOpen] = useState(() => pendingFiltersOpen);
   const today = localTodayIso();
   const [hint, setHint] = useState(() => datesHint(query.start ?? '', query.end ?? ''));
@@ -166,6 +169,23 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf', facetsEnable
       {!facetsEnabled && tail}
     </div>
   );
+  // MP-36 fix round (F1): with the facets hidden the form must still carry the URL's own make / type /
+  // band (or bare min / max, in dollars as the parser reads them) so a shared link survives a sort change
+  // or a date pick, and an unchanged submit names no facet. Hidden inputs, never controls, only when set.
+  const carried = (
+    <>
+      {query.makes.map((m) => <input key={`make-${m}`} type="hidden" name="make" value={m} />)}
+      {query.types.map((t) => <input key={`type-${t}`} type="hidden" name="type" value={t} />)}
+      {currentBand ? (
+        <input type="hidden" name="band" value={currentBand} />
+      ) : (
+        <>
+          {query.minDailyRateCents !== undefined && <input type="hidden" name="min" value={String(query.minDailyRateCents / 100)} />}
+          {query.maxDailyRateCents !== undefined && <input type="hidden" name="max" value={String(query.maxDailyRateCents / 100)} />}
+        </>
+      )}
+    </>
+  );
 
   return (
     <form ref={form} method="get" action={action} onSubmit={onSubmit} onChange={navigate} className="group relative space-y-2.5" aria-busy={isPending} data-pending={isPending ? '' : undefined} aria-label="Filter the fleet">
@@ -253,7 +273,12 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf', facetsEnable
           </div>
           </div>
         </>
-      ) : sortRow}
+      ) : (
+        <>
+          {sortRow}
+          {carried}
+        </>
+      )}
     </form>
   );
 }
