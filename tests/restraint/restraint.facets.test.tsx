@@ -20,6 +20,7 @@ vi.mock('@/components/analytics/posthog', () => ({ track: analytics.track }));
 
 import { FilterBar } from '@/components/browse/FilterBar';
 import { EmptyState } from '@/components/browse/EmptyState';
+import { changedFacet } from '@/components/browse/facetChange';
 import { parseMarketplaceQuery } from '@/domain/booking/marketplaceQuery';
 import type { MarketplaceFacets, MarketplaceQuery } from '@/domain/booking/publicContracts';
 import { stripComments } from '../design/lib/scan.mjs';
@@ -53,12 +54,37 @@ type Opts = { facetsEnabled?: boolean; query?: Partial<MarketplaceQuery> };
 const render = ({ facetsEnabled, query }: Opts = {}): string =>
   renderToStaticMarkup(createElement(Bar, { facets: FACETS, query: { ...BASE_QUERY, ...query }, action: ACTION, ...(facetsEnabled === undefined ? {} : { facetsEnabled }) }));
 
-const count = (root: El, name: string, value: string): number => byAttr(root, name, value).length;
+/** Visible controls with this attribute: a hidden input (a carried deep-link facet, fix round F1) is not a control. */
+const count = (root: El, name: string, value: string): number => byAttr(root, name, value).filter((e) => e.attrs.type !== 'hidden').length;
 const ancestors = (el: El): El[] => (el.parent ? [el.parent, ...ancestors(el.parent)] : []);
 const hasClass = (el: El, cls: string): boolean => (el.attrs.class ?? '').split(/\s+/).includes(cls);
 const kids = (el: El): El[] => el.children.filter((c): c is El => typeof c !== 'string');
 const norm = (s: string): string => s.replace(/\s+/g, ' ').trim();
 const wrapped = (el: El): boolean => ancestors(el).some((a) => hasClass(a, 'hidden') || hasClass(a, 'lg:block'));
+const SORT_OPEN = 'class="flex flex-wrap items-center gap-2" role="group" aria-labelledby="sf-sort-label"';
+
+/**
+ * The search navigate() would push for this rendered form, mimicking FormData order: every successful control
+ * (hidden input, checked radio/checkbox, filled date), empty values and sort=featured dropped. `overrides` stands
+ * in for the renter's gesture (a new sort, a picked date pair) and replaces that control's value once.
+ */
+function formSearch(html: string, overrides: Record<string, string> = {}): string {
+  const params = new URLSearchParams();
+  const overridden = new Set<string>();
+  for (const el of elements(parseHtml(html)).filter((e) => e.tag === 'input' && e.attrs.name)) {
+    const name = el.attrs.name;
+    const type = el.attrs.type ?? 'text';
+    let value: string;
+    if (name in overrides) { if (overridden.has(name)) continue; overridden.add(name); value = overrides[name]; }
+    else if (type === 'hidden' || type === 'date') value = el.attrs.value ?? '';
+    else if ('checked' in el.attrs) value = el.attrs.value ?? '';
+    else continue;
+    if (value === '') continue;
+    if (name === 'sort' && value === 'featured') continue;
+    params.append(name, value);
+  }
+  return params.toString();
+}
 
 /** AC1 + AC6 (structure): what the hidden bar must and must not hold. */
 function hiddenProblems(html: string): string[] {
@@ -137,6 +163,10 @@ describe('MP-36 storefront facets (AC1–AC6, AC5c)', () => {
   it('facets hidden: dates and four inline sort pills, no make, type, band or Filters & sort control', () => {
     // Planted: the on-state bar must fail the hidden checker (make inputs, the pill, the sheet).
     expect(hiddenProblems(render({ facetsEnabled: true }))).not.toEqual([]);
+    // Planted (fix round N4): a hidden class on the Sort row ITSELF, not only on an ancestor, must fail too.
+    const hiddenSort = render({ facetsEnabled: false }).replace(SORT_OPEN, SORT_OPEN.replace('class="', 'class="hidden '));
+    expect(hiddenSort).not.toBe(render({ facetsEnabled: false }));
+    expect(hiddenProblems(hiddenSort)).not.toEqual([]);
     expect(hiddenProblems(render({ facetsEnabled: false })), 'facetsEnabled false').toEqual([]);
     expect(hiddenProblems(render()), 'prop omitted').toEqual([]);
   });
@@ -175,6 +205,61 @@ describe('MP-36 storefront facets (AC1–AC6, AC5c)', () => {
       const got = clearOf(render({ facetsEnabled: false, query }));
       problems.push(...got.problems.map((x) => `${label}: ${x}`));
       if (got.text !== want) problems.push(`${label}: Clear reads "${got.text}", expected "${want}"`);
+    }
+    expect(problems).toEqual([]);
+  });
+
+  it('facets hidden with a make in the URL: a sort change keeps the make', () => {
+    // Planted: with nothing in the URL a sort change pushes the sort alone (no phantom facet).
+    expect(formSearch(render({ facetsEnabled: false }), { sort: 'price_asc' })).toBe('sort=price_asc');
+    const cases: [string, Partial<MarketplaceQuery>, string[]][] = [
+      ['make', { makes: ['Lamborghini'] }, ['make=Lamborghini']],
+      ['two makes', { makes: ['Lamborghini', 'Ferrari'] }, ['make=Lamborghini', 'make=Ferrari']],
+      ['type', { types: ['supercar'] }, ['type=supercar']],
+      ['band', UNDER_500, ['band=under-500']],
+      ['min', { minDailyRateCents: 60_000 }, ['min=600']],
+      ['max', { maxDailyRateCents: 40_000 }, ['max=400']],
+      ['min + max', { minDailyRateCents: 60_000, maxDailyRateCents: 90_000 }, ['min=600', 'max=900']],
+      ['make + band', { makes: ['Lamborghini'], ...UNDER_500 }, ['make=Lamborghini', 'band=under-500']],
+    ];
+    const problems: string[] = [];
+    for (const [label, query, want] of cases) {
+      const html = render({ facetsEnabled: false, query });
+      const root = parseHtml(html);
+      // Carried as hidden inputs, never as visible controls.
+      for (const name of ['make', 'type', 'band', 'min', 'max']) if (count(root, 'name', name)) problems.push(`${label}: a visible ${name} control`);
+      const sorted = formSearch(html, { sort: 'price_asc' }).split('&');
+      const dated = formSearch(html, { start: '2026-11-10', end: '2026-11-12' }).split('&');
+      for (const pair of want) {
+        if (!sorted.includes(pair)) problems.push(`${label}: a sort change lost ${pair} (${sorted.join('&')})`);
+        if (!dated.includes(pair)) problems.push(`${label}: a date pick lost ${pair} (${dated.join('&')})`);
+      }
+      if (!sorted.includes('sort=price_asc')) problems.push(`${label}: the new sort is missing`);
+      // A submit with nothing changed names no facet: the carried inputs equal the query.
+      const facet = changedFacet({ ...BASE_QUERY, ...query }, new URLSearchParams(formSearch(html)));
+      if (facet !== null) problems.push(`${label}: an unchanged submit names ${facet}`);
+    }
+    expect(problems).toEqual([]);
+  });
+
+  it('facets hidden with min or max in the URL: the Clear control still escapes the state', () => {
+    // Planted: the on-state offers no Clear for a bare bound (today's bar, unchanged); the hidden state must.
+    expect(clearOf(render({ facetsEnabled: true, query: { minDailyRateCents: 60_000 } })).problems).toEqual([`0 links to ${ACTION}`]);
+    const cases: [string, Partial<MarketplaceQuery>, string, string[]][] = [
+      ['min', { minDailyRateCents: 60_000 }, 'Clear filter', ['min=600']],
+      ['max', { maxDailyRateCents: 40_000 }, 'Clear filter', ['max=400']],
+      ['min + max', { minDailyRateCents: 60_000, maxDailyRateCents: 90_000 }, 'Clear filter', ['min=600', 'max=900']],
+      ['make + min', { makes: ['Lamborghini'], minDailyRateCents: 60_000 }, 'Clear filters', ['make=Lamborghini', 'min=600']],
+      ['dates + min', { start: '2026-11-10', end: '2026-11-12', minDailyRateCents: 60_000 }, 'Clear filters', ['min=600']],
+    ];
+    const problems: string[] = [];
+    for (const [label, query, want, carried] of cases) {
+      const html = render({ facetsEnabled: false, query });
+      const got = clearOf(html);
+      problems.push(...got.problems.map((x) => `${label}: ${x}`));
+      if (got.text !== want) problems.push(`${label}: Clear reads "${got.text}", expected "${want}"`);
+      const same = formSearch(html).split('&');
+      for (const pair of carried) if (!same.includes(pair)) problems.push(`${label}: the bound is not carried (${same.join('&')})`);
     }
     expect(problems).toEqual([]);
   });

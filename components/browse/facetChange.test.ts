@@ -4,7 +4,7 @@
 // because parseMarketplaceQuery drops a date window that starts before yesterday.
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { PRICE_BANDS, parseMarketplaceQuery, type SearchParamsLike } from '@/domain/booking/marketplaceQuery';
-import { changedFacet } from './facetChange';
+import { changedFacet, createNavigationGate } from './facetChange';
 
 const NOW_ISO = '2026-11-01T18:00:00.000Z';
 const q = (params: SearchParamsLike = {}) => parseMarketplaceQuery(params);
@@ -62,5 +62,57 @@ describe('MP-36 changedFacet', () => {
     expect(changedFacet(q({ make: 'Lamborghini' }), form(['make', 'Lamborghini'], ['type', 'supercar']))).toBeNull();
     // Explicit min/max that match no band read as "no band", exactly as the bar's Any radio does.
     expect(changedFacet(q({ min: '600' }), form())).toBeNull();
+  });
+
+  it('changedFacet is null when the hidden inputs carry a deep-linked facet back unchanged', () => {
+    // Fix round F1: the hidden-state bar re-submits the URL's own make / type / band / min / max as hidden inputs.
+    expect(changedFacet(q({ make: 'Lamborghini' }), form(['make', 'Lamborghini']))).toBeNull();
+    expect(changedFacet(q({ make: ['Lamborghini', 'Ferrari'] }), form(['make', 'Lamborghini'], ['make', 'Ferrari']))).toBeNull();
+    expect(changedFacet(q({ type: 'supercar' }), form(['type', 'supercar']))).toBeNull();
+    expect(changedFacet(q({ band: 'under-500' }), form(['band', 'under-500']))).toBeNull();
+    expect(changedFacet(q({ min: '600' }), form(['min', '600']))).toBeNull();
+    expect(changedFacet(q({ max: '400' }), form(['max', '400']))).toBeNull();
+    expect(changedFacet(q({ min: '600', max: '900' }), form(['min', '600'], ['max', '900']))).toBeNull();
+    // The carried facet never masks a real change.
+    expect(changedFacet(q({ make: 'Lamborghini' }), form(['sort', 'price_asc'], ['make', 'Lamborghini']))).toBe('sort');
+    expect(changedFacet(q({ min: '600' }), form(...DATES, ['min', '600']))).toBe('dates');
+    // Contrast: a form that drops the make (the bar before F1) reads as a make change — the false event F1 removes.
+    expect(changedFacet(q({ make: 'Lamborghini' }), form())).toBe('make');
+  });
+
+  it('navigationGate allows one push per form state and none when nothing changed', () => {
+    // Fix round F3: a date commit followed by Enter runs navigate() twice before the keyed remount, and an unchanged
+    // submit would push the page onto itself. The gate compares the next search with the last push and with the
+    // document's own search (order and the leading ? do not matter).
+    const allow = createNavigationGate();
+    expect(allow('', '')).toBe(false);
+    expect(allow('', '?')).toBe(false);
+    expect(allow('make=Lamborghini', '?make=Lamborghini')).toBe(false);
+    expect(allow('sort=newest&make=Lamborghini', '?make=Lamborghini&sort=newest')).toBe(false);
+    expect(allow('sort=price_asc', '?make=Lamborghini')).toBe(true);
+    expect(allow('sort=price_asc', '?make=Lamborghini')).toBe(false);
+    expect(allow('sort=newest', '?make=Lamborghini')).toBe(true);
+    expect(allow('sort=price_asc', '?make=Lamborghini')).toBe(true);
+    expect(allow('', '?make=Lamborghini')).toBe(true);
+    // One gesture, one push, one emit — the shape navigate() runs.
+    const gate = createNavigationGate();
+    const query = q({ make: 'Lamborghini' });
+    const pushes: string[] = [];
+    const emits: string[] = [];
+    const run = (params: URLSearchParams) => {
+      const qs = params.toString();
+      if (!gate(qs, '?make=Lamborghini')) return;
+      const facet = changedFacet(query, params);
+      if (facet) emits.push(facet);
+      pushes.push(qs);
+    };
+    const submitted = form(...DATES, ['make', 'Lamborghini']);
+    run(submitted);
+    run(submitted);
+    expect(pushes).toEqual(['start=2026-11-10&end=2026-11-12&make=Lamborghini']);
+    expect(emits).toEqual(['dates']);
+    run(form(['make', 'Lamborghini']));
+    expect(pushes).toHaveLength(1);
+    expect(emits).toHaveLength(1);
   });
 });
