@@ -60,7 +60,8 @@ const ancestors = (el: El): El[] => (el.parent ? [el.parent, ...ancestors(el.par
 const hasClass = (el: El, cls: string): boolean => (el.attrs.class ?? '').split(/\s+/).includes(cls);
 const kids = (el: El): El[] => el.children.filter((c): c is El => typeof c !== 'string');
 const norm = (s: string): string => s.replace(/\s+/g, ' ').trim();
-const wrapped = (el: El): boolean => ancestors(el).some((a) => hasClass(a, 'hidden') || hasClass(a, 'lg:block'));
+/** Hidden by its own class or by any ancestor's (fix round N4: the element itself counts). */
+const wrapped = (el: El): boolean => [el, ...ancestors(el)].some((a) => hasClass(a, 'hidden') || hasClass(a, 'lg:block'));
 const SORT_OPEN = 'class="flex flex-wrap items-center gap-2" role="group" aria-labelledby="sf-sort-label"';
 
 /**
