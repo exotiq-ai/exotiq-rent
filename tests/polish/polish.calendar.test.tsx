@@ -157,7 +157,7 @@ describe('MP-25 calendar', () => {
         continue;
       }
       const cells = panes[0].children.filter((c): c is El => typeof c !== 'string');
-      const round = cells.filter((c) => classes(c).includes('aspect-square')).length;
+      const round = cells.filter((c) => classes(c).includes('h-11')).length; // 44px cells since the legibility pass (were aspect-square)
       if (cells.length !== 42 || round !== 42) problems.push(`${m}: ${cells.length} cells, ${round} square (six week rows need 42)`);
       if (!classes(panes[0]).includes('grid-cols-7')) problems.push(`${m}: the month is not a seven-column grid`);
       const [y, mo] = m.split('-').map(Number);
@@ -242,7 +242,7 @@ describe('MP-25 calendar', () => {
     const problems: string[] = [];
     const base = baseCensus();
     const now = literals(prepare(DATES, read(DATES)));
-    const day = (lits: string[]) => lits.find((s) => s.includes('relative aspect-square text-muted outline-none')) ?? '';
+    const day = (lits: string[]) => lits.find((s) => s.includes('relative h-11 text-muted outline-none')) ?? '';
     const chevrons = (lits: string[]) => lits.filter((s) => s.includes('grid h-8 w-8 place-items-center rounded-lg'));
     const toks = (s: string) => s.split(/\s+/);
     if (/active:/.test(day(now)) || chevrons(now).some((s) => /active:/.test(s))) {

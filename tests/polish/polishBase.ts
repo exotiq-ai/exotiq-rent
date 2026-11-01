@@ -78,7 +78,7 @@ export function guardedSelection(src: string): string {
 export type DaySem = { name: string; pressed: string | null; current: string | null; disabled: boolean; taken: boolean };
 export const daySemantics = (html: string): DaySem[] =>
   elements(parseHtml(html))
-    .filter((e) => e.tag === 'button' && classes(e).includes('aspect-square'))
+    .filter((e) => e.tag === 'button' && classes(e).includes('h-11') && classes(e).includes('text-muted'))
     .map((e) => ({ name: e.attrs['aria-label'] ?? '', pressed: e.attrs['aria-pressed'] ?? null, current: e.attrs['aria-current'] ?? null, disabled: 'disabled' in e.attrs, taken: 'data-taken' in e.attrs }));
 
 // ---- globals.css: the polish fence, keyframes, animation shorthands ---------------------------
@@ -322,6 +322,15 @@ export const legibilityMarkup = (html: string): string =>
     .split('text-label uppercase tracking-[0.2em]').join('text-label uppercase tracking-[0.08em]')
     .split('placeholder:text-faint').join('placeholder:text-faint/[.85]')
     .split('border-t border-line pt-3 [:first-child&gt;&amp;]').join('border-t border-line pt-2 [:first-child&gt;&amp;]');
+/**
+ * The Dates layout nudges (2026-11), on top of legibilityMarkup: the instruction line is sentence case and no longer
+ * repeats the N-day minimum the subtitle already shows, and the Pickup time label moves inside its field. Applies to
+ * the Dates step's golden markup only.
+ */
+export const datesNudges = (html: string): string =>
+  html
+    .replace(/<div class="mt-3 text-center text-micro uppercase tracking-\[0\.08em\] text-faint">Tap start, then end · \d+-day minimum/, '<div class="mt-2.5 text-center text-micro text-faint">Tap start, then end')
+    .split("<label class=\"mt-5 block text-label uppercase tracking-[0.08em] text-faint\">Pickup time</label><span class=\"relative mt-2 block\"><select class=\"w-full appearance-none rounded-lg border border-line bg-field py-3 pl-4 pr-10 text-body-lg text-ink outline-none transition hover:border-line2 focus:border-gold/70 focus-visible:ring-2 focus-visible:ring-gold/60 [color-scheme:dark]\" aria-label=\"Pickup time\">").join("<span class=\"relative mt-4 block\"><label for=\"pickup-time\" class=\"pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-label uppercase tracking-[0.08em] text-faint\">Pickup time</label><select id=\"pickup-time\" class=\"w-full appearance-none rounded-lg border border-line bg-field py-3 pl-[7.25rem] pr-10 text-body-lg text-ink outline-none transition hover:border-line2 focus:border-gold/70 focus-visible:ring-2 focus-visible:ring-gold/60 [color-scheme:dark]\" aria-label=\"Pickup time\">");
 export const atBase = (rel: string): string => execFileSync('git', ['show', `${baseCensus().cutFrom}:${rel}`], { cwd: REPO, encoding: 'utf8' });
 const SHELL_BASE = 'min-h-0 flex-1 overflow-y-auto px-4 pt-2 [scrollbar-width:none] pb-5';
 const replaceOnce = (s: string, from: string, to: string): string => (s.split(from).length === 2 ? s.replace(from, to) : `${s}\n«${from} not found exactly once»`);
@@ -334,7 +343,7 @@ export function protectExpected(rel: string, base: string, recipe: string): stri
     const bar = replaceOnce(base, 'class="sticky top-0 z-40 border-b border-line/70 bg-ground/85 backdrop-blur-md ', `class="sticky top-0 z-40 border-b ${recipe} `);
     return legibilityMarkup(replaceOnce(bar, 'overflow-y-auto px-4 pt-2 [scrollbar-width:none] pb-5 lg:overflow-visible', `overflow-y-auto px-4 pt-2 [scrollbar-width:none] ${OVERSCROLL} pb-5 lg:overflow-visible`));
   }
-  if (name === PROTECT_FLOW) return legibilityMarkup(cutCalendarBytes(replaceOnce(shell(base), '>Review &amp; Request</span>', '>Review</span>')));
+  if (name === PROTECT_FLOW) return datesNudges(legibilityMarkup(cutCalendarBytes(replaceOnce(shell(base), '>Review &amp; Request</span>', '>Review</span>'))));
   return legibilityMarkup(base);
 }
 /** Errata #3: the protect goldens equal their base bytes with exactly the polish substitutions; base.json moves only their hashes; the restore test gains the calendar cut and nothing else. */
@@ -385,7 +394,7 @@ export function lockstepProblems(copy: (rel: string) => string, cur: (rel: strin
   if (cuts.length !== 1 || cuts[0].removed.length !== 2 || !cuts[0].removed[1].startsWith('export const cutDates =') || exportsAdded.length !== 2 || !exportsAdded.some((l) => l.startsWith('export function cutDates(')) || !exportsAdded.some((l) => l.startsWith('export function calendarRange('))) p.push(`tests/fees/goldens.ts: ${JSON.stringify(cuts)}`);
   const d0 = copy('tests/fees/golden/dates-step.html');
   const d1 = cur('tests/fees/golden/dates-step.html');
-  if (firstClass(d1) !== firstClass(d0) + SHELL_SUFFIX || withFirstClass(legibilityMarkup(cutCalendarBytes(d0)), firstClass(d1)) !== d1) p.push('tests/fees/golden/dates-step.html changed beyond the calendar placeholder and the scroller class');
+  if (firstClass(d1) !== firstClass(d0) + SHELL_SUFFIX || withFirstClass(datesNudges(legibilityMarkup(cutCalendarBytes(d0))), firstClass(d1)) !== d1) p.push('tests/fees/golden/dates-step.html changed beyond the calendar placeholder and the scroller class');
   const v0 = copy('tests/fees/golden/driver-step.html');
   const v1 = cur('tests/fees/golden/driver-step.html');
   if (firstClass(v1) !== firstClass(v0) + SHELL_SUFFIX || withFirstClass(legibilityMarkup(v0), firstClass(v1)) !== v1) p.push('tests/fees/golden/driver-step.html changed beyond the scroller class');
