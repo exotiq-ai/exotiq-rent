@@ -40,7 +40,7 @@ const SORT_LABELS: Record<MarketplaceQuery['sort'], string> = {
  * to the query so uncontrolled inputs never keep stale state across
  * search-param navigations.
  */
-export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: MarketplaceFacets; query: MarketplaceQuery; action: string; idPrefix?: string }) {
+export function FilterBar({ facets, query, action, idPrefix = 'sf', facetsEnabled = false }: { facets: MarketplaceFacets; query: MarketplaceQuery; action: string; idPrefix?: string; facetsEnabled?: boolean }) {
   const router = useRouter();
   const form = useRef<HTMLFormElement>(null);
   // MP-12: a chip flipped and then nothing happened for the RPC round-trip.
@@ -133,6 +133,33 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
     'inline-flex select-none items-center gap-1.5 rounded-full border border-line2 bg-field px-3 py-1.5 text-body-sm text-muted transition active:scale-[0.97] active:bg-surface2 ' +
     'peer-checked:border-ink peer-checked:bg-surface2 peer-checked:font-semibold peer-checked:text-ink peer-focus-visible:ring-2 peer-focus-visible:ring-gold/60 hover:border-faint hover:text-ink';
   const count = 'text-micro tabular-nums text-faint';
+  // MP-36: with the facets off (the default) the bar is Dates + Sort; the Clear control and the
+  // noscript Apply then close the Sort row instead of the Daily-rate row. Rows are gated by
+  // rendering, so every class literal below stays in source for the restraint scans either way.
+  const tail = (
+    <>
+      {active > 0 && (
+        <Link href={action} className="ml-1 text-body-sm text-faint underline decoration-line underline-offset-4 transition hover:text-ink">
+          {hasWindow && active === 1 ? 'Clear dates' : `Clear ${active === 1 ? 'filter' : 'filters'}`}
+        </Link>
+      )}
+      <noscript>
+        <button type="submit" className={`rounded-full px-3 py-1.5 text-body-sm font-semibold ${ctaOutlineClassName}`}>Apply</button>
+      </noscript>
+    </>
+  );
+  const sortRow = (
+    <div className={row} role="group" aria-labelledby={`${idPrefix}-sort-label`}>
+      <span id={`${idPrefix}-sort-label`} className={label}>Sort</span>
+      {MARKETPLACE_SORTS.map((s) => (
+        <label key={s} className={chip}>
+          <input type="radio" name="sort" value={s} defaultChecked={query.sort === s} className="peer sr-only" id={`${idPrefix}-sort-${s}`} />
+          <span className={face}>{SORT_LABELS[s]}</span>
+        </label>
+      ))}
+      {!facetsEnabled && tail}
+    </div>
+  );
 
   return (
     <form ref={form} method="get" action={action} onSubmit={onSubmit} onChange={navigate} className="group relative space-y-2.5" aria-busy={isPending} data-pending={isPending ? '' : undefined} aria-label="Filter the fleet">
@@ -157,81 +184,70 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf' }: { facets: 
         </span>
         <p id={`${idPrefix}-dates-hint`} className="basis-full text-label text-faint" aria-live="polite">{hint}</p>
       </div>
-      {/* On a phone, everything but the dates lives behind one pill — the chip
-          stack was eating the storefront above the fold. Not a <details>: a
-          closed one removes its content from rendering entirely, so no class
-          could keep the rows visible on desktop. A button + hidden/lg:block
-          panel keeps desktop untouched, and the open state survives the keyed
-          remount via pendingFiltersOpen. Without JavaScript the pill is inert
-          and phones see dates only — the chips are an enhancement there. */}
-      <button
-        type="button"
-        onClick={() => { pendingFiltersOpen = !moreOpen; setMoreOpen(!moreOpen); }}
-        aria-expanded={moreOpen}
-        aria-controls={`${idPrefix}-more-filters`}
-        className="flex w-fit cursor-pointer items-center gap-2 rounded-full border border-line2 bg-surface px-3.5 py-2 text-body-sm font-semibold text-ink transition hover:border-faint active:scale-[0.97] lg:hidden"
-      >
-        <SlidersHorizontal size={14} className="text-muted" aria-hidden />
-        Filters &amp; sort
-        {chipActive > 0 && <span className="rounded-full bg-surface2 px-1.5 py-0.5 text-micro font-semibold tabular-nums text-ink">{chipActive}</span>}
-      </button>
-      <div id={`${idPrefix}-more-filters`} className={`space-y-2.5 rounded-xl border border-line bg-panel/60 p-3 lg:block lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 ${moreOpen ? 'block' : 'hidden'}`}>
-      <div className={row} role="group" aria-labelledby={`${idPrefix}-sort-label`}>
-        <span id={`${idPrefix}-sort-label`} className={label}>Sort</span>
-        {MARKETPLACE_SORTS.map((s) => (
-          <label key={s} className={chip}>
-            <input type="radio" name="sort" value={s} defaultChecked={query.sort === s} className="peer sr-only" id={`${idPrefix}-sort-${s}`} />
-            <span className={face}>{SORT_LABELS[s]}</span>
-          </label>
-        ))}
-      </div>
+      {facetsEnabled ? (
+        <>
+          {/* On a phone, everything but the dates lives behind one pill — the chip
+              stack was eating the storefront above the fold. Not a <details>: a
+              closed one removes its content from rendering entirely, so no class
+              could keep the rows visible on desktop. A button + hidden/lg:block
+              panel keeps desktop untouched, and the open state survives the keyed
+              remount via pendingFiltersOpen. Without JavaScript the pill is inert
+              and phones see dates only — the chips are an enhancement there. */}
+          <button
+            type="button"
+            onClick={() => { pendingFiltersOpen = !moreOpen; setMoreOpen(!moreOpen); }}
+            aria-expanded={moreOpen}
+            aria-controls={`${idPrefix}-more-filters`}
+            className="flex w-fit cursor-pointer items-center gap-2 rounded-full border border-line2 bg-surface px-3.5 py-2 text-body-sm font-semibold text-ink transition hover:border-faint active:scale-[0.97] lg:hidden"
+          >
+            <SlidersHorizontal size={14} className="text-muted" aria-hidden />
+            Filters &amp; sort
+            {chipActive > 0 && <span className="rounded-full bg-surface2 px-1.5 py-0.5 text-micro font-semibold tabular-nums text-ink">{chipActive}</span>}
+          </button>
+          <div id={`${idPrefix}-more-filters`} className={`space-y-2.5 rounded-xl border border-line bg-panel/60 p-3 lg:block lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 ${moreOpen ? 'block' : 'hidden'}`}>
+          {sortRow}
 
-      {typesNarrow && (
-        <div className={row} role="group" aria-labelledby={`${idPrefix}-type-label`}>
-          <span id={`${idPrefix}-type-label`} className={label}>Type</span>
-          {facets.types.map((t) => (
-            <label key={t.value} className={chip}>
-              <input id={`${idPrefix}-type-${t.value}`} type="checkbox" name="type" value={t.value} defaultChecked={query.types.includes(t.value)} className="peer sr-only" />
-              <span className={face}>{t.label}<span className={count}> {t.count}</span></span>
+          {typesNarrow && (
+            <div className={row} role="group" aria-labelledby={`${idPrefix}-type-label`}>
+              <span id={`${idPrefix}-type-label`} className={label}>Type</span>
+              {facets.types.map((t) => (
+                <label key={t.value} className={chip}>
+                  <input id={`${idPrefix}-type-${t.value}`} type="checkbox" name="type" value={t.value} defaultChecked={query.types.includes(t.value)} className="peer sr-only" />
+                  <span className={face}>{t.label}<span className={count}> {t.count}</span></span>
+                </label>
+              ))}
+            </div>
+          )}
+
+          {facets.makes.length > 1 && (
+            <div className={row} role="group" aria-labelledby={`${idPrefix}-make-label`}>
+              <span id={`${idPrefix}-make-label`} className={label}>Make</span>
+              {facets.makes.map((m) => (
+                <label key={m.value} className={chip}>
+                  <input id={`${idPrefix}-make-${m.value.replace(/\s+/g, '-')}`} type="checkbox" name="make" value={m.value} defaultChecked={query.makes.some((x) => x.toLowerCase() === m.value.toLowerCase())} className="peer sr-only" />
+                  <span className={face}>{m.label}<span className={count}> {m.count}</span></span>
+                </label>
+              ))}
+            </div>
+          )}
+
+          <div className={row} role="group" aria-labelledby={`${idPrefix}-band-label`}>
+            <span id={`${idPrefix}-band-label`} className={label}>Daily rate</span>
+            <label className={chip}>
+              <input id={`${idPrefix}-band-any`} type="radio" name="band" value="" defaultChecked={currentBand === ''} className="peer sr-only" />
+              <span className={face}>Any</span>
             </label>
-          ))}
-        </div>
-      )}
-
-      {facets.makes.length > 1 && (
-        <div className={row} role="group" aria-labelledby={`${idPrefix}-make-label`}>
-          <span id={`${idPrefix}-make-label`} className={label}>Make</span>
-          {facets.makes.map((m) => (
-            <label key={m.value} className={chip}>
-              <input id={`${idPrefix}-make-${m.value.replace(/\s+/g, '-')}`} type="checkbox" name="make" value={m.value} defaultChecked={query.makes.some((x) => x.toLowerCase() === m.value.toLowerCase())} className="peer sr-only" />
-              <span className={face}>{m.label}<span className={count}> {m.count}</span></span>
-            </label>
-          ))}
-        </div>
-      )}
-
-      <div className={row} role="group" aria-labelledby={`${idPrefix}-band-label`}>
-        <span id={`${idPrefix}-band-label`} className={label}>Daily rate</span>
-        <label className={chip}>
-          <input id={`${idPrefix}-band-any`} type="radio" name="band" value="" defaultChecked={currentBand === ''} className="peer sr-only" />
-          <span className={face}>Any</span>
-        </label>
-        {facets.priceBands.filter((b) => b.count > 0).map((b) => (
-          <label key={b.value} className={chip}>
-            <input id={`${idPrefix}-band-${b.value}`} type="radio" name="band" value={b.value} defaultChecked={currentBand === b.value} className="peer sr-only" />
-            <span className={face}>{b.label}<span className={count}> {b.count}</span></span>
-          </label>
-        ))}
-        {active > 0 && (
-          <Link href={action} className="ml-1 text-body-sm text-faint underline decoration-line underline-offset-4 transition hover:text-ink">
-            {hasWindow && active === 1 ? 'Clear dates' : `Clear ${active === 1 ? 'filter' : 'filters'}`}
-          </Link>
-        )}
-        <noscript>
-          <button type="submit" className={`rounded-full px-3 py-1.5 text-body-sm font-semibold ${ctaOutlineClassName}`}>Apply</button>
-        </noscript>
-      </div>
-      </div>
+            {facets.priceBands.filter((b) => b.count > 0).map((b) => (
+              <label key={b.value} className={chip}>
+                <input id={`${idPrefix}-band-${b.value}`} type="radio" name="band" value={b.value} defaultChecked={currentBand === b.value} className="peer sr-only" />
+                <span className={face}>{b.label}<span className={count}> {b.count}</span></span>
+              </label>
+            ))}
+            {tail}
+          </div>
+          </div>
+        </>
+      ) : sortRow}
     </form>
   );
 }
