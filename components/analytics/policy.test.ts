@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { eligibleRoute, trackingConfig, sanitizeProperties, sanitizeUrl, sanitizePostHogEvent, consentValue } from './policy';
+import { EVENTS, eligibleRoute, trackingConfig, sanitizeProperties, sanitizeUrl, sanitizePostHogEvent, consentValue } from './policy';
 
 const env = { enabled: 'true', dataMode: 'supabase', posthogKey: 'phc_publicTest123', posthogHost: 'https://us.i.posthog.com', metaPixelId: '1603562574756003' };
 
@@ -55,5 +55,20 @@ describe('allowlisted events only, with no identity or credential properties', (
     expect(JSON.stringify(clean)).not.toMatch(/SECRET|renter|initial|\$set|nested/);
     expect(sanitizePostHogEvent({ event: '$autocapture', properties: {} })).toBeNull();
     expect(sanitizePostHogEvent(null)).toBeNull();
+  });
+  it('facet_applied is allow-listed and the sanitizer keeps only a known facet name', () => {
+    expect(EVENTS).toContain('facet_applied');
+    // The facet's NAME survives; a value, a query string, a raw make and anything unknown do not.
+    expect(sanitizeProperties('facet_applied', { facet: 'make', value: 'Lamborghini', query: '?make=Lamborghini', make: 'Lamborghini', team: 'exotiq' })).toEqual({ facet: 'make', team: 'exotiq' });
+    for (const facet of ['sort', 'dates', 'band']) expect(sanitizeProperties('facet_applied', { facet })).toEqual({ facet });
+    for (const facet of ['type', 'Lamborghini', '', 1, undefined]) {
+      const out = sanitizeProperties('facet_applied', { facet, team: 'ark' });
+      expect(out, JSON.stringify(facet)).not.toBeNull();
+      expect(out, JSON.stringify(facet)).not.toHaveProperty('facet');
+      expect(out).toEqual({ team: 'ark' });
+    }
+    // facet is this event's property only.
+    expect(sanitizeProperties('vehicle_view', { facet: 'make', team: 'exotiq' })).toEqual({ team: 'exotiq' });
+    expect(sanitizeProperties('facet_applied', { facet: 'make', path: '/exotiq' })).toEqual({ facet: 'make', path: '/exotiq' });
   });
 });

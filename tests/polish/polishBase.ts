@@ -389,7 +389,12 @@ export function lockstepProblems(copy: (rel: string) => string, cur: (rel: strin
   const p: string[] = [];
   const hs = (rel: string) => hunks(copy(rel), cur(rel));
   const flow = hs('tests/fees/fees.flow.test.ts');
-  if (flow.length !== 1 || !swap(flow[0], "'Review & Request']", "'Review']")) p.push(`tests/fees/fees.flow.test.ts: ${JSON.stringify(flow)}`);
+  // MP-25's Review swap, plus MP-36's one event name on the EVENTS literal pin (facet_applied). Nothing else.
+  const flowOk = [
+    flow.some((h) => swap(h, "'Review & Request']", "'Review']")),
+    flow.some((h) => swap(h, "'checkout_started']\"", "'checkout_started', 'facet_applied']\"")),
+  ];
+  if (flow.length !== 2 || flowOk.includes(false)) p.push(`tests/fees/fees.flow.test.ts: ${JSON.stringify(flow)}`);
   const frame = hs('tests/chrome/chrome.frame.test.tsx');
   const ok = [
     frame.some((h) => h.removed.length === 0 && h.added.length === 1 && h.added[0] === FLOW_IMPORT),
