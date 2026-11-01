@@ -325,7 +325,7 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
   return (
     <>
       <ScreenShell>
-        <StepHeader eyebrow={stepEyebrow(1)} title="When are you driving?" sub={`${cart.vehicle.minRentalDays}-day minimum · from ${formatMoney(cart.vehicle.dailyRateCents)}/day`} />
+        <StepHeader eyebrow={stepEyebrow(1)} title="When are you driving?" sub={`${cart.vehicle.minRentalDays > 1 ? `${cart.vehicle.minRentalDays}-day minimum · ` : ''}from ${formatMoney(cart.vehicle.dailyRateCents)}/day`} />
         <div className="mt-4 flex items-center justify-between px-1">
           <button type="button" onClick={() => page(-1)} disabled={!canGoPrev} className="relative grid h-8 w-8 place-items-center rounded-lg text-muted transition before:absolute before:-inset-1.5 hover:bg-surface hover:text-ink disabled:opacity-30 duration-100 active:scale-[0.96] motion-reduce:active:scale-100" aria-label="Previous month"><ChevronLeft size={16} /></button>
           <span className="text-body font-medium tracking-[-0.005em]">{monthLabel(visibleMonth)}</span>

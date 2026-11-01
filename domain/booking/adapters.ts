@@ -53,14 +53,14 @@ export function publicImageUrl(url: string | null | undefined): string | null {
 }
 
 function footnoteFor(minRentalDays: number, mileageLimit: number | null | undefined, overageRate?: number | string | null): string {
-  // A 1-day minimum is still a minimum. "No minimum" contradicted the booking
-  // preview tile beside it, which read the same field and said "Minimum: 1 day".
-  const minimum = `${minRentalDays}-day minimum`;
+  // A 1-day minimum is not worth a word (owner decision 2026-11-01): every surface
+  // that shows the minimum hides it at 1 day, so nothing beside this line contradicts it.
+  const minimum = minRentalDays > 1 ? `${minRentalDays}-day minimum · ` : '';
   // Overage rate shown pre-booking (T-15): the renter must see the terms the
   // booking snapshot will freeze, before agreeing to them.
   const overage = overageRate != null && Number(overageRate) > 0 ? ` · then $${Number(overageRate).toFixed(2)}/mile` : '';
   const mileage = mileageLimit ? `${mileageLimit} miles/day included${overage}` : 'Mileage per operator policy';
-  return `${minimum} · ${mileage}`;
+  return `${minimum}${mileage}`;
 }
 
 export function adaptFleetVehicle(row: RpcFleetVehicleRow, team: Operator): Vehicle {

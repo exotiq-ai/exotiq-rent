@@ -147,7 +147,7 @@ export function BookingFlow({ operator, vehicle, initialDates }: { operator: Ope
         <p className="mt-1 text-label text-muted">{operator.city}, {operator.state}</p>
         <dl className="mt-4 space-y-2 border-t border-line pt-4 text-body-sm">
           <div className="flex justify-between gap-4"><dt className="text-muted">Daily rate</dt><dd className="text-ink"><Money cents={vehicle.dailyRateCents} /></dd></div>
-          <div className="flex justify-between gap-4"><dt className="text-muted">Minimum</dt><dd className="text-ink">{vehicle.minRentalDays} {vehicle.minRentalDays === 1 ? 'day' : 'days'}</dd></div>
+          {vehicle.minRentalDays > 1 && <div className="flex justify-between gap-4"><dt className="text-muted">Minimum</dt><dd className="text-ink">{vehicle.minRentalDays} days</dd></div>}
         </dl>
         <p className="mt-4 text-label leading-5 text-faint">Your dates and total are confirmed in the steps. {operator.name} reviews every request before payment.</p>
       </div>
