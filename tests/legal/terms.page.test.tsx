@@ -224,7 +224,10 @@ describe('styling follows the legal page pattern: tokens only, no gold, 16px bod
     for (const c of ['!text-title', '!normal-case', '!tracking-normal', '!text-ink', 'scroll-mt-20']) expect(classes(h2), c).toContain(c);
     for (const c of ['text-title-sm', 'text-ink', 'scroll-mt-20']) expect(classes(h3), c).toContain(c);
     // 22px headings over 18px sub-headings over 16px body: the three steps the type scale offers in that range.
-    const px = (step: string) => Number.parseFloat(String((config.theme?.extend?.fontSize as unknown as Record<string, [string]>)[step][0]));
+    const px = (step: string) => {
+      const size = String((config.theme?.extend?.fontSize as unknown as Record<string, [string]>)[step][0]);
+      return size.endsWith('rem') ? Number.parseFloat(size) * 16 : Number.parseFloat(size); // the scale is in rem since the legibility pass
+    };
     expect([px('body-lg'), px('title-sm'), px('title')]).toEqual([16, 18, 22]);
   });
 

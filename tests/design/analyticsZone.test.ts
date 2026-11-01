@@ -18,7 +18,7 @@ const read = () => readFileSync(path.join(root, FILE), 'utf8');
 
 // The six tone-valued colours R11 renames, mapped back to the literal the pre-MP-15 file carries.
 const RENAMED: Record<string, string> = {
-  goldInk: '#1A1308', gold: '#C8A664', muted: '#9BA1B0', surface: '#161922', ink: '#F0F2F5', line: '#2A2E3A',
+  goldInk: '#1A1308', gold: '#C8A664', muted: '#E1E4EA', surface: '#161922', ink: '#F4F6F9', line: '#2A2E3A', // muted and ink are the legibility pass's brighter values (2026-11); MP-15 proved the rename colour-neutral
 };
 // <variants><util>-<token>, token not followed by more name characters (gold never eats goldInk).
 const NAMED = /(?<![A-Za-z0-9_-])((?:[a-z0-9_\-[\]&:>*=]+:)*)(bg|text|border(?:-[trblxy])?|outline|ring(?:-offset)?|divide|fill|stroke|decoration|from|via|to|accent|caret)-(goldInk|gold|muted|surface|ink|line)(?![A-Za-z0-9_-])/g;
@@ -53,12 +53,12 @@ describe('MP-15 analytics zone', () => {
     expect(differ).toEqual([]);
 
     // The zone's own palette and type stay literal (D10): the five analytics-only colours, once each,
-    // and the ten type literals (10px x2, 11px x4, 12px x3, 14px x1).
+    // and the nine type literals since the legibility pass (11px x4, 12px x4, 14px x1; no 10px).
     const count = (re: RegExp) => Array.from(now.matchAll(re)).length;
     expect(Object.fromEntries(['#465064', '#252B38', '#CDD1D9', '#353B49', '#0008'].map((h) => [h, count(new RegExp(`${h}(?![0-9A-Fa-f])`, 'g'))])))
       .toEqual({ '#465064': 1, '#252B38': 1, '#CDD1D9': 1, '#353B49': 1, '#0008': 1 });
     expect(Object.fromEntries(['10', '11', '12', '14'].map((px) => [px, count(new RegExp(`text-\\[${px}px\\]`, 'g'))])))
-      .toEqual({ 10: 2, 11: 4, 12: 3, 14: 1 });
+      .toEqual({ 10: 0, 11: 4, 12: 4, 14: 1 });
   });
 });
 

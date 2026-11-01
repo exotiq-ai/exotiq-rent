@@ -15,10 +15,13 @@ const read = (rel: string) => readFileSync(new URL(`../../${rel}`, import.meta.u
 // alphabetically later one wins, whatever their size or className order (spec R9's prose is wrong;
 // kb/tickets/MP-15.md holds the correction). Pair two steps through a breakpoint variant (max-lg:/lg:),
 // emitted after base utilities; the HTitle test below pins it.
-const STEPS: [string, string, string][] = [
-  ['micro', '10px', '1.4'], ['label', '11px', '1.45'], ['body-sm', '13px', '1.5'], ['body', '15px', '1.5'],
-  ['body-lg', '16px', '1.5'], ['title-sm', '18px', '1.4'], ['title', '22px', '1.35'], ['heading', '28px', '1.3'],
-  ['display', '36px', '1.2'], ['display-lg', '48px', '1.1'], ['display-xl', '56px', '1.05'],
+// Legibility pass (2026-11): sizes are written in rem (1rem = 16px at the default, so a reader's own text-size
+// setting works); micro is now 11px like label, and the two smallest steps are medium weight. The px each rem
+// value means is in the trailing comment of each row.
+const STEPS: [string, string, string, string?][] = [
+  ['micro', '0.6875rem', '1.4', '500'], ['label', '0.6875rem', '1.45', '500'], ['body-sm', '0.8125rem', '1.5'], ['body', '0.9375rem', '1.5'], // 11, 11, 13, 15px
+  ['body-lg', '1rem', '1.5'], ['title-sm', '1.125rem', '1.4'], ['title', '1.375rem', '1.35'], ['heading', '1.75rem', '1.3'], // 16, 18, 22, 28px
+  ['display', '2.25rem', '1.2'], ['display-lg', '3rem', '1.1'], ['display-xl', '3.5rem', '1.05'], // 36, 48, 56px
 ];
 const STEP_NAMES = STEPS.map(([name]) => name);
 
@@ -78,7 +81,7 @@ describe('MP-15 type scale', () => {
   it('the type scale is the 11 contract steps with paired line-heights', () => {
     const fontSize = (config.theme?.extend?.fontSize ?? {}) as Record<string, unknown>;
     expect(Object.keys(fontSize)).toEqual(STEP_NAMES);
-    expect(fontSize).toEqual(Object.fromEntries(STEPS.map(([name, px, lineHeight]) => [name, [px, { lineHeight }]])));
+    expect(fontSize).toEqual(Object.fromEntries(STEPS.map(([name, size, lineHeight, fontWeight]) => [name, [size, fontWeight ? { lineHeight, fontWeight } : { lineHeight }]])));
     expect(sizeClasses(tokens.eyebrowClassName)).toEqual(['text-label']);
     expect(sizeClasses(tokens.microLabelClassName)).toEqual(['text-micro']);
   });
@@ -95,8 +98,9 @@ describe('MP-15 type scale', () => {
     });
     expect(uncommented.map((site) => `${site.file}:${site.line}: ${site.token}`)).toEqual([]);
 
-    // The analytics zone keeps its 10 literals byte-for-byte (D10); an 11th there is not exempt.
-    expect(report.sizeExempt).toBe(10);
+    // The analytics zone keeps its literals (D10); an extra one there is not exempt. 9 since the legibility pass:
+    // the 10px state label went with the inline switch, and the card's last 10px line is 11px.
+    expect(report.sizeExempt).toBe(9);
 
     // Every named text-<size> in use outside that zone is one of the 11 steps.
     const colorNames = new Set([...Object.keys(tokens.tone), 'deep-black', 'pure-white', 'jet-grey', 'graphite']);

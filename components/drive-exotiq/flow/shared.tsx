@@ -55,7 +55,7 @@ export function RunningTotalCard({
   amountCents: number;
 }) {
   return (
-    <div className="border-t border-line pt-3 [:first-child>&]:border-t-0 [:first-child>&]:pt-0">
+    <div className="border-t border-line pt-2 [:first-child>&]:border-t-0 [:first-child>&]:pt-0">
       <div className="flex items-baseline justify-between gap-3">
         <div className="min-w-0">
           <div className="truncate text-body-sm font-medium text-ink">{label}</div>

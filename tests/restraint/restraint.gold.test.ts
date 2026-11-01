@@ -359,8 +359,8 @@ describe('MP-16 gold is punctuation (AC1-AC5)', () => {
     const backdrop = mix(tone.panel, '#ffffff', 0.7);
     const ink = contrast(tone.ink, backdrop);
     if (ink < 3) problems.push(`ink heart on the backing over white: ${ink.toFixed(2)}`);
-    // Planted: the muted heart is caught on the same backdrop.
-    expect(contrast(tone.muted, backdrop)).toBeLessThan(3);
+    // Planted: a dim heart is caught on the same backdrop (muted was the planted colour until the legibility pass made it bright).
+    expect(contrast(tone.dim, backdrop)).toBeLessThan(3);
     expect(problems).toEqual([]);
   });
 

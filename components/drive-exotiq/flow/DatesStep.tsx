@@ -268,13 +268,14 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
   // The closing tap: its end disc is the one just tapped and the range is no longer awaiting an end.
   const washIn = springIso !== null && springIso === endIso && !awaitingEnd;
 
-  /** One month's day grid. Six week rows always (42 square cells), so paging never moves what sits below. */
+  /** One month's day grid. Six week rows always (42 cells, 44px tall: a full-size tap target that is shorter than the old
+   *  square, which gave the legibility pass its room back), so paging never moves what sits below. */
   const renderMonth = (month: MonthKey) => {
     const totalDays = daysInMonth(month);
     const leadingBlanks = firstWeekdayOfMonth(month);
     return (
       <div data-calendar="month" className="grid grid-cols-7 px-0.5 text-center text-body">
-        {Array.from({ length: leadingBlanks }).map((_, index) => <span key={`blank-${index}`} className="aspect-square" />)}
+        {Array.from({ length: leadingBlanks }).map((_, index) => <span key={`blank-${index}`} className="h-11" />)}
         {Array.from({ length: totalDays }, (_, i) => i + 1).map((day) => {
           const iso = isoDate(month.year, month.month, day);
           const blocked = isBlocked(iso);
@@ -301,7 +302,7 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
               // MP-11: hover fill and keyboard ring are drawn on the same 34px
               // disc the selected/today states use (a `before:` layer under
               // the number), so the grid never mixes two circle sizes.
-              className="relative aspect-square text-muted outline-none transition-colors before:pointer-events-none before:absolute before:left-1/2 before:top-1/2 before:h-[34px] before:w-[34px] before:-translate-x-1/2 before:-translate-y-1/2 before:rounded-full enabled:hover:text-ink enabled:hover:before:bg-surface focus-visible:before:ring-2 focus-visible:before:ring-gold/60 disabled:cursor-not-allowed disabled:text-dim data-[taken]:text-dim data-[taken]:hover:text-dim2 before:transition-transform before:duration-100 enabled:active:before:bg-surface active:before:scale-[0.96] motion-reduce:active:before:scale-100"
+              className="relative h-11 text-muted outline-none transition-colors before:pointer-events-none before:absolute before:left-1/2 before:top-1/2 before:h-[34px] before:w-[34px] before:-translate-x-1/2 before:-translate-y-1/2 before:rounded-full enabled:hover:text-ink enabled:hover:before:bg-surface focus-visible:before:ring-2 focus-visible:before:ring-gold/60 disabled:cursor-not-allowed disabled:text-dim data-[taken]:text-dim data-[taken]:hover:text-dim2 before:transition-transform before:duration-100 enabled:active:before:bg-surface active:before:scale-[0.96] motion-reduce:active:before:scale-100"
               aria-pressed={inRange}
               aria-label={`${longDate(iso)}${blocked ? (iso >= todayIso && captureOn ? ', taken — get an alert' : ', unavailable') : ''}`}
               aria-current={iso === todayIso ? 'date' : undefined}
@@ -316,7 +317,7 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
             </button>
           );
         })}
-        {Array.from({ length: 42 - leadingBlanks - totalDays }).map((_, index) => <span key={`tail-${index}`} className="aspect-square" />)}
+        {Array.from({ length: 42 - leadingBlanks - totalDays }).map((_, index) => <span key={`tail-${index}`} className="h-11" />)}
       </div>
     );
   };
@@ -326,9 +327,9 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
       <ScreenShell>
         <StepHeader eyebrow={stepEyebrow(1)} title="When are you driving?" sub={`${cart.vehicle.minRentalDays}-day minimum · from ${formatMoney(cart.vehicle.dailyRateCents)}/day`} />
         <div className="mt-4 flex items-center justify-between px-1">
-          <button type="button" onClick={() => page(-1)} disabled={!canGoPrev} className="grid h-8 w-8 place-items-center rounded-lg text-muted transition hover:bg-surface hover:text-ink disabled:opacity-30 duration-100 active:scale-[0.96] motion-reduce:active:scale-100" aria-label="Previous month"><ChevronLeft size={16} /></button>
+          <button type="button" onClick={() => page(-1)} disabled={!canGoPrev} className="relative grid h-8 w-8 place-items-center rounded-lg text-muted transition before:absolute before:-inset-1.5 hover:bg-surface hover:text-ink disabled:opacity-30 duration-100 active:scale-[0.96] motion-reduce:active:scale-100" aria-label="Previous month"><ChevronLeft size={16} /></button>
           <span className="text-body font-medium tracking-[-0.005em]">{monthLabel(visibleMonth)}</span>
-          <button type="button" onClick={() => page(1)} disabled={!canGoNext} className="grid h-8 w-8 place-items-center rounded-lg text-muted transition hover:bg-surface hover:text-ink disabled:opacity-30 duration-100 active:scale-[0.96] motion-reduce:active:scale-100" aria-label="Next month"><ChevronRight size={16} /></button>
+          <button type="button" onClick={() => page(1)} disabled={!canGoNext} className="relative grid h-8 w-8 place-items-center rounded-lg text-muted transition before:absolute before:-inset-1.5 hover:bg-surface hover:text-ink disabled:opacity-30 duration-100 active:scale-[0.96] motion-reduce:active:scale-100" aria-label="Next month"><ChevronRight size={16} /></button>
         </div>
         <div className={`mt-3 grid grid-cols-7 px-0.5 text-center ${microLabelClassName} text-faint`}>
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, index) => <span key={`${d}-${index}`} className="py-1.5">{d}</span>)}
@@ -343,7 +344,8 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
             )}
           </div>
         </div>
-        <div className={`mt-3 text-center ${microLabelClassName} text-faint`}>Tap start, then end · {cart.vehicle.minRentalDays}-day minimum{hasBlockedDays ? (captureOn ? ' · Crossed-out dates are taken — tap one for an alert' : ' · Crossed-out dates are unavailable') : ''}</div>
+        {/* One line, in sentence case: the minimum stays in the subtitle above, where it already is. */}
+        <div className="mt-2.5 text-center text-micro text-faint">Tap start, then end{hasBlockedDays ? (captureOn ? ' · Crossed-out dates are taken — tap one for an alert' : ' · Crossed-out dates are unavailable') : ''}</div>
         {/* One sentence announces the card's arrival; the form below keeps its own status line (MP-14). */}
         <div aria-live="polite" className="sr-only">{alertWindow && captureOn ? `Alert offer for ${formatRangeLabel(alertWindow.start, alertWindow.end)} added below.` : ''}</div>
         <div>
@@ -355,11 +357,12 @@ export function DatesStep({ cart, setCart, next }: { cart: BookingCart; setCart:
             </div>
           )}
         </div>
-        <label className={`mt-5 block ${eyebrowClassName} text-faint`}>Pickup time</label>
         {/* Still a native select (iOS wheel, screen-reader semantics), wearing
-            the Driver step's field recipe with a muted chevron (MP-11; muted since MP-16). */}
-        <span className="relative mt-2 block">
-          <select value={cart.pickupTime} onChange={(event) => setCart(recomputeBookingCart({ ...cart, pickupTime: event.target.value }))} className="w-full appearance-none rounded-lg border border-line bg-field py-3 pl-4 pr-10 text-body-lg text-ink outline-none transition hover:border-line2 focus:border-gold/70 focus-visible:ring-2 focus-visible:ring-gold/60 [color-scheme:dark]" aria-label="Pickup time">
+            the Driver step's field recipe with a muted chevron (MP-11; muted since MP-16). Its label sits inside
+            the field on the left, so the field is one row instead of a label above a box. */}
+        <span className="relative mt-4 block">
+          <label htmlFor="pickup-time" className={`pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 ${eyebrowClassName} text-faint`}>Pickup time</label>
+          <select id="pickup-time" value={cart.pickupTime} onChange={(event) => setCart(recomputeBookingCart({ ...cart, pickupTime: event.target.value }))} className="w-full appearance-none rounded-lg border border-line bg-field py-3 pl-[7.25rem] pr-10 text-body-lg text-ink outline-none transition hover:border-line2 focus:border-gold/70 focus-visible:ring-2 focus-visible:ring-gold/60 [color-scheme:dark]" aria-label="Pickup time">
             {PICKUP_TIMES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
           <ChevronDown size={16} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-muted" aria-hidden />

@@ -11,12 +11,12 @@ const root = fileURLToPath(new URL('../../', import.meta.url));
 const read = (rel: string) => readFileSync(new URL(`../../${rel}`, import.meta.url), 'utf8');
 const tone = tokens.tone as Record<string, string>;
 
-// AC1: the 14 contract colours + the 5 residual tokens, at today's values (compared case-insensitively).
+// AC1: the 14 contract colours + the 5 residual tokens, at today's values (compared case-insensitively). The text greys (ink, muted, faint, inkSoft) moved up one tier in the legibility pass (2026-11).
 const EXPECTED_TONE: Record<string, string> = {
   ground: '#06070A', panel: '#0D0F14', surface: '#161922', surface2: '#1E2230', field: '#10131A',
-  line: '#2A2E3A', line2: '#3A3F4D', ink: '#F0F2F5', muted: '#9BA1B0', faint: '#848A9A',
+  line: '#2A2E3A', line2: '#3A3F4D', ink: '#F4F6F9', muted: '#E1E4EA', faint: '#B9BFCC',
   gold: '#C8A664', goldInk: '#1A1308', verified: '#6EC1E4', warn: '#FFB84D', danger: '#F87171',
-  goldWash: '#14130F', shareGround: '#0B0D12', dim: '#3D4250', dim2: '#5C6272', inkSoft: '#D7DAE0',
+  goldWash: '#14130F', shareGround: '#0B0D12', dim: '#3D4250', dim2: '#5C6272', inkSoft: '#E1E4EA',
 };
 // AC13 lets these four referenced legacy colours live in a commented LEGACY group.
 const LEGACY_COLORS = ['deep-black', 'pure-white', 'jet-grey', 'graphite'];
