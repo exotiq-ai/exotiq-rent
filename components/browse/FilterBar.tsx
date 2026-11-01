@@ -9,6 +9,8 @@ import { MARKETPLACE_SORTS, PRICE_BANDS, daysBetween } from '@/domain/booking/ma
 import { addDays } from '@/domain/booking/dates';
 import { localTodayIso } from '@/domain/booking/availability';
 import { ctaOutlineClassName, datePillClassName, microLabelClassName } from './tokens';
+import { track } from '@/components/analytics/posthog';
+import { changedFacet } from './facetChange';
 
 /** The control that navigated, so its successor can take focus after the keyed remount (same document, no storage). */
 let pendingFocusId: string | null = null;
@@ -110,6 +112,10 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf', facetsEnable
       params.append(key, value);
     });
     const qs = params.toString();
+    // MP-36: one event per navigation, the facet's NAME only (never a value); the emitter swallows
+    // every error and is a no-op without window, so analytics can never block the push.
+    const facet = changedFacet(query, params);
+    if (facet) track('facet_applied', { facet });
     startTransition(() => router.push(qs ? `${action}?${qs}` : action));
   };
   const onSubmit = (event: FormEvent) => {
