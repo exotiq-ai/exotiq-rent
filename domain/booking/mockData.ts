@@ -175,7 +175,7 @@ export const mockVehicles: Vehicle[] = [
     photos: ['/images/vehicles/lamborghini-urus.png', '/images/vehicles/hero-exotic-car.png'],
     heroImage: '/images/vehicles/lamborghini-urus.png',
     specs: { zeroToSixty: '3.5s', power: '657 hp', engine: 'V8 twin-turbo', transmission: '8-speed automatic' },
-    footnote: 'No minimum · Seats five with luggage',
+    footnote: 'Seats five with luggage',
     pickupLocation: scottsdaleShowroom,
   },
 
@@ -253,7 +253,7 @@ export const mockVehicles: Vehicle[] = [
     photos: ['/images/vehicles/bmw-m4-competition.png', '/images/vehicles/hero-exotic-car.png'],
     heroImage: '/images/vehicles/bmw-m4-competition.png',
     specs: { zeroToSixty: '3.4s', power: '503 hp', engine: 'Inline-six twin-turbo', transmission: '8-speed automatic' },
-    footnote: 'No minimum · Great first exotic weekend',
+    footnote: 'Great first exotic weekend',
     pickupLocation: denverShowroom,
   },
 

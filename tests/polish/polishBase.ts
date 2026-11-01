@@ -331,6 +331,17 @@ export const datesNudges = (html: string): string =>
   html
     .replace(/<div class="mt-3 text-center text-micro uppercase tracking-\[0\.08em\] text-faint">Tap start, then end · \d+-day minimum/, '<div class="mt-2.5 text-center text-micro text-faint">Tap start, then end')
     .split("<label class=\"mt-5 block text-label uppercase tracking-[0.08em] text-faint\">Pickup time</label><span class=\"relative mt-2 block\"><select class=\"w-full appearance-none rounded-lg border border-line bg-field py-3 pl-4 pr-10 text-body-lg text-ink outline-none transition hover:border-line2 focus:border-gold/70 focus-visible:ring-2 focus-visible:ring-gold/60 [color-scheme:dark]\" aria-label=\"Pickup time\">").join("<span class=\"relative mt-4 block\"><label for=\"pickup-time\" class=\"pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-label uppercase tracking-[0.08em] text-faint\">Pickup time</label><select id=\"pickup-time\" class=\"w-full appearance-none rounded-lg border border-line bg-field py-3 pl-[7.25rem] pr-10 text-body-lg text-ink outline-none transition hover:border-line2 focus:border-gold/70 focus-visible:ring-2 focus-visible:ring-gold/60 [color-scheme:dark]\" aria-label=\"Pickup time\">");
+/**
+ * Hide-at-one-day (2026-11-01, owner decision): the storefront's "1+ day Minimum" tile is gone and its stats grid is
+ * two columns (the demo fleet's shortest minimum is one day), and a one-day car's listing card loses its "1-day min"
+ * pill. The storefront renders the grid twice (phone and desktop), so every occurrence moves. Storefront goldens only.
+ */
+export const hideOneDayMinimum = (html: string): string =>
+  html
+    .split("<div class=\"mt-4 grid grid-cols-3 divide-x divide-line text-center text-label\">").join("<div class=\"mt-4 grid grid-cols-2 divide-x divide-line text-center text-label\">")
+    .split("<div class=\"px-1\"><div class=\"text-body font-medium leading-none tabular-nums text-ink min-[360px]:text-title-sm min-[360px]:leading-none\">1+<span class=\"text-label font-normal text-faint\"> day</span></div><div class=\"mt-1.5 text-faint\">Minimum</div></div>").join('')
+    // and the "1-day min" pill over a one-day car's photo (two demo cars).
+    .split("<div class=\"absolute left-3 top-3 rounded-full border border-line2 bg-panel/70 px-2.5 py-1 text-micro uppercase tracking-[0.08em] text-ink backdrop-blur\">1-day min</div>").join('');
 export const atBase = (rel: string): string => execFileSync('git', ['show', `${baseCensus().cutFrom}:${rel}`], { cwd: REPO, encoding: 'utf8' });
 const SHELL_BASE = 'min-h-0 flex-1 overflow-y-auto px-4 pt-2 [scrollbar-width:none] pb-5';
 const replaceOnce = (s: string, from: string, to: string): string => (s.split(from).length === 2 ? s.replace(from, to) : `${s}\n«${from} not found exactly once»`);
@@ -341,7 +352,7 @@ export function protectExpected(rel: string, base: string, recipe: string): stri
   if (PROTECT_REVIEW.includes(name)) return legibilityMarkup(shell(base));
   if (PROTECT_STOREFRONT.includes(name)) {
     const bar = replaceOnce(base, 'class="sticky top-0 z-40 border-b border-line/70 bg-ground/85 backdrop-blur-md ', `class="sticky top-0 z-40 border-b ${recipe} `);
-    return legibilityMarkup(replaceOnce(bar, 'overflow-y-auto px-4 pt-2 [scrollbar-width:none] pb-5 lg:overflow-visible', `overflow-y-auto px-4 pt-2 [scrollbar-width:none] ${OVERSCROLL} pb-5 lg:overflow-visible`));
+    return hideOneDayMinimum(legibilityMarkup(replaceOnce(bar, 'overflow-y-auto px-4 pt-2 [scrollbar-width:none] pb-5 lg:overflow-visible', `overflow-y-auto px-4 pt-2 [scrollbar-width:none] ${OVERSCROLL} pb-5 lg:overflow-visible`)));
   }
   if (name === PROTECT_FLOW) return datesNudges(legibilityMarkup(cutCalendarBytes(replaceOnce(shell(base), '>Review &amp; Request</span>', '>Review</span>'))));
   return legibilityMarkup(base);

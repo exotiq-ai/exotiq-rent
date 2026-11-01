@@ -59,10 +59,13 @@ function AboutCard({ team, count, minRate, minDays, className = '' }: { team: Te
           a tile read as two lines of caption (MP-11). Figures alone on the
           17px line: a "From " prefix wrapped inside a 69px phone tile, so the
           caption carries the qualifier. Five-figure rates step down to 15px. */}
-      <div className="mt-4 grid grid-cols-3 divide-x divide-line text-center text-label">
+      {/* The minimum tile only when the fleet's shortest minimum is longer than a day (a "1+ day minimum" says nothing). */}
+      <div className={`mt-4 grid ${minDays > 1 ? 'grid-cols-3' : 'grid-cols-2'} divide-x divide-line text-center text-label`}>
         <div className="px-1"><div className="text-body font-medium leading-none tabular-nums text-ink min-[360px]:text-title-sm min-[360px]:leading-none">{count}</div><div className="mt-1.5 text-faint">Cars</div></div>
         <div className="px-1"><div className={`font-medium leading-none tabular-nums text-ink ${minRate >= 1_000_000 ? 'text-body-sm min-[360px]:text-body min-[360px]:leading-none' : 'text-body min-[360px]:text-title-sm min-[360px]:leading-none'}`}><Money cents={minRate} /></div><div className="mt-1.5 text-faint">Lowest rate</div></div>
-        <div className="px-1"><div className="text-body font-medium leading-none tabular-nums text-ink min-[360px]:text-title-sm min-[360px]:leading-none">{minDays}+<span className="text-label font-normal text-faint"> {minDays === 1 ? 'day' : 'days'}</span></div><div className="mt-1.5 text-faint">Minimum</div></div>
+        {minDays > 1 && (
+          <div className="px-1"><div className="text-body font-medium leading-none tabular-nums text-ink min-[360px]:text-title-sm min-[360px]:leading-none">{minDays}+<span className="text-label font-normal text-faint"> {minDays === 1 ? 'day' : 'days'}</span></div><div className="mt-1.5 text-faint">Minimum</div></div>
+        )}
       </div>
     </div>
   );

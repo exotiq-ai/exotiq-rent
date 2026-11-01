@@ -58,9 +58,11 @@ export function ListingCard({
           ) : (
             <ListingPhotoPlaceholder />
           )}
-          <div className={`absolute left-3 top-3 rounded-full border border-line2 bg-panel/70 px-2.5 py-1 ${microLabelClassName} text-ink backdrop-blur`}>
-            {vehicle.minRentalDays}-day min
-          </div>
+          {vehicle.minRentalDays > 1 && (
+            <div className={`absolute left-3 top-3 rounded-full border border-line2 bg-panel/70 px-2.5 py-1 ${microLabelClassName} text-ink backdrop-blur`}>
+              {vehicle.minRentalDays}-day min
+            </div>
+          )}
           {verified && (
             <div className={`absolute right-3 top-3 flex items-center gap-1.5 rounded-full border border-verified/35 bg-panel/70 px-2.5 py-1 ${microLabelClassName} text-verified backdrop-blur`}>
               <BadgeCheck size={11} strokeWidth={2.25} aria-hidden /> Verified
