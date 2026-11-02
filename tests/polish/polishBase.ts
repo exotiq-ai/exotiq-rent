@@ -407,7 +407,9 @@ export function protectLockstepProblems(cur: (rel: string) => string, recipe: st
   const hs = hunks(atBase(PROTECT_RESTORE), cur(PROTECT_RESTORE));
   const imp = hs.some((h) => h.removed.length === 0 && h.added.length === 1 && h.added[0] === "import { calendarRange } from '../fees/goldens';");
   const cut = hs.some((h) => h.removed.length === 1 && h.removed[0].startsWith('const flow = () => renderToStaticMarkup(') && h.added.length === 2 && h.added[0].startsWith('/**') && h.added[1].startsWith('const flow = () => ') && h.added[1].includes('calendarRange(parseHtml(') && h.added[1].includes('«calendar»'));
-  if (hs.length !== 2 || !imp || !cut) p.push(`${PROTECT_RESTORE}: ${JSON.stringify(hs)}`);
+  // MP-36 fix round 2 (N6): the harness pins NEXT_PUBLIC_STOREFRONT_FACETS to the hidden default, one token on the BASE_ENV line.
+  const facets = hs.some((h) => swap(h, "NEXT_PUBLIC_SITE_MODE: 'booking' };", "NEXT_PUBLIC_SITE_MODE: 'booking', NEXT_PUBLIC_STOREFRONT_FACETS: '' };"));
+  if (hs.length !== 3 || !imp || !cut || !facets) p.push(`${PROTECT_RESTORE}: ${JSON.stringify(hs)}`);
   return p;
 }
 
