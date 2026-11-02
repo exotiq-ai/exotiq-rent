@@ -345,6 +345,33 @@ export const hideOneDayMinimum = (html: string): string =>
 export const atBase = (rel: string): string => execFileSync('git', ['show', `${baseCensus().cutFrom}:${rel}`], { cwd: REPO, encoding: 'utf8' });
 const SHELL_BASE = 'min-h-0 flex-1 overflow-y-auto px-4 pt-2 [scrollbar-width:none] pb-5';
 const replaceOnce = (s: string, from: string, to: string): string => (s.split(from).length === 2 ? s.replace(from, to) : `${s}\n«${from} not found exactly once»`);
+/** Cut [from, to] (or [from, to) when keepTo) out of `s`; `from` must occur exactly once or a marker makes the comparison fail loudly. */
+const cutOnce = (s: string, from: string, to: string, keepTo: boolean): string => {
+  const a = s.indexOf(from);
+  const b = a < 0 ? -1 : s.indexOf(to, a + from.length);
+  if (a < 0 || b < 0 || s.indexOf(from, a + 1) >= 0) return `${s}\n«${from} … ${to} not found exactly once»`;
+  return s.slice(0, a) + s.slice(keepTo ? b : b + to.length);
+};
+/**
+ * MP-36 (2026-11-01, owner decision): the storefront facets are off by default, so the storefront goldens lose the phone
+ * "Filters &amp; sort" pill, the sf-more-filters sheet wrapper and the Type, Make and Daily-rate rows; the Sort row becomes
+ * a direct child of the form and keeps the noscript Apply. Applied after hideOneDayMinimum; storefront goldens only.
+ */
+export const gateStorefrontFacets = (html: string): string =>
+  replaceOnce(
+    cutOnce(
+      replaceOnce(
+        cutOnce(html, '<button type="button" aria-expanded="false" aria-controls="sf-more-filters" ', 'Filters &amp; sort</button>', false),
+        '<div id="sf-more-filters" class="space-y-2.5 rounded-xl border border-line bg-panel/60 p-3 lg:block lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 hidden">',
+        '',
+      ),
+      '</div><div class="flex flex-wrap items-center gap-2" role="group" aria-labelledby="sf-type-label">',
+      '<noscript>',
+      true,
+    ),
+    '</noscript></div></div></form>',
+    '</noscript></div></form>',
+  );
 /** The one glass recipe as SiteBar renders it (read from tokens.ts by the caller, so this file imports no recipe). */
 export function protectExpected(rel: string, base: string, recipe: string): string {
   const name = rel.slice(PG.length);
@@ -352,7 +379,7 @@ export function protectExpected(rel: string, base: string, recipe: string): stri
   if (PROTECT_REVIEW.includes(name)) return legibilityMarkup(shell(base));
   if (PROTECT_STOREFRONT.includes(name)) {
     const bar = replaceOnce(base, 'class="sticky top-0 z-40 border-b border-line/70 bg-ground/85 backdrop-blur-md ', `class="sticky top-0 z-40 border-b ${recipe} `);
-    return hideOneDayMinimum(legibilityMarkup(replaceOnce(bar, 'overflow-y-auto px-4 pt-2 [scrollbar-width:none] pb-5 lg:overflow-visible', `overflow-y-auto px-4 pt-2 [scrollbar-width:none] ${OVERSCROLL} pb-5 lg:overflow-visible`)));
+    return gateStorefrontFacets(hideOneDayMinimum(legibilityMarkup(replaceOnce(bar, 'overflow-y-auto px-4 pt-2 [scrollbar-width:none] pb-5 lg:overflow-visible', `overflow-y-auto px-4 pt-2 [scrollbar-width:none] ${OVERSCROLL} pb-5 lg:overflow-visible`))));
   }
   if (name === PROTECT_FLOW) return datesNudges(legibilityMarkup(cutCalendarBytes(replaceOnce(shell(base), '>Review &amp; Request</span>', '>Review</span>'))));
   return legibilityMarkup(base);
@@ -380,7 +407,9 @@ export function protectLockstepProblems(cur: (rel: string) => string, recipe: st
   const hs = hunks(atBase(PROTECT_RESTORE), cur(PROTECT_RESTORE));
   const imp = hs.some((h) => h.removed.length === 0 && h.added.length === 1 && h.added[0] === "import { calendarRange } from '../fees/goldens';");
   const cut = hs.some((h) => h.removed.length === 1 && h.removed[0].startsWith('const flow = () => renderToStaticMarkup(') && h.added.length === 2 && h.added[0].startsWith('/**') && h.added[1].startsWith('const flow = () => ') && h.added[1].includes('calendarRange(parseHtml(') && h.added[1].includes('«calendar»'));
-  if (hs.length !== 2 || !imp || !cut) p.push(`${PROTECT_RESTORE}: ${JSON.stringify(hs)}`);
+  // MP-36 fix round 2 (N6): the harness pins NEXT_PUBLIC_STOREFRONT_FACETS to the hidden default, one token on the BASE_ENV line.
+  const facets = hs.some((h) => swap(h, "NEXT_PUBLIC_SITE_MODE: 'booking' };", "NEXT_PUBLIC_SITE_MODE: 'booking', NEXT_PUBLIC_STOREFRONT_FACETS: '' };"));
+  if (hs.length !== 3 || !imp || !cut || !facets) p.push(`${PROTECT_RESTORE}: ${JSON.stringify(hs)}`);
   return p;
 }
 
@@ -389,7 +418,12 @@ export function lockstepProblems(copy: (rel: string) => string, cur: (rel: strin
   const p: string[] = [];
   const hs = (rel: string) => hunks(copy(rel), cur(rel));
   const flow = hs('tests/fees/fees.flow.test.ts');
-  if (flow.length !== 1 || !swap(flow[0], "'Review & Request']", "'Review']")) p.push(`tests/fees/fees.flow.test.ts: ${JSON.stringify(flow)}`);
+  // MP-25's Review swap, plus MP-36's one event name on the EVENTS literal pin (facet_applied). Nothing else.
+  const flowOk = [
+    flow.some((h) => swap(h, "'Review & Request']", "'Review']")),
+    flow.some((h) => swap(h, "'checkout_started']\"", "'checkout_started', 'facet_applied']\"")),
+  ];
+  if (flow.length !== 2 || flowOk.includes(false)) p.push(`tests/fees/fees.flow.test.ts: ${JSON.stringify(flow)}`);
   const frame = hs('tests/chrome/chrome.frame.test.tsx');
   const ok = [
     frame.some((h) => h.removed.length === 0 && h.added.length === 1 && h.added[0] === FLOW_IMPORT),

@@ -58,7 +58,7 @@ const REPO = fileURLToPath(new URL('../../', import.meta.url));
 const read = (rel: string) => readFileSync(join(REPO, rel), 'utf8');
 const sha256 = (t: string) => createHash('sha256').update(t).digest('hex');
 const noop = () => {};
-const BASE_ENV: Record<string, string> = { NEXT_PUBLIC_EXOTIQ_RENT_DATA_MODE: 'mock', NEXT_PUBLIC_RENTER_CAPTURE: 'on', NEXT_PUBLIC_MARKETPLACE_BROWSE: 'off', NEXT_PUBLIC_SITE_MODE: 'booking' };
+const BASE_ENV: Record<string, string> = { NEXT_PUBLIC_EXOTIQ_RENT_DATA_MODE: 'mock', NEXT_PUBLIC_RENTER_CAPTURE: 'on', NEXT_PUBLIC_MARKETPLACE_BROWSE: 'off', NEXT_PUBLIC_SITE_MODE: 'booking', NEXT_PUBLIC_STOREFRONT_FACETS: '' };
 /** One case's environment, whatever the ambient env says: the harness values, then the flag (undefined = unset). */
 function env(flag: string | undefined, extra: Record<string, string> = {}): void {
   vi.unstubAllEnvs();
