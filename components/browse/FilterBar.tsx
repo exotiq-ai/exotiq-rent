@@ -177,9 +177,11 @@ export function FilterBar({ facets, query, action, idPrefix = 'sf', facetsEnable
   // MP-36 fix round (F1): with the facets hidden the form must still carry the URL's own make / type /
   // band (or bare min / max, in dollars as the parser reads them) so a shared link survives a sort change
   // or a date pick, and an unchanged submit names no facet. Hidden inputs, never controls, only when set.
+  // The URL may repeat a make (the parser keeps every spelling); carry each once, first spelling wins (N10).
+  const carriedMakes = query.makes.filter((m, i) => query.makes.findIndex((x) => x.toLowerCase() === m.toLowerCase()) === i);
   const carried = (
     <>
-      {query.makes.map((m) => <input key={`make-${m}`} type="hidden" name="make" value={m} />)}
+      {carriedMakes.map((m) => <input key={`make-${m}`} type="hidden" name="make" value={m} />)}
       {query.types.map((t) => <input key={`type-${t}`} type="hidden" name="type" value={t} />)}
       {currentBand ? (
         <input type="hidden" name="band" value={currentBand} />

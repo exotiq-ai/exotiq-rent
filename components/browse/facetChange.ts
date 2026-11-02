@@ -10,7 +10,8 @@ export type AppliedFacet = 'dates' | 'sort' | 'make' | 'band';
 /** The band slug the query's min/max spell, '' when they match none — the same derivation as the bar's currentBand. */
 const bandOf = (query: MarketplaceQuery): string =>
   PRICE_BANDS.find((b) => b.minCents === (query.minDailyRateCents ?? 0) && b.maxCents === query.maxDailyRateCents)?.value ?? '';
-const normalised = (values: string[]): string[] => values.map((v) => v.toLowerCase()).sort();
+/** Lower-cased, deduped, sorted: a set compare (the URL may repeat a make; the bar carries it once — fix round 2 N10). */
+const normalised = (values: string[]): string[] => Array.from(new Set(values.map((v) => v.toLowerCase()))).sort();
 const sameSet = (a: string[], b: string[]): boolean => a.length === b.length && a.every((v, i) => v === b[i]);
 
 /** The first facet, in dates → sort → make → band order, that the submission changes; null when none (a type-only change is none: A2). */
@@ -30,13 +31,16 @@ export const sameSearch = (a: string, b: string): boolean => {
 
 /**
  * MP-36 fix round (F3): one gesture, one navigation. The gate remembers the last search it allowed and refuses a
- * repeat of it — a date commit followed by Enter calls navigate() twice before the keyed remount — and refuses
- * the document's own search, so an unchanged submit never pushes the page onto itself or emits an event.
+ * repeat of it — a date commit followed by Enter calls navigate() twice before the keyed remount — and, until a
+ * push is in flight, refuses the document's own search, so an unchanged submit never pushes the page onto itself
+ * or emits an event. Fix round 2 (F7): once a push is pending the document's search is stale, so the last push is
+ * what the next search is measured against — a reversal (B, then back to A) navigates instead of being swallowed.
  */
 export function createNavigationGate(): (next: string, current: string) => boolean {
   let last: string | null = null;
   return (next, current) => {
-    if (sameSearch(next, current) || (last !== null && sameSearch(next, last))) return false;
+    const against = last ?? current;
+    if (sameSearch(next, against)) return false;
     last = next;
     return true;
   };
