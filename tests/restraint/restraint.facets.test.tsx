@@ -141,6 +141,10 @@ function wiringProblems(src: string, others: [string, string][]): string[] {
   const emit = nav.indexOf("if (facet) track('facet_applied', { facet });");
   const push = nav.indexOf('startTransition(');
   if (!(guard >= 0 && decide > guard && emit > decide && push > emit)) p.push(`navigate() order: guard ${guard}, changedFacet ${decide}, track ${emit}, startTransition ${push}`);
+  // Fix round 2 F9: the navigation gate (one push per gesture) sits between the built search and the decision.
+  const built = nav.indexOf('const qs = params.toString();');
+  const gate = nav.indexOf('if (!allowNavigation(qs, window.location.search)) return;');
+  if (!(built >= 0 && gate > built && decide > gate)) p.push(`navigate() gate: qs ${built}, gate ${gate}, changedFacet ${decide}`);
   if ((nav.match(/\btrack\(/g) ?? []).length !== 1) p.push('track( is not inside navigate() exactly once');
   for (const [name, text] of others) if (/\btrack\(/.test(text)) p.push(`${name} calls track(`);
   return p;
@@ -185,6 +189,12 @@ describe('MP-36 storefront facets (AC1–AC6, AC5c)', () => {
     if (!band || !elements(band).some((e) => e.tag === 'noscript')) problems.push('golden: the noscript Apply is not inside the Daily-rate row');
     if (golden.includes('\n')) problems.push('golden: not a single line');
     expect(problems).toEqual([]);
+    // Fix round 2 F8: the on-state over a loaded query never renders the hidden carry-over inputs (a leak would
+    // double-submit every visible make / band and read as a false make change).
+    const hiddenInputs = (h: string): number => (h.match(/type="hidden"/g) ?? []).length;
+    const loaded = render({ facetsEnabled: true, query: { makes: ['Lamborghini', 'Ferrari'], types: ['supercar'], ...UNDER_500, start: '2026-11-10', end: '2026-11-12' } });
+    expect(hiddenInputs(`${loaded}<input type="hidden" name="make" value="x"/>`), 'planted').toBe(1);
+    expect(hiddenInputs(loaded), 'on-state over a loaded query').toBe(0);
     const now = render({ facetsEnabled: true });
     let i = 0;
     while (i < now.length && i < golden.length && now[i] === golden[i]) i++;
@@ -223,11 +233,15 @@ describe('MP-36 storefront facets (AC1–AC6, AC5c)', () => {
       ['max', { maxDailyRateCents: 40_000 }, ['max=400']],
       ['min + max', { minDailyRateCents: 60_000, maxDailyRateCents: 90_000 }, ['min=600', 'max=900']],
       ['make + band', { makes: ['Lamborghini'], ...UNDER_500 }, ['make=Lamborghini', 'band=under-500']],
+      // Fix round 2 N10: the parser does not dedupe makes; the bar carries a repeated make once (first spelling wins).
+      ['repeated make', { makes: ['Lamborghini', 'lamborghini', 'Lamborghini'] }, ['make=Lamborghini']],
     ];
     const problems: string[] = [];
     for (const [label, query, want] of cases) {
       const html = render({ facetsEnabled: false, query });
       const root = parseHtml(html);
+      const hiddenMakes = byAttr(root, 'name', 'make').filter((e) => e.attrs.type === 'hidden').map((e) => e.attrs.value);
+      if (new Set(hiddenMakes.map((v) => v.toLowerCase())).size !== hiddenMakes.length) problems.push(`${label}: a make is carried twice (${hiddenMakes.join(',')})`);
       // Carried as hidden inputs, never as visible controls.
       for (const name of ['make', 'type', 'band', 'min', 'max']) if (count(root, 'name', name)) problems.push(`${label}: a visible ${name} control`);
       const sorted = formSearch(html, { sort: 'price_asc' }).split('&');
@@ -286,6 +300,9 @@ describe('MP-36 storefront facets (AC1–AC6, AC5c)', () => {
       expect(wiringProblems(good.replace("track('facet_applied', { facet })", "track('facet_applied', { facet, value: 'x' })"), others)).not.toEqual([]);
       expect(wiringProblems(`${good}\ntrack('x', {});`, others)).not.toEqual([]);
       expect(wiringProblems(good, [...others, ['planted.tsx', "track('x', {})"]])).not.toEqual([]);
+      // Fix round 2 F9: deleting the gate call unwires F3 and must go red.
+      expect(good.includes('if (!allowNavigation(qs, window.location.search)) return;')).toBe(true);
+      expect(wiringProblems(good.replace('if (!allowNavigation(qs, window.location.search)) return;', ''), others)).not.toEqual([]);
     }
     expect(wiringProblems(src, others)).toEqual([]);
   });

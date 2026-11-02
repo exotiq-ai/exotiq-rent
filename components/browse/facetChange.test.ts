@@ -73,6 +73,8 @@ describe('MP-36 changedFacet', () => {
     expect(changedFacet(q({ min: '600' }), form(['min', '600']))).toBeNull();
     expect(changedFacet(q({ max: '400' }), form(['max', '400']))).toBeNull();
     expect(changedFacet(q({ min: '600', max: '900' }), form(['min', '600'], ['max', '900']))).toBeNull();
+    // Fix round 2 N10: the URL may repeat a make (?make=X&make=X, any case); the bar carries it once, and that is no change.
+    expect(changedFacet(q({ make: ['Lamborghini', 'lamborghini', 'Lamborghini'] }), form(['make', 'Lamborghini']))).toBeNull();
     // The carried facet never masks a real change.
     expect(changedFacet(q({ make: 'Lamborghini' }), form(['sort', 'price_asc'], ['make', 'Lamborghini']))).toBe('sort');
     expect(changedFacet(q({ min: '600' }), form(...DATES, ['min', '600']))).toBe('dates');
@@ -94,6 +96,19 @@ describe('MP-36 changedFacet', () => {
     expect(allow('sort=newest', '?make=Lamborghini')).toBe(true);
     expect(allow('sort=price_asc', '?make=Lamborghini')).toBe(true);
     expect(allow('', '?make=Lamborghini')).toBe(true);
+    // Fix round 2 F7: a reversal inside the pending window (sort B, then back to A before the push commits) must
+    // navigate — the document's search is stale then, so once a push is in flight the last push is the truth;
+    // the unchanged submit and the double call stay refused.
+    const pending = createNavigationGate();
+    expect(pending('make=Lamborghini', '?make=Lamborghini'), 'unchanged submit').toBe(false);
+    expect(pending('sort=price_asc&make=Lamborghini', '?make=Lamborghini'), 'A → B').toBe(true);
+    expect(pending('sort=price_asc&make=Lamborghini', '?make=Lamborghini'), 'B again (double call)').toBe(false);
+    expect(pending('make=Lamborghini', '?make=Lamborghini'), 'B → A while the push is pending').toBe(true);
+    expect(pending('make=Lamborghini', '?make=Lamborghini'), 'A again (double call)').toBe(false);
+    const datesGate = createNavigationGate();
+    expect(datesGate('start=2026-11-10&end=2026-11-12', ''), 'dates picked').toBe(true);
+    expect(datesGate('', ''), 'both cleared before the push commits').toBe(true);
+    expect(datesGate('', ''), 'cleared again (double call)').toBe(false);
     // One gesture, one push, one emit — the shape navigate() runs.
     const gate = createNavigationGate();
     const query = q({ make: 'Lamborghini' });
@@ -111,8 +126,11 @@ describe('MP-36 changedFacet', () => {
     run(submitted);
     expect(pushes).toEqual(['start=2026-11-10&end=2026-11-12&make=Lamborghini']);
     expect(emits).toEqual(['dates']);
+    // Clearing the dates again before the remount is a reversal: it pushes (back to the page's own query) and, with
+    // nothing changed against that query, emits nothing; the double call of it is refused.
     run(form(['make', 'Lamborghini']));
-    expect(pushes).toHaveLength(1);
-    expect(emits).toHaveLength(1);
+    run(form(['make', 'Lamborghini']));
+    expect(pushes).toEqual(['start=2026-11-10&end=2026-11-12&make=Lamborghini', 'make=Lamborghini']);
+    expect(emits).toEqual(['dates']);
   });
 });
