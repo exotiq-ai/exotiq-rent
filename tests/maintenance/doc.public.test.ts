@@ -40,6 +40,8 @@ const TOPICS: [string, RegExp[]][] = [
   ['only the icons come back as bytes', [/only\s+the\s+three\s+icon\s+files/i, /other\s+`public\/`\s+files\s+answered\s+the\s+wall/i]],
   ['on probes only at a wall or locally', [/only\s+at\s+a\s+deploy\s+that\s+is\s+meant\s+to\s+be\s+a\s+wall,\s+or\s+at\s+a\s+local\s+server/i]],
   ['a local server imitates a wall deploy', [/start\s+it\s+with\s+`MAINTENANCE_MODE=on`/i]],
+  ['the image probes catch an older wall build', [/a\s+source\s+the\s+normal\s+site\s+allows/i, /older\s+wall\s+build\s+that\s+could\s+still\s+fetch\s+images\s+fails/i]],
+  ['the deploy id decides which wall is published', [/several\s+wall\s+deploys/i, /Netlify\s+deploy\s+id/i, /the\s+check\s+cannot\s+see/i]],
   ['the Netlify exceptions', [/`x-nextjs-data: 1`/, /with\s+any\s+other\s+build\s+id\s+it\s+answers\s+Next's\s+own\s+404\s+page/i, /`\/\.netlify\/scripts\/cdp`/, /answers\s+200\s+on\s+every\s+deploy/i, /nothing\s+a\s+renter\s+can\s+use/i, /as\s+measured\s+at\s+rehearsal/i]],
   ['two layers', [/two\s+layers/i, /`app\/\[\[\.\.\.wall\]\]\/route\.wall\.ts`/, /holds\s+nothing\s+but\s+the\s+wall/i, /hand(?:s|ed)?\s+past\s+the\s+middleware/i]],
   ['what a wall build contains', [/no\s+page,\s+layout,\s+route\s+handler\s+or\s+metadata\s+route\s+of\s+the\s+real\s+app/i, /static\s+icon\s+files/i, /fixed\s+build\s+id\s+`maintenance-wall`/]],

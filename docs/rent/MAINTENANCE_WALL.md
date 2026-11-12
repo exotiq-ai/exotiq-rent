@@ -136,7 +136,11 @@ node scripts/maintenance/check-wall.mjs https://book.exotiq.rent --expect off
   with "headers say wall, body is not the wall". So an on pass means every route answered the wall
   itself, not just its headers. The last line says `summary: expect on: ... all OK` and the exit
   code is 0. It also asks the image path, through the data shape and plainly, for a remote image
-  on a name that cannot resolve; the answer must be the wall or a refusal, never image bytes.
+  from a source the normal site allows (a public stock photo); the answer must be the wall or a
+  refusal, never image bytes, so an older wall build that could still fetch images fails the check.
+- Several wall deploys can exist for the wall pull request (one per push, per site). The one to
+  publish is identified by its Netlify deploy id, which the check cannot see: record that id with
+  the check's result and publish exactly that deploy.
 - `--expect on` sends empty POSTs (to the capture route and to its data path), so point it only
   at a deploy that is meant to be a wall, or at a local server; never at the normal live site.
   To imitate a deployed wall locally, build with `MAINTENANCE_MODE=on` and start it with
