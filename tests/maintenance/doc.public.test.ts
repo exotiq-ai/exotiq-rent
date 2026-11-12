@@ -36,12 +36,15 @@ const TOPICS: [string, RegExp[]][] = [
   ['which methods answer the wall', [/GET, HEAD, POST, PUT, PATCH, DELETE(,| and) OPTIONS/, /TRACE/, /over-long URL/i, /reach no application code/i]],
   ['image paths', [/on Netlify every path tried, including static files and the image paths, answered the wall/i, /`next start` server handles `\/_next\/image` before the wall/]],
   ['font fetch at build time', [/fonts from Google/i, /failed build publishes nothing/i]],
+  ['trailing slash, server by server', [/plain\s+`next start`\s+server\s+a\s+trailing\s+slash\s+path\s+answers\s+a\s+308\s+first\s+and\s+then\s+the\s+wall/i, /on\s+Netlify\s+the\s+rehearsal\s+found\s+the\s+wall\s+answered\s+directly,\s+with\s+no\s+redirect\s+first/i]],
+  ['an off pass and the backend', [/off\s+pass\s+does\s+not\s+prove\s+that\s+pages\s+which\s+need\s+the\s+backend\s+are\s+working/i, /storefront\s+line/i]],
 ];
 // Claims the note must no longer make.
 const RETIRED: [string, RegExp][] = [
   ['every method', /Every method too/],
   ['lines always agree', /they always agree/i],
   ['image cache guess', /may still answer from its own cache/i],
+  ['308 stated as general', /A trailing slash path such as `\/exotiq\/` first answers a 308|The 308 redirect on trailing slash paths: it happens before the wall/],
 ];
 const retiredProblems = (doc: string) => RETIRED.filter(([, re]) => re.test(doc)).map(([name]) => `still says: ${name}`);
 

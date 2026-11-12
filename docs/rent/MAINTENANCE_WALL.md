@@ -13,7 +13,8 @@ same as without this feature.
   wall. Odd requests such as TRACE or an over-long URL are refused by the server before the wall
   and reach no application code.
 - On Netlify every path tried, including static files and the image paths, answered the wall; a
-  plain `next start` server handles `/_next/image` before the wall.
+  plain `next start` server handles `/_next/image` before the wall, and redirects trailing slash
+  paths before the wall too.
 - Headers: `Retry-After`, `Cache-Control: no-store`, `X-Robots-Tag: noindex`,
   `X-Exotiq-Maintenance: on` and a content policy that lets the page load nothing from anywhere.
 - Pages get a small HTML page that loads nothing else (no script, no image, no font, no other
@@ -106,15 +107,20 @@ node scripts/maintenance/check-wall.mjs https://book.exotiq.rent --expect off
 - `--expect off` passes when no route carries the marker header or the wall page, and the four
   core pages every deployment serves (`/`, `/terms`, `/privacy`, `/robots.txt`) answer below
   400 (the 307 on `/` counts as an answer and is not followed).
-  An off pass means the wall is gone and the four core pages answer.
-  Other routes are not judged by status: some pages are switched off per site (they answer 404 by design), storefront pages depend on which tenant a
-  site serves, and the e-mail capture route can answer 503 itself when it is not configured.
+  An off pass means the wall is gone and the four core pages answer. An off pass does not prove
+  that pages which need the backend are working: after backend maintenance, also look at the
+  storefront line (for example `GET /exotiq`) in the output, or open a storefront page, before
+  calling the site back.
+  Other routes are not judged by status: some pages are switched off per site (they answer 404
+  by design), storefront pages depend on which tenant a site serves, and the e-mail capture route can answer 503 itself when it is not configured.
 - It sends only requests that cannot write: GET and HEAD, plus one POST to the e-mail capture
   route with an empty `text/plain` body, which that route refuses before reading anything. It
   sends no token and talks to the one host it is given.
-- A trailing slash path such as `/exotiq/` first answers a 308 redirect to `/exotiq` (the
-  router does that before any middleware); the checker follows that one redirect and requires
-  the wall behind it. The image optimizer path is shown with what it answered and never decides
+- Trailing slash paths such as `/exotiq/`: on a plain `next start` server a trailing slash path
+  answers a 308 first and then the wall (the router redirects to `/exotiq` before any
+  middleware); on Netlify the rehearsal found the wall answered directly, with no redirect first.
+  The checker accepts either: the wall at once, or one redirect to a path on the same site that
+  then answers the wall. The image optimizer path is shown with what it answered and never decides
   the result.
 
 ## What the wall does not stop
@@ -124,11 +130,12 @@ node scripts/maintenance/check-wall.mjs https://book.exotiq.rent --expect off
 - The daily canary (`.github/workflows/canary.yml`): it calls the backend directly and never
   requests the site. Plan the maintenance so it does not overlap the canary's scheduled run.
 - The scheduled `availability-alerts` function (`netlify/functions/availability-alerts.mts`):
-  it is part of every deploy, including the wall deploy, and does not pass through middleware.
-  Plan around its schedule the same way.
+  it is part of every deploy, including the wall deploy, and its scheduled runs do not pass
+  through middleware (a request to a `/.netlify/functions/` URL did answer the wall on Netlify;
+  the schedule does not make a request). Plan around its schedule the same way.
 - Payments already completed at the payment provider: they stand. The page tells renters not to
   pay again.
-- The 308 redirect on trailing slash paths: it happens before the wall and serves nothing of the
-  app.
+- On a plain `next start` server, the 308 redirect on trailing slash paths: it comes before the
+  wall and serves nothing of the app (on Netlify those paths answered the wall directly).
 
 Outside monitors pointed at the site will see 503 while the wall is up. That is expected.
