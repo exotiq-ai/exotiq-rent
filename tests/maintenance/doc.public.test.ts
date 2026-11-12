@@ -29,7 +29,21 @@ const TOPICS: [string, RegExp[]][] = [
   ['what it does not stop', [/already open/i, /canary/i, /availability-alerts/, /payment provider/i, /image/i, /trailing slash/i, /\b308\b/]],
   ['api links in e-mails', [/text\/html/, /JSON/]],
   ['outside monitors', [/monitor/i]],
+  ['the build log is the record', [/build log's two lines are the record/i, /running site prints nothing/i]],
+  ['what an off pass means', [/off pass means the wall is gone and the four core pages answer/i, /after each publish step/i]],
+  ['the wall is per site', [/per Netlify site/i, /publish it on each site/i]],
+  ['the variable must be in the build environment', [/build's environment/i, /env file/i]],
+  ['which methods answer the wall', [/GET, HEAD, POST, PUT, PATCH, DELETE(,| and) OPTIONS/, /TRACE/, /over-long URL/i, /reach no application code/i]],
+  ['image paths', [/on Netlify every path tried, including static files and the image paths, answered the wall/i, /`next start` server handles `\/_next\/image` before the wall/]],
+  ['font fetch at build time', [/fonts from Google/i, /failed build publishes nothing/i]],
 ];
+// Claims the note must no longer make.
+const RETIRED: [string, RegExp][] = [
+  ['every method', /Every method too/],
+  ['lines always agree', /they always agree/i],
+  ['image cache guess', /may still answer from its own cache/i],
+];
+const retiredProblems = (doc: string) => RETIRED.filter(([, re]) => re.test(doc)).map(([name]) => `still says: ${name}`);
 
 function topicProblems(doc: string): string[] {
   return TOPICS.flatMap(([name, res]) => res.filter((re) => !re.test(doc)).map((re) => `${name}: missing ${re}`));
@@ -60,6 +74,8 @@ describe('MP-37 the operator note', () => {
     // Planted: a note without the canary sentence is reported.
     expect(topicProblems(doc.replace(/canary/gi, 'check'))).toEqual(['what it does not stop: missing /canary/i']);
     expect(topicProblems(doc)).toEqual([]);
+    expect(retiredProblems(`${doc}\nEvery method too.`)).toEqual(['still says: every method']);
+    expect(retiredProblems(doc)).toEqual([]);
   });
 
   it('the operator note and every added file carry no private material', () => {

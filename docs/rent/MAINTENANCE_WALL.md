@@ -9,7 +9,11 @@ same as without this feature.
 ## What a visitor gets
 
 - Every path answers 503: pages, deep links, API routes, `robots.txt`, the sitemap, icons, static
-  files and Next data requests. Every method too (GET, HEAD, POST and the rest).
+  files and Next data requests. GET, HEAD, POST, PUT, PATCH, DELETE and OPTIONS all answer the
+  wall. Odd requests such as TRACE or an over-long URL are refused by the server before the wall
+  and reach no application code.
+- On Netlify every path tried, including static files and the image paths, answered the wall; a
+  plain `next start` server handles `/_next/image` before the wall.
 - Headers: `Retry-After`, `Cache-Control: no-store`, `X-Robots-Tag: noindex`,
   `X-Exotiq-Maintenance: on` and a content policy that lets the page load nothing from anywhere.
 - Pages get a small HTML page that loads nothing else (no script, no image, no font, no other
@@ -22,7 +26,10 @@ same as without this feature.
 
 ## The three variables
 
-All three are server side only and are read when a build is made, never by the browser.
+All three are server side only and are read when a build is made, never by the browser. They only
+count when they are in the build's environment (on Netlify: the site's or the context's
+environment, or `netlify.toml`). An env file such as `.env.local` is not read by the tripwire,
+so never set the wall there.
 
 | Variable | Rule |
 | --- | --- |
@@ -41,9 +48,15 @@ The build log's two lines are the record: the `wall build:` line and the tripwir
 running site prints nothing about the wall (a server started from a build does not know how that
 build was made), so check a running site with `check-wall.mjs`, never by its logs.
 
-So a wall deploy is built once and then published to turn the wall on. The page text,
-`Retry-After` and the back-by text are fixed into that deploy. Changing any of them means a new
+So a wall deploy is built once and then published to turn the wall on. The wall is per site: a
+wall deploy exists per Netlify site (each site connected to the repo builds its own Deploy Preview
+of the `maintenance-wall` pull request), so publish it on each site that should be walled.
+The page text, `Retry-After` and the back-by text are fixed into that deploy. Changing any of them means a new
 commit, a new deploy and a new check.
+
+Builds of this site fetch fonts from Google, and that fetch occasionally fails a build, wall or
+not. A failed build publishes nothing, which is one more reason the wall deploy is built and
+checked well ahead of time.
 
 After every build, `scripts/maintenance/assert-build.mjs` (the `postbuild` script) checks whether
 the wall itself was built (the built middleware carries the wall's marker header) and fails the
@@ -92,9 +105,9 @@ node scripts/maintenance/check-wall.mjs https://book.exotiq.rent --expect off
   code is 0.
 - `--expect off` passes when no route carries the marker header or the wall page, and the four
   core pages every deployment serves (`/`, `/terms`, `/privacy`, `/robots.txt`) answer below
-  400 (the 307 on `/` counts as an answer and is not followed). An off pass means the wall is
-  gone and the four core pages answer. Other routes are not judged by status: some pages are
-  switched off per site (they answer 404 by design), storefront pages depend on which tenant a
+  400 (the 307 on `/` counts as an answer and is not followed).
+  An off pass means the wall is gone and the four core pages answer.
+  Other routes are not judged by status: some pages are switched off per site (they answer 404 by design), storefront pages depend on which tenant a
   site serves, and the e-mail capture route can answer 503 itself when it is not configured.
 - It sends only requests that cannot write: GET and HEAD, plus one POST to the e-mail capture
   route with an empty `text/plain` body, which that route refuses before reading anything. It
@@ -115,8 +128,6 @@ node scripts/maintenance/check-wall.mjs https://book.exotiq.rent --expect off
   Plan around its schedule the same way.
 - Payments already completed at the payment provider: they stand. The page tells renters not to
   pay again.
-- Image bytes served by the platform's image service, if any: the wall page has no images, but a
-  platform image path may still answer from its own cache.
 - The 308 redirect on trailing slash paths: it happens before the wall and serves nothing of the
   app.
 
