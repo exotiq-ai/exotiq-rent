@@ -15,7 +15,12 @@
 // wall: the catch-all route app/[[...wall]] plus, at most, the static icon files and Next's own
 // not-found page. Any other route there means the real app is still behind the wall, which a host
 // could reach past the middleware. A normal build must not hold the catch-all.
-import { readFileSync } from 'node:fs';
+//
+// A wall build must also allow no remote image source: the images manifest (and the copy of the
+// config in required-server-files.json, when present) must list no remote pattern and no domain,
+// otherwise the image optimizer could be made to fetch from those hosts. A normal build is not
+// checked for this.
+import { existsSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 
@@ -29,6 +34,23 @@ const APP_ROUTES = '.next/app-path-routes-manifest.json';
 const CATCH_ALL = '/[[...wall]]';
 /** Routes a wall build may hold besides the catch-all: the static icon files and Next's not-found page. */
 const WALL_BUILD_EXTRA_ROUTES = ['/apple-icon.png', '/favicon.ico', '/icon.svg', '/_not-found'];
+const IMAGES_MANIFEST = '.next/images-manifest.json';
+const SERVER_FILES = '.next/required-server-files.json';
+
+/** Remote image sources named by an images config: its remote patterns' hosts and its domains. */
+function remoteSources(images) {
+  const host = (pattern) => String(pattern?.hostname ?? '?').replace(/^\^\(\?:/, '').replace(/\)\$$/, '').replace(/\\/g, '');
+  const patterns = Array.isArray(images?.remotePatterns) ? images.remotePatterns.map(host) : [];
+  const domains = Array.isArray(images?.domains) ? images.domains.map(String) : [];
+  return [...patterns, ...domains];
+}
+const readJson = (rel) => {
+  try {
+    return JSON.parse(readFileSync(path.join(process.cwd(), rel), 'utf8'));
+  } catch {
+    return null;
+  }
+};
 
 function fail(sentence) {
   console.error(`[maintenance] tripwire failed: ${sentence}`);
@@ -75,6 +97,17 @@ if (wanted && entries.length === 0) fail('MAINTENANCE_MODE asks for the wall but
 if (wanted && otherBuilt) fail('MAINTENANCE_MODE asks for the wall but the middleware in this build is not the wall, so it would not serve the wall page.');
 if (wanted && !hasCatchAll) fail('MAINTENANCE_MODE asks for the wall but this build has no wall catch-all route, so a request handed past the middleware would reach no wall.');
 if (wanted && appLeft.length) fail(`this wall build still contains application routes (${appLeft.join(', ')}), so the app behind the wall could still answer.`);
+if (wanted) {
+  const manifestImages = readJson(IMAGES_MANIFEST)?.images;
+  if (!manifestImages || typeof manifestImages !== 'object') unreadable(IMAGES_MANIFEST);
+  const remote = remoteSources(manifestImages);
+  if (existsSync(path.join(process.cwd(), SERVER_FILES))) {
+    const serverFiles = readJson(SERVER_FILES);
+    if (!serverFiles) unreadable(SERVER_FILES);
+    remote.push(...remoteSources(serverFiles?.config?.images));
+  }
+  if (remote.length) fail(`this wall build still allows remote image sources (${Array.from(new Set(remote)).join(', ')}), so its image optimizer could fetch from them.`);
+}
 if (!wanted && wallBuilt) fail('this build contains the wall middleware but MAINTENANCE_MODE does not ask for the wall, so it would serve the wall instead of the normal site.');
 if (!wanted && hasCatchAll) fail("this build contains the wall's catch-all route but MAINTENANCE_MODE does not ask for the wall, so it would serve the wall instead of the normal site.");
 

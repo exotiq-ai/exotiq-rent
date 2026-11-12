@@ -17,7 +17,13 @@
 //               503 itself. So an off pass means the wall is gone and the four core pages answer.
 // --expect on also sends three data-request probes: the shape a host may hand past the middleware
 // straight to the app (header x-nextjs-data: 1, the wall build's fixed build id maintenance-wall).
-// They are not sent under --expect off.
+// It also sends two image probes with a remote source on a reserved name that cannot resolve
+// (https://example.invalid/x.png), through the data path and plainly: each answer must be the wall,
+// or a refusal (status 400 or above and no image); image bytes mean the image optimizer fetched a
+// remote source. None of these probes is sent under --expect off.
+//
+// --expect on sends empty POSTs to the capture route and to the capture route's data path, so point
+// it only at a deploy that is meant to be a wall, or at a local server; never at a normal live site.
 // Exit 0 when every asserted route passes, 1 otherwise (the last line names the failures), 2 for a
 // usage error.
 //
@@ -104,6 +110,12 @@ const DATA_PROBES = [
   { method: 'GET', path: '/_next/data/maintenance-wall/api/renters/capture.json', headers: DATA_HEADERS },
   { method: 'POST', path: '/_next/data/maintenance-wall/api/renters/capture.json', headers: { ...DATA_HEADERS, 'Content-Type': 'text/plain' }, body: '' },
 ].map((r) => ({ ...r, label: `${r.path} (x-nextjs-data: 1)` }));
+/** Under --expect on only: the image optimizer asked for a remote source that cannot resolve. */
+const REMOTE_IMAGE = 'https%3A%2F%2Fexample.invalid%2Fx.png';
+const IMAGE_PROBES = [
+  { method: 'GET', path: `/_next/data/maintenance-wall/_next/image.json?url=${REMOTE_IMAGE}&w=64&q=75`, headers: DATA_HEADERS, tag: ' (x-nextjs-data: 1)' },
+  { method: 'GET', path: `/_next/image?url=${REMOTE_IMAGE}&w=64&q=75`, tag: '' },
+].map(({ tag, ...r }) => ({ ...r, label: `${r.path}${tag}` }));
 const SLASH_PROBE = '/exotiq/';
 const IMAGE_PROBE = '/_next/image?url=%2Ficon-192.png&w=640&q=75';
 
@@ -113,6 +125,7 @@ async function send(origin, { method, path, headers = {}, body }) {
     const text = method === 'HEAD' ? '' : await res.text();
     return {
       head: method === 'HEAD',
+      contentType: res.headers.get('content-type') ?? '',
       status: String(res.status),
       code: res.status,
       retryAfter: res.headers.get('retry-after'),
@@ -122,7 +135,7 @@ async function send(origin, { method, path, headers = {}, body }) {
       error: '',
     };
   } catch (e) {
-    return { status: 'error', code: 0, retryAfter: null, marker: null, location: null, text: '', error: e instanceof Error ? e.message : String(e) };
+    return { status: 'error', contentType: '', code: 0, retryAfter: null, marker: null, location: null, text: '', error: e instanceof Error ? e.message : String(e) };
   }
 }
 
@@ -172,6 +185,28 @@ async function main() {
       const r = await send(origin, route);
       asserted++;
       const ok = isWall(r);
+      if (!ok) failed.push(`${route.method} ${route.label}`);
+      line(route.method, route.label, r, ok ? 'OK' : 'FAIL');
+    }
+  }
+
+  if (expect === 'on') {
+    for (const route of IMAGE_PROBES) {
+      const r = await send(origin, route);
+      asserted++;
+      let ok;
+      if (r.status === 'error') ok = false;
+      else if (r.contentType.toLowerCase().startsWith('image/')) {
+        ok = false;
+        r.error = 'the image optimizer fetched a remote source';
+      } else if (isWall(r)) ok = true;
+      else if (r.code >= 400) {
+        ok = true;
+        r.error = '';
+      } else {
+        ok = false;
+        r.error = 'neither the wall nor a refusal';
+      }
       if (!ok) failed.push(`${route.method} ${route.label}`);
       line(route.method, route.label, r, ok ? 'OK' : 'FAIL');
     }

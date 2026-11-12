@@ -4,7 +4,9 @@
 // the wall is wanted but the build's middleware is not the wall, or when the manifest or a file it
 // lists cannot be read. A non-wall middleware in a normal build is fine. It also reads the app
 // routes manifest: a wall build must hold the wall's catch-all route and nothing else but the
-// static icons and Next's own not-found page; a normal build must not hold the catch-all. Each case
+// static icons and Next's own not-found page; a normal build must not hold the catch-all. A wall
+// build must also allow no remote image source (images manifest, and the copy of the config in
+// required-server-files.json when present); a normal build is not checked for that. Each case
 // runs the real script as a child process in a temporary directory that holds only that variant.
 import { execFile } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -36,7 +38,11 @@ const WALL_ROUTES = { '/[[...wall]]/route': '/[[...wall]]', '/apple-icon.png/rou
 // A few of a normal build's routes.
 const NORMAL_ROUTES = { '/page': '/', '/privacy/page': '/privacy', '/api/renters/capture/route': '/api/renters/capture', '/icon.svg/route': '/icon.svg', '/_not-found/page': '/_not-found' };
 const routes = (r: Record<string, string>) => JSON.stringify(r);
-const WALL_MW = { [MANIFEST]: manifest(FILES), '.next/server/edge-runtime-webpack.js': 'var runtime=1;', '.next/server/middleware.js': WALL_JS };
+const IMAGES = '.next/images-manifest.json';
+const RSF = '.next/required-server-files.json';
+const images = (extra: Record<string, unknown>) => JSON.stringify({ version: 1, images: { unoptimized: true, domains: [], remotePatterns: [], sizes: [640], ...extra } });
+const REMOTE = [{ protocol: 'https', hostname: '^(?:images\\.unsplash\\.com)$', pathname: '^(?:\\/.*)$' }];
+const WALL_MW = { [MANIFEST]: manifest(FILES), '.next/server/edge-runtime-webpack.js': 'var runtime=1;', '.next/server/middleware.js': WALL_JS, [IMAGES]: images({}) };
 const NO_MW = { [MANIFEST]: manifest(null) };
 
 const BUILDS: Record<string, Build> = {
@@ -52,6 +58,13 @@ const BUILDS: Record<string, Build> = {
   normalWithCatchAll: { ...NO_MW, [APP]: routes({ ...NORMAL_ROUTES, '/[[...wall]]/route': '/[[...wall]]' }) },
   appManifestMissing: { ...NO_MW },
   appManifestUnparsable: { ...WALL_MW, [APP]: '{not json' },
+  wallRemotePattern: { ...WALL_MW, [APP]: routes(WALL_ROUTES), [IMAGES]: images({ remotePatterns: REMOTE }) },
+  wallDomains: { ...WALL_MW, [APP]: routes(WALL_ROUTES), [IMAGES]: images({ domains: ['cdn.example.test'] }) },
+  wallServerFilesRemote: { ...WALL_MW, [APP]: routes(WALL_ROUTES), [RSF]: JSON.stringify({ version: 1, config: { images: { remotePatterns: [{ hostname: 'cdn.example.test' }], domains: [] } } }) },
+  wallServerFilesClean: { ...WALL_MW, [APP]: routes(WALL_ROUTES), [RSF]: JSON.stringify({ version: 1, config: { images: { unoptimized: true, remotePatterns: [], domains: [] } } }) },
+  wallNoImagesManifest: { [MANIFEST]: manifest(FILES), '.next/server/edge-runtime-webpack.js': 'var runtime=1;', '.next/server/middleware.js': WALL_JS, [APP]: routes(WALL_ROUTES) },
+  wallImagesUnparsable: { ...WALL_MW, [APP]: routes(WALL_ROUTES), [IMAGES]: '{not json' },
+  normalRemote: { ...NO_MW, [APP]: routes(NORMAL_ROUTES), [IMAGES]: images({ unoptimized: false, remotePatterns: REMOTE, domains: ['cdn.example.test'] }) },
 };
 
 const temps: string[] = [];
@@ -146,6 +159,29 @@ describe('MP-37 the build tripwire', () => {
     expect(n.code).toBe(1);
     expect(oneSentence(n.lines), n.lines.join('|')).toBe(true);
     expect(n.lines[0]).toMatch(/has no wall catch-all route/);
+  });
+
+  it('tripwire fails when a wall build still allows a remote image source', async () => {
+    for (const [build, needle] of [['wallRemotePattern', 'images.unsplash.com'], ['wallDomains', 'cdn.example.test'], ['wallServerFilesRemote', 'cdn.example.test']] as const) {
+      const r = await tripwire('wanted + remote images', 'on', build);
+      expect(r.code, build).toBe(1);
+      expect(oneSentence(r.lines), r.lines.join('|')).toBe(true);
+      expect(r.lines[0], build).toMatch(/^\[maintenance\] tripwire failed: this wall build still allows remote image sources \(/);
+      expect(r.lines[0], build).toContain(needle);
+    }
+    // A clean copy of the config in required-server-files.json passes.
+    expect((await tripwire('wanted + clean server files', 'on', 'wallServerFilesClean')).code).toBe(0);
+    // A wall build without a readable images manifest fails closed.
+    for (const build of ['wallNoImagesManifest', 'wallImagesUnparsable'] as const) {
+      const r = await tripwire('wanted + images manifest unreadable', 'on', build);
+      expect(r.code, build).toBe(1);
+      expect(r.lines[0]).toMatch(/images-manifest\.json is missing or unreadable, so this build cannot be checked/);
+    }
+    // A normal build is not checked for this: its own allow-list, or no images manifest at all, is fine.
+    for (const build of ['normalRemote', 'none'] as const) {
+      const r = await tripwire('not wanted + images not checked', undefined, build);
+      expect(r.code, build).toBe(0);
+    }
   });
 
   it('tripwire fails when a normal build contains the wall catch-all route', async () => {

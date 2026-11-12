@@ -17,6 +17,9 @@ scrubWallEnv();
 const run = promisify(execFile);
 const SCRIPT = path.join(ROOT, 'scripts/maintenance/check-wall.mjs');
 const IMAGE_PROBE = '/_next/image?url=%2Ficon-192.png&w=640&q=75';
+// The remote source the image probes ask for: a reserved name that cannot resolve.
+const REMOTE_IMG = 'https%3A%2F%2Fexample.invalid%2Fx.png';
+const IMAGE_PROBES = [`GET /_next/data/maintenance-wall/_next/image.json?url=${REMOTE_IMG}&w=64&q=75 (x-nextjs-data: 1)`, `GET /_next/image?url=${REMOTE_IMG}&w=64&q=75`];
 
 type Seen = { method: string; url: string; host: string; contentType: string; authorization: string; bodyLength: number };
 type Handler = (method: string, url: string, headers: IncomingMessage['headers']) => Response;
@@ -121,13 +124,13 @@ describe('MP-37 the route checker', () => {
   });
 
   it('check-wall probes the data-request shape with the fixed build id under --expect on only', async () => {
-    const DATA = ['GET /_next/data/maintenance-wall/exotiq.json', 'GET /_next/data/maintenance-wall/api/renters/capture.json', 'POST /_next/data/maintenance-wall/api/renters/capture.json'];
+    const DATA = ['GET /_next/data/maintenance-wall/exotiq.json', 'GET /_next/data/maintenance-wall/api/renters/capture.json', 'POST /_next/data/maintenance-wall/api/renters/capture.json', `GET /_next/data/maintenance-wall/_next/image.json?url=${REMOTE_IMG}&w=64&q=75`];
     // A site that walls everything except a request carrying x-nextjs-data (what a host may hand past the middleware).
     const leaky = await serve((m, u, h) => (h['x-nextjs-data'] ? html(200, 'the real page') : wallOn()(m, u, h)));
     const r = await check(leaky.base, '--expect', 'on');
     expect(r.code, r.out).toBe(1);
-    expect(lines(r.out).filter((l) => l.endsWith(' FAIL')).map((l) => l.split(' -> ')[0])).toEqual(DATA.map((d) => `${d} (x-nextjs-data: 1)`));
-    expect(summary(r.out)[0]).toBe(`summary: expect on: 3 of 30 FAILED: ${DATA.map((d) => `${d} (x-nextjs-data: 1)`).join(', ')}`);
+    expect(lines(r.out).filter((l) => !l.startsWith('summary:') && / FAIL( |$)/.test(l)).map((l) => l.split(' -> ')[0])).toEqual(DATA.map((d) => `${d} (x-nextjs-data: 1)`));
+    expect(summary(r.out)[0]).toBe(`summary: expect on: 4 of 32 FAILED: ${DATA.map((d) => `${d} (x-nextjs-data: 1)`).join(', ')}`);
     // The probes send the header and the fixed id; the POST is empty text/plain.
     const sent = leaky.log.filter((x) => x.url.startsWith('/_next/data/'));
     expect(sent.map((x) => `${x.method} ${x.url}`)).toEqual(DATA);
@@ -165,7 +168,7 @@ describe('MP-37 the route checker', () => {
         'POST /_next/data/maintenance-wall/api/renters/capture.json (x-nextjs-data: 1)',
       ]);
       for (const l of failed) expect(l, name).toMatch(/ 503 retry-after=1800 marker=on FAIL \(headers say wall, body is not the wall\)$/);
-      expect(summary(r.out)[0], name).toMatch(/^summary: expect on: 3 of 30 FAILED: /);
+      expect(summary(r.out)[0], name).toMatch(/^summary: expect on: 3 of 32 FAILED: /);
     }
     // The same on an ordinary page route: a 200-style app page under wall headers fails too.
     const pageMerged = await serve((m, u, h) => {
@@ -184,7 +187,38 @@ describe('MP-37 the route checker', () => {
     });
     const a = await check(appended.base, '--expect', 'on');
     expect(a.code, a.out).toBe(0);
-    expect(summary(a.out)[0]).toMatch(/^summary: expect on: 30 asserted, all OK$/);
+    expect(summary(a.out)[0]).toMatch(/^summary: expect on: 32 asserted, all OK$/);
+  });
+
+  it('check-wall fails --expect on when the image optimizer serves a remote source', async () => {
+    const isRemoteImage = (u: string) => u.includes('_next/image') && u.includes('example.invalid');
+    // A host whose optimizer fetched the remote source: image bytes for both image probes.
+    const fetched = await serve((m, u, h) => (isRemoteImage(u) ? new Response(new Uint8Array([0x89, 0x50, 0x4e, 0x47]), { status: 200, headers: { 'content-type': 'image/png' } }) : wallOn()(m, u, h)));
+    const a = await check(fetched.base, '--expect', 'on');
+    expect(a.code, a.out).toBe(1);
+    const failed = lines(a.out).filter((l) => !l.startsWith('summary:') && / FAIL( |$)/.test(l));
+    expect(failed.map((l) => l.split(' -> ')[0])).toEqual(IMAGE_PROBES);
+    for (const l of failed) expect(l).toMatch(/ -> 200 retry-after=- marker=- FAIL \(the image optimizer fetched a remote source\)$/);
+    expect(summary(a.out)[0]).toMatch(/^summary: expect on: 2 of 32 FAILED: /);
+    // Image bytes under the wall's status and headers are still an image: FAIL.
+    const disguised = await serve((m, u, h) => (isRemoteImage(u) ? new Response(new Uint8Array([1, 2, 3]), { status: 503, headers: { 'content-type': 'image/jpeg', 'retry-after': '1800', 'x-exotiq-maintenance': 'on' } }) : wallOn()(m, u, h)));
+    const d = await check(disguised.base, '--expect', 'on');
+    expect(d.code).toBe(1);
+    expect(summary(d.out)[0]).toMatch(/^summary: expect on: 2 of 32 FAILED: /);
+    // A 200 page that is neither the wall nor a refusal fails with its own reason.
+    const page = await serve((m, u, h) => (isRemoteImage(u) ? html(200, 'not an image') : wallOn()(m, u, h)));
+    const pg = await check(page.base, '--expect', 'on');
+    expect(pg.code).toBe(1);
+    expect(lines(pg.out).filter((l) => l.includes('(neither the wall nor a refusal)')).length).toBe(2);
+    // A refusal (400 and no image) passes, and so does the wall itself.
+    const refused = await serve((m, u, h) => (isRemoteImage(u) ? new Response('"url" parameter is not allowed', { status: 400 }) : wallOn()(m, u, h)));
+    const r = await check(refused.base, '--expect', 'on');
+    expect(r.code, r.out).toBe(0);
+    for (const probe of IMAGE_PROBES) expect(lines(r.out).find((l) => l.startsWith(`${probe} -> `))).toMatch(/ OK$/);
+    // Under --expect off the image probes are not sent.
+    const normal = await serve(wallOff(elsewhere.base));
+    await check(normal.base, '--expect', 'off');
+    expect(normal.log.filter((x) => x.url.includes('example.invalid'))).toEqual([]);
   });
 
   it('check-wall passes a wall-off server with --expect off', async () => {
@@ -234,7 +268,7 @@ describe('MP-37 the route checker', () => {
     expect(a.code, a.out).toBe(1);
     expect(failing(a.out).length).toBe(30);
     expect(lines(a.out).find((l) => l.startsWith('GET /privacy -> '))).toBe('GET /privacy -> 503 retry-after=120 marker=- FAIL');
-    expect(summary(a.out)[0]).toMatch(/^summary: expect on: 30 of 30 FAILED: /);
+    expect(summary(a.out)[0]).toMatch(/^summary: expect on: 30 of 32 FAILED: /);
     // The same outage under --expect off: no wall marker anywhere, but the four core pages fail.
     const b = await check(outage.base, '--expect', 'off');
     expect(b.code, b.out).toBe(1);
@@ -246,13 +280,13 @@ describe('MP-37 the route checker', () => {
     const c = await check(ok200.base, '--expect', 'on');
     expect(c.code, c.out).toBe(1);
     expect(lines(c.out).find((l) => l.startsWith('GET /privacy -> '))).toBe('GET /privacy -> 200 retry-after=1800 marker=on FAIL');
-    expect(summary(c.out)[0]).toMatch(/^summary: expect on: 30 of 30 FAILED: /);
+    expect(summary(c.out)[0]).toMatch(/^summary: expect on: 32 of 32 FAILED: /);
     // 503 and the marker without Retry-After is not the wall either.
     const noRetry = await serve(() => new Response('x', { status: 503, headers: { 'x-exotiq-maintenance': 'on' } }));
     const d = await check(noRetry.base, '--expect', 'on');
     expect(d.code, d.out).toBe(1);
     expect(lines(d.out).find((l) => l.startsWith('GET /privacy -> '))).toBe('GET /privacy -> 503 retry-after=- marker=on FAIL');
-    expect(summary(d.out)[0]).toMatch(/^summary: expect on: 30 of 30 FAILED: /);
+    expect(summary(d.out)[0]).toMatch(/^summary: expect on: 30 of 32 FAILED: /);
   });
 
   it('check-wall fails a wall-off server with --expect on and a wall-on server with --expect off', async () => {

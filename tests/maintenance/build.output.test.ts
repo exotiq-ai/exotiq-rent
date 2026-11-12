@@ -86,6 +86,22 @@ function wallRoutesProblems(nextDir: string): string[] {
   return p;
 }
 
+/** A wall build's images manifest: no remote pattern, no domain, the optimizer off. */
+function wallImagesProblems(nextDir: string): string[] {
+  let images: { remotePatterns?: unknown[]; domains?: unknown[]; unoptimized?: boolean } | undefined;
+  try {
+    images = JSON.parse(readFileSync(path.join(nextDir, 'images-manifest.json'), 'utf8')).images;
+  } catch {
+    return ['images-manifest.json missing or unreadable'];
+  }
+  if (!images) return ['images-manifest.json has no images'];
+  const p: string[] = [];
+  if ((images.remotePatterns ?? []).length) p.push(`remote image patterns: ${JSON.stringify(images.remotePatterns)}`);
+  if ((images.domains ?? []).length) p.push(`remote image domains: ${JSON.stringify(images.domains)}`);
+  if (images.unoptimized !== true) p.push('the image optimizer is on');
+  return p;
+}
+
 function normalRoutesProblems(nextDir: string, baseline: string[] | null): string[] {
   const r = appRoutesOf(nextDir);
   if (!r) return ['app-path-routes-manifest.json missing or unreadable'];
@@ -154,6 +170,15 @@ describe('MP-37 built output: the scanners catch planted faults', () => {
     expect(normalRoutesProblems(plantedNext(routesOf({ '/page': '/', '/[[...wall]]/route': CATCH_ALL })), null)).toEqual(['the wall catch-all is a route in a wall-off build']);
     expect(normalRoutesProblems(plantedNext(routesOf({ '/page': '/', '/terms/page': '/terms' })), ['/', '/privacy'])).toEqual(['routes differ from the baseline: added ["/terms"], missing ["/privacy"]']);
     expect(normalRoutesProblems(plantedNext({}), null)).toEqual(['app-path-routes-manifest.json missing or unreadable']);
+    // Images: a wall build that keeps a remote pattern or a domain, or the optimizer on, is reported.
+    const imagesOf = (images: Record<string, unknown>) => ({ 'images-manifest.json': JSON.stringify({ version: 1, images }) });
+    expect(wallImagesProblems(plantedNext(imagesOf({ unoptimized: false, domains: ['cdn.example.test'], remotePatterns: [{ hostname: 'x' }] })))).toEqual([
+      'remote image patterns: [{"hostname":"x"}]',
+      'remote image domains: ["cdn.example.test"]',
+      'the image optimizer is on',
+    ]);
+    expect(wallImagesProblems(plantedNext({}))).toEqual(['images-manifest.json missing or unreadable']);
+    expect(wallImagesProblems(plantedNext(imagesOf({ unoptimized: true, domains: [], remotePatterns: [] })))).toEqual([]);
     const clean = plantedNext({ 'server/middleware-manifest.json': JSON.stringify(EMPTY_MANIFEST), 'static/chunks/app.js': 'ok' });
     expect(offBuildProblems(clean)).toEqual([]);
     expect(onBuildProblems(clean)).toEqual(['0 middleware entries']);
@@ -167,6 +192,11 @@ describe('MP-37 built output (real build)', () => {
     const baseline = BASELINE ? (Object.values(JSON.parse(readFileSync(BASELINE, 'utf8')) as Record<string, string>).sort()) : null;
     expect(normalRoutesProblems(DIR, baseline)).toEqual([]);
     console.log(`wall-off app routes (${appRoutesOf(DIR)?.length}): ${appRoutesOf(DIR)?.join(' ')}${baseline ? ' (equal to the baseline)' : ''}`);
+  });
+
+  it.skipIf(!(DIR && MODE === 'on'))(`a wall-on build allows no remote image source (${SKIP}, mode on)`, () => {
+    expect(wallImagesProblems(DIR)).toEqual([]);
+    console.log(`wall-on images manifest: ${readFileSync(path.join(DIR, 'images-manifest.json'), 'utf8')}`);
   });
 
   it.skipIf(!(DIR && MODE === 'on'))(`a wall-on build contains only the wall routes (${SKIP}, mode on)`, () => {
