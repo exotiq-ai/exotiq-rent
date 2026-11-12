@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
 import { ROOT, exists, read, walkText } from './helpers';
 
 const DOC = 'docs/rent/MAINTENANCE_WALL.md';
-const ALLOWED_PATHS = ['middleware.wall.ts', 'next.config.js', 'package.json', DOC, 'domain/maintenance', 'scripts/maintenance', 'tests/maintenance', 'tests/polish/golden/census.base.json'];
+const ALLOWED_PATHS = ['middleware.wall.ts', 'app/[[...wall]]', 'next.config.js', 'package.json', DOC, 'domain/maintenance', 'scripts/maintenance', 'tests/maintenance', 'tests/polish/golden/census.base.json'];
 const BASE_REF = process.env.MP37_BASE_REF ?? '';
 const PR_TEXTS = (process.env.MP37_PR_TEXTS ?? '').split(':').filter(Boolean);
 // The commit attribution trailer is the one address outside exotiq.ai a commit message may carry.

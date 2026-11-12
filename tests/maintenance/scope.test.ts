@@ -5,7 +5,8 @@ import { execFileSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 import { ROOT } from './helpers';
 
-const ALLOWED_FILES = ['middleware.wall.ts', 'next.config.js', 'package.json', 'docs/rent/MAINTENANCE_WALL.md', 'tests/polish/golden/census.base.json'];
+// The one file under app/: the wall's origin catch-all, a route only in a wall build.
+const ALLOWED_FILES = ['middleware.wall.ts', 'app/[[...wall]]/route.wall.ts', 'next.config.js', 'package.json', 'docs/rent/MAINTENANCE_WALL.md', 'tests/polish/golden/census.base.json'];
 const ALLOWED_DIRS = ['domain/maintenance/', 'scripts/maintenance/', 'tests/maintenance/'];
 
 function outOfScope(changed: string[]): string[] {
@@ -23,7 +24,9 @@ describe('MP-37 scope fence', () => {
       'tests/polish/polishBase.ts',
       'domain/maintenancex.ts',
     ]);
-    expect(outOfScope(['tests/maintenance/scope.test.ts', 'scripts/maintenance/check-wall.mjs', 'docs/rent/MAINTENANCE_WALL.md'])).toEqual([]);
+    expect(outOfScope(['tests/maintenance/scope.test.ts', 'scripts/maintenance/check-wall.mjs', 'docs/rent/MAINTENANCE_WALL.md', 'app/[[...wall]]/route.wall.ts'])).toEqual([]);
+    // Nothing else under app/, not even next to the catch-all.
+    expect(outOfScope(['app/[[...wall]]/page.tsx', 'app/[[...wall]]/route.ts', 'app/page.tsx', 'app/layout.wall.tsx'])).toEqual(['app/[[...wall]]/page.tsx', 'app/[[...wall]]/route.ts', 'app/page.tsx', 'app/layout.wall.tsx']);
 
     const ref = process.env.MP37_BASE_REF;
     if (ref) {

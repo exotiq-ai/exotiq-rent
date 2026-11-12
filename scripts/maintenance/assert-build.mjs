@@ -10,6 +10,11 @@
 // minification, and following the manifest's own file list does not depend on where Next puts the
 // bundle. A middleware without the marker is some other middleware: fine for a normal build, a
 // failure for a wall build.
+//
+// It also reads the app routes manifest. A wall build must be an app that holds nothing but the
+// wall: the catch-all route app/[[...wall]] plus, at most, the static icon files and Next's own
+// not-found page. Any other route there means the real app is still behind the wall, which a host
+// could reach past the middleware. A normal build must not hold the catch-all.
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
@@ -20,6 +25,10 @@ const { isWallOn } = require('../../domain/maintenance/flags.js');
 const NEXT_DIR = path.join(process.cwd(), '.next');
 const MANIFEST = '.next/server/middleware-manifest.json';
 const MARKER = 'x-exotiq-maintenance';
+const APP_ROUTES = '.next/app-path-routes-manifest.json';
+const CATCH_ALL = '/[[...wall]]';
+/** Routes a wall build may hold besides the catch-all: the static icon files and Next's not-found page. */
+const WALL_BUILD_EXTRA_ROUTES = ['/apple-icon.png', '/favicon.ico', '/icon.svg', '/_not-found'];
 
 function fail(sentence) {
   console.error(`[maintenance] tripwire failed: ${sentence}`);
@@ -51,10 +60,24 @@ for (const entry of entries) {
 const otherBuilt = entries.length > 0 && !wallBuilt;
 const wanted = isWallOn(process.env.MAINTENANCE_MODE);
 
+let appRoutes = null;
+try {
+  const m = JSON.parse(readFileSync(path.join(process.cwd(), APP_ROUTES), 'utf8'));
+  if (m && typeof m === 'object' && !Array.isArray(m)) appRoutes = Object.values(m);
+} catch {
+  appRoutes = null;
+}
+if (!appRoutes || appRoutes.some((r) => typeof r !== 'string')) unreadable(APP_ROUTES);
+const hasCatchAll = appRoutes.includes(CATCH_ALL);
+const appLeft = appRoutes.filter((r) => r !== CATCH_ALL && !WALL_BUILD_EXTRA_ROUTES.includes(r));
+
 if (wanted && entries.length === 0) fail('MAINTENANCE_MODE asks for the wall but this build has no middleware, so it would serve the normal site.');
 if (wanted && otherBuilt) fail('MAINTENANCE_MODE asks for the wall but the middleware in this build is not the wall, so it would not serve the wall page.');
+if (wanted && !hasCatchAll) fail('MAINTENANCE_MODE asks for the wall but this build has no wall catch-all route, so a request handed past the middleware would reach no wall.');
+if (wanted && appLeft.length) fail(`this wall build still contains application routes (${appLeft.join(', ')}), so the app behind the wall could still answer.`);
 if (!wanted && wallBuilt) fail('this build contains the wall middleware but MAINTENANCE_MODE does not ask for the wall, so it would serve the wall instead of the normal site.');
+if (!wanted && hasCatchAll) fail("this build contains the wall's catch-all route but MAINTENANCE_MODE does not ask for the wall, so it would serve the wall instead of the normal site.");
 
-if (wanted) console.log('[maintenance] tripwire ok: the wall was wanted and the wall middleware was built.');
+if (wanted) console.log('[maintenance] tripwire ok: the wall was wanted, and the wall middleware and the wall-only app were built.');
 else if (otherBuilt) console.log('[maintenance] tripwire ok: the wall was not wanted and is not in this build; a non-wall middleware is present.');
 else console.log('[maintenance] tripwire ok: the wall was not wanted and no middleware was built.');

@@ -11,6 +11,9 @@
 //               400 (the 307 on / is not followed). Other routes are not judged by status: some are
 //               switched off per site, some are meant to be missing, and the capture route can answer
 //               503 itself. So an off pass means the wall is gone and the four core pages answer.
+// --expect on also sends three data-request probes: the shape a host may hand past the middleware
+// straight to the app (header x-nextjs-data: 1, the wall build's fixed build id maintenance-wall).
+// They are not sent under --expect off.
 // Exit 0 when every asserted route passes, 1 otherwise (the last line names the failures), 2 for a
 // usage error.
 //
@@ -86,6 +89,13 @@ const ROUTES = [
 ];
 /** Under --expect off these must also answer below 400 (GET, no extra headers). */
 const CORE_PAGES = ['/', '/terms', '/privacy', '/robots.txt'];
+/** Under --expect on only: the data-request shape with the wall build's fixed build id. */
+const DATA_HEADERS = { 'x-nextjs-data': '1' };
+const DATA_PROBES = [
+  { method: 'GET', path: '/_next/data/maintenance-wall/exotiq.json', headers: DATA_HEADERS },
+  { method: 'GET', path: '/_next/data/maintenance-wall/api/renters/capture.json', headers: DATA_HEADERS },
+  { method: 'POST', path: '/_next/data/maintenance-wall/api/renters/capture.json', headers: { ...DATA_HEADERS, 'Content-Type': 'text/plain' }, body: '' },
+].map((r) => ({ ...r, label: `${r.path} (x-nextjs-data: 1)` }));
 const SLASH_PROBE = '/exotiq/';
 const IMAGE_PROBE = '/_next/image?url=%2Ficon-192.png&w=640&q=75';
 
@@ -138,6 +148,16 @@ async function main() {
     }
     if (!ok) failed.push(`${route.method} ${route.label}`);
     line(route.method, route.label, r, ok ? 'OK' : 'FAIL');
+  }
+
+  if (expect === 'on') {
+    for (const route of DATA_PROBES) {
+      const r = await send(origin, route);
+      asserted++;
+      const ok = isWall(r);
+      if (!ok) failed.push(`${route.method} ${route.label}`);
+      line(route.method, route.label, r, ok ? 'OK' : 'FAIL');
+    }
   }
 
   // Trailing slash: the router's normalising redirect runs before any middleware. Under --expect on
