@@ -1,6 +1,13 @@
+// Maintenance wall (MP-37): decided here, once per build. Off (the default), this config is exactly
+// the normal one and no middleware is compiled. On, middleware.wall.ts becomes the middleware and
+// answers every request with the 503 wall page. See docs/rent/MAINTENANCE_WALL.md.
+const wall = require('./domain/maintenance/flags.js').readWall();
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async redirects() {
+    // A wall build redirects nothing: redirects run before middleware.
+    if (wall.on) return [];
     // Site split (2026-07-22): booking mode (default, book.exotiq.rent)
     // lands visitors straight on a storefront. Marketplace mode
     // (exotiq.rent, NEXT_PUBLIC_SITE_MODE=marketplace) serves the public
@@ -52,6 +59,9 @@ const nextConfig = {
   swcMinify: true,
   // Optimize fonts
   reactStrictMode: true,
+  // Wall build only: 'wall.ts' first makes middleware.wall.ts the middleware, and env inlines the two
+  // optional wall values into that bundle (server side only).
+  ...(wall.on ? { pageExtensions: ['wall.ts', 'tsx', 'ts', 'jsx', 'js'], env: wall.env } : {}),
 };
 
 module.exports = nextConfig;
