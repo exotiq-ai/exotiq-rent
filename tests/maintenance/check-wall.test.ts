@@ -8,7 +8,7 @@ import type { AddressInfo } from 'node:net';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { buildWallResponse } from '@/domain/maintenance/wall';
+import { buildWallResponse, renderWallHtml } from '@/domain/maintenance/wall';
 import { ROOT, scrubWallEnv } from './helpers';
 
 // The suite must not depend on wall variables exported in the caller's shell.
@@ -138,6 +138,53 @@ describe('MP-37 the route checker', () => {
     const normal = await serve(wallOff(elsewhere.base));
     await check(normal.base, '--expect', 'off');
     expect(normal.log.filter((x) => x.url.startsWith('/_next/data/'))).toEqual([]);
+  });
+
+  it('check-wall needs the wall body under --expect on, not only the wall headers', async () => {
+    const REASON = '(headers say wall, body is not the wall)';
+    // A host that puts the wall's status and headers on whatever the app answered: the
+    // data-shape probes reach the app, whose page or own 503 body comes back under wall headers.
+    const wallHeaders = (r: Response) => { const h: Record<string, string> = {}; r.headers.forEach((v, k) => { h[k] = v; }); return h; };
+    const merged = (body: (u: string) => string) => (m: string, u: string, h: IncomingMessage['headers']) => {
+      const real = wallOn()(m, u, h);
+      if (!h['x-nextjs-data']) return real;
+      return new Response(m === 'HEAD' ? null : body(u), { status: 503, headers: wallHeaders(real) });
+    };
+    for (const [name, body] of [
+      ['an app page', () => '<!doctype html><html><body><h1>Exotiq fleet</h1><p>Book a car</p></body></html>'],
+      ['a different 503 body', () => '{"error":"Email sign-up is not available right now."}'],
+      ['the wall phrase without the wall page', () => 'Booking is paused for maintenance'],
+    ] as const) {
+      const site = await serve(merged(body));
+      const r = await check(site.base, '--expect', 'on');
+      expect(r.code, `${name}: ${r.out}`).toBe(1);
+      const failed = lines(r.out).filter((l) => !l.startsWith('summary:') && / FAIL( |$)/.test(l));
+      expect(failed.map((l) => l.split(' -> ')[0]), name).toEqual([
+        'GET /_next/data/maintenance-wall/exotiq.json (x-nextjs-data: 1)',
+        'GET /_next/data/maintenance-wall/api/renters/capture.json (x-nextjs-data: 1)',
+        'POST /_next/data/maintenance-wall/api/renters/capture.json (x-nextjs-data: 1)',
+      ]);
+      for (const l of failed) expect(l, name).toMatch(/ 503 retry-after=1800 marker=on FAIL \(headers say wall, body is not the wall\)$/);
+      expect(summary(r.out)[0], name).toMatch(/^summary: expect on: 3 of 30 FAILED: /);
+    }
+    // The same on an ordinary page route: a 200-style app page under wall headers fails too.
+    const pageMerged = await serve((m, u, h) => {
+      const real = wallOn()(m, u, h);
+      return u === '/privacy' ? new Response('<!doctype html><html><body><h1>Privacy</h1></body></html>', { status: 503, headers: wallHeaders(real) }) : real;
+    });
+    const p = await check(pageMerged.base, '--expect', 'on');
+    expect(p.code).toBe(1);
+    expect(lines(p.out).filter((l) => !l.startsWith('summary:') && / FAIL( |$)/.test(l))).toEqual([`GET /privacy -> 503 retry-after=1800 marker=on FAIL ${REASON}`]);
+    // A host that appends its own markup after the wall document (a preview snippet) still passes:
+    // the wall is matched on contained text, not on byte equality.
+    const appended = await serve((m, u, h) => {
+      const real = wallOn()(m, u, h);
+      if (m === 'HEAD' || !(real.headers.get('content-type') ?? '').startsWith('text/html')) return real;
+      return new Response(`${renderWallHtml()}<script src="/.netlify/scripts/cdp" async></script>\n`, { status: 503, headers: wallHeaders(real) });
+    });
+    const a = await check(appended.base, '--expect', 'on');
+    expect(a.code, a.out).toBe(0);
+    expect(summary(a.out)[0]).toMatch(/^summary: expect on: 30 asserted, all OK$/);
   });
 
   it('check-wall passes a wall-off server with --expect off', async () => {
