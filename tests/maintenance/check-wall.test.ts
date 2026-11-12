@@ -159,6 +159,35 @@ describe('MP-37 the route checker', () => {
     expect(summary(h.out)[0]).toMatch(/: 1 of \d+ FAILED: GET \/terms$/);
   });
 
+  it('check-wall needs all three of 503, Retry-After and the marker for --expect on', async () => {
+    const failing = (out: string) => lines(out).filter((l) => / FAIL( |$)/.test(l) && !l.startsWith('summary:'));
+    // An ordinary outage or a host error page: 503 and Retry-After everywhere, but no wall marker.
+    const outage = await serve(() => new Response('Service Unavailable', { status: 503, headers: { 'retry-after': '120' } }));
+    const a = await check(outage.base, '--expect', 'on');
+    expect(a.code, a.out).toBe(1);
+    expect(failing(a.out).length).toBe(27);
+    expect(lines(a.out).find((l) => l.startsWith('GET /privacy -> '))).toBe('GET /privacy -> 503 retry-after=120 marker=- FAIL');
+    expect(summary(a.out)[0]).toMatch(/^summary: expect on: 27 of 27 FAILED: /);
+    // The same outage under --expect off: no wall marker anywhere, but the four core pages fail.
+    const b = await check(outage.base, '--expect', 'off');
+    expect(b.code, b.out).toBe(1);
+    expect(lines(b.out).filter((l) => / marker=on /.test(l))).toEqual([]);
+    expect(failing(b.out).map((l) => l.split(' ')[1]).sort()).toEqual(['/', '/privacy', '/robots.txt', '/terms']);
+    expect(summary(b.out)[0]).toMatch(/^summary: expect off: 4 of \d+ FAILED: /);
+    // The marker with status 200 is not the wall.
+    const ok200 = await serve(() => new Response('ok', { status: 200, headers: { 'x-exotiq-maintenance': 'on', 'retry-after': '1800' } }));
+    const c = await check(ok200.base, '--expect', 'on');
+    expect(c.code, c.out).toBe(1);
+    expect(lines(c.out).find((l) => l.startsWith('GET /privacy -> '))).toBe('GET /privacy -> 200 retry-after=1800 marker=on FAIL');
+    expect(summary(c.out)[0]).toMatch(/^summary: expect on: 27 of 27 FAILED: /);
+    // 503 and the marker without Retry-After is not the wall either.
+    const noRetry = await serve(() => new Response('x', { status: 503, headers: { 'x-exotiq-maintenance': 'on' } }));
+    const d = await check(noRetry.base, '--expect', 'on');
+    expect(d.code, d.out).toBe(1);
+    expect(lines(d.out).find((l) => l.startsWith('GET /privacy -> '))).toBe('GET /privacy -> 503 retry-after=- marker=on FAIL');
+    expect(summary(d.out)[0]).toMatch(/^summary: expect on: 27 of 27 FAILED: /);
+  });
+
   it('check-wall fails a wall-off server with --expect on and a wall-on server with --expect off', async () => {
     const off = await serve(wallOff(elsewhere.base));
     const on = await serve(wallOn());
