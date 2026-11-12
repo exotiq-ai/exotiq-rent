@@ -17,8 +17,9 @@ scrubWallEnv();
 const run = promisify(execFile);
 const SCRIPT = path.join(ROOT, 'scripts/maintenance/check-wall.mjs');
 const IMAGE_PROBE = '/_next/image?url=%2Ficon-192.png&w=640&q=75';
-// The remote source the image probes ask for: a reserved name that cannot resolve.
-const REMOTE_IMG = 'https%3A%2F%2Fexample.invalid%2Fx.png';
+// The remote source the image probes ask for: a public stock photo on a host the NORMAL site's image
+// allow-list admits, so a wall build that still carries that allow-list would fetch it.
+const REMOTE_IMG = 'https%3A%2F%2Fimages.unsplash.com%2Fphoto-1503376780353-7e6692767b70';
 const IMAGE_PROBES = [`GET /_next/data/maintenance-wall/_next/image.json?url=${REMOTE_IMG}&w=64&q=75 (x-nextjs-data: 1)`, `GET /_next/image?url=${REMOTE_IMG}&w=64&q=75`];
 
 type Seen = { method: string; url: string; host: string; contentType: string; authorization: string; bodyLength: number };
@@ -191,7 +192,7 @@ describe('MP-37 the route checker', () => {
   });
 
   it('check-wall fails --expect on when the image optimizer serves a remote source', async () => {
-    const isRemoteImage = (u: string) => u.includes('_next/image') && u.includes('example.invalid');
+    const isRemoteImage = (u: string) => u.includes('_next/image') && u.includes('images.unsplash.com');
     // A host whose optimizer fetched the remote source: image bytes for both image probes.
     const fetched = await serve((m, u, h) => (isRemoteImage(u) ? new Response(new Uint8Array([0x89, 0x50, 0x4e, 0x47]), { status: 200, headers: { 'content-type': 'image/png' } }) : wallOn()(m, u, h)));
     const a = await check(fetched.base, '--expect', 'on');
@@ -218,7 +219,28 @@ describe('MP-37 the route checker', () => {
     // Under --expect off the image probes are not sent.
     const normal = await serve(wallOff(elsewhere.base));
     await check(normal.base, '--expect', 'off');
-    expect(normal.log.filter((x) => x.url.includes('example.invalid'))).toEqual([]);
+    expect(normal.log.filter((x) => x.url.includes('images.unsplash.com'))).toEqual([]);
+  });
+
+  it('check-wall fails a superseded wall build that still carries the image allow-list', async () => {
+    // Models the wall build before the image fix: its optimizer still has the normal allow-list, so it
+    // refuses a host that is not on it (400) but fetches and serves an image from a host that is.
+    const superseded = await serve((m, u, h) => {
+      if (u.includes('_next/image')) {
+        if (u.includes('images.unsplash.com')) return new Response(new Uint8Array([0xff, 0xd8, 0xff, 0xe0]), { status: 200, headers: { 'content-type': 'image/jpeg' } });
+        return new Response('"url" parameter is not allowed', { status: 400 });
+      }
+      return wallOn()(m, u, h);
+    });
+    const r = await check(superseded.base, '--expect', 'on');
+    expect(r.code, r.out).toBe(1);
+    const failed = lines(r.out).filter((l) => !l.startsWith('summary:') && / FAIL( |$)/.test(l));
+    expect(failed.map((l) => l.split(' -> ')[0])).toEqual(IMAGE_PROBES);
+    for (const l of failed) expect(l).toMatch(/ -> 200 retry-after=- marker=- FAIL \(the image optimizer fetched a remote source\)$/);
+    expect(summary(r.out)[0]).toMatch(/^summary: expect on: 2 of 32 FAILED: /);
+    // The probes name the allowed stock-photo host, not a name no allow-list contains.
+    expect(superseded.log.filter((x) => x.url.includes('_next/image') && x.url.includes('images.unsplash.com')).length).toBe(2);
+    expect(superseded.log.filter((x) => x.url.includes('example.invalid'))).toEqual([]);
   });
 
   it('check-wall passes a wall-off server with --expect off', async () => {

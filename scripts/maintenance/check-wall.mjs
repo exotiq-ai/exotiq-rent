@@ -17,10 +17,12 @@
 //               503 itself. So an off pass means the wall is gone and the four core pages answer.
 // --expect on also sends three data-request probes: the shape a host may hand past the middleware
 // straight to the app (header x-nextjs-data: 1, the wall build's fixed build id maintenance-wall).
-// It also sends two image probes with a remote source on a reserved name that cannot resolve
-// (https://example.invalid/x.png), through the data path and plainly: each answer must be the wall,
-// or a refusal (status 400 or above and no image); image bytes mean the image optimizer fetched a
-// remote source. None of these probes is sent under --expect off.
+// It also sends two image probes, through the data path and plainly, for a public stock photo on a
+// host the NORMAL site's image allow-list admits (images.unsplash.com). A wall build allows no remote
+// source, so each answer must be the wall, or a refusal (status 400 or above and no image); image
+// bytes mean the image optimizer fetched a remote source, which is what an older wall build that
+// still carries the normal allow-list does (a name no allow-list contains would be refused there too
+// and would not tell the two apart). None of these probes is sent under --expect off.
 //
 // --expect on sends empty POSTs to the capture route and to the capture route's data path, so point
 // it only at a deploy that is meant to be a wall, or at a local server; never at a normal live site.
@@ -110,8 +112,8 @@ const DATA_PROBES = [
   { method: 'GET', path: '/_next/data/maintenance-wall/api/renters/capture.json', headers: DATA_HEADERS },
   { method: 'POST', path: '/_next/data/maintenance-wall/api/renters/capture.json', headers: { ...DATA_HEADERS, 'Content-Type': 'text/plain' }, body: '' },
 ].map((r) => ({ ...r, label: `${r.path} (x-nextjs-data: 1)` }));
-/** Under --expect on only: the image optimizer asked for a remote source that cannot resolve. */
-const REMOTE_IMAGE = 'https%3A%2F%2Fexample.invalid%2Fx.png';
+/** Under --expect on only: the image optimizer asked for a remote source the normal site allows. */
+const REMOTE_IMAGE = 'https%3A%2F%2Fimages.unsplash.com%2Fphoto-1503376780353-7e6692767b70';
 const IMAGE_PROBES = [
   { method: 'GET', path: `/_next/data/maintenance-wall/_next/image.json?url=${REMOTE_IMAGE}&w=64&q=75`, headers: DATA_HEADERS, tag: ' (x-nextjs-data: 1)' },
   { method: 'GET', path: `/_next/image?url=${REMOTE_IMAGE}&w=64&q=75`, tag: '' },
