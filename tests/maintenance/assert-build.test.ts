@@ -2,8 +2,10 @@
 // files the middleware manifest lists carry the wall's marker header name) and compares that with
 // MAINTENANCE_MODE. It fails, in one plain sentence, when they disagree in either direction, when
 // the wall is wanted but the build's middleware is not the wall, or when the manifest or a file it
-// lists cannot be read. A non-wall middleware in a normal build is fine. Each case runs the real
-// script as a child process in a temporary directory that holds only that build variant.
+// lists cannot be read. A non-wall middleware in a normal build is fine. It also reads the app
+// routes manifest: a wall build must hold the wall's catch-all route and nothing else but the
+// static icons and Next's own not-found page; a normal build must not hold the catch-all. Each case
+// runs the real script as a child process in a temporary directory that holds only that variant.
 import { execFile } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -28,14 +30,28 @@ const FILES = ['server/edge-runtime-webpack.js', 'server/middleware.js'];
 const WALL_JS = '(self._ENTRIES=self._ENTRIES||{}).middleware_middleware=function(){let t=new Headers({"Retry-After":"1800","X-Exotiq-Maintenance":"on"});return new Response(null,{status:503,headers:t})};';
 const OTHER_JS = '(self._ENTRIES=self._ENTRIES||{}).middleware_middleware=function(){return new Response(null,{headers:{"x-middleware-next":"1"}})};';
 
+const APP = '.next/app-path-routes-manifest.json';
+// What a wall build's app routes manifest holds: the catch-all, the static icons, Next's not-found.
+const WALL_ROUTES = { '/[[...wall]]/route': '/[[...wall]]', '/apple-icon.png/route': '/apple-icon.png', '/icon.svg/route': '/icon.svg', '/favicon.ico/route': '/favicon.ico', '/_not-found/page': '/_not-found' };
+// A few of a normal build's routes.
+const NORMAL_ROUTES = { '/page': '/', '/privacy/page': '/privacy', '/api/renters/capture/route': '/api/renters/capture', '/icon.svg/route': '/icon.svg', '/_not-found/page': '/_not-found' };
+const routes = (r: Record<string, string>) => JSON.stringify(r);
+const WALL_MW = { [MANIFEST]: manifest(FILES), '.next/server/edge-runtime-webpack.js': 'var runtime=1;', '.next/server/middleware.js': WALL_JS };
+const NO_MW = { [MANIFEST]: manifest(null) };
+
 const BUILDS: Record<string, Build> = {
-  none: { [MANIFEST]: manifest(null) },
-  wall: { [MANIFEST]: manifest(FILES), '.next/server/edge-runtime-webpack.js': 'var runtime=1;', '.next/server/middleware.js': WALL_JS },
-  other: { [MANIFEST]: manifest(FILES), '.next/server/edge-runtime-webpack.js': 'var runtime=1;', '.next/server/middleware.js': OTHER_JS },
-  listedFileMissing: { [MANIFEST]: manifest(FILES), '.next/server/edge-runtime-webpack.js': 'var runtime=1;' },
+  none: { ...NO_MW, [APP]: routes(NORMAL_ROUTES) },
+  wall: { ...WALL_MW, [APP]: routes(WALL_ROUTES) },
+  other: { [MANIFEST]: manifest(FILES), '.next/server/edge-runtime-webpack.js': 'var runtime=1;', '.next/server/middleware.js': OTHER_JS, [APP]: routes(NORMAL_ROUTES) },
+  listedFileMissing: { [MANIFEST]: manifest(FILES), '.next/server/edge-runtime-webpack.js': 'var runtime=1;', [APP]: routes(NORMAL_ROUTES) },
   noManifest: {},
-  unparsable: { [MANIFEST]: '{not json' },
-  noMiddlewareKey: { [MANIFEST]: '{"version":3}' },
+  unparsable: { [MANIFEST]: '{not json', [APP]: routes(NORMAL_ROUTES) },
+  noMiddlewareKey: { [MANIFEST]: '{"version":3}', [APP]: routes(NORMAL_ROUTES) },
+  wallWithAppRoutes: { ...WALL_MW, [APP]: routes({ ...WALL_ROUTES, '/privacy/page': '/privacy', '/api/renters/capture/route': '/api/renters/capture' }) },
+  wallWithoutCatchAll: { ...WALL_MW, [APP]: routes({ '/icon.svg/route': '/icon.svg', '/_not-found/page': '/_not-found' }) },
+  normalWithCatchAll: { ...NO_MW, [APP]: routes({ ...NORMAL_ROUTES, '/[[...wall]]/route': '/[[...wall]]' }) },
+  appManifestMissing: { ...NO_MW },
+  appManifestUnparsable: { ...WALL_MW, [APP]: '{not json' },
 };
 
 const temps: string[] = [];
@@ -78,7 +94,7 @@ describe('MP-37 the build tripwire', () => {
   it('tripwire passes when the wall is wanted and a middleware is present', async () => {
     const r = await tripwire('wanted + wall built', 'on', 'wall');
     expect(r.code).toBe(0);
-    expect(r.lines).toEqual(['[maintenance] tripwire ok: the wall was wanted and the wall middleware was built.']);
+    expect(r.lines).toEqual(['[maintenance] tripwire ok: the wall was wanted, and the wall middleware and the wall-only app were built.']);
     expect((await tripwire('wanted (TRUE) + wall built', ' TRUE ', 'wall')).code).toBe(0);
   });
 
@@ -121,7 +137,35 @@ describe('MP-37 the build tripwire', () => {
     }
   });
 
+  it('tripwire fails when a wall build still contains application routes', async () => {
+    const r = await tripwire('wanted + app routes left', 'on', 'wallWithAppRoutes');
+    expect(r.code).toBe(1);
+    expect(oneSentence(r.lines), r.lines.join('|')).toBe(true);
+    expect(r.lines[0]).toBe('[maintenance] tripwire failed: this wall build still contains application routes (/privacy, /api/renters/capture), so the app behind the wall could still answer.');
+    const n = await tripwire('wanted + no catch-all', 'on', 'wallWithoutCatchAll');
+    expect(n.code).toBe(1);
+    expect(oneSentence(n.lines), n.lines.join('|')).toBe(true);
+    expect(n.lines[0]).toMatch(/has no wall catch-all route/);
+  });
+
+  it('tripwire fails when a normal build contains the wall catch-all route', async () => {
+    for (const mode of [undefined, 'off']) {
+      const r = await tripwire('not wanted + catch-all', mode, 'normalWithCatchAll');
+      expect(r.code, String(mode)).toBe(1);
+      expect(oneSentence(r.lines), r.lines.join('|')).toBe(true);
+      expect(r.lines[0]).toMatch(/contains the wall's catch-all route but MAINTENANCE_MODE does not ask for the wall/);
+    }
+  });
+
   it('tripwire fails when the manifest is missing or unreadable', async () => {
+    for (const build of ['appManifestMissing', 'appManifestUnparsable'] as const) {
+      for (const mode of ['on', undefined]) {
+        const r = await tripwire('app manifest unreadable', mode, build);
+        expect(r.code, `${build} ${mode}`).toBe(1);
+        expect(oneSentence(r.lines), r.lines.join('|')).toBe(true);
+        expect(r.lines[0]).toMatch(/is missing or unreadable, so this build cannot be checked/);
+      }
+    }
     for (const build of ['noManifest', 'unparsable', 'noMiddlewareKey', 'listedFileMissing'] as const) {
       for (const mode of ['on', undefined]) {
         const r = await tripwire('unreadable', mode, build);

@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
 import { ROOT, exists, read, walkText } from './helpers';
 
 const DOC = 'docs/rent/MAINTENANCE_WALL.md';
-const ALLOWED_PATHS = ['middleware.wall.ts', 'next.config.js', 'package.json', DOC, 'domain/maintenance', 'scripts/maintenance', 'tests/maintenance', 'tests/polish/golden/census.base.json'];
+const ALLOWED_PATHS = ['middleware.wall.ts', 'app/[[...wall]]', 'next.config.js', 'package.json', DOC, 'domain/maintenance', 'scripts/maintenance', 'tests/maintenance', 'tests/polish/golden/census.base.json'];
 const BASE_REF = process.env.MP37_BASE_REF ?? '';
 const PR_TEXTS = (process.env.MP37_PR_TEXTS ?? '').split(':').filter(Boolean);
 // The commit attribution trailer is the one address outside exotiq.ai a commit message may carry.
@@ -34,8 +34,14 @@ const TOPICS: [string, RegExp[]][] = [
   ['the wall is per site', [/per Netlify site/i, /publish it on each site/i]],
   ['the variable must be in the build environment', [/build's environment/i, /env file/i]],
   ['which methods answer the wall', [/GET, HEAD, POST, PUT, PATCH, DELETE(,| and) OPTIONS/, /TRACE/, /over-long URL/i, /reach no application code/i]],
-  ['image paths', [/on Netlify every path tried, including static files and the image paths, answered the wall/i, /`next start` server handles `\/_next\/image` before the wall/]],
-  ['font fetch at build time', [/fonts from Google/i, /failed build publishes nothing/i]],
+  ['image paths', [/every\s+page,\s+API\s+route,\s+static\s+file\s+and\s+image\s+path\s+tried\s+answered\s+the\s+wall/i, /`next start` server handles `\/_next\/image` before the wall/]],
+  ['the Netlify exceptions', [/`x-nextjs-data: 1`/, /with\s+a\s+wrong\s+build\s+id\s+it\s+answers\s+a\s+404\s+from\s+an\s+app\s+that\s+holds\s+nothing\s+but\s+the\s+wall/i, /`\/\.netlify\/scripts\/cdp`/, /answers\s+200\s+on\s+every\s+deploy/i, /nothing\s+a\s+renter\s+can\s+use/i, /as\s+measured\s+at\s+rehearsal/i]],
+  ['two layers', [/two\s+layers/i, /`app\/\[\[\.\.\.wall\]\]\/route\.wall\.ts`/, /holds\s+nothing\s+but\s+the\s+wall/i, /hand(?:s|ed)?\s+past\s+the\s+middleware/i]],
+  ['what a wall build contains', [/no\s+page,\s+layout,\s+route\s+handler\s+or\s+metadata\s+route\s+of\s+the\s+real\s+app/i, /static\s+icon\s+files/i, /fixed\s+build\s+id\s+`maintenance-wall`/]],
+  ['the tripwire checks the routes', [/still\s+contains\s+application\s+routes/i]],
+  ['the checker probes data requests', [/data-request\s+probes/i]],
+  ['wall builds fetch no fonts', [/a\s+wall\s+build\s+fetches\s+no\s+fonts/i]],
+  ['font fetch at build time', [/fonts from Google/i, /failed\s+build\s+publishes\s+nothing/i]],
   ['trailing slash, server by server', [/plain\s+`next start`\s+server\s+a\s+trailing\s+slash\s+path\s+answers\s+a\s+308\s+first\s+and\s+then\s+the\s+wall/i, /on\s+Netlify\s+the\s+rehearsal\s+found\s+the\s+wall\s+answered\s+directly,\s+with\s+no\s+redirect\s+first/i]],
   ['an off pass and the backend', [/off\s+pass\s+does\s+not\s+prove\s+that\s+pages\s+which\s+need\s+the\s+backend\s+are\s+working/i, /storefront\s+line/i]],
 ];
@@ -44,6 +50,11 @@ const RETIRED: [string, RegExp][] = [
   ['every method', /Every method too/],
   ['lines always agree', /they always agree/i],
   ['image cache guess', /may still answer from its own cache/i],
+  ['every path on Netlify', /every path tried/i],
+  ['Next data requests walled without exception', /static\s+files\s+and\s+Next\s+data\s+requests\./],
+  ['the old data-request answer', /answers\s+404\s+with\s+the\s+site's\s+not-found\s+page/i],
+  ['the old unreachable claim', /no\s+booking,\s+payment\s+or\s+form\s+route\s+can\s+be\s+reached/i],
+  ['fonts fail any build', /fails\s+a\s+build,\s+wall\s+or\s+not/i],
   ['308 stated as general', /A trailing slash path such as `\/exotiq\/` first answers a 308|The 308 redirect on trailing slash paths: it happens before the wall/],
 ];
 const retiredProblems = (doc: string) => RETIRED.filter(([, re]) => re.test(doc)).map(([name]) => `still says: ${name}`);

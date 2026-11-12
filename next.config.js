@@ -1,6 +1,7 @@
 // Maintenance wall (MP-37): decided here, once per build. Off (the default), this config is exactly
-// the normal one and no middleware is compiled. On, middleware.wall.ts becomes the middleware and
-// answers every request with the 503 wall page. See docs/rent/MAINTENANCE_WALL.md.
+// the normal one and no middleware is compiled. On, the build is an app that holds nothing but the
+// wall: middleware.wall.ts and app/[[...wall]]/route.wall.ts both answer with the 503 wall page.
+// See docs/rent/MAINTENANCE_WALL.md.
 const wall = require('./domain/maintenance/flags.js').readWall();
 
 /** @type {import('next').NextConfig} */
@@ -59,9 +60,12 @@ const nextConfig = {
   swcMinify: true,
   // Optimize fonts
   reactStrictMode: true,
-  // Wall build only: 'wall.ts' first makes middleware.wall.ts the middleware, and env inlines the two
-  // optional wall values into that bundle (server side only).
-  ...(wall.on ? { pageExtensions: ['wall.ts', 'tsx', 'ts', 'jsx', 'js'], env: wall.env } : {}),
+  // Wall build only: only *.wall.ts(x) files are compiled, so the middleware and the catch-all route
+  // are the whole app (two entries: Next 14.2 fails on a single one); a fixed build id lets the
+  // checker probe the data-request shape; env inlines the two optional wall values (server side only).
+  ...(wall.on
+    ? { pageExtensions: ['wall.ts', 'wall.tsx'], generateBuildId: async () => 'maintenance-wall', env: wall.env }
+    : {}),
 };
 
 module.exports = nextConfig;

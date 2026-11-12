@@ -97,7 +97,7 @@ async function check(base: string, ...args: string[]) {
 }
 const lines = (out: string) => out.trim().split('\n').filter(Boolean);
 const summary = (out: string) => lines(out).filter((l) => l.startsWith('summary:'));
-const LINE = /^(GET|HEAD|POST) \S+(?: \((?:RSC: 1|after \/exotiq\/)\))? -> (?:\d{3}|error) retry-after=\S+ marker=(?:on|-) (OK|FAIL|SEEN)(?: .*)?$/;
+const LINE = /^(GET|HEAD|POST) \S+(?: \((?:RSC: 1|after \/exotiq\/|x-nextjs-data: 1)\))? -> (?:\d{3}|error) retry-after=\S+ marker=(?:on|-) (OK|FAIL|SEEN)(?: .*)?$/;
 
 let elsewhere: { base: string; log: Seen[] };
 beforeAll(async () => {
@@ -118,6 +118,26 @@ describe('MP-37 the route checker', () => {
     expect(body.some((l) => /^GET \/exotiq \(after \/exotiq\/\) -> 503 retry-after=1800 marker=on OK$/.test(l))).toBe(true);
     expect(summary(r.out)).toEqual([expect.stringMatching(/^summary: expect on: \d+ asserted, all OK$/)]);
     console.log(r.out);
+  });
+
+  it('check-wall probes the data-request shape with the fixed build id under --expect on only', async () => {
+    const DATA = ['GET /_next/data/maintenance-wall/exotiq.json', 'GET /_next/data/maintenance-wall/api/renters/capture.json', 'POST /_next/data/maintenance-wall/api/renters/capture.json'];
+    // A site that walls everything except a request carrying x-nextjs-data (what a host may hand past the middleware).
+    const leaky = await serve((m, u, h) => (h['x-nextjs-data'] ? html(200, 'the real page') : wallOn()(m, u, h)));
+    const r = await check(leaky.base, '--expect', 'on');
+    expect(r.code, r.out).toBe(1);
+    expect(lines(r.out).filter((l) => l.endsWith(' FAIL')).map((l) => l.split(' -> ')[0])).toEqual(DATA.map((d) => `${d} (x-nextjs-data: 1)`));
+    expect(summary(r.out)[0]).toBe(`summary: expect on: 3 of 30 FAILED: ${DATA.map((d) => `${d} (x-nextjs-data: 1)`).join(', ')}`);
+    // The probes send the header and the fixed id; the POST is empty text/plain.
+    const sent = leaky.log.filter((x) => x.url.startsWith('/_next/data/'));
+    expect(sent.map((x) => `${x.method} ${x.url}`)).toEqual(DATA);
+    expect(sent.find((x) => x.method === 'POST')).toMatchObject({ contentType: 'text/plain', bodyLength: 0 });
+    // A walled site passes them; under --expect off they are not sent at all.
+    const walled = await serve(wallOn());
+    expect((await check(walled.base, '--expect', 'on')).code).toBe(0);
+    const normal = await serve(wallOff(elsewhere.base));
+    await check(normal.base, '--expect', 'off');
+    expect(normal.log.filter((x) => x.url.startsWith('/_next/data/'))).toEqual([]);
   });
 
   it('check-wall passes a wall-off server with --expect off', async () => {
@@ -157,6 +177,35 @@ describe('MP-37 the route checker', () => {
     const h = await check(half.base, '--expect', 'off');
     expect(h.code).toBe(1);
     expect(summary(h.out)[0]).toMatch(/: 1 of \d+ FAILED: GET \/terms$/);
+  });
+
+  it('check-wall needs all three of 503, Retry-After and the marker for --expect on', async () => {
+    const failing = (out: string) => lines(out).filter((l) => / FAIL( |$)/.test(l) && !l.startsWith('summary:'));
+    // An ordinary outage or a host error page: 503 and Retry-After everywhere, but no wall marker.
+    const outage = await serve(() => new Response('Service Unavailable', { status: 503, headers: { 'retry-after': '120' } }));
+    const a = await check(outage.base, '--expect', 'on');
+    expect(a.code, a.out).toBe(1);
+    expect(failing(a.out).length).toBe(30);
+    expect(lines(a.out).find((l) => l.startsWith('GET /privacy -> '))).toBe('GET /privacy -> 503 retry-after=120 marker=- FAIL');
+    expect(summary(a.out)[0]).toMatch(/^summary: expect on: 30 of 30 FAILED: /);
+    // The same outage under --expect off: no wall marker anywhere, but the four core pages fail.
+    const b = await check(outage.base, '--expect', 'off');
+    expect(b.code, b.out).toBe(1);
+    expect(lines(b.out).filter((l) => / marker=on /.test(l))).toEqual([]);
+    expect(failing(b.out).map((l) => l.split(' ')[1]).sort()).toEqual(['/', '/privacy', '/robots.txt', '/terms']);
+    expect(summary(b.out)[0]).toMatch(/^summary: expect off: 4 of \d+ FAILED: /);
+    // The marker with status 200 is not the wall.
+    const ok200 = await serve(() => new Response('ok', { status: 200, headers: { 'x-exotiq-maintenance': 'on', 'retry-after': '1800' } }));
+    const c = await check(ok200.base, '--expect', 'on');
+    expect(c.code, c.out).toBe(1);
+    expect(lines(c.out).find((l) => l.startsWith('GET /privacy -> '))).toBe('GET /privacy -> 200 retry-after=1800 marker=on FAIL');
+    expect(summary(c.out)[0]).toMatch(/^summary: expect on: 30 of 30 FAILED: /);
+    // 503 and the marker without Retry-After is not the wall either.
+    const noRetry = await serve(() => new Response('x', { status: 503, headers: { 'x-exotiq-maintenance': 'on' } }));
+    const d = await check(noRetry.base, '--expect', 'on');
+    expect(d.code, d.out).toBe(1);
+    expect(lines(d.out).find((l) => l.startsWith('GET /privacy -> '))).toBe('GET /privacy -> 503 retry-after=- marker=on FAIL');
+    expect(summary(d.out)[0]).toMatch(/^summary: expect on: 30 of 30 FAILED: /);
   });
 
   it('check-wall fails a wall-off server with --expect on and a wall-on server with --expect off', async () => {
@@ -215,7 +264,8 @@ describe('MP-37 the route checker', () => {
       expect(site.log.length, mode).toBeGreaterThan(20);
       expect(Array.from(new Set(site.log.map((s) => s.method))).sort(), mode).toEqual(['GET', 'HEAD', 'POST']);
       const posts = site.log.filter((s) => s.method === 'POST');
-      expect(posts, mode).toEqual([{ method: 'POST', url: '/api/renters/capture', host, contentType: 'text/plain', authorization: '', bodyLength: 0 }]);
+      const postUrls = mode === 'on' ? ['/api/renters/capture', '/_next/data/maintenance-wall/api/renters/capture.json'] : ['/api/renters/capture'];
+      expect(posts, mode).toEqual(postUrls.map((url) => ({ method: 'POST', url, host, contentType: 'text/plain', authorization: '', bodyLength: 0 })));
       for (const s of site.log) {
         expect(s.host, s.url).toBe(host);
         expect(s.authorization, s.url).toBe('');

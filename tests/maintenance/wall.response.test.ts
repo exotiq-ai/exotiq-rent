@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { buildWallResponse } from '@/domain/maintenance/wall';
 import { middleware } from '@/middleware.wall';
 import { stripComments } from '../design/lib/scan.mjs';
-import { exists, makeRequest, matrix, read, scrubWallEnv, WALL_JSON, wallHeaderProblems, withoutHeader } from './helpers';
+import { exists, makeRequest, matrix, METHODS, read, scrubWallEnv, WALL_JSON, wallHeaderProblems, withoutHeader } from './helpers';
 
 // The suite must not depend on wall variables exported in the caller's shell.
 scrubWallEnv();
@@ -78,6 +78,30 @@ describe('MP-37 the wall response', () => {
     const head = middleware(new Request('https://book.example.test/exotiq', { method: 'HEAD' }));
     expect(wallHeaderProblems('head', head)).toEqual([]);
     expect(head.body).toBeNull();
+  });
+
+  it('the origin catch-all answers the wall for every method and path class', async () => {
+    // The second layer: in a wall build app/[[...wall]]/route.wall.ts is the only route, so a
+    // request that a host hands past the middleware still gets the wall from the app itself.
+    const route = (await import('@/app/[[...wall]]/route.wall')) as unknown as Record<string, unknown>;
+    expect(route.dynamic).toBe('force-dynamic');
+    const missing = METHODS.filter((m) => typeof route[m] !== 'function');
+    expect(missing).toEqual([]);
+    const p: string[] = [];
+    for (const c of matrix()) {
+      const res = await (route[c.method] as (r: Request) => unknown)(makeRequest(c.method, c.path, c.headers));
+      const label = `${c.method} ${c.label}`;
+      if (!(res instanceof Response)) { p.push(`${label}: no response`); continue; }
+      p.push(...wallHeaderProblems(label, res));
+      if (c.method === 'HEAD' && res.body !== null) p.push(`${label}: HEAD has a body`);
+    }
+    expect(p).toEqual([]);
+    // The data-request shape a host may hand to the origin gets the wall too.
+    const data = await (route.GET as (r: Request) => Response)(makeRequest('GET', '/_next/data/maintenance-wall/exotiq.json', { 'x-nextjs-data': '1' }));
+    expect(wallHeaderProblems('data request', data)).toEqual([]);
+    const source = read('app/[[...wall]]/route.wall.ts');
+    expect(sourceProblems('app/[[...wall]]/route.wall.ts', source, false)).toEqual([]);
+    expect(stripComments(source)).not.toMatch(/MAINTENANCE_/);
   });
 
   it('the middleware never calls next and exports no matcher', () => {
