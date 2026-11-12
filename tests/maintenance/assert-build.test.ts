@@ -30,8 +30,10 @@ async function tripwire(label: string, mode: string | undefined, manifest: strin
     mkdirSync(path.join(dir, '.next', 'server'), { recursive: true });
     writeFileSync(path.join(dir, '.next', 'server', 'middleware-manifest.json'), manifest);
   }
-  const env: NodeJS.ProcessEnv = { PATH: process.env.PATH ?? '' };
-  if (mode !== undefined) env.MAINTENANCE_MODE = mode;
+  // Only PATH and, per case, the wall variable: nothing from the test's own environment leaks in.
+  const vars: Record<string, string> = { PATH: process.env.PATH ?? '' };
+  if (mode !== undefined) vars.MAINTENANCE_MODE = mode;
+  const env = vars as NodeJS.ProcessEnv;
   let code = 0;
   let out = '';
   try {
