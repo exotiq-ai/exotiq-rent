@@ -48,7 +48,7 @@ describe('MP-37 the wall copy', () => {
     expect(timeProblems(renderWallHtml({ backBy: '' }))).toEqual([]);
   });
 
-  it('brand is written Exotiq or exotiq and never ExotIQ', async () => {
+  it('the brand is never written with mixed capitals', async () => {
     const planted = renderWallHtml({ backBy: '' }).replace('Exotiq booking', ['Exot', 'IQ booking'].join(''));
     expect(brandProblems(planted)).toEqual([`brand written ${['Exot', 'IQ'].join('')}`]);
     const html = renderWallHtml({ backBy: '' });

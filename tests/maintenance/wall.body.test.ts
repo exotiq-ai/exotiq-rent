@@ -1,5 +1,5 @@
-// MP-37 AC5 with the driver's ruling: an API path gets the exact JSON body unless the caller asks
-// for HTML (a link clicked in an e-mail does), every other path gets the HTML document, status and
+// MP-37 AC5: an API path gets the exact JSON body unless the request's Accept header asks for
+// text/html (a confirm or unsubscribe link clicked in an e-mail does, and then gets the page), every other path gets the HTML document, status and
 // headers never change with the body, the request body is never read, and nothing from the
 // request (path, query, headers) is reflected into either body.
 import { describe, expect, it } from 'vitest';
