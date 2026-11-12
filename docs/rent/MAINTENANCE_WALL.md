@@ -12,13 +12,15 @@ its config is the same as without this feature.
   requests answer 503 (the few exceptions are listed under "What the wall does not stop").
   GET, HEAD, POST, PUT, PATCH, DELETE and OPTIONS all answer the wall. Odd requests such as TRACE
   or an over-long URL are refused by the server before the wall and reach no application code.
-- On Netlify (as measured at rehearsal) every page, API route, static file and image path tried
-  answered the wall; a plain `next start` server handles `/_next/image` before the wall, and
-  redirects trailing slash paths before the wall too.
+- On Netlify (as measured at rehearsal) every page, booking step, API route, static file and
+  platform image path tried answered the wall, apart from the few paths listed under "What the
+  wall does not stop". A plain `next start` server handles `/_next/image` before the wall (in a
+  wall build it answers 404) and redirects trailing slash paths before the wall too.
 - Headers: `Retry-After`, `Cache-Control: no-store`, `X-Robots-Tag: noindex`,
   `X-Exotiq-Maintenance: on` and a content policy that lets the page load nothing from anywhere.
 - Pages get a small HTML page that loads nothing else (no script, no image, no font, no other
-  request). It tells people not to pay again if they just paid, and gives `support@exotiq.ai`
+  request; on Deploy Preview URLs Netlify appends its own script tag, which the page's content
+  policy blocks). It tells people not to pay again if they just paid, and gives `support@exotiq.ai`
   for help with a current rental.
 - API paths under `/api/` get a short JSON body
   `{"error":"Booking is paused for maintenance. Please try again later.","maintenance":true}`,
@@ -54,8 +56,11 @@ With the wall on, the build is an app that holds nothing but the wall, in two la
 Only files ending in `.wall.ts` or `.wall.tsx` are compiled in a wall build, so it contains no
 page, layout, route handler or metadata route of the real app. What it does contain besides the
 two wall files: the static icon files (`/icon.svg`, `/apple-icon.png`, `/favicon.ico`), the files
-in `public/`, and Next's default 404 page. A wall build also has the fixed build id
-`maintenance-wall` instead of a random one, so the checker can probe the data-request shape.
+in `public/`, Next's default 404 page, and Next's image path. A wall build turns the image
+optimizer off and allows no remote image source (`images.unoptimized`, an empty
+`remotePatterns`), so the image path fetches nothing, from the backend's storage or anywhere else.
+A wall build also has the fixed build id `maintenance-wall` instead of a random one, so the
+checker can probe the data-request shape.
 
 With the wall off, both wall files are ignored: their names are not route or middleware names in
 a normal build, and its routes are the same as without this feature.
@@ -81,8 +86,8 @@ build when that disagrees with the variable: the wall was asked for but no middl
 middleware that is not the wall, was built; or the wall was built although it was not asked for.
 A normal build that has some other middleware is fine. It also reads the app's route list: it
 fails a wall build that still contains application routes (anything besides the catch-all, the
-static icon files and Next's not-found page) or lacks the catch-all, and a normal build that
-contains the catch-all. It prints `[maintenance] tripwire ok: ...`
+static icon files and Next's not-found page) or lacks the catch-all, a wall build whose images
+config still names a remote source, and a normal build that contains the catch-all. It prints `[maintenance] tripwire ok: ...`
 when all is well. Look for that line in the deploy log. If it is missing, the site is building
 with `next build` instead of `npm run build`, and the tripwire did not run.
 
@@ -130,7 +135,12 @@ node scripts/maintenance/check-wall.mjs https://book.exotiq.rent --expect off
   wall's headers on whatever the app answered: a 503 with the right headers and another body fails
   with "headers say wall, body is not the wall". So an on pass means every route answered the wall
   itself, not just its headers. The last line says `summary: expect on: ... all OK` and the exit
-  code is 0.
+  code is 0. It also asks the image path, through the data shape and plainly, for a remote image
+  on a name that cannot resolve; the answer must be the wall or a refusal, never image bytes.
+- `--expect on` sends empty POSTs (to the capture route and to its data path), so point it only
+  at a deploy that is meant to be a wall, or at a local server; never at the normal live site.
+  To imitate a deployed wall locally, build with `MAINTENANCE_MODE=on` and start it with
+  `MAINTENANCE_MODE=on` as well: `next start` reads `next.config.js` again when it starts.
 - `--expect off` passes when no route carries the marker header or the wall page, and the four
   core pages every deployment serves (`/`, `/terms`, `/privacy`, `/robots.txt`) answer below
   400 (the 307 on `/` counts as an answer and is not followed).
@@ -168,12 +178,16 @@ node scripts/maintenance/check-wall.mjs https://book.exotiq.rent --expect off
   measured at rehearsal; the rehearsal of each new wall deploy records what it finds):
   - A hand-made data request: `/_next/data/<build id>/<path>.json` with the header
     `x-nextjs-data: 1`. Netlify hands this shape past the middleware to the app. With the wall
-    build's own id (`maintenance-wall`) it answers the wall from the catch-all; with a wrong
-    build id it answers a 404 from an app that holds nothing but the wall. No page or API route
-    of the real app exists in a wall build, so nothing a renter can use is reached that way.
-  - The static icon files and the files in `public/`: behind the middleware they answer the
-    wall; a request a host hands straight to the app gets the file itself (bytes only, nothing a
-    renter can use).
+    build's own id (`maintenance-wall`) it answers the wall from the catch-all; with any other
+    build id it answers Next's own 404 page, from an app that holds nothing but the wall. No page
+    or API route of the real app exists in a wall build, so nothing a renter can use is reached.
+  - The same data request with the header `x-middleware-prefetch: 1` answers an empty `{}`
+    (Next's prefetch short-cut; no route runs).
+  - Through that data request, only the three icon files (`/icon.svg`, `/apple-icon.png`,
+    `/favicon.ico`) come back as bytes; other `public/` files answered the wall on Netlify.
+  - Next's image path, asked through the data request: the optimizer is off and allows no remote
+    source, so it fetches nothing; it answers the wall or a refusal, never an image from
+    anywhere else.
   - `/.netlify/scripts/cdp`, Netlify's own preview script, answers 200 on every deploy, wall or
     not. It is not application code: nothing a renter can use.
 - On a plain `next start` server, the 308 redirect on trailing slash paths: it comes before the
