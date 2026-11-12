@@ -74,8 +74,10 @@ function staticLeakProblems(nextDir: string, sentinel: string, mode: 'on' | 'off
   if (mode === 'off') {
     if (all.length) p.push(`sentinel found in a wall-off build: ${all.join(', ')}`);
   } else {
-    const elsewhere = all.filter((f) => !f.startsWith('server/') && f !== 'required-server-files.json');
-    if (elsewhere.length) p.push(`sentinel outside server/ and required-server-files.json: ${elsewhere.join(', ')}`);
+    // cache/ is the local webpack build cache: it holds the compiled middleware too, but it is never
+    // served and is not part of the deploy's static output.
+    const elsewhere = all.filter((f) => !f.startsWith('server/') && f !== 'required-server-files.json' && !f.startsWith('cache/'));
+    if (elsewhere.length) p.push(`sentinel outside server/, cache/ and required-server-files.json: ${elsewhere.join(', ')}`);
     if (!all.some((f) => f.startsWith('server/'))) p.push('sentinel not found under server/');
     if (!all.includes('required-server-files.json')) p.push('sentinel not found in required-server-files.json');
   }
@@ -107,7 +109,7 @@ describe('MP-37 built output: the scanners catch planted faults', () => {
     expect(logProblems('[maintenance] wall build: OFF', 'off')).toEqual(['log has no tripwire success line']);
     expect(staticLeakProblems(walled, 'ZZPLANTEDZZ', 'on')).toEqual([
       'static contains the sentinel: chunks/app.js',
-      'sentinel outside server/ and required-server-files.json: static/chunks/app.js',
+      'sentinel outside server/, cache/ and required-server-files.json: static/chunks/app.js',
       'sentinel not found under server/',
       'sentinel not found in required-server-files.json',
     ]);
