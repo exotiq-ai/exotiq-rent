@@ -40,6 +40,7 @@ const TOPICS: [string, RegExp[]][] = [
   ['what a wall build contains', [/no\s+page,\s+layout,\s+route\s+handler\s+or\s+metadata\s+route\s+of\s+the\s+real\s+app/i, /static\s+icon\s+files/i, /fixed\s+build\s+id\s+`maintenance-wall`/]],
   ['the tripwire checks the routes', [/still\s+contains\s+application\s+routes/i]],
   ['the checker probes data requests', [/data-request\s+probes/i]],
+  ['an on pass needs the wall body', [/headers\s+say\s+wall,\s+body\s+is\s+not\s+the\s+wall/, /the\s+wall\s+page's\s+heading/i, /exact\s+wall\s+JSON/i]],
   ['wall builds fetch no fonts', [/a\s+wall\s+build\s+fetches\s+no\s+fonts/i]],
   ['font fetch at build time', [/fonts from Google/i, /failed\s+build\s+publishes\s+nothing/i]],
   ['trailing slash, server by server', [/plain\s+`next start`\s+server\s+a\s+trailing\s+slash\s+path\s+answers\s+a\s+308\s+first\s+and\s+then\s+the\s+wall/i, /on\s+Netlify\s+the\s+rehearsal\s+found\s+the\s+wall\s+answered\s+directly,\s+with\s+no\s+redirect\s+first/i]],

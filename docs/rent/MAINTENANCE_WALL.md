@@ -124,8 +124,13 @@ node scripts/maintenance/check-wall.mjs https://book.exotiq.rent --expect off
   `X-Exotiq-Maintenance: on`. It also sends three data-request probes, the shape a host may hand
   past the middleware: `x-nextjs-data: 1` with the fixed build id `maintenance-wall` (GET
   `/_next/data/maintenance-wall/exotiq.json`, GET and an empty POST to
-  `/_next/data/maintenance-wall/api/renters/capture.json`); each must be the wall too. The last
-  line says `summary: expect on: ... all OK` and the exit code is 0.
+  `/_next/data/maintenance-wall/api/renters/capture.json`); each must be the wall too. Every
+  answer with a body must also be the wall itself (the wall page's heading for a page, the exact
+  wall JSON for an API answer; markup a host appends is tolerated), because a host can put the
+  wall's headers on whatever the app answered: a 503 with the right headers and another body fails
+  with "headers say wall, body is not the wall". So an on pass means every route answered the wall
+  itself, not just its headers. The last line says `summary: expect on: ... all OK` and the exit
+  code is 0.
 - `--expect off` passes when no route carries the marker header or the wall page, and the four
   core pages every deployment serves (`/`, `/terms`, `/privacy`, `/robots.txt`) answer below
   400 (the 307 on `/` counts as an answer and is not followed).
