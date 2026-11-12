@@ -4,7 +4,10 @@
 // request (path, query, headers) is reflected into either body.
 import { describe, expect, it } from 'vitest';
 import { buildWallResponse } from '@/domain/maintenance/wall';
-import { METHODS, ORIGIN, PATH_CLASSES, WALL_JSON, makeRequest, wallHeaderProblems } from './helpers';
+import { makeRequest, METHODS, ORIGIN, PATH_CLASSES, scrubWallEnv, WALL_JSON, wallHeaderProblems } from './helpers';
+
+// The suite must not depend on wall variables exported in the caller's shell.
+scrubWallEnv();
 
 const BROWSER_ACCEPT = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8';
 const isApi = (p: string) => p === '/api' || p.startsWith('/api/');

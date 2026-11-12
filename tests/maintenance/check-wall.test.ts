@@ -9,7 +9,10 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { buildWallResponse } from '@/domain/maintenance/wall';
-import { ROOT } from './helpers';
+import { ROOT, scrubWallEnv } from './helpers';
+
+// The suite must not depend on wall variables exported in the caller's shell.
+scrubWallEnv();
 
 const run = promisify(execFile);
 const SCRIPT = path.join(ROOT, 'scripts/maintenance/check-wall.mjs');
