@@ -33,10 +33,13 @@ All three are server side only and are read when a build is made, never by the b
 ## Decided when a build is made
 
 The wall is decided when the build is made, not per request. `next.config.js` asks
-`domain/maintenance/flags.js` once per build and prints `[maintenance] wall build: ON` or
-`[maintenance] wall build: OFF` in the build log (several times; they always agree). With the
-wall on, `middleware.wall.ts` becomes the middleware and answers every request; with it off that
-file is ignored.
+`domain/maintenance/flags.js`, and during the build it prints `[maintenance] wall build: ON` or
+`[maintenance] wall build: OFF`. With the wall on, `middleware.wall.ts` becomes the middleware and
+answers every request; with it off that file is ignored.
+
+The build log's two lines are the record: the `wall build:` line and the tripwire line below. The
+running site prints nothing about the wall (a server started from a build does not know how that
+build was made), so check a running site with `check-wall.mjs`, never by its logs.
 
 So a wall deploy is built once and then published to turn the wall on. The page text,
 `Retry-After` and the back-by text are fixed into that deploy. Changing any of them means a new
