@@ -3,8 +3,12 @@
 // request on (no next, rewrite or redirect) and exports no matcher, so it matches every path.
 import { describe, expect, it } from 'vitest';
 import { buildWallResponse } from '@/domain/maintenance/wall';
+import { middleware } from '@/middleware.wall';
 import { stripComments } from '../design/lib/scan.mjs';
-import { exists, makeRequest, matrix, read, wallHeaderProblems, withoutHeader } from './helpers';
+import { exists, makeRequest, matrix, read, scrubWallEnv, WALL_JSON, wallHeaderProblems, withoutHeader } from './helpers';
+
+// The suite must not depend on wall variables exported in the caller's shell.
+scrubWallEnv();
 
 const HEADERS = ['retry-after', 'cache-control', 'x-robots-tag', 'x-exotiq-maintenance', 'content-security-policy'];
 
@@ -42,6 +46,38 @@ describe('MP-37 the wall response', () => {
       expect(res.body, c.label).toBeNull();
       expect(await res.text(), c.label).toBe('');
     }
+  });
+
+  it('the middleware file itself answers the wall for every method and path class', async () => {
+    // Problems for a middleware function run over the whole matrix. In Next a middleware that
+    // returns nothing lets the request through, so "no Response" is a failure too.
+    const run = async (fn: (r: Request) => unknown) => {
+      const p: string[] = [];
+      for (const c of matrix()) {
+        const res = await fn(makeRequest(c.method, c.path, c.headers));
+        const label = `${c.method} ${c.label}`;
+        if (!(res instanceof Response)) { p.push(`${label}: no response (passes through)`); continue; }
+        p.push(...wallHeaderProblems(label, res));
+        if (c.method === 'HEAD' && res.body !== null) p.push(`${label}: HEAD has a body`);
+      }
+      return p;
+    };
+    // Planted: a middleware that walls GET only lets every other method through, and is caught.
+    const getOnly = (r: Request) => (r.method === 'GET' ? middleware(r) : undefined);
+    const planted = await run(getOnly);
+    expect(planted.length).toBe(matrix().length - matrix().filter((c) => c.method === 'GET').length);
+    expect(planted[0]).toMatch(/no response \(passes through\)$/);
+    expect(await run(middleware)).toEqual([]);
+    // A page, an API path and a HEAD, spelled out.
+    const page = middleware(new Request('https://book.example.test/exotiq/2017-audi-s8/book'));
+    expect(wallHeaderProblems('page', page)).toEqual([]);
+    expect(page.headers.get('content-type')).toBe('text/html; charset=utf-8');
+    const api = middleware(new Request('https://book.example.test/api/renters/capture', { method: 'POST', body: '{}' }));
+    expect(wallHeaderProblems('api', api)).toEqual([]);
+    expect(await api.text()).toBe(WALL_JSON);
+    const head = middleware(new Request('https://book.example.test/exotiq', { method: 'HEAD' }));
+    expect(wallHeaderProblems('head', head)).toEqual([]);
+    expect(head.body).toBeNull();
   });
 
   it('the middleware never calls next and exports no matcher', () => {

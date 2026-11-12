@@ -13,13 +13,25 @@ function isWallOn(value) {
 }
 
 /**
- * Reads the wall variables once and prints one build-log line saying which build this is.
- * Returns the decision and the two optional values (strings, '' when unset) that next.config.js
- * hands to the middleware bundle.
+ * True while `next build` runs: in the `next build` process itself (its arguments), or in a worker
+ * that Next starts during the build (Next sets NEXT_PHASE to phase-production-build there). Not
+ * for `next start`, `next dev`, `next lint` or a deployed server, which also read next.config.js.
  */
-function readWall(env = process.env) {
+function isBuilding(env, argv) {
+  if (env.NEXT_PHASE === 'phase-production-build') return true;
+  const script = typeof argv[1] === 'string' ? argv[1] : '';
+  return argv[2] === 'build' && /(^|[\\/])next(\.c?js|\.mjs)?$/.test(script);
+}
+
+/**
+ * Reads the wall variables. During a build it prints one build-log line saying which build this
+ * is; anywhere else it prints nothing, because a running server reads the variables from its own
+ * environment and its answer would not describe the build it serves. Returns the decision and the
+ * two optional values (strings, '' when unset) that next.config.js hands to the middleware bundle.
+ */
+function readWall(env = process.env, argv = process.argv) {
   const on = isWallOn(env.MAINTENANCE_MODE);
-  console.log(`[maintenance] wall build: ${on ? 'ON' : 'OFF'}`);
+  if (isBuilding(env, argv)) console.log(`[maintenance] wall build: ${on ? 'ON' : 'OFF'}`);
   return {
     on,
     env: {

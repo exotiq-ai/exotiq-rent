@@ -3,7 +3,10 @@
 // escaped, never truncated.
 import { describe, expect, it } from 'vitest';
 import { backByText, buildWallResponse, renderWallHtml } from '@/domain/maintenance/wall';
-import { WALL_JSON, makeRequest, visibleBlocks } from './helpers';
+import { makeRequest, scrubWallEnv, visibleBlocks, WALL_JSON } from './helpers';
+
+// The suite must not depend on wall variables exported in the caller's shell.
+scrubWallEnv();
 
 const HEADING = 'Booking is paused for maintenance';
 const BODY = 'We are doing planned maintenance on Exotiq booking. You cannot book, pay or change a reservation right now. Please come back a little later.';
@@ -45,7 +48,7 @@ describe('MP-37 the wall copy', () => {
     expect(timeProblems(renderWallHtml({ backBy: '' }))).toEqual([]);
   });
 
-  it('brand is written Exotiq or exotiq and never ExotIQ', async () => {
+  it('the brand is never written with mixed capitals', async () => {
     const planted = renderWallHtml({ backBy: '' }).replace('Exotiq booking', ['Exot', 'IQ booking'].join(''));
     expect(brandProblems(planted)).toEqual([`brand written ${['Exot', 'IQ'].join('')}`]);
     const html = renderWallHtml({ backBy: '' });

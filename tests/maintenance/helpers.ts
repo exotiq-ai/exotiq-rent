@@ -4,6 +4,19 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { afterEach, beforeEach, vi } from 'vitest';
+
+/** The three wall variables. */
+export const WALL_VARS = ['MAINTENANCE_MODE', 'MAINTENANCE_RETRY_AFTER', 'MAINTENANCE_BACK_BY'];
+
+/**
+ * Removes the three wall variables for every test in the calling file, so the suite gives the same
+ * result whatever the caller's shell has exported. Call once at the top level of a test file.
+ */
+export function scrubWallEnv() {
+  beforeEach(() => { for (const name of WALL_VARS) vi.stubEnv(name, undefined); });
+  afterEach(() => { vi.unstubAllEnvs(); });
+}
 
 export const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 export const read = (rel: string) => readFileSync(path.join(ROOT, rel), 'utf8');

@@ -3,7 +3,10 @@
 // error, and it is the same on every method and path class.
 import { describe, expect, it } from 'vitest';
 import { buildWallResponse, retryAfterSeconds } from '@/domain/maintenance/wall';
-import { makeRequest, matrix } from './helpers';
+import { makeRequest, matrix, scrubWallEnv } from './helpers';
+
+// The suite must not depend on wall variables exported in the caller's shell.
+scrubWallEnv();
 
 const ACCEPTED: [string | undefined, number][] = [
   [undefined, 1800],

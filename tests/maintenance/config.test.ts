@@ -47,7 +47,7 @@ afterEach(() => {
 
 /** next.config.js evaluated fresh under `env` (undefined deletes a variable). */
 function loadConfig(env: Record<string, string | undefined>): { config: Config; lines: string[] } {
-  for (const k of [...WALL_VARS, 'NEXT_PUBLIC_SITE_MODE', 'NEXT_PUBLIC_DEFAULT_TEAM_SLUG']) vi.stubEnv(k, undefined);
+  for (const k of [...WALL_VARS, 'NEXT_PUBLIC_SITE_MODE', 'NEXT_PUBLIC_DEFAULT_TEAM_SLUG', 'NEXT_PHASE']) vi.stubEnv(k, undefined);
   for (const [k, v] of Object.entries(env)) vi.stubEnv(k, v);
   delete require.cache[CONFIG];
   delete require.cache[FLAGS];
@@ -92,6 +92,31 @@ function configProblems(config: Config, redirects: { booking?: Redirect[]; marke
     for (const k of envKeys) if (typeof env?.[k] !== 'string') p.push(`env ${k} is not a string`);
   }
   return p;
+}
+
+const BUILD_PHASE = 'phase-production-build';
+const BUILD_ARGV = ['/usr/local/bin/node', '/repo/node_modules/next/dist/bin/next', 'build'];
+const BUILD_ARGV_BIN = ['/usr/local/bin/node', '/repo/node_modules/.bin/next', 'build', '--no-lint'];
+const WORKER_ARGV = ['/usr/local/bin/node', '/repo/node_modules/next/dist/compiled/jest-worker/processChild.js'];
+
+type ReadWall = (env?: Record<string, string | undefined>, argv?: string[]) => { on: boolean };
+/** readWall from a fresh flags.js with an explicit environment and argv, and the lines it printed. */
+function readWallLines(env: Record<string, string | undefined>, argv: string[]) {
+  delete require.cache[FLAGS];
+  const { readWall } = require(FLAGS) as { readWall: ReadWall };
+  const lines: string[] = [];
+  const spy = vi.spyOn(console, 'log').mockImplementation((...a: unknown[]) => { lines.push(a.map(String).join(' ')); });
+  try {
+    return { lines, result: readWall(env, argv) };
+  } finally {
+    spy.mockRestore();
+  }
+}
+
+/** Outside a build, no wall line at all. */
+function silentProblems(lines: string[]): string[] {
+  const wall = lines.filter((l) => l.includes('[maintenance] wall build:'));
+  return wall.length ? [`printed ${JSON.stringify(wall)} outside a build`] : [];
 }
 
 /** The build-log lines printed by one evaluation agree with the parsed value. */
@@ -144,18 +169,38 @@ describe('MP-37 next.config and the wall', () => {
     expect(logProblems(['[maintenance] wall build: OFF', '[maintenance] wall build: OFF'], false)).toEqual([
       '2 wall build lines: ["[maintenance] wall build: OFF","[maintenance] wall build: OFF"]',
     ]);
-    for (const v of ON_VALUES) expect(logProblems(loadConfig({ MAINTENANCE_MODE: v }).lines, true), JSON.stringify(v)).toEqual([]);
-    for (const v of OFF_VALUES) expect(logProblems(loadConfig({ MAINTENANCE_MODE: v }).lines, false), JSON.stringify(v)).toEqual([]);
-    // The reader on its own prints exactly one line per evaluation too.
-    delete require.cache[FLAGS];
-    const { readWall } = require(FLAGS) as { readWall: (env?: Record<string, string | undefined>) => { on: boolean } };
+    // Through next.config.js, in a build (Next sets NEXT_PHASE in its build workers).
+    for (const v of ON_VALUES) expect(logProblems(loadConfig({ MAINTENANCE_MODE: v, NEXT_PHASE: BUILD_PHASE }).lines, true), JSON.stringify(v)).toEqual([]);
+    for (const v of OFF_VALUES) expect(logProblems(loadConfig({ MAINTENANCE_MODE: v, NEXT_PHASE: BUILD_PHASE }).lines, false), JSON.stringify(v)).toEqual([]);
+    // The reader on its own, in the `next build` process itself (arguments) and in a build worker (phase).
     for (const v of [...ON_VALUES, ...OFF_VALUES]) {
-      const lines: string[] = [];
-      const spy = vi.spyOn(console, 'log').mockImplementation((...a: unknown[]) => { lines.push(a.map(String).join(' ')); });
-      const r = readWall({ MAINTENANCE_MODE: v });
-      spy.mockRestore();
-      expect(logProblems(lines, r.on), JSON.stringify(v)).toEqual([]);
-      expect(r.on).toBe(ON_VALUES.includes(v as string));
+      for (const [env, argv] of [[{}, BUILD_ARGV], [{}, BUILD_ARGV_BIN], [{ NEXT_PHASE: BUILD_PHASE }, WORKER_ARGV]] as const) {
+        const { lines, result } = readWallLines({ ...env, MAINTENANCE_MODE: v }, [...argv]);
+        expect(logProblems(lines, result.on), `${JSON.stringify(v)} ${argv.join(' ')}`).toEqual([]);
+        expect(result.on).toBe(ON_VALUES.includes(v as string));
+      }
+    }
+  });
+
+  it('the flags reader prints nothing outside a build', () => {
+    // Planted: a reader that prints on every evaluation is reported.
+    expect(silentProblems(['[maintenance] wall build: OFF'])).toEqual(['printed ["[maintenance] wall build: OFF"] outside a build']);
+    const outside: [Record<string, string>, string[], string][] = [
+      [{}, ['node', '/repo/node_modules/next/dist/bin/next', 'start', '-p', '4000'], 'next start'],
+      [{}, ['node', '/repo/node_modules/.bin/next', 'dev'], 'next dev'],
+      [{}, ['node', '/repo/node_modules/.bin/next', 'lint'], 'next lint'],
+      [{ NEXT_PHASE: 'phase-production-server' }, ['node', '/var/task/server.js'], 'a deployed server'],
+      [{}, ['node', '/repo/node_modules/vitest/vitest.mjs', 'run'], 'a test run'],
+      [{}, ['node', '/repo/scripts/build.js', 'build'], 'some other script called with build'],
+    ];
+    for (const v of ['on', 'off', undefined]) {
+      for (const [env, argv, name] of outside) {
+        const { lines, result } = readWallLines({ ...env, MAINTENANCE_MODE: v }, argv);
+        expect(silentProblems(lines), `${name} ${v}`).toEqual([]);
+        expect(result.on).toBe(v === 'on');
+      }
+      // Through next.config.js outside a build (this test process is not `next build`).
+      expect(silentProblems(loadConfig({ MAINTENANCE_MODE: v }).lines), String(v)).toEqual([]);
     }
   });
 });
