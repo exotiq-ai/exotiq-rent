@@ -42,11 +42,13 @@ So a wall deploy is built once and then published to turn the wall on. The page 
 `Retry-After` and the back-by text are fixed into that deploy. Changing any of them means a new
 commit, a new deploy and a new check.
 
-After every build, `scripts/maintenance/assert-build.mjs` (the `postbuild` script) fails the build
-if the variable and the built middleware disagree in either direction, and prints
-`[maintenance] tripwire ok: ...` when they agree. Look for that line in the deploy log. If it is
-missing, the site is building with `next build` instead of `npm run build`, and the tripwire did
-not run.
+After every build, `scripts/maintenance/assert-build.mjs` (the `postbuild` script) checks whether
+the wall itself was built (the built middleware carries the wall's marker header) and fails the
+build when that disagrees with the variable: the wall was asked for but no middleware, or a
+middleware that is not the wall, was built; or the wall was built although it was not asked for.
+A normal build that has some other middleware is fine. It prints `[maintenance] tripwire ok: ...`
+when all is well. Look for that line in the deploy log. If it is missing, the site is building
+with `next build` instead of `npm run build`, and the tripwire did not run.
 
 ## The `maintenance-wall` branch and its Deploy Preview
 
