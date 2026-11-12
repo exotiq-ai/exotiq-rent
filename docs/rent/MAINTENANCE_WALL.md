@@ -1,18 +1,18 @@
 # Maintenance wall
 
-The maintenance wall is a special build of this site that answers every request with
-HTTP 503, a `Retry-After` header and a short Exotiq page saying booking is paused for planned
+The maintenance wall is a special build of this site that answers its pages, API routes and files
+with HTTP 503, a `Retry-After` header and a short Exotiq page saying booking is paused for planned
 maintenance. Use it when renters must not be able to quote, book, pay, verify their ID or cancel
 for a while. A normal build is not affected: it compiles no middleware and its config is the
 same as without this feature.
 
 ## What a visitor gets
 
-- Every path answers 503: pages, deep links, API routes, `robots.txt`, the sitemap, icons, static
-  files and Next data requests. GET, HEAD, POST, PUT, PATCH, DELETE and OPTIONS all answer the
-  wall. Odd requests such as TRACE or an over-long URL are refused by the server before the wall
+- Pages, deep links, API routes, `robots.txt`, the sitemap, icons, static files and Next data
+  requests answer 503 (two Netlify exceptions are listed under "What the wall does not stop").
+  GET, HEAD, POST, PUT, PATCH, DELETE and OPTIONS all answer the wall. Odd requests such as TRACE or an over-long URL are refused by the server before the wall
   and reach no application code.
-- On Netlify every path tried, including static files and the image paths, answered the wall; a
+- On Netlify every page, API route, static file and image path tried answered the wall; a
   plain `next start` server handles `/_next/image` before the wall, and redirects trailing slash
   paths before the wall too.
 - Headers: `Retry-After`, `Cache-Control: no-store`, `X-Robots-Tag: noindex`,
@@ -43,7 +43,7 @@ so never set the wall there.
 The wall is decided when the build is made, not per request. `next.config.js` asks
 `domain/maintenance/flags.js`, and during the build it prints `[maintenance] wall build: ON` or
 `[maintenance] wall build: OFF`. With the wall on, `middleware.wall.ts` becomes the middleware and
-answers every request; with it off that file is ignored.
+answers the site's requests; with it off that file is ignored.
 
 The build log's two lines are the record: the `wall build:` line and the tripwire line below. The
 running site prints nothing about the wall (a server started from a build does not know how that
@@ -135,6 +135,15 @@ node scripts/maintenance/check-wall.mjs https://book.exotiq.rent --expect off
   the schedule does not make a request). Plan around its schedule the same way.
 - Payments already completed at the payment provider: they stand. The page tells renters not to
   pay again.
+- Two Netlify paths, measured on the wall deploy. Neither is anything a renter can use:
+  - A hand-made request to `/_next/data/<anything>/<path>.json` that carries the header
+    `x-nextjs-data: 1` answers 404 with the site's not-found page (still with the wall headers);
+    without that header the same URL answers the wall. This app has no routes of that kind,
+    browsers using the site never send that header, and the scripts that page names are
+    themselves walled, so no booking, payment or form route can be reached that way: nothing a
+    renter can use.
+  - `/.netlify/scripts/cdp`, Netlify's own preview script, answers 200 on every deploy, wall or
+    not. It is not application code: nothing a renter can use.
 - On a plain `next start` server, the 308 redirect on trailing slash paths: it comes before the
   wall and serves nothing of the app (on Netlify those paths answered the wall directly).
 

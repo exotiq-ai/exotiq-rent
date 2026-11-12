@@ -34,7 +34,8 @@ const TOPICS: [string, RegExp[]][] = [
   ['the wall is per site', [/per Netlify site/i, /publish it on each site/i]],
   ['the variable must be in the build environment', [/build's environment/i, /env file/i]],
   ['which methods answer the wall', [/GET, HEAD, POST, PUT, PATCH, DELETE(,| and) OPTIONS/, /TRACE/, /over-long URL/i, /reach no application code/i]],
-  ['image paths', [/on Netlify every path tried, including static files and the image paths, answered the wall/i, /`next start` server handles `\/_next\/image` before the wall/]],
+  ['image paths', [/every\s+page,\s+API\s+route,\s+static\s+file\s+and\s+image\s+path\s+tried\s+answered\s+the\s+wall/i, /`next start` server handles `\/_next\/image` before the wall/]],
+  ['the two Netlify exceptions', [/`x-nextjs-data: 1`/, /answers\s+404\s+with\s+the\s+site's\s+not-found\s+page/i, /`\/\.netlify\/scripts\/cdp`/, /answers\s+200\s+on\s+every\s+deploy/i, /nothing\s+a\s+renter\s+can\s+use/i]],
   ['font fetch at build time', [/fonts from Google/i, /failed build publishes nothing/i]],
   ['trailing slash, server by server', [/plain\s+`next start`\s+server\s+a\s+trailing\s+slash\s+path\s+answers\s+a\s+308\s+first\s+and\s+then\s+the\s+wall/i, /on\s+Netlify\s+the\s+rehearsal\s+found\s+the\s+wall\s+answered\s+directly,\s+with\s+no\s+redirect\s+first/i]],
   ['an off pass and the backend', [/off\s+pass\s+does\s+not\s+prove\s+that\s+pages\s+which\s+need\s+the\s+backend\s+are\s+working/i, /storefront\s+line/i]],
@@ -44,6 +45,8 @@ const RETIRED: [string, RegExp][] = [
   ['every method', /Every method too/],
   ['lines always agree', /they always agree/i],
   ['image cache guess', /may still answer from its own cache/i],
+  ['every path on Netlify', /every path tried/i],
+  ['Next data requests walled without exception', /static\s+files\s+and\s+Next\s+data\s+requests\./],
   ['308 stated as general', /A trailing slash path such as `\/exotiq\/` first answers a 308|The 308 redirect on trailing slash paths: it happens before the wall/],
 ];
 const retiredProblems = (doc: string) => RETIRED.filter(([, re]) => re.test(doc)).map(([name]) => `still says: ${name}`);
