@@ -77,6 +77,7 @@ function wallOff(elsewhere: string): Handler {
   return (method, url) => {
     const p = url.split('?')[0];
     if (url === '/exotiq/') return new Response(null, { status: 308, headers: { location: '/exotiq' } });
+    if (p === '/') return new Response(null, { status: 307, headers: { location: '/exotiq' } });
     if (p === '/api/renters/capture') return new Response('{"error":"Email sign-up is not available right now."}', { status: 503, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
     if (p === '/api/renters/confirm' || p === '/api/renters/unsubscribe') return new Response(null, { status: 302, headers: { location: `${elsewhere}/renters/confirmed` } });
     if (p.startsWith('/_next/image')) return new Response('img', { status: 200 });
@@ -128,6 +129,36 @@ describe('MP-37 the route checker', () => {
     expect(summary(r.out)).toEqual([expect.stringMatching(/^summary: expect off: \d+ asserted, all OK$/)]);
   });
 
+  it('check-wall names the core pages and fails --expect off for a site whose core pages do not answer', async () => {
+    const CORE = ['/', '/terms', '/privacy', '/robots.txt'];
+    // Stand-ins for a dead or wrong site: the same answer on every path, never the wall marker.
+    const dead: [string, Handler][] = [
+      ['404 everywhere', () => html(404, 'Not found')],
+      ['401 everywhere', () => new Response('login', { status: 401, headers: { 'www-authenticate': 'Basic' } })],
+      ['500 everywhere', () => html(500, 'Error')],
+      ['bare 503 everywhere', () => new Response('down', { status: 503, headers: { 'retry-after': '1800' } })],
+    ];
+    for (const [name, handler] of dead) {
+      const site = await serve(handler);
+      const r = await check(site.base, '--expect', 'off');
+      expect(r.code, name).toBe(1);
+      const failed = lines(r.out).filter((l) => l.endsWith('(core page did not answer below 400)'));
+      expect(failed.map((l) => l.split(' ')[1]).sort(), name).toEqual(CORE.slice().sort());
+      expect(summary(r.out)[0], name).toMatch(/^summary: expect off: 4 of \d+ FAILED: GET \/, GET \/privacy, GET \/terms, GET \/robots\.txt$/);
+    }
+    // The core set is named in the output; a healthy normal site passes, and its non-core 404s do not count.
+    const ok = await check((await serve(wallOff(elsewhere.base))).base, '--expect', 'off');
+    expect(ok.code, ok.out).toBe(0);
+    expect(lines(ok.out)[0]).toBe('expect off: no route may carry the wall marker or the wall page; the core pages /, /terms, /privacy, /robots.txt must also answer below 400');
+    expect(lines(ok.out).find((l) => l.startsWith('GET /definitely-not-a-page -> 404 '))).toMatch(/ OK$/);
+    expect(lines(ok.out).find((l) => l.startsWith('GET / -> 307 '))).toMatch(/ OK location=\/exotiq$/);
+    // Only one core page down: exactly that one fails.
+    const half = await serve((m, u) => (u === '/terms' ? html(404, 'gone') : wallOff(elsewhere.base)(m, u, {})));
+    const h = await check(half.base, '--expect', 'off');
+    expect(h.code).toBe(1);
+    expect(summary(h.out)[0]).toMatch(/: 1 of \d+ FAILED: GET \/terms$/);
+  });
+
   it('check-wall fails a wall-off server with --expect on and a wall-on server with --expect off', async () => {
     const off = await serve(wallOff(elsewhere.base));
     const on = await serve(wallOn());
@@ -162,6 +193,13 @@ describe('MP-37 the route checker', () => {
     const b = await check(plain.base, '--expect', 'on');
     expect(b.code).toBe(1);
     expect(summary(b.out)[0]).toMatch(/FAILED: GET \/exotiq\/$/);
+
+    // An unparsable Location is a FAIL line, not a crash.
+    const broken = await serve(wallOn({ slash: () => new Response(null, { status: 308, headers: { location: 'http://[bad' } }) }));
+    const c = await check(broken.base, '--expect', 'on');
+    expect(c.code).toBe(1);
+    expect(c.err).not.toMatch(/TypeError|at main/);
+    expect(summary(c.out)[0]).toMatch(/FAILED: GET \/exotiq\/$/);
 
     // A trailing-slash shape that is walled at once (no redirect) passes.
     const direct = await serve(wallOn({ slash: (u) => buildWallResponse(new Request(`http://127.0.0.1${u}`)) }));

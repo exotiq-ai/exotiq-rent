@@ -6,8 +6,11 @@
 // Requests a fixed list of routes on <base-url> and prints one line per request:
 //   <METHOD> <path> -> <status> retry-after=<value|-> marker=<on|-> OK|FAIL|SEEN
 // --expect on:  every asserted route must answer 503 with Retry-After and X-Exotiq-Maintenance: on.
-// --expect off: no asserted route may carry X-Exotiq-Maintenance or the wall page. Status is not
-//               used, because a normal site can answer 503 for its own reasons.
+// --expect off: no asserted route may carry X-Exotiq-Maintenance or the wall page, AND the four core
+//               pages every deployment serves (/, /terms, /privacy, /robots.txt) must answer below
+//               400 (the 307 on / is not followed). Other routes are not judged by status: some are
+//               switched off per site, some are meant to be missing, and the capture route can answer
+//               503 itself. So an off pass means the wall is gone and the four core pages answer.
 // Exit 0 when every asserted route passes, 1 otherwise (the last line names the failures), 2 for a
 // usage error.
 //
@@ -81,6 +84,8 @@ const ROUTES = [
   { method: 'HEAD', path: '/exotiq', label: '/exotiq' },
   { method: 'POST', path: '/api/renters/capture', label: '/api/renters/capture', headers: { 'Content-Type': 'text/plain' }, body: '' },
 ];
+/** Under --expect off these must also answer below 400 (GET, no extra headers). */
+const CORE_PAGES = ['/', '/terms', '/privacy', '/robots.txt'];
 const SLASH_PROBE = '/exotiq/';
 const IMAGE_PROBE = '/_next/image?url=%2Ficon-192.png&w=640&q=75';
 
@@ -104,6 +109,8 @@ async function send(origin, { method, path, headers = {}, body }) {
 
 const isWall = (r) => r.code === 503 && r.retryAfter !== null && r.marker === 'on';
 const isNormal = (r) => !r.error && r.marker === null && !r.text.includes(WALL_TEXT);
+const isCore = (route) => route.method === 'GET' && !route.headers && CORE_PAGES.includes(route.path);
+const answers = (r) => r.code > 0 && r.code < 400;
 
 function line(method, label, r, verdict) {
   let s = `${method} ${label} -> ${r.status} retry-after=${r.retryAfter ?? '-'} marker=${r.marker === 'on' ? 'on' : '-'} ${verdict}`;
@@ -117,11 +124,18 @@ async function main() {
   const pass = expect === 'on' ? isWall : isNormal;
   const failed = [];
   let asserted = 0;
+  if (expect === 'off') {
+    console.log(`expect off: no route may carry the wall marker or the wall page; the core pages ${CORE_PAGES.join(', ')} must also answer below 400`);
+  }
 
   for (const route of ROUTES) {
     const r = await send(origin, route);
     asserted++;
-    const ok = pass(r);
+    let ok = pass(r);
+    if (ok && expect === 'off' && isCore(route) && !answers(r)) {
+      ok = false;
+      r.error = 'core page did not answer below 400';
+    }
     if (!ok) failed.push(`${route.method} ${route.label}`);
     line(route.method, route.label, r, ok ? 'OK' : 'FAIL');
   }
@@ -135,8 +149,16 @@ async function main() {
     asserted++;
     if (isWall(first)) line('GET', SLASH_PROBE, first, 'OK');
     else if (first.code >= 300 && first.code < 400 && first.location) {
-      const target = new URL(first.location, origin);
-      if (target.origin !== origin) {
+      let target = null;
+      try {
+        target = new URL(first.location, origin);
+      } catch {
+        target = null;
+      }
+      if (!target) {
+        line('GET', SLASH_PROBE, { ...first, error: 'unparsable redirect, not followed' }, 'FAIL');
+        failed.push(`GET ${SLASH_PROBE}`);
+      } else if (target.origin !== origin) {
         line('GET', SLASH_PROBE, { ...first, error: 'redirect to another host, not followed' }, 'FAIL');
         failed.push(`GET ${SLASH_PROBE}`);
       } else {

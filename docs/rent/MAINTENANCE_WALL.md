@@ -68,9 +68,12 @@ wall deploy has been checked: a push makes a new deploy that has not been checke
    booking site right now.
 2. Raise it: in Netlify, publish the wall deploy (the checked Deploy Preview of the
    `maintenance-wall` pull request). Publishing a deploy by hand locks auto publishing on that
-   site.
+   site. Then run the checker with `--expect on`.
 3. Lower it: publish the normal deploy (the restore point recorded in step 1, or a newer normal
-   deploy if one was planned), then unlock auto publishing.
+   deploy if one was planned), then unlock auto publishing. Then run the checker with
+   `--expect off`.
+
+Run the check after each publish step, not only once.
 
 No variable on the production site is changed for any of this.
 
@@ -87,8 +90,12 @@ node scripts/maintenance/check-wall.mjs https://book.exotiq.rent --expect off
 - `--expect on` passes when every route answers 503 with `Retry-After` and
   `X-Exotiq-Maintenance: on`. The last line says `summary: expect on: ... all OK` and the exit
   code is 0.
-- `--expect off` passes when no route carries the marker header or the wall page. It does not look
-  at status, because the normal site can answer 503 for its own reasons.
+- `--expect off` passes when no route carries the marker header or the wall page, and the four
+  core pages every deployment serves (`/`, `/terms`, `/privacy`, `/robots.txt`) answer below
+  400 (the 307 on `/` counts as an answer and is not followed). An off pass means the wall is
+  gone and the four core pages answer. Other routes are not judged by status: some pages are
+  switched off per site (they answer 404 by design), storefront pages depend on which tenant a
+  site serves, and the e-mail capture route can answer 503 itself when it is not configured.
 - It sends only requests that cannot write: GET and HEAD, plus one POST to the e-mail capture
   route with an empty `text/plain` body, which that route refuses before reading anything. It
   sends no token and talks to the one host it is given.
