@@ -62,9 +62,16 @@ const nextConfig = {
   reactStrictMode: true,
   // Wall build only: only *.wall.ts(x) files are compiled, so the middleware and the catch-all route
   // are the whole app (two entries: Next 14.2 fails on a single one); a fixed build id lets the
-  // checker probe the data-request shape; env inlines the two optional wall values (server side only).
+  // checker probe the data-request shape; env inlines the two optional wall values (server side only);
+  // images allow no remote source at all and turn the optimizer off (it then answers 404 and fetches
+  // nothing), so a request that reaches it cannot make the wall deploy fetch from anywhere.
   ...(wall.on
-    ? { pageExtensions: ['wall.ts', 'wall.tsx'], generateBuildId: async () => 'maintenance-wall', env: wall.env }
+    ? {
+        pageExtensions: ['wall.ts', 'wall.tsx'],
+        generateBuildId: async () => 'maintenance-wall',
+        env: wall.env,
+        images: { unoptimized: true, remotePatterns: [] },
+      }
     : {}),
 };
 
