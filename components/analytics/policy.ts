@@ -10,7 +10,7 @@ export const DENIED: Consent = { analytics: false, marketing: false };
  * honored indefinitely. Revisit before serving EU/UK traffic — those
  * jurisdictions require opt-in. */
 export const DEFAULT_CONSENT: Consent = { analytics: true, marketing: true };
-export const EVENTS = ['browse_view', 'storefront_view', 'vehicle_view', 'book_start', 'book_step', 'booking_created', 'confirmation_view', 'favourite_added', 'capture_start', 'capture_sent', 'alert_created', 'saved_view', 'booking_request_failed', 'checkout_started'] as const;
+export const EVENTS = ['browse_view', 'storefront_view', 'vehicle_view', 'book_start', 'book_step', 'booking_created', 'confirmation_view', 'favourite_added', 'capture_start', 'capture_sent', 'alert_created', 'saved_view', 'booking_request_failed', 'checkout_started', 'facet_applied'] as const;
 export type FunnelEvent = typeof EVENTS[number];
 // fbclid joins the whitelist so a PostHog session can be tied back to the Meta
 // click that bought it; the pixel reads the live URL itself and never needed it.
@@ -70,6 +70,7 @@ export function sanitizeProperties(event: string, props: Record<string, unknown>
   if (event === 'book_step' && Number.isInteger(props.step) && Number(props.step) >= 1 && Number(props.step) <= 10) out.step = props.step;
   if (event === 'booking_request_failed' && ['network', 'validation', 'unavailable', 'server', 'unknown'].includes(String(props.reason))) out.reason = props.reason;
   if (event === 'booking_created' && typeof props.event_id === 'string' && /^booking_created_[a-f0-9-]{36}$/i.test(props.event_id)) out.event_id = props.event_id;
+  if (event === 'facet_applied' && ['sort', 'dates', 'make', 'band'].includes(String(props.facet))) out.facet = props.facet;
   return out;
 }
 export function sanitizeUrl(value: unknown): string | undefined {

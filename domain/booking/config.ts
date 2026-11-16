@@ -36,6 +36,17 @@ export function browseEnabled(): boolean {
 }
 
 /**
+ * Tenant storefront facets (MP-36): the Make / Type / Daily-rate rows and the phone "Filters & sort" sheet in
+ * components/browse/FilterBar.tsx render only when this is exactly 'on'. Absent, empty or anything else (the
+ * default on both Netlify sites) keeps the Dates row and the inline Sort row. A literal NEXT_PUBLIC_* read, so
+ * Next inlines it at build time; the server page passes it to the bar as a prop and the client component never
+ * reads env. Not gated on site mode: marketplace-mode deploys already 404 the storefront route.
+ */
+export function storefrontFacetsEnabled(): boolean {
+  return process.env.NEXT_PUBLIC_STOREFRONT_FACETS === 'on';
+}
+
+/**
  * Where a failure surface (the 404, the error boundary) sends the renter (MP-18, lifted from the
  * 404). Tenant-neutral (T-8): booking mode lands on the default tenant's storefront through the
  * same env the root redirect uses, never the mock tenant's slug; "Continue browsing", not "Browse

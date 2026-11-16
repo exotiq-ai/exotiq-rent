@@ -11,7 +11,7 @@ import { EmptyState } from '@/components/browse/EmptyState';
 import { ListingGrid } from '@/components/browse/ListingGrid';
 import { PhotoShimmer } from '@/components/browse/photoPlaceholder';
 import { eyebrowClassName, microLabelClassName, stickyBarClassName, stickyBelowBarClassName } from '@/components/browse/tokens';
-import { browseEnabled, getSiteMode } from '@/domain/booking/config';
+import { browseEnabled, getSiteMode, storefrontFacetsEnabled } from '@/domain/booking/config';
 import { protectEnabled } from '@/domain/booking/protect';
 import { formatRangeLabel, formatShortDate } from '@/domain/booking/dates';
 import { applyMarketplaceQuery, computeFacets, excludeBusy, filterListings } from '@/domain/booking/marketplaceCore';
@@ -208,7 +208,7 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
               <AboutCard team={team} count={vehicles.length} minRate={minRate} minDays={minDays} className="mt-4 lg:hidden" />
 
               <div className="mt-5 px-1 lg:mt-8">
-                <FilterBar key={filterKey} facets={facets} query={query} action={`/${team.slug}`} />
+                <FilterBar key={filterKey} facets={facets} query={query} action={`/${team.slug}`} facetsEnabled={storefrontFacetsEnabled()} />
               </div>
               {/* A successful check is a status line, not an alert (MP-11). */}
               {availability && (

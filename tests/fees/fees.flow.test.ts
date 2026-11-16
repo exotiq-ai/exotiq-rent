@@ -279,7 +279,7 @@ describe('MP-26 flow: three steps (AC7, AC8, AC10, AC12)', () => {
     const names = Array.from(new Set(Array.from(flow.matchAll(/track\('([a-z_]+)'/g), (m) => m[1]))).sort();
     if (JSON.stringify(names) !== JSON.stringify(['book_step', 'booking_created'])) problems.push(`event names ${names.join(',')}`);
     const events = /export const EVENTS = (\[[^\]]*\])/.exec(read('components/analytics/policy.ts'))?.[1];
-    if (events !== "['browse_view', 'storefront_view', 'vehicle_view', 'book_start', 'book_step', 'booking_created', 'confirmation_view', 'favourite_added', 'capture_start', 'capture_sent', 'alert_created', 'saved_view', 'booking_request_failed', 'checkout_started']") problems.push(`EVENTS changed: ${events}`);
+    if (events !== "['browse_view', 'storefront_view', 'vehicle_view', 'book_start', 'book_step', 'booking_created', 'confirmation_view', 'favourite_added', 'capture_start', 'capture_sent', 'alert_created', 'saved_view', 'booking_request_failed', 'checkout_started', 'facet_applied']") problems.push(`EVENTS changed: ${events}`);
 
     // The no-diff check under components/analytics/ and docs/analytics/ (positive control always on).
     const analyticsPaths = (paths: string[]) => paths.filter((p) => p.startsWith('components/analytics/') || p.startsWith('docs/analytics/'));
