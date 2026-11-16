@@ -1,6 +1,14 @@
+// Maintenance wall (MP-37): decided here, once per build. Off (the default), this config is exactly
+// the normal one and no middleware is compiled. On, the build is an app that holds nothing but the
+// wall: middleware.wall.ts and app/[[...wall]]/route.wall.ts both answer with the 503 wall page.
+// See docs/rent/MAINTENANCE_WALL.md.
+const wall = require('./domain/maintenance/flags.js').readWall();
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async redirects() {
+    // A wall build redirects nothing: redirects run before middleware.
+    if (wall.on) return [];
     // Site split (2026-07-22): booking mode (default, book.exotiq.rent)
     // lands visitors straight on a storefront. Marketplace mode
     // (exotiq.rent, NEXT_PUBLIC_SITE_MODE=marketplace) serves the public
@@ -52,6 +60,19 @@ const nextConfig = {
   swcMinify: true,
   // Optimize fonts
   reactStrictMode: true,
+  // Wall build only: only *.wall.ts(x) files are compiled, so the middleware and the catch-all route
+  // are the whole app (two entries: Next 14.2 fails on a single one); a fixed build id lets the
+  // checker probe the data-request shape; env inlines the two optional wall values (server side only);
+  // images allow no remote source at all and turn the optimizer off (it then answers 404 and fetches
+  // nothing), so a request that reaches it cannot make the wall deploy fetch from anywhere.
+  ...(wall.on
+    ? {
+        pageExtensions: ['wall.ts', 'wall.tsx'],
+        generateBuildId: async () => 'maintenance-wall',
+        env: wall.env,
+        images: { unoptimized: true, remotePatterns: [] },
+      }
+    : {}),
 };
 
 module.exports = nextConfig;

@@ -6,3 +6,8 @@
 # Per-site behavior stays in each site's Netlify env vars, never in this file.
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+[context.deploy-preview.environment]
+  MAINTENANCE_MODE = "on"
+[context.branch-deploy.environment]
+  MAINTENANCE_MODE = "on"
