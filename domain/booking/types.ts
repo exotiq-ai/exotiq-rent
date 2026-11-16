@@ -24,6 +24,8 @@ export type Operator = {
   /** Operator free text — ALWAYS rendered as plain text, never as HTML/links. */
   pickupInstructions?: string;
   logoUrl?: string;
+  /** Operator-chosen hero for the storefront page; absent = first car's photo. */
+  storefrontHeroUrl?: string;
   timezone?: string;
   stripeAccountId?: string;
   platformFeePercent?: number;

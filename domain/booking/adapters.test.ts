@@ -59,6 +59,14 @@ describe('M4 adapters (RPC rows -> domain, dollars -> cents)', () => {
     expect(team.about).toBe('Pilot operator.');
   });
 
+  it('carries the operator storefront hero only when it is an absolute https URL', () => {
+    expect(adaptTeam(teamRow).storefrontHeroUrl).toBeUndefined();
+    const url = 'https://example.supabase.co/storage/v1/object/public/dashboard-banners/teams/t/storefront-hero.webp';
+    expect(adaptTeam({ ...teamRow, storefront_hero_url: url }).storefrontHeroUrl).toBe(url);
+    expect(adaptTeam({ ...teamRow, storefront_hero_url: '/lovable-uploads/hero.png' }).storefrontHeroUrl).toBeUndefined();
+    expect(adaptTeam({ ...teamRow, storefront_hero_url: null }).storefrontHeroUrl).toBeUndefined();
+  });
+
   it('adapts a fleet vehicle with cents money and a safe fallback footnote', () => {
     const team = adaptTeam(teamRow);
     const vehicle = adaptFleetVehicle(vehicleRow, team);

@@ -39,6 +39,7 @@ export function adaptTeam(row: RpcTeamRow): Operator {
     pickupAddress: row.pickup_address ?? undefined,
     pickupInstructions: row.pickup_instructions ?? undefined,
     logoUrl: row.logo_url ?? undefined,
+    storefrontHeroUrl: publicImageUrl(row.storefront_hero_url) ?? undefined,
     timezone: row.timezone ?? undefined,
     about: row.public_description ?? undefined,
   };
