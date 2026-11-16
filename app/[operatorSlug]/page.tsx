@@ -134,6 +134,12 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
   }
 
   const heroVehicle = vehicles[0];
+  // The operator's own hero when they set one in the Command Center, else the first car's photo.
+  const hero = team.storefrontHeroUrl
+    ? { src: team.storefrontHeroUrl, alt: team.name, position: 'object-center' }
+    : heroVehicle.heroImage
+      ? { src: heroVehicle.heroImage, alt: heroVehicle.name, position: 'object-[50%_52%]' }
+      : null;
   const minRate = Math.min(...vehicles.map((vehicle) => vehicle.dailyRateCents));
   const minDays = Math.min(...vehicles.map((vehicle) => vehicle.minRentalDays));
   // Storefront filters (MP-8): the same query language and core as /browse,
@@ -193,10 +199,10 @@ export default async function TeamStorefrontRoute({ params, searchParams }: Prop
                   third element competing in a block that should hold one. If partner
                   status needs disclosing it belongs in copy, not a gold pill over a car. */}
               <div className="relative -mx-4 mt-[-8px] aspect-[3/2] overflow-hidden bg-surface lg:mx-0 lg:mt-0 lg:aspect-[21/9] lg:rounded-2xl">
-                {heroVehicle.heroImage && (
+                {hero && (
                   <>
                     <PhotoShimmer />
-                    <Image src={heroVehicle.heroImage} alt={heroVehicle.name} fill priority sizes="(min-width: 1024px) 840px, 480px" className="object-cover object-[50%_52%]" />
+                    <Image src={hero.src} alt={hero.alt} fill priority sizes="(min-width: 1024px) 840px, 480px" className={`object-cover ${hero.position}`} />
                   </>
                 )}
               </div>

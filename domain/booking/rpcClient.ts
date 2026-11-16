@@ -24,6 +24,9 @@ export type RpcTeamRow = {
   support_phone?: string | null;
   pickup_address?: string | null;
   pickup_instructions?: string | null;
+  /** Operator-chosen storefront hero image (CC team settings, 2026-11-16).
+   * Null or absent: the storefront shows the first car's photo. */
+  storefront_hero_url?: string | null;
 };
 
 export type RpcFleetVehicleRow = {
