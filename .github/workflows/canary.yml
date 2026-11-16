@@ -17,8 +17,8 @@ jobs:
     timeout-minutes: 5
     env:
       # Public by design — the anon key ships in every browser bundle.
-      NEXT_PUBLIC_SUPABASE_URL: https://jlgwbbqydjeokypoenoc.supabase.co
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpsZ3diYnF5ZGplb2t5cG9lbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NzgzNTEsImV4cCI6MjA3NzM1NDM1MX0.CIh8I-Y5bMERvkGLPeegkTNrW8Xbx7dijVhl2zyZ9ac
+      NEXT_PUBLIC_SUPABASE_URL: https://qdvevfplstxatlqchezx.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkdmV2ZnBsc3R4YXRscWNoZXp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ0NjI1MDksImV4cCI6MjExMDAzODUwOX0.gKBJAe4Z23bsEy-IUQLiHg1qSUO6i2uIc4Og0ReHJfo
       CANARY_TEAM_SLUG: exotiq
       CANARY_VEHICLE_SLUG: 2017-audi-s8
     steps:

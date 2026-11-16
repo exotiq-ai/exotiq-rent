@@ -33,7 +33,7 @@ Needs only public config (Supabase URL, anon key — the same values shipped in
 every browser bundle), so the job has no secrets.
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=https://jlgwbbqydjeokypoenoc.supabase.co \
+NEXT_PUBLIC_SUPABASE_URL=https://qdvevfplstxatlqchezx.supabase.co \
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key> \
 bun scripts/canary/renter-canary.ts
 ```
@@ -41,7 +41,7 @@ bun scripts/canary/renter-canary.ts
 ## 2. Stripe live config (`scripts/canary/stripe-live-monitor.ts`)
 
 Read-only drift detection against the live Stripe account: the four webhook
-endpoints created 2026-08-01 exist, are **enabled** (Stripe silently
+endpoints created 2026-11-13 (owned backend) exist, are **enabled** (Stripe silently
 auto-disables endpoints whose deliveries keep failing — how the sandbox
 webhook died for ten days), and carry their expected events; **no unexpected
 endpoint targets our function URLs** (a duplicate means double delivery where
