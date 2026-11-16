@@ -23,13 +23,14 @@
 
 const KEY = process.env.STRIPE_MONITOR_KEY ?? '';
 
-const FUNCTIONS_BASE = 'https://jlgwbbqydjeokypoenoc.supabase.co/functions/v1';
+const FUNCTIONS_BASE = 'https://qdvevfplstxatlqchezx.supabase.co/functions/v1';
 
-// Endpoint IDs are stable identifiers, not secrets. Created 2026-08-01
-// (session record: memory project-exotiq-stripe-live-switch).
+// Endpoint IDs are stable identifiers, not secrets. Created 2026-11-13 for the
+// owned backend (the 2026-08-01 endpoints of the previous backend are disabled,
+// kept, and deliberately not checked here).
 const EXPECTED_ENDPOINTS: Array<{ id: string; url: string; events: string[] }> = [
   {
-    id: 'we_1TzjjLHO7nC3pJiPggtq38ey', // platform: subscriptions + charges
+    id: 'we_1UbB6FHO7nC3pJiPF9QaJd0R', // platform: subscriptions + charges
     url: `${FUNCTIONS_BASE}/stripe-webhook`,
     events: [
       'customer.subscription.updated',
@@ -42,24 +43,28 @@ const EXPECTED_ENDPOINTS: Array<{ id: string; url: string; events: string[] }> =
     ],
   },
   {
-    id: 'we_1TznwIHO7nC3pJiPDs6xZAMy', // connected accounts: onboarding + holds + payouts
+    id: 'we_1UbB6FHO7nC3pJiPfsLJc3Np', // connected accounts: onboarding + holds + booking payments + payouts
     url: `${FUNCTIONS_BASE}/stripe-webhook`,
     events: [
       'account.updated',
       'account.application.deauthorized',
       'charge.captured',
+      'charge.dispute.created',
       'charge.succeeded',
       'charge.refunded',
+      'checkout.session.completed',
+      'payment_intent.amount_capturable_updated',
+      'payment_intent.succeeded',
       'payout.paid',
     ],
   },
   {
-    id: 'we_1TzjjMHO7nC3pJiP0w035KfK', // renter payments — the money path
+    id: 'we_1UbB6GHO7nC3pJiPZIYfHqbS', // renter payments — the money path
     url: `${FUNCTIONS_BASE}/rent-payment-webhook`,
     events: ['checkout.session.completed', 'payment_intent.succeeded', 'payment_intent.payment_failed'],
   },
   {
-    id: 'we_1TzjjMHO7nC3pJiPlSjl6FeB', // identity verification
+    id: 'we_1UbB6HHO7nC3pJiP7X7QCaht', // identity verification
     url: `${FUNCTIONS_BASE}/identity-webhook`,
     events: [
       'identity.verification_session.verified',
